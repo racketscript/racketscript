@@ -1,2 +1,3 @@
-# racketscript
+# RacketScript
+
 Racket to JavaScript compiler
