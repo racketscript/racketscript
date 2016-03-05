@@ -1,3 +1,3 @@
-# RacketScript
+# Rapture
 
-Racket to JavaScript compiler
+A lightweight Racket to JavaScript compiler
