@@ -87,7 +87,6 @@
 
 (define (full-path-string p)
   (path->string (normalize-path (simplify-path p #t))))
-
 (define (desymbolize s)
   (cond
     [(symbol? s) (symbol->string s)]
@@ -313,10 +312,12 @@
                            (to-json (cdr (last-pair (syntax-e v))) (cdr (last-pair (syntax-e v/loc))))))]
     [((module name _ ...) _)
      (parameterize ([current-module (push-module (current-module) (syntax-e #'name))])
-       (convert v v/loc #f))]
+       (define-values (mod name body) (convert v v/loc #f))
+       body)]
     [((module* name _ ...) _)
      (parameterize ([current-module (push-module (current-module) (syntax-e #'name))])
-       (convert v v/loc #f))]
+       (define-values (mod name body) (convert v v/loc #f))
+       body)]
     [((#%declare _) _) #f] ;; ignore these
     ;; this is a simplification of the json output
     [_
@@ -497,12 +498,11 @@
                          (require-json #'#%kernel)
                          (require-json #'lang))])
        (parameterize ([current-phase 0])
-         (hash* 'module-name (symbol->string (syntax-e #'name))
-                'body-forms (filter-map to-json
-                                        (syntax->list #'(forms ...))
-                                        (syntax->list #'(forms* ...)))
-                'language (first lang-req)
-                'config (and config? global-config))))]
+         (values (symbol->string (syntax-e #'name))
+                 (first lang-req)
+                 (filter-map to-json
+                             (syntax->list #'(forms ...))
+                             (syntax->list #'(forms* ...))))))]
     [((module* name:id lang:expr (#%plain-module-begin forms ...))
       (_ _ _                    (_ forms* ...)))
      (let ([lang-req (cond
@@ -519,102 +519,30 @@
                    (syntax-shift-phase-level mod/loc (- (current-phase))))
              (list mod mod/loc)))
        (parameterize ([current-phase 0])
-         (hash* 'module-name (symbol->string (syntax-e #'name))
-                'body-forms (filter-map to-json
+         (values (symbol->string (syntax-e #'name))
+                 (first lang-req)
+                 (filter-map to-json
                                         (syntax->list #'(s-forms ...))
-                                        (syntax->list #'(s-forms* ...)))
-                'language (first lang-req)
-                'config (and config? global-config))))]
+                                        (syntax->list #'(s-forms* ...))))))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
+(define (read-module input)
+  (read-syntax (object-name input) input))
+
+(define (open-read-module in-path)
+  (read-module (open-input-file in-path)))
 
 (module+ main
-  (require racket/cmdline json)
-
-  (define in #f)
-  (define out #f)
-
-  (define wrap? #t)
-  (define stdlib? #t)
-  (define mpair? #f)
-  (define loop? #f)
-
-  (define logging? #f)
-
-  (define srcloc? #t)
-  (define config? #t)
-
-  (command-line
-   #:once-any
-   [("--output") file "write output to output <file>"
-    (set! out (open-output-file file #:exists 'replace))]
-   [("--stdout") "write output to standard out"
-    (set! out (current-output-port))]
-   #:once-each
-   [("--omit-srcloc") "don't include src location info" (set! srcloc? #f)]
-   [("--omit-config") "don't include config info" (set! config? #f)]
-   [("--stdin") "read input from standard in" (set! in (current-input-port))]
-   [("--no-stdlib") "don't include stdlib.sch" (set! stdlib? #f)]
-   [("--loop") "keep process alive" (set! loop? #t)]
-
-   #:args ([source #f])
-   (cond [(and in source)
-          (raise-user-error "can't supply --stdin with a source file")]
-         [(and loop? source)
-          (raise-user-error "can't loop on a file")]
-         [source
-          (when (not (output-port? out))
-            (set! out (open-output-file (string-append source ".json")
-                                        #:exists 'replace)))
-          (when logging?
-            (fprintf (open-output-file #:exists 'append "/tmp/expand.log")
-                     ">>> expanding ~a\n" source))
-          (set! in source)]))
-
-  (define input (if (input-port? in) in (open-input-file in)))
-
-  (unless (output-port? out)
-    (raise-user-error "no output specified"))
-
-  (unless (input-port? input)
-    (raise-user-error "no input specified"))
-
-  ;; If the given input is a file name, then chdir to its containing
-  ;; directory so the expand function works properly
-  (define in-path (if (input-port? in) #f (normalize-path in)))
-
-  (unless (input-port? in)
-    (define in-dir (or (path-only in) "."))
-    (current-module (list (object-name input)))
-    (current-directory in-dir))
-
   (read-accept-reader #t)
   (read-accept-lang #t)
 
-  (let loop ()
-    (define mod
-      ;; hack b/c I can't write EOF from Python
-      (cond [loop?
-             (let rd ([s null])
-               (define d (read-bytes-line input))
-               ;(write d (current-error-port)) (newline (current-error-port))
-               (cond
-                [(or (equal? d #"\0") (eof-object? d))
-                 ;(eprintf "done\n")
-                 (read-syntax (object-name input)
-                              (open-input-bytes
-                               (apply bytes-append
-                                      (add-between (reverse s) #"\n"))))]
-                [else
-                 (rd (cons d s))]))]
-            [else
-             ;(eprintf "starting read-syntax\n")
-             (read-syntax (object-name input) input)]))
-    (when (eof-object? mod) (exit 0))
-    (define-values  (expanded expanded-srcloc) (do-expand mod in-path))
-    (parameterize ([keep-srcloc srcloc?])
-      (write-json (convert expanded expanded-srcloc config?) out))
-    (newline out)
-    (flush-output out)
-    (when loop? (loop))))
+  (define in-path (build-path (current-directory) "main.rkt"))
+  (define mod (open-read-module in-path))
+  (define-values  (expanded expanded-srcloc) (do-expand mod in-path))
+  (parameterize ([keep-srcloc srcloc?])
+    (define-values (mod lang body) (convert expanded expanded-srcloc))
+    (displayln lang)
+    (displayln mod)
+    (displayln body)))
+
