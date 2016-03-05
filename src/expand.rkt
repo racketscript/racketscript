@@ -240,31 +240,7 @@
       (hash-has-key? r 'case-lambda)))
 
 (define (to-json v v/loc)
-  (define (path/symbol/list->string o)
-    (cond [(path-string? o) (hash '%p (full-path-string o))]
-          [(symbol? o)      (hash 'quote (symbol->string o))]
-          [(list? o)        (map path/symbol/list->string o)]
-          [else o]))
-  (define (syntax-source-module->hash m)
-    (cond [(module-path-index? m)
-           (hash '%mpi
-                 (let ((rm (resolved-module-path-name (module-path-index-resolve m))))
-                   (path/symbol/list->string rm)))]
-          [else (path/symbol/list->string m)]))
-  (let ([r (to-json* v v/loc)])
-    (if (or (not (keep-srcloc))
-            (not (hash? r))
-            (not (save-source-here? r)))
-        r
-        (hash-set* r
-                   'line     (syntax-line v/loc)
-                   'column   (syntax-column v/loc)
-                   'position (syntax-position v/loc)
-                   'span     (syntax-span v/loc)
-                   'original (syntax-original? v/loc)
-                   'source   (path/symbol/list->string (syntax-source v/loc))
-                   'module   (syntax-source-module->hash
-                              (syntax-source-module v/loc #f))))))
+   (to-json* v v/loc))
 
 (define (expanded-module)
   (let ([mod (car (current-module))]
