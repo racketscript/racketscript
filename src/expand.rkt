@@ -17,6 +17,8 @@
          racket/syntax
          (for-syntax racket/base))
 
+(require "absyn.rkt")
+
 (provide hash* global-config)
 
 (define keep-srcloc (make-parameter #t))
