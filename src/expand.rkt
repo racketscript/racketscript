@@ -15,9 +15,11 @@
          racket/format
          racket/extflonum
          racket/syntax
+         syntax/id-table
          (for-syntax racket/base))
 
-(require "absyn.rkt")
+(require "absyn.rkt"
+         "util.rkt")
 
 (provide quick-convert
          open-read-module
@@ -28,6 +30,47 @@
 (define current-module (make-parameter (list #f)))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
+
+;;; Lexical bindings
+
+(define lexical-bindings (make-free-id-table))
+
+(define (register-all! x)
+  (cond [(list? x) (for-each register-all! x)]
+        [(identifier? x) (dict-set! lexical-bindings x #t)]
+        [(pair? x)
+         (register-all! (car x))
+         (register-all! (cdr x))]
+        [(syntax? x) (register-all! (syntax-e x))]
+        [else (error 'register-all! "unexpected ~a" x)]))
+
+(define (identifier-binding* i)
+  (if (dict-ref lexical-bindings i #f)
+      'lexical
+      (identifier-binding i)))
+
+(define table (make-free-id-table))
+(define sym-table (make-hash))
+
+(define (gen-name id)
+  ;; use strings to make sure unreadablility isn't an issue
+  (if (hash-ref sym-table (symbol->string (syntax-e id)) #f)
+      (gensym (syntax-e id))
+      (begin (hash-set! sym-table (symbol->string (syntax-e id)) #t)
+             (syntax-e id))))
+
+(define (id->sym id)
+  (define sym (identifier-binding-symbol id))
+  (define sym*
+    (if (eq? 'lexical (identifier-binding id))
+        (dict-ref! table id (λ _
+                               ;(printf ">>> miss: ~a\n" id)
+                               (gen-name id)))
+        sym))
+  ;(printf ">>> id sym sym*: ~a ~a ~a\n" id sym sym*)
+  (if (quoted?)
+      (syntax-e id)
+      sym*))
 
 (define (do-expand stx in-path)
   ;; error checking
@@ -124,9 +167,11 @@
     [(if e0 e1 e2)
      (If (to-absyn #'e0) (to-absyn #'e1) (to-absyn #'e2))]
     [(let-values ([xs es] ...) b ...)
-     (LetValues (for/list ([x (syntax->datum #'(xs ...))]
+     (LetValues (for/list ([x (syntax->list #'(xs ...))]
                            [e (syntax->list #'(es ...))])
-                  (cons x (to-absyn e))) ;; FIXME: convertion of x
+                  (register-all! x)
+                  (cons (map id->sym (syntax->list x))
+                        (to-absyn e))) ;; FIXME: convertion of x
                 (map to-absyn (syntax->list #'(b ...))))]
     [(letrec-values ([xs es] ...) b ...)
      (error "let-rec is not supported")]
@@ -135,24 +180,22 @@
                   (to-absyn #'e)))]
     [(#%require . x) #f] ;; TODO
     [(#%plain-lambda formals . body)
-     (PlainLambda (syntax->datum #'formals) (map to-absyn (syntax->list #'body)))]
+     (register-all! #'fmls)
+     (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
-     (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
-    [(#%top . x) (TopId (symbol->string (syntax-e #'x)))]
+     (DefineValues (map id->sym (syntax->list #'(id ...))) (to-absyn #'b))]
+    [(#%top . x) (TopId (syntax-e #'x))]
     [i:identifier
-     (syntax-e #'i)
-     #;(match (identifier-binding #'i)
-       ['lexical (hash 'lexical  (symbol->string (syntax-e v)))]
-       [#f       (hash 'toplevel (symbol->string (syntax-e v)))]
+     (match (identifier-binding #'i (current-phase))
+       ['lexical (syntax-e v)]
+       [#f       (syntax-e v)]
        [(list (app index->path src) src-id _ _ 0 0 0)
-        (hash 'module (symbol->string (syntax-e v))
-              'source-module (if (path? src)
-                                 (path->string src)
-                                 (and src (symbol->string src)))
-              'source-name (symbol->string src-id))]
+        (syntax-e v)]
        [v (error 'expand_racket "phase not zero: ~a" v)])]
-    [(a . b) (displayln (syntax->datum #'a)) (displayln (syntax->datum #'b))
-     (error "improper not supported")]
+    [(_ ...) 
+     (map to-absyn (syntax->list v))]
+    [(a . b)
+     (error "impropers are not supported")]
     [#(_ ...) (error "vector not supported")]
     [_ #:when (box? (syntax-e v))
        (error "box not supported")]
