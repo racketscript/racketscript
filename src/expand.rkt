@@ -124,9 +124,9 @@
     [(if e0 e1 e2)
      (If (to-absyn #'e0) (to-absyn #'e1) (to-absyn #'e2))]
     [(let-values ([xs es] ...) b ...)
-     (LetValues (for/list ([x (syntax->list #'(xs ...))]
+     (LetValues (for/list ([x (syntax->datum #'(xs ...))]
                            [e (syntax->list #'(es ...))])
-                  (cons (to-absyn x) (to-absyn e)))
+                  (cons x (to-absyn e))) ;; FIXME: convertion of x
                 (map to-absyn (syntax->list #'(b ...))))]
     [(letrec-values ([xs es] ...) b ...)
      (error "let-rec is not supported")]
@@ -138,7 +138,6 @@
      (PlainLambda (syntax->datum #'formals) (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
-    [(a . b) (error "improper not supported")]
     [(#%top . x) (TopId (symbol->string (syntax-e #'x)))]
     [i:identifier
      (syntax-e #'i)
@@ -152,6 +151,8 @@
                                  (and src (symbol->string src)))
               'source-name (symbol->string src-id))]
        [v (error 'expand_racket "phase not zero: ~a" v)])]
+    [(a . b) (displayln (syntax->datum #'a)) (displayln (syntax->datum #'b))
+     (error "improper not supported")]
     [#(_ ...) (error "vector not supported")]
     [_ #:when (box? (syntax-e v))
        (error "box not supported")]
