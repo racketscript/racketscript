@@ -185,5 +185,7 @@
   (read-module (open-input-file in-path)))
 
 (define (quick-convert in-path)
+  (read-accept-reader #t)
+  (read-accept-lang #t)
   (convert (do-expand (open-read-module in-path) in-path)))
 
