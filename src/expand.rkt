@@ -113,8 +113,6 @@
     ;; this is a simplification of the json output
     [(#%plain-app e0 e ...)
      (PlainApp (to-absyn #'e0) (map to-absyn (syntax->list #'(e ...))))]
-    [((~literal with-continuation-mark) e0 e1 e2)
-     (error "with-continuation-mark is not supported")]
     [(begin0 e0 e ...)
      (map to-absyn (syntax->list #'(e0 e ...)))]
     [(if e0 e1 e2)
@@ -129,14 +127,13 @@
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))]
-
     [(#%require . x) #f] ;; TODO
-    [(#%top . x) (TopId (symbol->string (syntax-e #'x)))]
     [(#%plain-lambda formals . body)
      (PlainLambda (syntax->datum #'formals) (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(a . b) (error "improper not supported")]
+    [(#%top . x) (TopId (symbol->string (syntax-e #'x)))]
     [i:identifier
      (syntax-e #'i)
      #;(match (identifier-binding #'i)
@@ -168,7 +165,9 @@
     [_ #:when (byte-regexp? (syntax-e v))
        (error "byte-regexp? not supported")]
     [_ #:when (byte-pregexp? (syntax-e v))
-       (error "byte-pregexp not supported")]))
+       (error "byte-pregexp not supported")]
+    [((~literal with-continuation-mark) e0 e1 e2)
+     (error "with-continuation-mark is not supported")]))
 
 (define (convert mod)
   (syntax-parse mod
