@@ -52,43 +52,43 @@
 
 ;;; Expressions 
 
-(struct PlainLambda ([args : Args] [exprs : (Listof Expr)]))
+(struct PlainLambda ([args : Args] [exprs : (Listof Expr)]) #:transparent)
 
 (define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
 
-(struct If ([pred : Expr] [t-branch : Expr] [f-branch : Expr]))
+(struct If ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
 
 (define-type Begin (Listof (U TopLevelForm Expr)))
 
 
-(struct LetValues ([bindings : (Listof Binding)] [body : (Listof Expr)]))
+(struct LetValues ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
 
-(struct LetRecValues ([bindings : (Listof Binding)] [body : (Listof Expr)]))
+(struct LetRecValues ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
 
-(struct Set! ([id : Symbol] [expr : Expr]))
+(struct Set! ([id : Symbol] [expr : Expr]) #:transparent)
 
-(struct Quote ([datum : Any]))
+(struct Quote ([datum : Any]) #:transparent)
 
-(struct PlainApp ([lam : Expr] [args : (Listof Expr)])) ;; Special case of (PlainApp '()) produces '()
+(struct PlainApp ([lam : Expr] [args : (Listof Expr)]) #:transparent) ;; Special case of (PlainApp '()) produces '()
 
-(struct TopId ([id : Symbol]))
+(struct TopId ([id : Symbol]) #:transparent)
 
-(struct VarRef ([var : (Option (U Symbol TopId))]))
+(struct VarRef ([var : (Option (U Symbol TopId))]) #:transparent)
 
 
 ;;; Top Level Forms
 
-(struct Module ([id : (U Symbol String)] [path : (Option Path)] [forms : (Listof ModuleLevelForm)])) ;; FIXME: path
+(struct Module ([id : (U Symbol String)] [path : (Option Path)] [forms : (Listof ModuleLevelForm)]) #:transparent) ;; FIXME: path
 
 ;;; Module Level Forms
 
-(struct Provide ([id : Symbol])) ;; This more than just one field
+(struct Provide ([id : Symbol]) #:transparent) ;; This more than just one field
 
 ;; GeneralTopLevelForm
 
-(struct DefineValues ([ids : Args] [expr : Expr]))
+(struct DefineValues ([ids : Args] [expr : Expr]) #:transparent)
 
-(struct Require ([id : Symbol])) ;; This more than just one field
+(struct Require ([id : Symbol]) #:transparent) ;; This more than just one field
 
 
 
