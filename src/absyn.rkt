@@ -67,9 +67,9 @@
 
 (struct Set! ([id : Symbol] [expr : Expr]))
 
-(struct Quote ([datum : Datum]))
+(struct Quote ([datum : Any]))
 
-(struct PlainApp ([exprs : (Listof Expr)])) ;; Special case of (PlainApp '()) produces '()
+(struct PlainApp ([lam : Expr] [args : (Listof Expr)])) ;; Special case of (PlainApp '()) produces '()
 
 (struct TopId ([id : Symbol]))
 
@@ -78,9 +78,7 @@
 
 ;;; Top Level Forms
 
-(define-type PlainModule (Listof ModuleLevelForm))
-
-(struct Module ([id : Symbol] [path : Path] [plain-mod : PlainModule]))
+(struct Module ([id : (U Symbol String)] [path : (Option Path)] [forms : (Listof ModuleLevelForm)])) ;; FIXME: path
 
 ;;; Module Level Forms
 
