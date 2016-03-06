@@ -132,6 +132,10 @@
 
     [(#%require . x) #f] ;; TODO
     [(#%top . x) (TopId (symbol->string (syntax-e #'x)))]
+    [(#%plain-lambda formals . body)
+     (PlainLambda (syntax->datum #'formals) (map to-absyn (syntax->list #'body)))]
+    [(define-values (id ...) b)
+     (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(a . b) (error "improper not supported")]
     [i:identifier
      (syntax-e #'i)
