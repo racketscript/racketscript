@@ -19,6 +19,12 @@
 
 (require "absyn.rkt")
 
+(provide quick-convert
+         open-read-module
+         read-module
+         convert
+         to-absyn)
+
 (define current-module (make-parameter (list #f)))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
