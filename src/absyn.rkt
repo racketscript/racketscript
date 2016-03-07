@@ -2,6 +2,8 @@
 
 (provide (all-defined-out))
 
+(define-type Program TopLevelForm)
+
 (define-type Expr (U Symbol
                      PlainLambda
                      CaseLambda
@@ -42,7 +44,7 @@
 
 ;;;
 
-(define-type Args      (Listof Symbol))
+(define-type Args      (Listof Symbol))      ;;; FIXME: this doesn't match with formals in grammar
 (define-type Binding   (Pairof Args Expr))
 
 ;;; Expressions 
@@ -72,7 +74,3 @@
 
 (struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
 (struct Require        ([id : Symbol]) #:transparent) ;; This more than just one field
-
-
-
-
