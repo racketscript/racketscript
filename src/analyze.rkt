@@ -49,7 +49,9 @@
      (define new-bindings (fresh-binding-map binding-map args))
      (PlainLambda (map (λ ([a : Symbol])
                          (hash-ref new-bindings a)) args)
-                  exprs)]
+                  (map (λ ([e : Expr])
+                         (rename-expr-bindings e new-bindings))
+                       exprs))]
     [(If expr t-branch f-branch)
      (If (rename-expr-bindings expr binding-map)
          (rename-expr-bindings t-branch binding-map)
