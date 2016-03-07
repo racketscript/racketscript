@@ -2,78 +2,62 @@
 
 (provide (all-defined-out))
 
-(define-type Expr (U
-                   Symbol
-                   PlainLambda
-                   CaseLambda
-                   PlainApp
-                   If
-                   Begin
-                   LetValues
-                   LetRecValues
-                   TopId
-                   Set!
-                   Quote
-                   ;; QuoteSyntax
-                   ;; WithContinuationMark
-                   VarRef))
+(define-type Expr (U Symbol
+                     PlainLambda
+                     CaseLambda
+                     PlainApp
+                     If
+                     Begin
+                     LetValues
+                     LetRecValues
+                     TopId
+                     Set!
+                     Quote
+                     ;; QuoteSyntax
+                     ;; WithContinuationMark
+                     VarRef))
 
-(define-type TopLevelForm (U
-                           GeneralTopLevelForm
-                           Expr
-                           Module
-                           Begin
-                           ;; BeginForSyntax
-                           ))
+(define-type TopLevelForm (U GeneralTopLevelForm
+                             Expr
+                             Module
+                             Begin
+                             ;; BeginForSyntax
+                             ))
 
-(define-type ModuleLevelForm (U
-                              GeneralTopLevelForm
-                              Provide
-                              ;; BeginForSyntax
-                              SubModuleForm
-                               ;; Declare
+(define-type ModuleLevelForm (U GeneralTopLevelForm
+                                Provide
+                                ;; BeginForSyntax
+                                SubModuleForm
+                                ;; Declare
+                                ))
+
+(define-type SubModuleForm (U Module
+                              ;;Module*
                               ))
 
-(define-type SubModuleForm (U
-                            Module
-                            ;;Module*
-                            ))
-
-(define-type GeneralTopLevelForm (U
-                                  Expr
-                                  DefineValues
-                                  ;; DefineSyntaxes
-                                  Require))
+(define-type GeneralTopLevelForm (U Expr
+                                    DefineValues
+                                    ;; DefineSyntaxes
+                                    Require))
 
 ;;;
 
-(define-type Args (Listof Symbol))
-(define-type Binding (Pairof Args Expr))
+(define-type Args      (Listof Symbol))
+(define-type Binding   (Pairof Args Expr))
 
 ;;; Expressions 
 
-(struct PlainLambda ([args : Args] [exprs : (Listof Expr)]) #:transparent)
-
+(define-type Begin      (Listof (U TopLevelForm Expr)))
 (define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
-
-(struct If ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
-
-(define-type Begin (Listof (U TopLevelForm Expr)))
-
-
-(struct LetValues ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
-
-(struct LetRecValues ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
-
-(struct Set! ([id : Symbol] [expr : Expr]) #:transparent)
-
-(struct Quote ([datum : Any]) #:transparent)
-
-(struct PlainApp ([lam : Expr] [args : (Listof Expr)]) #:transparent) ;; Special case of (PlainApp '()) produces '()
-
-(struct TopId ([id : Symbol]) #:transparent)
-
-(struct VarRef ([var : (Option (U Symbol TopId))]) #:transparent)
+(struct PlainLambda     ([args : Args] [exprs : (Listof Expr)]) #:transparent)
+(struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
+(struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
+(struct LetRecValues    ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
+(struct Set!            ([id : Symbol] [expr : Expr]) #:transparent)
+(struct Quote           ([datum : Any]) #:transparent)
+(struct PlainApp        ([lam : Expr] [args : (Listof Expr)]) #:transparent) ;; Special case of (PlainApp '()) produces '()
+(struct TopId           ([id : Symbol]) #:transparent)
+(struct VarRef          ([var : (Option (U Symbol TopId))]) #:transparent)
 
 
 ;;; Top Level Forms
@@ -86,9 +70,8 @@
 
 ;; GeneralTopLevelForm
 
-(struct DefineValues ([ids : Args] [expr : Expr]) #:transparent)
-
-(struct Require ([id : Symbol]) #:transparent) ;; This more than just one field
+(struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
+(struct Require        ([id : Symbol]) #:transparent) ;; This more than just one field
 
 
 
