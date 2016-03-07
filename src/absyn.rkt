@@ -6,16 +6,16 @@
                    Symbol
                    PlainLambda
                    CaseLambda
+                   PlainApp
                    If
                    Begin
                    LetValues
                    LetRecValues
+                   TopId
                    Set!
                    Quote
                    ;; QuoteSyntax
                    ;; WithContinuationMark
-                   PlainApp
-                   TopId
                    VarRef))
 
 (define-type TopLevelForm (U

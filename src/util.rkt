@@ -1,16 +1,16 @@
 #lang racket
 
-(provide hash-set*
+(provide hash-set-pair*
          hash*)
 
-(define (hash-set* h . kvs)
-  (let loop ([kvs kvs] [h h])
-    (if (null? kvs)
+(define (hash-set-pair* h pairs)
+  (let loop ([p* pairs] [h h])
+    (if (empty? p*)
         h
-        (let* ([k (car kvs)]
-               [v (cadr kvs)]
-               [h (if v (hash-set h k v) h)])
-          (loop (cddr kvs) h)))))
+        (let* ([p (car p*)]
+               [k (car p)]
+               [v (cdr p)])
+          (loop (cdr p*) (hash-set h k v))))))
 
 (define (hash* . kvs) (apply hash-set* (hash) kvs))
 
