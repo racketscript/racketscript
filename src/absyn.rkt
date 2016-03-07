@@ -55,7 +55,7 @@
 
 ;;; Expressions 
 
-(define-type Begin      (Listof (U TopLevelForm Expr)))
+(define-type Begin      (Listof TopLevelForm))
 (define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
 (struct PlainLambda     ([args : Args] [exprs : (Listof Expr)]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)

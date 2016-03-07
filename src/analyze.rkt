@@ -4,43 +4,65 @@
          "util.rkt")
 
 (provide rename-program
+         rename-top-level-form
          rename-expr-bindings)
 
 (define-type RenameMap (HashTable Symbol Symbol))
 
-(: rename-program (-> Program RenameMap Program))
-(define (rename-program p symap)
-  (cond
-    [(Expr? p) (rename-expr-bindings p symap)]
-    [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap)]
-    [(Module? p) (rename-module p symap)]
-    [(Begin? p) (rename-begin p symap)]))
+(define (rename-program p)
+  p)
 
-(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap GeneralTopLevelForm))
+(: rename-top-level-form (-> TopLevelForm RenameMap (Values TopLevelForm RenameMap)))
+(define (rename-top-level-form p symap)
+  (cond
+    [(Expr? p) (values (rename-expr-bindings p symap) symap)]
+    [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap)]
+    [(Module? p) (values (rename-module p symap) symap)]
+    [(Begin? p) (values (rename-begin p symap) symap)]))
+
+(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap
+                                     (Values GeneralTopLevelForm RenameMap)))
 (define (rename-general-top-level-form form symap)
   (cond
-    [(Expr? form) (rename-expr-bindings form symap)]
-    [(DefineValues? form) form] ;;;; TODO: URGENT!!!!
-    [(Require? form) form]))    ;;;; TODO
+    [(Expr? form) (values (rename-expr-bindings form symap) symap)]
+    [(DefineValues? form)
+     (match-define (DefineValues ids expr) form)
+     (define new-symap (fresh-binding-map symap ids))
+     (define new-ids (map (λ ([a : Symbol])
+                            (hash-ref new-symap a))
+                          ids))
+     ;; we have to add current ids to maps for recursive calls
+     (values (DefineValues new-ids (rename-expr-bindings expr new-symap))
+             new-symap)]
+    [(Require? form) (values form symap)]))    ;;;; TODO
 
-(: rename-module-level-form (-> ModuleLevelForm RenameMap ModuleLevelForm))
+(: rename-module-level-form (-> ModuleLevelForm RenameMap (Values ModuleLevelForm RenameMap)))
 (define (rename-module-level-form form symap)
   (cond
     [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap)]
-    [(Provide? form) form] ;;;; TODO
-    [(SubModuleForm? form) form])) ;;;; TODO)
+    [(Provide? form) (values form symap)] ;;;; TODO
+    [(SubModuleForm? form) (values form symap)])) ;;;; TODO)
 
 (: rename-module (-> Module RenameMap Module))
-(define (rename-module mod symap)
-  (match-define (Module id path forms) mod)
-  (Module id
+ (define (rename-module mod symap)
+   (match-define (Module id path forms) mod)
+   mod
+  #;(Module id
           path
           (map (λ ([f : ModuleLevelForm])
                  (rename-module-level-form f symap))
                forms)))
 
-(define (rename-begin beg symap)
-  beg)
+(: rename-begin (-> Begin RenameMap Begin))
+(define (rename-begin forms symap)
+  (let loop ([f : Begin forms]
+             [fr : Begin '()]
+             [symap* : RenameMap symap])
+    (match f
+      [(cons hd tl)
+       (define-values (f s) (rename-top-level-form hd symap*))
+       (loop tl (cons f fr) s)]
+      [_ (reverse fr)])))
 
 (: rename-expr-bindings (-> Expr RenameMap Expr))
 (define (rename-expr-bindings expr binding-map)
@@ -82,8 +104,9 @@
                     args))]
     [(TopId id) expr] ;; FIXME: rename top-levels?
     [(Quote datum) expr]
+    [(cons hd tl) (rename-begin expr binding-map)]
     [_ #:when (symbol? expr) (hash-ref binding-map expr)]
-    [_ (error "unsupported expr")]))
+    [_ (error "unsupported expr" expr)]))
 
 (: fresh-binding-map (-> RenameMap Args RenameMap))
 (define (fresh-binding-map binding-map args)
