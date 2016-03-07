@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(define-type Program TopLevelForm)
+(define-type-alias Program TopLevelForm)
 
 (define-type Expr (U Symbol
                      PlainLambda
@@ -18,13 +18,16 @@
                      ;; QuoteSyntax
                      ;; WithContinuationMark
                      VarRef))
+(define-predicate Expr? Expr)
 
 (define-type TopLevelForm (U GeneralTopLevelForm
                              Expr
                              Module
                              Begin
+                             ;; #%expression
                              ;; BeginForSyntax
                              ))
+(define-predicate TopLevelForm? TopLevelForm)
 
 (define-type ModuleLevelForm (U GeneralTopLevelForm
                                 Provide
@@ -32,15 +35,18 @@
                                 SubModuleForm
                                 ;; Declare
                                 ))
+(define-predicate ModuleLevelForm? ModuleLevelForm)
 
 (define-type SubModuleForm (U Module
                               ;;Module*
                               ))
+(define-predicate SubModuleForm? SubModuleForm)
 
 (define-type GeneralTopLevelForm (U Expr
                                     DefineValues
                                     ;; DefineSyntaxes
                                     Require))
+(define-predicate GeneralTopLevelForm? GeneralTopLevelForm)
 
 ;;;
 
@@ -61,6 +67,7 @@
 (struct TopId           ([id : Symbol]) #:transparent)
 (struct VarRef          ([var : (Option (U Symbol TopId))]) #:transparent)
 
+(define-predicate Begin? Begin)
 
 ;;; Top Level Forms
 
