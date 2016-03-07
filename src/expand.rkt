@@ -153,12 +153,12 @@
     [_ #:when (exact-integer? (syntax-e v))
        (Quote (~a (syntax-e v)))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]
-    [_ #:when (keyword? (syntax-e v)) (Quote (keyword->string (syntax-e v)))]
+    [_ #:when (keyword? (syntax-e v)) (Quote (syntax-e v))]
     [(~or (~datum +inf.0) (~datum -inf.0) (~datum nan.0))
-     (Quote (number->string (syntax-e v)))]
+     (Quote (syntax-e v))]
     [_ #:when (real? (syntax-e v)) (Quote (syntax-e v))]
     [_ #:when (char? (syntax-e v))
-       (Quote (~a (char->integer (syntax-e v))))]
+       (Quote (syntax-e v))]
     [_ #:when (regexp? (syntax-e v))
        (error "regexp not supported")]
     [_ #:when (pregexp? (syntax-e v))
