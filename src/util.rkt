@@ -1,8 +1,12 @@
-#lang racket
+#lang typed/racket
 
 (provide hash-set-pair*
-         hash*)
+         flatten1
+         ++)
 
+(define ++ string-append)
+
+(: hash-set-pair* (∀ (A B) (-> (HashTable A B) (Listof (Pairof A B)) (HashTable A B))))
 (define (hash-set-pair* h pairs)
   (let loop ([p* pairs] [h h])
     (if (empty? p*)
@@ -12,5 +16,7 @@
                [v (cdr p)])
           (loop (cdr p*) (hash-set h k v))))))
 
-(define (hash* . kvs) (apply hash-set* (hash) kvs))
 
+(: flatten1 (∀ (A) (-> (Listof (Listof A)) (Listof A))))
+(define (flatten1 lst)
+  (foldl (inst append A) '() lst))
