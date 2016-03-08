@@ -105,8 +105,8 @@
                 (map (λ ([e : Expr])
                        (rename-expr e new-bindings))
                      body))]
-    [(Set! id expr) expr (Set! (hash-ref symap id)
-                               (rename-expr expr symap))]
+    [(Set! id expr) (Set! (hash-ref symap id)
+                          (rename-expr expr symap))]
     [(PlainApp lam args)
      (PlainApp (rename-expr lam symap)
                (map (λ ([e : Expr])
