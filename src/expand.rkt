@@ -151,7 +151,7 @@
     [_ #:when (box? (syntax-e v))
        (error "box not supported")]
     [_ #:when (exact-integer? (syntax-e v))
-       (Quote (~a (syntax-e v)))]
+       (Quote (syntax-e v))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]
     [_ #:when (keyword? (syntax-e v)) (Quote (syntax-e v))]
     [(~or (~datum +inf.0) (~datum -inf.0) (~datum nan.0))
