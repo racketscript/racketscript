@@ -5,7 +5,7 @@
 
 (provide rename-program
          rename-top-level-form
-         rename-expr-bindings)
+         rename-expr)
 
 (define-type RenameMap (HashTable Symbol Symbol))
 
@@ -17,7 +17,7 @@
 (: rename-top-level-form (-> TopLevelForm RenameMap (Values TopLevelForm RenameMap)))
 (define (rename-top-level-form p symap)
   (cond
-    [(Expr? p) (values (rename-expr-bindings p symap) symap)]
+    [(Expr? p) (values (rename-expr p symap) symap)]
     [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap)]
     [(Module? p) (values (rename-module p symap) symap)]
     [(Begin? p) (values (rename-begin p symap) symap)]))
@@ -26,15 +26,15 @@
                                      (Values GeneralTopLevelForm RenameMap)))
 (define (rename-general-top-level-form form symap)
   (cond
-    [(Expr? form) (values (rename-expr-bindings form symap) symap)]
+    [(Expr? form) (values (rename-expr form symap) symap)]
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
-     (define new-symap (fresh-binding-map symap ids))
+     (define new-symap (fresh-symap symap ids))
      (define new-ids (map (λ ([a : Symbol])
                             (hash-ref new-symap a))
                           ids))
      ;; we have to add current ids to maps for recursive calls
-     (values (DefineValues new-ids (rename-expr-bindings expr new-symap))
+     (values (DefineValues new-ids (rename-expr expr new-symap))
              new-symap)]
     [(Require? form) (values form symap)]))    ;;;; TODO
 
@@ -72,53 +72,53 @@
        (loop tl (cons f fr) s)]
       [_ (reverse fr)])))
 
-(: rename-expr-bindings (-> Expr RenameMap Expr))
-(define (rename-expr-bindings expr binding-map)
+(: rename-expr (-> Expr RenameMap Expr))
+(define (rename-expr expr symap)
   (match expr
     [(PlainLambda args exprs)
-     (define new-bindings (fresh-binding-map binding-map args))
+     (define new-bindings (fresh-symap symap args))
      (PlainLambda (map (λ ([a : Symbol])
                          (hash-ref new-bindings a)) args)
                   (map (λ ([e : Expr])
-                         (rename-expr-bindings e new-bindings))
+                         (rename-expr e new-bindings))
                        exprs))]
     [(If expr t-branch f-branch)
-     (If (rename-expr-bindings expr binding-map)
-         (rename-expr-bindings t-branch binding-map)
-         (rename-expr-bindings f-branch binding-map))]
+     (If (rename-expr expr symap)
+         (rename-expr t-branch symap)
+         (rename-expr f-branch symap))]
     [(LetValues bindings body)
      (define names (map (λ ([b : Binding]) (car b)) bindings))
      (define renames (map fresh-names names))
      (define renamed-binding-exprs
        (map (λ ([b : Binding])
-              (rename-expr-bindings (cdr b) binding-map))
+              (rename-expr (cdr b) symap))
             bindings))
      (define new-binding-pairs
        (map (inst cons Symbol Symbol)
             (flatten1 names) (flatten1 renames)))
-     (define new-bindings (hash-set-pair* binding-map new-binding-pairs))
+     (define new-bindings (hash-set-pair* symap new-binding-pairs))
      (LetValues (map (λ ([a : Args] [b : Expr])
                        (cons a b))
                      renames renamed-binding-exprs)
                 (map (λ ([e : Expr])
-                       (rename-expr-bindings e new-bindings))
+                       (rename-expr e new-bindings))
                      body))]
-    [(Set! id expr) expr (Set! (hash-ref binding-map id)
-                               (rename-expr-bindings expr binding-map))]
+    [(Set! id expr) expr (Set! (hash-ref symap id)
+                               (rename-expr expr symap))]
     [(PlainApp lam args)
-     (PlainApp (rename-expr-bindings lam binding-map)
+     (PlainApp (rename-expr lam symap)
                (map (λ ([e : Expr])
-                      (rename-expr-bindings e binding-map))
+                      (rename-expr e symap))
                     args))]
     [(TopId id) expr] ;; FIXME: rename top-levels?
     [(Quote datum) expr]
-    [(cons hd tl) (rename-begin expr binding-map)]
-    [_ #:when (symbol? expr) (hash-ref binding-map expr)]
+    [(cons hd tl) (rename-begin expr symap)]
+    [_ #:when (symbol? expr) (hash-ref symap expr)]
     [_ (error "unsupported expr" expr)]))
 
-(: fresh-binding-map (-> RenameMap Args RenameMap))
-(define (fresh-binding-map binding-map args)
-  (let loop ([as args] [b binding-map])
+(: fresh-symap (-> RenameMap Args RenameMap))
+(define (fresh-symap symap args)
+  (let loop ([as args] [b symap])
     (match as
       [(cons hd tl) (loop tl (hash-set b hd (gensym hd)))]
       ['() b])))
