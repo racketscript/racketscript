@@ -176,6 +176,7 @@
     [(module name:id lang:expr (#%plain-module-begin forms ...))
      (Module (symbol->string (syntax-e #'name))
              #f
+             (syntax->datum #'lang)
              (filter-map to-absyn (syntax->list #'(forms ...))))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))

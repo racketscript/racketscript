@@ -53,6 +53,7 @@
     (cond
       [(empty? f) (Module (Module-id mod)
                           (Module-path mod)
+                          (Module-lang mod)
                           (reverse fr))]
       [else
        (define-values (fn sn) (rename-module-level-form (car f) s))

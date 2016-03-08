@@ -71,7 +71,11 @@
 
 ;;; Top Level Forms
 
-(struct Module ([id : (U Symbol String)] [path : (Option Path)] [forms : (Listof ModuleLevelForm)]) #:transparent) ;; FIXME: path
+(struct Module ([id : (U Symbol String)]
+                [path : (Option Path)]
+                [lang : (U Symbol String)]
+                [forms : (Listof ModuleLevelForm)])
+  #:transparent) ;; FIXME: path
 
 ;;; Module Level Forms
 
