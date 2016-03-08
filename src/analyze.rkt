@@ -9,8 +9,10 @@
 
 (define-type RenameMap (HashTable Symbol Symbol))
 
+(: rename-program (-> Program Program))
 (define (rename-program p)
-  p)
+  (define-values (f _) (rename-top-level-form p (hash)))
+  f)
 
 (: rename-top-level-form (-> TopLevelForm RenameMap (Values TopLevelForm RenameMap)))
 (define (rename-top-level-form p symap)
@@ -44,14 +46,19 @@
     [(SubModuleForm? form) (values form symap)])) ;;;; TODO)
 
 (: rename-module (-> Module RenameMap Module))
- (define (rename-module mod symap)
-   (match-define (Module id path forms) mod)
-   mod
-  #;(Module id
-          path
-          (map (λ ([f : ModuleLevelForm])
-                 (rename-module-level-form f symap))
-               forms)))
+(define (rename-module mod symap)
+  (let loop ([f (Module-forms mod)]
+             [s symap]
+             [fr : (Listof ModuleLevelForm) '()])
+    (cond
+      [(empty? f) (Module (Module-id mod)
+                          (Module-path mod)
+                          (reverse fr))]
+      [else
+       (define-values (fn sn) (rename-module-level-form (car f) s))
+       (loop (rest f)
+             sn
+             (cons fn fr))])))
 
 (: rename-begin (-> Begin RenameMap Begin))
 (define (rename-begin forms symap)
