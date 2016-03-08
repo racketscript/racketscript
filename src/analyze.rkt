@@ -1,6 +1,8 @@
-#lang typed/racket
+#lang typed/racket/base
 
-(require "absyn.rkt"
+(require racket/match
+         racket/list
+         "absyn.rkt"
          "util.rkt")
 
 (provide rename-program
