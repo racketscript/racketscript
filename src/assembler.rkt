@@ -9,9 +9,13 @@
          racket/match
          racket/function
          "config.rkt"
-         "absyn.rkt")
+         "absyn.rkt"
+         "il.rkt")
 
-(provide assemble)
+(provide assemble
+         assemble-module
+         assemble-statement*
+         assemble-statement)
 
 (: normalize-symbol (-> Symbol String))
 (define (normalize-symbol s)
@@ -21,53 +25,98 @@
   ;; naive renaming
   (string-replace (~a s) "-" "_"))
 
-(: assemble (-> Program Void))
+(: assemble (-> ILProgram Void))
 (define (assemble p)
-  (cond
-    [(GeneralTopLevelForm? p) (void)]
-    [(Expr? p) (void)]
-    [(Module? p) (void)]
-    [(Begin? p) (void)]))
+  (assemble-statement* p (current-output-port)))
 
-(: assemble-expr (-> Expr Output-Port Void))
+(: assemble-expr (-> ILExpr Output-Port Void))
 (define (assemble-expr expr out)
   (define emit (curry fprintf out))
   (match expr
-    [(PlainLambda args exprs)
-     ;;; TODO: URGENT! add 'return' statement at end
+    [(ILLambda args exprs)
      (emit "function(")
      (emit (string-join (map normalize-symbol args) ", "))
      (emit ") {")
      (for ([e exprs])
-       (assemble-expr e out))
+       (assemble-statement e out))
      (emit "}")]
-    [(If expr t-branch f-branch)
+    [(ILApp lam args)
+     (unless (symbol? lam) (emit "("))
+     (assemble-expr lam out)
+     (unless (symbol? lam) (emit ")"))
+     (emit "(")
+     (let loop ([a* args])
+       (match a*
+         ['() (void)]
+         [(cons a '()) (assemble-expr a out)]
+         [(cons a tl)
+          (assemble-expr a out)
+          (emit ",")
+          (loop tl)]))
+     (emit ")")]
+    [(ILBinaryOp oper right left) (void)]
+    [(ILValue v) (assemble-value v out)]
+    [_ #:when (symbol? expr) (emit (~a (normalize-symbol expr)))]
+    [_ (error "unsupported expr" (void))]))
+
+(: assemble-statement* (-> ILStatement* Output-Port Void))
+(define (assemble-statement* stmt* out)
+  (for [(s stmt*)]
+    (assemble-statement s out)))
+
+(: assemble-statement (-> ILStatement Output-Port Void))
+(define (assemble-statement stmt out)
+  (define emit (curry fprintf out))
+  (match stmt
+    [(ILVarDec id expr)
+     (emit (~a "var " (normalize-symbol id)))
+     (when expr
+       (emit " = ")
+       (assemble-expr expr out))
+     (emit ";")]
+    [(ILReturn expr)
+     (emit "return ")
+     (assemble-expr expr out)
+     (emit ";")]
+    [(ILIf expr t-branch f-branch)
      (emit "if (")
      (assemble-expr expr out)
      (emit ") {")
-     (assemble-expr t-branch out)
+     (assemble-statement* t-branch out)
      (emit "} else { ")
-     (assemble-expr f-branch out)
+     (assemble-statement* f-branch out)
      (emit "}")]
-    [(LetValues bindings body)
-     (for ([b bindings])
-       ;;; TODO: let needs pattern matching here
-       (void))]
-    [(Set! id e)
+    [(ILAssign id rv)
      (emit (~a (normalize-symbol id)))
      (emit " = ")
-     (assemble-expr e out)]
-    [(PlainApp lam args)
-     (void)
-       
-     ]
-    [(TopId id) (void)] ;; FIXME: rename top-levels?
-    [(Quote datum) (assemble-value datum out)]
-    [(cons hd tl) (void) ]
-    [_ #:when (symbol? expr) (void)]
-    [_ (error "unsupported expr" (void))]))
+     (assemble-expr rv out)
+     (emit ";")]
+    [(ILValuesMatch id vref index)
+     (emit (~a "var " (normalize-symbol id)))
+     (emit " = ")
+     (emit (~a (normalize-symbol vref) "[" index "]"))
+     (emit ";")]
+    [_ #:when (ILModule? stmt) (assemble-module stmt out)]
+    [_ #:when (ILExpr? stmt)
+       (assemble-expr stmt out)
+       (emit ";")]))
+
+(: assemble-module (-> ILModule Output-Port Void))
+(define (assemble-module mod out)
+  (define emit (curry fprintf out))
+  (match-define (ILModule id body) mod)
+  (emit "function() {")
+
+  (for ([b body])
+    (assemble-statement b out))
+  
+  (emit "}();"))
 
 (: assemble-value (-> Any Output-Port Void))
-(define (assemble-value d)
-  ;; TODO
-  (~a d))
+(define (assemble-value d out)
+  (define emit (curry fprintf out))
+  ;; TODO: this will eventually be replaced by runtime primitives
+  (cond
+    [(symbol? d) (emit (~a "\"" d "\""))]
+    [(string? d) (emit (~a "\"" d "\""))]
+    [(number? d) (emit (~a d))]))
