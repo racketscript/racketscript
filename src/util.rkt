@@ -9,6 +9,7 @@
          fresh-id
          normalize-symbol
          flatten1
+         append1
          split-before-last
          ++)
 
