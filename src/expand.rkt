@@ -134,7 +134,7 @@
      (error "let-rec is not supported")]
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
-                  (to-absyn #'e)))]
+                  (syntax-e #'e)))] ;;;; TODO: HACK! See what actually happens
     [(#%require . x) #f] ;; TODO
     [(#%plain-lambda formals . body)
      (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]

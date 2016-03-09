@@ -6,12 +6,13 @@
 (require racket/match
          racket/function
          racket/list
+         racket/format
          "config.rkt"
          "util.rkt"
          "absyn.rkt"
          "il.rkt")
 
-(provide absyn->il)
+(provide absyn->il absyn-expr->il)
 
 (: absyn->il (-> Program Void))
 (define (absyn->il p)
@@ -44,8 +45,7 @@
      (define-values (ts te) (absyn-expr->il t-branch))
      (define-values (fs fe) (absyn-expr->il f-branch))
      (define result-id (fresh-id 'if_res))
-     (values (append (list (ILVarDec result-id #f))
-                     ps
+     (values (append ps
                      (list (ILIf pe
                                  (append1 ts (ILVarDec result-id te))
                                  (append1 fs (ILVarDec result-id fe)))))
@@ -84,9 +84,9 @@
              (values (append args-stms stms)
                      (ILApp v id*))])]
     [(TopId id) (values '() id)] ;; FIXME: rename top-levels?
-    [(Quote datum) (values '() (absyn-value->il expr))]
+    [(Quote datum) (values '() (absyn-value->il datum))]
     [_ #:when (symbol? expr) (values '() expr)]
-    [_ (error "unsupported expr")]))
+    [_ (error (~a "unsupported expr " expr))]))
 
 (: absyn-binding->il (-> Binding ILStatement*))
 (define (absyn-binding->il b)
