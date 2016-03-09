@@ -3,7 +3,8 @@
 (require racket/match
          racket/list
          racket/string
-         racket/format)
+         racket/format
+         (for-syntax racket/base))
 
 (provide hash-set-pair*
          fresh-id
@@ -11,7 +12,7 @@
          flatten1
          append1
          split-before-last
-         for/fold-last
+         for/fold/last
          ++)
 
 (define ++ string-append)
@@ -52,7 +53,7 @@
   (values ls v))
 
 
-(define-syntax (for/fold-last stx)
+(define-syntax (for/fold/last stx)
   (syntax-case stx ()
     [(_ ([accum-id init-expr] ...) ([item is-last? lst] ...) body ...)
      (with-syntax ([(lst-len ...) (generate-temporaries #'(lst ...))]

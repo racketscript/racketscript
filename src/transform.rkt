@@ -43,16 +43,16 @@
              result-id)]
     [(LetValues bindings body)
      (define binding-stms
-       (for/fold ([stms '()])
+       (for/fold ([stms : ILStatement* '()])
                  ([b bindings])
-         (define-values (s v) (absyn-expr->il b))
          (append stms
-                 (list s (ILVarDec b v)))))
-     (define-values (s v) (absyn-exp->il body))
-       ;;; TODO: let needs pattern matching here:
-                            (void))
-     (values '() 'void)
-     ]
+                 (absyn-binding->il b))))
+     (for/fold ([stms binding-stms]
+                [rv (ILValue (void))])
+               ([e  body])
+       (define-values (s nv) (absyn-expr->il body))
+       ;; Ignore the value of all but last expression
+       (values (append stms s) rv))]
     [(Set! id e)
      (values '() 'void)
      ]
@@ -64,6 +64,13 @@
     [(cons hd tl) (values '() 'void) ]
     [_ #:when (symbol? expr) (values '() expr)]
     [_ (error "unsupported expr")]))
+
+(: absyn-binding->il (-> Binding ILStatement*))
+(define (absyn-binding->il b)
+  (match-define (cons args expr) b)
+  (define-values (stms v) (absyn-expr->il expr))
+  ;;TODO
+  '())
 
 (: absyn-value->il (-> Any ILValue))
 (define (absyn-value->il d)
