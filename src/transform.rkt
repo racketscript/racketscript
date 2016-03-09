@@ -12,15 +12,45 @@
          "absyn.rkt"
          "il.rkt")
 
-(provide absyn->il absyn-expr->il)
+(provide absyn-top-level->il
+         absyn-gtl-form->il
+         absyn-expr->il
+         absyn-module->il)
 
-(: absyn->il (-> Program Void))
-(define (absyn->il p)
+(: absyn-top-level->il (-> TopLevelForm ILStatement*))
+(define (absyn-top-level->il form)
   (cond
-    [(GeneralTopLevelForm? p) (void)]
-    [(Expr? p) (void)]
-    [(Module? p) (void)]
-    [(Begin? p) (void)]))
+    [(Module? form) (list (absyn-module->il form))]
+    [(Expr? form)
+     (define-values (stmt v) (absyn-expr->il form))
+     (append1 stmt v)]
+    [(Begin? form) (absyn-expr->il form)]
+    [else (error "only modules supported at top level")]))
+
+(: absyn-module->il (-> Module ILModule))
+(define (absyn-module->il mod)
+  (match-define (Module id path lang forms) mod)
+  (define mod-stms
+    (append-map
+     (λ ([form : ModuleLevelForm])
+       (cond
+         [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
+         [(Provide? form) '()] ;; TODO
+         [(SubModuleForm? form) '()])) ;; TODO
+     forms))
+  (ILModule id mod-stms))
+
+(: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
+(define (absyn-gtl-form->il form)
+  (cond
+    [(Expr? form)
+     (define-values (stms v) (absyn-expr->il form))
+     (append1 stms v)]
+    [(DefineValues? form)
+     (match-define (DefineValues ids expr) form)
+     (absyn-binding->il (cons ids expr))]
+    [(Require? form) '()]))
+     
 
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
@@ -59,7 +89,7 @@
      (for/fold ([stms binding-stms]
                 [rv : ILExpr (ILValue (void))])
                ([e  body])
-       (define-values (s nv) (absyn-expr->il e))
+       (define-values (s nv) (absyn-expr->il e)) ;; FIXME: is ignoring rv right? App isn't
        ;; Ignore the value of all but last expression
        (values (append stms s) nv))]
     [(Set! id e)
@@ -85,6 +115,15 @@
                      (ILApp v id*))])]
     [(TopId id) (values '() id)] ;; FIXME: rename top-levels?
     [(Quote datum) (values '() (absyn-value->il datum))]
+    ;; Begin Statements
+    [(cons hd '()) (cond
+                     [(Expr? hd) (absyn-expr->il hd)]
+                     [else (error "last datum in body must be expression")])]
+    [(cons hd tl)
+     (define hd-stms (absyn-top-level->il hd))
+     (define-values (tl-stms v) (absyn-expr->il tl))
+     (values (append hd-stms tl-stms)
+             v)]
     [_ #:when (symbol? expr) (values '() expr)]
     [_ (error (~a "unsupported expr " expr))]))
 
@@ -117,4 +156,3 @@
          (real? d))
      (ILValue d)]
     [else (error "unsupported value")]))
-
