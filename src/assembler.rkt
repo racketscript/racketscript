@@ -67,7 +67,7 @@
     [_ #:when (symbol? expr) (void)]
     [_ (error "unsupported expr" (void))]))
 
-(: assemble-value (-> Datum Output-Port Void))
+(: assemble-value (-> Any Output-Port Void))
 (define (assemble-value d)
   ;; TODO
   (~a d))
