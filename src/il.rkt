@@ -16,6 +16,7 @@
 (define-type ILStatement (U ILVarDec
                             ILReturn
                             ILIf
+                            ILValuesMatch
                             ILAssign
                             ILExpr))
 (define-predicate ILStatement? ILStatement)
@@ -33,14 +34,18 @@
 
 ;;; IL Expressions
 
-(define-type ILExpr (U ILFunction
+(define-type ILExpr (U ILLambda
                        ILBinaryOp
                        ILApp
                        Symbol
                        ILValue))
 (define-predicate ILExpr? ILExpr)
 
-(struct ILFunction ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
+(struct ILLambda   ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
 (struct ILBinaryOp ([operator : Symbol] [right : ILExpr] [left : ILExpr]) #:transparent)
-(struct ILApp      ([id : Symbol] [args : (Listof ILExpr)]) #:transparent)
+(struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
+
+;; TODO: This is quickfix. Maybe think more about this
+(struct ILValuesMatch ([id : Symbol] [vref : Symbol] [index : Natural]) #:transparent)
+(struct ILMultiValue ([v* : (Listof ILValue)]) #:transparent) ;; TODO: fits where?
