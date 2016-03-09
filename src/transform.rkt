@@ -59,7 +59,7 @@
      (for/fold ([stms binding-stms]
                 [rv : ILExpr (ILValue (void))])
                ([e  body])
-       (define-values (s nv) (absyn-expr->il body))
+       (define-values (s nv) (absyn-expr->il e))
        ;; Ignore the value of all but last expression
        (values (append stms s) nv))]
     [(Set! id e)
