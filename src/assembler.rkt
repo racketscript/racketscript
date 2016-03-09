@@ -23,7 +23,7 @@
   ;; Since every identifier is suffixed with fresh symbol
   ;; we don't have to worry about name clashes after this
   ;; naive renaming
-  (string-replace (~a s) "-" "_"))
+  (regexp-replace* #rx"[^a-zA-Z0-9_]*" (~a s) ""))
 
 (: assemble (-> ILProgram Void))
 (define (assemble p)
