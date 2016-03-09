@@ -2,7 +2,7 @@
 
 (provide (all-defined-out))
 
-(define-type ILProgram (Listof ILModule))
+(define-type ILProgram ILStatement*)
 (define-predicate ILProgram? ILProgram)
 
 (struct ILModule ([id   : (U String Symbol)]
@@ -18,7 +18,8 @@
                             ILIf
                             ILValuesMatch
                             ILAssign
-                            ILExpr))
+                            ILExpr
+                            ILModule)) ;;NOTE: Adding ILModule here feels hacky
 (define-predicate ILStatement? ILStatement)
 
 (define-type-alias ILStatement* (Listof ILStatement))
