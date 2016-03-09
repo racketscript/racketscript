@@ -55,11 +55,11 @@
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()
-    [(_ ([accum-id init-expr] ...) ([item is-last? lst] ...) body ...)
+    [(_ ([accum-id bw ... init-expr] ...) ([item is-last? lst] ...) body ...)
      (with-syntax ([(lst-len ...) (generate-temporaries #'(lst ...))]
                    [(lst-i ...) (generate-temporaries #'(lst ...))])
        #'(let ([lst-len (length lst)] ...)
-           (for/fold ([accum-id init-expr] ...)
+           (for/fold ([accum-id bw ... init-expr] ...)
                      ([item lst] ...
                       [lst-i (range lst-len)] ...)
              (let ([is-last? (equal? (sub1 lst-len) lst-i)] ...)

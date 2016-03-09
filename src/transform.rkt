@@ -62,11 +62,13 @@
   (match expr
     [(PlainLambda args body)
      (define-values (body-stms body-value)
-       (for/fold ([stms : ILStatement* '()]
-                  [rv : ILExpr (ILValue (void))])
-                 ([e body])
+       (for/fold/last ([stms : ILStatement* '()]
+                       [rv : ILExpr (ILValue (void))])
+                      ([e last? body])
          (define-values (s v) (absyn-expr->il e))
-         (values (append stms s) v)))
+         (if last?
+             (values (append stms s) v)
+             (values (append stms s (list v)) v))))
      (values '()
              (ILLambda args
                        (append1 body-stms (ILReturn body-value))))]
@@ -86,12 +88,13 @@
                  ([b bindings])
          (append stms
                  (absyn-binding->il b))))
-     (for/fold ([stms binding-stms]
-                [rv : ILExpr (ILValue (void))])
-               ([e  body])
-       (define-values (s nv) (absyn-expr->il e)) ;; FIXME: is ignoring rv right? App isn't
-       ;; Ignore the value of all but last expression
-       (values (append stms s) nv))]
+     (for/fold/last ([stms binding-stms]
+                     [rv : ILExpr (ILValue (void))])
+                    ([e last? body])
+       (define-values (s nv) (absyn-expr->il e))
+       (if last?
+           (values (append stms s) nv)
+           (values (append stms s (list nv)) nv)))]
     [(Set! id e)
      (values (let-values ([(stms v) (absyn-expr->il e)])
                (append1 stms
