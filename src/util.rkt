@@ -11,6 +11,7 @@
          flatten1
          append1
          split-before-last
+         for/fold-last
          ++)
 
 (define ++ string-append)
@@ -49,3 +50,16 @@
 (define (split-before-last lst)
   (match-define-values (ls (list v)) (split-at-right lst 1))
   (values ls v))
+
+
+(define-syntax (for/fold-last stx)
+  (syntax-case stx ()
+    [(_ ([accum-id init-expr] ...) ([item is-last? lst] ...) body ...)
+     (with-syntax ([(lst-len ...) (generate-temporaries #'(lst ...))]
+                   [(lst-i ...) (generate-temporaries #'(lst ...))])
+       #'(let ([lst-len (length lst)] ...)
+           (for/fold ([accum-id init-expr] ...)
+                     ([item lst] ...
+                      [lst-i (range lst-len)] ...)
+             (let ([is-last? (equal? (sub1 lst-len) lst-i)] ...)
+               body ...))))]))

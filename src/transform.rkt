@@ -42,9 +42,15 @@
                                  (append1 fs (ILVarDec result-id fe)))))
              result-id)]
     [(LetValues bindings body)
-     (for ([b bindings])
-       ;;; TODO: let needs pattern matching here
-       (void))
+     (define binding-stms
+       (for/fold ([stms '()])
+                 ([b bindings])
+         (define-values (s v) (absyn-expr->il b))
+         (append stms
+                 (list s (ILVarDec b v)))))
+     (define-values (s v) (absyn-exp->il body))
+       ;;; TODO: let needs pattern matching here:
+                            (void))
      (values '() 'void)
      ]
     [(Set! id e)
