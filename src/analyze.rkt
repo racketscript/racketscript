@@ -122,9 +122,9 @@
 (define (fresh-symap symap args)
   (let loop ([as args] [b symap])
     (match as
-      [(cons hd tl) (loop tl (hash-set b hd (gensym hd)))]
+      [(cons hd tl) (loop tl (hash-set b hd (fresh-id hd)))]
       ['() b])))
 
 (: fresh-names (-> Args Args))
 (define (fresh-names args)
-  (map gensym args))
+  (map fresh-id args))

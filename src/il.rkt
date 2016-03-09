@@ -16,20 +16,19 @@
 (define-type ILStatement (U ILVarDec
                             ILReturn
                             ILIf
-                            ILSeq
                             ILAssign
                             ILExpr))
 (define-predicate ILStatement? ILStatement)
 
 (define-type-alias ILStatement* (Listof ILStatement))
 
-(struct ILVarDec   ([id : Symbol] [expr : ILExpr]) #:transparent)
+(struct ILVarDec   ([id : Symbol] [expr : (Option ILExpr)]) #:transparent)
 (struct ILReturn   ([expr : ILExpr]) #:transparent)
 (struct ILIf       ([pred : ILExpr]
                     [t-branch : ILStatement*]
                     [f-branch : ILStatement*])
   #:transparent)
-(struct ILSeq      ([stms : ILStatement*]) #:transparent)
+;; (struct ILSeq      ([stms : ILStatement*]) #:transparent)
 (struct ILAssign   ([id : Symbol] [rvalue : ILExpr]) #:transparent)
 
 ;;; IL Expressions
@@ -37,10 +36,11 @@
 (define-type ILExpr (U ILFunction
                        ILBinaryOp
                        ILApp
+                       Symbol
                        ILValue))
 (define-predicate ILExpr? ILExpr)
 
-(struct ILFunction ([args : (Listof Symbol)] [expr : (Listof ILStatement)]) #:transparent)
+(struct ILFunction ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
 (struct ILBinaryOp ([operator : Symbol] [right : ILExpr] [left : ILExpr]) #:transparent)
 (struct ILApp      ([id : Symbol] [args : (Listof ILExpr)]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
