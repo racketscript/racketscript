@@ -20,20 +20,20 @@
 (define (rename-top-level-form p symap)
   (cond
     [(Expr? p) (values (rename-expr p symap) symap)]
-    [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap)]
+    [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap #f)]
     [(Module? p) (values (rename-module p symap) symap)]
     [(Begin? p) (values (rename-begin p symap) symap)]))
 
-(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap
+(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap Boolean
                                      (Values GeneralTopLevelForm RenameMap)))
-(define (rename-general-top-level-form form symap)
+(define (rename-general-top-level-form form symap module?)
   (cond
     [(Expr? form) (values (rename-expr form symap) symap)]
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
-     (define new-symap (fresh-symap symap ids))
+     (define new-symap (fresh-symap symap ids (not module?)))
      (define new-ids (map (λ ([a : Symbol])
-                            (hash-ref new-symap a))
+                            (lookup new-symap a))
                           ids))
      ;; we have to add current ids to maps for recursive calls
      (values (DefineValues new-ids (rename-expr expr new-symap))
@@ -43,7 +43,7 @@
 (: rename-module-level-form (-> ModuleLevelForm RenameMap (Values ModuleLevelForm RenameMap)))
 (define (rename-module-level-form form symap)
   (cond
-    [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap)]
+    [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap #t)]
     [(Provide? form) (values form symap)] ;;;; TODO
     [(SubModuleForm? form) (values form symap)])) ;;;; TODO)
 
@@ -78,9 +78,9 @@
 (define (rename-expr expr symap)
   (match expr
     [(PlainLambda args exprs)
-     (define new-bindings (fresh-symap symap args))
+     (define new-bindings (fresh-symap symap args #t))
      (PlainLambda (map (λ ([a : Symbol])
-                         (hash-ref new-bindings a)) args)
+                         (lookup new-bindings a)) args)
                   (map (λ ([e : Expr])
                          (rename-expr e new-bindings))
                        exprs))]
@@ -105,7 +105,7 @@
                 (map (λ ([e : Expr])
                        (rename-expr e new-bindings))
                      body))]
-    [(Set! id expr) (Set! (hash-ref symap id)
+    [(Set! id expr) (Set! (lookup symap id)
                           (rename-expr expr symap))]
     [(PlainApp lam args)
      (PlainApp (rename-expr lam symap)
@@ -115,16 +115,25 @@
     [(TopId id) expr] ;; FIXME: rename top-levels?
     [(Quote datum) expr]
     [(cons hd tl) (rename-begin expr symap)]
-    [_ #:when (symbol? expr) (hash-ref symap expr)]
+    [_ #:when (symbol? expr) (lookup symap expr)]
     [_ (error "unsupported expr" expr)]))
 
-(: fresh-symap (-> RenameMap Args RenameMap))
-(define (fresh-symap symap args)
+(: fresh-symap (-> RenameMap Args Boolean RenameMap))
+(define (fresh-symap symap args rename?)
   (let loop ([as args] [b symap])
     (match as
-      [(cons hd tl) (loop tl (hash-set b hd (fresh-id hd)))]
-      ['() b])))
+      [(cons hd tl) (loop tl (update-symap b hd (if rename?
+                                                    (fresh-id hd)
+                                                    hd)))]
+       ['() b])))
 
 (: fresh-names (-> Args Args))
 (define (fresh-names args)
   (map fresh-id args))
+
+(: lookup (-> RenameMap Symbol Symbol))
+(define (lookup m s)
+  (hash-ref m s))
+
+(: update-symap (-> RenameMap Symbol Symbol RenameMap))
+(define update-symap hash-set)
