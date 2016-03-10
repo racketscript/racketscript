@@ -105,12 +105,12 @@
 (define (assemble-module mod out)
   (define emit (curry fprintf out))
   (match-define (ILModule id body) mod)
-  (emit "function() {")
+  (emit "(function() {")
 
   (for ([b body])
     (assemble-statement b out))
   
-  (emit "}();"))
+  (emit "})();"))
 
 (: assemble-value (-> Any Output-Port Void))
 (define (assemble-value d out)
