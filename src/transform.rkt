@@ -101,21 +101,29 @@
                         (ILAssign id v)))
              (ILValue (void)))]
     [(PlainApp lam args)
-     (define id* (map (λ (_)
-                        (fresh-id 'temp-arg))
-                      args))
-     (define arg+id* (map (λ (e s) (cons e s)) args id*)) ;;; CHECK: Why the lambda, not inst?
-     (define (gen-arg-stms arg+id)
-       (match-define (cons e id) arg+id)
-       (define-values (s v) (absyn-expr->il e))
-       (append1 s (ILVarDec id v)))
-     (define args-stms (append-map gen-arg-stms arg+id*))
-     (cond
-       [(symbol? lam) (values args-stms
-                              (ILApp lam id*))]
-       [else (define-values (stms v) (absyn-expr->il lam))
-             (values (append args-stms stms)
-                     (ILApp v id*))])]
+     (let loop ([arg-stms : ILStatement* '()]      ;;; statements for computing arguments
+                [arg* : (Listof ILExpr) '()]       ;;; expressions passed to the lam
+                [arg args])
+       (match arg
+         ['()
+          (cond
+            [(symbol? lam) (values arg-stms
+                                   (ILApp lam arg*))]
+            [else (define-values (stms v) (absyn-expr->il lam))
+                  (values (append arg-stms stms)
+                          (ILApp v arg*))])]
+         [(cons hd tl)
+          (define-values (s v) (absyn-expr->il hd))
+          (cond
+            [(ILExpr? v)
+             (loop (append arg-stms s)
+                   (append1 arg* v)
+                   tl)]
+            [else
+             (define temp-id (fresh-id 'arg-temp))
+             (loop (append arg-stms s (list (ILVarDec temp-id v)))
+                   (append1 arg* temp-id)
+                   tl)])]))]
     [(TopId id) (values '() id)] ;; FIXME: rename top-levels?
     [(Quote datum) (values '() (absyn-value->il datum))]
     ;; Begin Statements
