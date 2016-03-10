@@ -119,4 +119,5 @@
   (cond
     [(symbol? d) (emit (~a "\"" d "\""))]
     [(string? d) (emit (~a "\"" d "\""))]
-    [(number? d) (emit (~a d))]))
+    [(number? d) (emit (~a d))]
+    [(boolean? d) (emit (if d "true" "false"))]))

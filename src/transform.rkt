@@ -164,6 +164,7 @@
          (string? d)
          (integer? d)
          (list? d)
+         (boolean? d)
          (real? d))
      (ILValue d)]
-    [else (error "unsupported value")]))
+    [else (error (~a "unsupported value" d))]))
