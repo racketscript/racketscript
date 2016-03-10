@@ -20,37 +20,54 @@
 (define (rename-top-level-form p symap)
   (cond
     [(Expr? p) (values (rename-expr p symap) symap)]
-    [(GeneralTopLevelForm? p) (rename-general-top-level-form p symap #f)]
+    [(GeneralTopLevelForm? p)
+     (rename-general-top-level-form p (general-form->symap p symap #f))]
     [(Module? p) (values (rename-module p symap) symap)]
     [(Begin? p) (values (rename-begin p symap) symap)]))
 
-(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap Boolean
+(: rename-general-top-level-form (-> GeneralTopLevelForm RenameMap
                                      (Values GeneralTopLevelForm RenameMap)))
-(define (rename-general-top-level-form form symap module?)
+(define (rename-general-top-level-form form symap)
   (cond
     [(Expr? form) (values (rename-expr form symap) symap)]
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
-     (define new-symap (fresh-symap symap ids (not module?)))
      (define new-ids (map (λ ([a : Symbol])
-                            (lookup new-symap a))
+                            (lookup symap a))
                           ids))
      ;; we have to add current ids to maps for recursive calls
-     (values (DefineValues new-ids (rename-expr expr new-symap))
-             new-symap)]
+     (values (DefineValues new-ids (rename-expr expr symap))
+             symap)]
     [(Require? form) (values form symap)]))    ;;;; TODO
 
 (: rename-module-level-form (-> ModuleLevelForm RenameMap (Values ModuleLevelForm RenameMap)))
 (define (rename-module-level-form form symap)
   (cond
-    [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap #t)]
+    [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap)]
     [(Provide? form) (values form symap)] ;;;; TODO
     [(SubModuleForm? form) (values form symap)])) ;;;; TODO)
 
+(: general-form->symap (-> GeneralTopLevelForm RenameMap Boolean RenameMap))
+(define (general-form->symap form symap module?)
+  (cond
+    [(DefineValues? form)
+     (match-define (DefineValues ids _) form)
+     (fresh-symap symap ids (not module?))]
+    [else symap]))
+
+(: general-form*->symap (-> (Listof GeneralTopLevelForm) RenameMap Boolean RenameMap))
+(define (general-form*->symap forms symap module?)
+  (for/fold ([s symap])
+            ([f (filter DefineValues? forms)])
+    (general-form->symap f s module?)))
+
 (: rename-module (-> Module RenameMap Module))
 (define (rename-module mod symap)
+  (define new-symap (general-form*->symap (filter GeneralTopLevelForm? (Module-forms mod))
+                                          symap
+                                          #t))
   (let loop ([f (Module-forms mod)]
-             [s symap]
+             [s new-symap]
              [fr : (Listof ModuleLevelForm) '()])
     (cond
       [(empty? f) (Module (Module-id mod)
@@ -125,7 +142,7 @@
       [(cons hd tl) (loop tl (update-symap b hd (if rename?
                                                     (fresh-id hd)
                                                     hd)))]
-       ['() b])))
+      ['() b])))
 
 (: fresh-names (-> Args Args))
 (define (fresh-names args)
