@@ -128,10 +128,14 @@
      (LetValues (for/list ([x (syntax->list #'(xs ...))]
                            [e (syntax->list #'(es ...))])
                   (cons (syntax->datum x)
-                        (to-absyn e))) ;; FIXME: convertion of x
+                        (to-absyn e)))
                 (map to-absyn (syntax->list #'(b ...))))]
     [(letrec-values ([xs es] ...) b ...)
-     (error "let-rec is not supported")]
+     (LetRecValues (for/list ([x (syntax->list #'(xs ...))]
+                              [e (syntax->list #'(es ...))])
+                     (cons (syntax->datum x)
+                           (to-absyn e)))
+                   (map to-absyn (syntax->list #'(b ...))))]
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
                   (syntax-e #'e)))] ;;;; TODO: HACK! See what actually happens

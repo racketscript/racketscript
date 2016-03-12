@@ -122,6 +122,23 @@
                 (map (λ ([e : Expr])
                        (rename-expr e new-bindings))
                      body))]
+    [(LetRecValues bindings body)
+     (define names (map (λ ([b : Binding]) (car b)) bindings))
+     (define renames (map fresh-names names))
+     (define new-binding-pairs
+       (map (inst cons Symbol Symbol)
+            (flatten1 names) (flatten1 renames)))
+     (define new-bindings (hash-set-pair* symap new-binding-pairs))
+     (define renamed-binding-exprs
+       (map (λ ([b : Binding])
+              (rename-expr (cdr b) new-bindings))
+            bindings))
+     (LetRecValues (map (λ ([a : Args] [b : Expr])
+                          (cons a b))
+                        renames renamed-binding-exprs)
+                   (map (λ ([e : Expr])
+                          (rename-expr e new-bindings))
+                        body))]
     [(Set! id expr) (Set! (lookup symap id)
                           (rename-expr expr symap))]
     [(PlainApp lam args)
