@@ -23,7 +23,32 @@
   ;; Since every identifier is suffixed with fresh symbol
   ;; we don't have to worry about name clashes after this
   ;; naive renaming
-  (regexp-replace* #rx"[^a-zA-Z0-9_]*" (~a s) ""))
+  (: char-map (HashTable String String))
+  (define char-map
+    #hash(("-" . "_")
+          ("?" . "_p")
+          ("+" . "_plus_")
+          ("'" . "_prime_")
+          ("*" . "_star_")
+          ("/" . "_by_")
+          ("=" . "_eq_")
+          ("<" . "_lt_")
+          (">" . "_gt_")
+          ("!" . "_bang_")
+          ("." . "_dot_")
+          ("&" . "_and_")))
+  (define char-list (string->list (symbol->string s)))
+  (string-join
+   (map (λ ([ch : Char])
+          (define sch (string ch))
+          (cond
+            [(or (char-numeric? ch) (char-alphabetic? ch))
+             sch]
+            [(hash-has-key? char-map sch)
+             (hash-ref char-map sch)]
+            [else "_"]))
+        char-list)
+   ""))
 
 (: assemble (-> ILProgram Void))
 (define (assemble p)
