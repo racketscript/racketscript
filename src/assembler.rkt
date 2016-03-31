@@ -145,4 +145,13 @@
     [(symbol? d) (emit (~a "\"" d "\""))]
     [(string? d) (emit (~a "\"" d "\""))]
     [(number? d) (emit (~a d))]
-    [(boolean? d) (emit (if d "true" "false"))]))
+    [(boolean? d) (emit (if d "true" "false"))]
+    [(list? d)
+     (emit "__$RACKETJS.primitives.makeList(")
+     (for/last? ([item last? d])
+                (match item
+                  [(Quote v) (assemble-value v out)]
+                  [_ (assemble-value item out)])
+                (unless last?
+                  (emit ", ")))
+     (emit ")")]))

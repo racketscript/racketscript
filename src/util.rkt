@@ -13,6 +13,7 @@
          append1
          split-before-last
          for/fold/last
+         for/last?
          ++)
 
 (define ++ string-append)
@@ -55,12 +56,23 @@
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()
-    [(_ ([accum-id bw ... init-expr] ...) ([item is-last? lst] ...) body ...)
+    [(_ ([accum-id bw ... init-expr] ...) ([item bw2 ... is-last? lst] ...) body ...)
      (with-syntax ([(lst-len ...) (generate-temporaries #'(lst ...))]
                    [(lst-i ...) (generate-temporaries #'(lst ...))])
        #'(let ([lst-len (length lst)] ...)
            (for/fold ([accum-id bw ... init-expr] ...)
-                     ([item lst] ...
+                     ([item bw2 ... lst] ...
                       [lst-i (range lst-len)] ...)
+             (let ([is-last? (equal? (sub1 lst-len) lst-i)] ...)
+               body ...))))]))
+
+(define-syntax (for/last? stx)
+  (syntax-case stx ()
+    [(_ ([item bw ... is-last? lst] ...) body ...)
+     (with-syntax ([(lst-len ...) (generate-temporaries #'(lst ...))]
+                   [(lst-i ...) (generate-temporaries #'(lst ...))])
+       #'(let ([lst-len (length lst)] ...)
+           (for ([item bw ... lst] ...
+                 [lst-i (range lst-len)] ...)
              (let ([is-last? (equal? (sub1 lst-len) lst-i)] ...)
                body ...))))]))
