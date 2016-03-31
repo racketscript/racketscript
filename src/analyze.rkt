@@ -167,7 +167,10 @@
 
 (: lookup (-> RenameMap Symbol Symbol))
 (define (lookup m s)
-  (hash-ref m s))
+  (if (hash-has-key? m s) ;; TODO: why is default value not type checking?
+      (hash-ref m s)
+      s))
 
 (: update-symap (-> RenameMap Symbol Symbol RenameMap))
+
 (define update-symap hash-set)
