@@ -7,10 +7,13 @@
 (define-type ModuleName (U String Symbol))
 
 (struct ILModule ([id   :  ModuleName]
-                  [provides : (Listof ModuleName)]
-                  [requires : (Listof ModuleName)]
+                  [provides : (Listof ILProvide)]
+                  [requires : (Listof ILRequire)]
                   [body : ILStatement*])
   #:transparent)
+
+(struct ILProvide ([id : Symbol]) #:transparent)
+(struct ILRequire ([id : Symbol]) #:transparent)
 
 ;;; IL Statements
 

@@ -107,6 +107,12 @@
     [v:identifier (Require (syntax-e #'v))]
     [_ (error "unsupported require format")]))
 
+(define (provide-parse r)
+  (syntax-parse r
+    [v:str (Provide (syntax-e #'v))]
+    [v:identifier (Provide (syntax-e #'v))]
+    [_ (error "unsupported provide form")]))
+
 (define (to-absyn v)
   (define (proper l)
     (match l
@@ -147,6 +153,8 @@
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
     [(#%require x ...)
      (map require-parse (syntax->list #'(x ...)))]
+    [(#%provide x ...)
+     (map provide-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
      (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
@@ -160,7 +168,7 @@
      (error "impropers are not supported")]
     [#(_ ...) (error "vector not supported")]
     [_ #:when (box? (syntax-e v))
-       (error "box not supported")]
+       (error "box not supportend")]
     [_ #:when (exact-integer? (syntax-e v))
        (Quote (syntax-e v))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]
@@ -181,12 +189,12 @@
     [((~literal with-continuation-mark) e0 e1 e2)
      (error "with-continuation-mark is not supported")]))
 
-(define (convert mod)
+(define (convert mod path)
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
      (Module (symbol->string (syntax-e #'name))
-             #f
+             path
              (syntax->datum #'lang)
              (filter-map to-absyn (syntax->list #'(forms ...))))]
     [_
@@ -203,5 +211,5 @@
 (define (quick-convert in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (convert (do-expand (open-read-module in-path) in-path)))
+  (convert (do-expand (open-read-module in-path) in-path) (build-path in-path)))
 

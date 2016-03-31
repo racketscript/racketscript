@@ -29,16 +29,23 @@
 
 (: absyn-module->il (-> Module ILModule))
 (define (absyn-module->il mod)
+  (: provides (Boxof (Listof ILProvide)))
+  (define provides (box '()))
+
+  (: add-provides! (-> (Listof ILProvide) Void))
+  (define (add-provides! p*)
+    (set-box! provides (append (unbox provides) p*)))
+  
   (match-define (Module id path lang forms) mod)
   (define mod-stms
     (append-map
      (λ ([form : ModuleLevelForm])
        (cond
          [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
-         [(Provide*? form) '()] ;; TODO
+         [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
          [(SubModuleForm? form) '()])) ;; TODO
      forms))
-  (ILModule id '() '() mod-stms))
+  (ILModule id (unbox provides) '() mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)
@@ -50,6 +57,10 @@
      (match-define (DefineValues ids expr) form)
      (absyn-binding->il (cons ids expr))]
     [(Require*? form) '()]))
+
+(: absyn-provide->il (-> Provide* (Listof ILProvide)))
+(define (absyn-provide->il form)
+  (map (λ ([f : Provide]) (ILProvide (Provide-id f))) form))
      
 
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))

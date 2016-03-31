@@ -81,7 +81,7 @@
 
 (define-type Provide* (Listof Provide))
 (define-predicate Provide*? Provide*)
-(struct Provide ([id : (U Symbol String)]) #:transparent) ;; This more than just one field
+(struct Provide ([id : Symbol]) #:transparent) ;; This more than just one field
 
 ;; GeneralTopLevelForm
 

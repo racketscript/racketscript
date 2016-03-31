@@ -130,13 +130,28 @@
 (: assemble-module (-> ILModule Output-Port Void))
 (define (assemble-module mod out)
   (define emit (curry fprintf out))
-  (match-define (ILModule id requires provides body) mod)
-  (emit "(function() {")
+  (match-define (ILModule id provides requires body) mod)
 
+  (assemble-requires* requires out)
   (for ([b body])
     (assemble-statement b out))
-  
-  (emit "})();"))
+  (assemble-provides* provides out))
+
+(: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
+(define (assemble-requires* r* out)
+  (void)) ;;; TODO
+
+(: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
+(define (assemble-provides* p* out)
+  (define emit (curry fprintf out))
+
+  (emit "export { ")
+  (for/last? ([p last? p*])
+     (emit (~a (ILProvide-id p)))
+     (unless last?
+       (emit ",")))
+
+  (emit " };"))
 
 (: assemble-value (-> Any Output-Port Void))
 (define (assemble-value d out)
