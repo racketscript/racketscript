@@ -4,10 +4,11 @@
 
 (define-type ILProgram ILStatement*)
 (define-predicate ILProgram? ILProgram)
+(define-type ModuleName (U String Symbol))
 
-(struct ILModule ([id   : (U String Symbol)]
-                  ;; Provides
-                  ;; Requires
+(struct ILModule ([id   :  ModuleName]
+                  [provides : (Listof ModuleName)]
+                  [requires : (Listof ModuleName)]
                   [body : ILStatement*])
   #:transparent)
 

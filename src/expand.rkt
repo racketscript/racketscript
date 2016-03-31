@@ -101,6 +101,12 @@
     (expanded-module)
     (list (symbol->string p))))
 
+(define (require-parse r)
+  (syntax-parse r
+    [v:str (Require (syntax-e #'v))]
+    [v:identifier (Require (syntax-e #'v))]
+    [_ (error "unsupported require format")]))
+
 (define (to-absyn v)
   (define (proper l)
     (match l
@@ -138,8 +144,9 @@
                    (map to-absyn (syntax->list #'(b ...))))]
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
-                  (syntax-e #'e)))] ;;;; TODO: HACK! See what actually happens
-    [(#%require . x) #f] ;; TODO
+                  (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
+    [(#%require x ...)
+     (map require-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
      (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)

@@ -30,7 +30,7 @@
 (define-predicate TopLevelForm? TopLevelForm)
 
 (define-type ModuleLevelForm (U GeneralTopLevelForm
-                                Provide
+                                Provide*
                                 ;; BeginForSyntax
                                 SubModuleForm
                                 ;; Declare
@@ -45,7 +45,7 @@
 (define-type GeneralTopLevelForm (U Expr
                                     DefineValues
                                     ;; DefineSyntaxes
-                                    Require))
+                                    Require*))
 (define-predicate GeneralTopLevelForm? GeneralTopLevelForm)
 
 ;;;
@@ -79,9 +79,14 @@
 
 ;;; Module Level Forms
 
-(struct Provide ([id : Symbol]) #:transparent) ;; This more than just one field
+(define-type Provide* (Listof Provide))
+(define-predicate Provide*? Provide*)
+(struct Provide ([id : (U Symbol String)]) #:transparent) ;; This more than just one field
 
 ;; GeneralTopLevelForm
 
 (struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
+
+(define-type Require*  (Listof Require))
+(define-predicate Require*? Require*)
 (struct Require        ([id : Symbol]) #:transparent) ;; This more than just one field

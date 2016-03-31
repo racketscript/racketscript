@@ -9,6 +9,7 @@
          racket/match
          racket/function
          "config.rkt"
+         "util.rkt"
          "absyn.rkt"
          "il.rkt")
 
@@ -129,7 +130,7 @@
 (: assemble-module (-> ILModule Output-Port Void))
 (define (assemble-module mod out)
   (define emit (curry fprintf out))
-  (match-define (ILModule id body) mod)
+  (match-define (ILModule id requires provides body) mod)
   (emit "(function() {")
 
   (for ([b body])

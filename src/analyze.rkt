@@ -38,13 +38,13 @@
      ;; we have to add current ids to maps for recursive calls
      (values (DefineValues new-ids (rename-expr expr symap))
              symap)]
-    [(Require? form) (values form symap)]))    ;;;; TODO
+    [(Require*? form) (values form symap)]))    ;;;; TODO
 
 (: rename-module-level-form (-> ModuleLevelForm RenameMap (Values ModuleLevelForm RenameMap)))
 (define (rename-module-level-form form symap)
   (cond
     [(GeneralTopLevelForm? form) (rename-general-top-level-form form symap)]
-    [(Provide? form) (values form symap)] ;;;; TODO
+    [(Provide*? form) (values form symap)] ;;;; TODO
     [(SubModuleForm? form) (values form symap)])) ;;;; TODO)
 
 (: general-form->symap (-> GeneralTopLevelForm RenameMap Boolean RenameMap))

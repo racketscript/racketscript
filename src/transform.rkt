@@ -35,10 +35,10 @@
      (λ ([form : ModuleLevelForm])
        (cond
          [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
-         [(Provide? form) '()] ;; TODO
+         [(Provide*? form) '()] ;; TODO
          [(SubModuleForm? form) '()])) ;; TODO
      forms))
-  (ILModule id mod-stms))
+  (ILModule id '() '() mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)
@@ -49,7 +49,7 @@
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
      (absyn-binding->il (cons ids expr))]
-    [(Require? form) '()]))
+    [(Require*? form) '()]))
      
 
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
@@ -179,6 +179,8 @@
          (integer? d)
          (list? d)
          (boolean? d)
+         (vector? d)
+         (struct? d)
          (real? d))
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
