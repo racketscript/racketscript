@@ -19,6 +19,7 @@
          assemble-statement)
 
 (require/typed "config.rkt"
+  [module-output-file (-> (U String Symbol) Path)]
   [output-directory (Parameter String)])
 
 (: assemble (-> ILProgram Void))
@@ -102,7 +103,7 @@
   (define emit (curry fprintf out))
   (match-define (ILModule id provides requires body) mod)
   (displayln (~a "INFO: Compiling " id))
-  (call-with-output-file (build-path (output-directory) (~a id ".js")) #:exists 'replace
+  (call-with-output-file (module-output-file id) #:exists 'replace
     (λ ([out : Output-Port])
       (assemble-requires* requires out)
       (for ([b body])

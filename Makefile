@@ -6,9 +6,12 @@
 ##               #
 ##               "
 
+setup:
+	npm install -g traceur js-beautify  ## these tools must be in PATH
+	raco pkg install threading
+
 build:
 	raco make src/main.rkt
-
 
 clean:
 	rm -rf src/compiled

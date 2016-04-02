@@ -1,7 +1,10 @@
 #lang racket/base
 ;#lang typed/racket
 
+(require racket/format)
+
 (provide output-directory
+         module-output-file
          BASE-ENV)
 
 (define output-directory (make-parameter "js-build"))
@@ -28,3 +31,9 @@
                   'empty? '__$RACKETKERNEL.empty_p
                   'print-values '__$RACKETKERNEL.print_values
                   ))
+
+(define (module-output-file mod)
+  (cond
+    [(or (string? mod) (symbol? mod))
+     (build-path (output-directory) "modules" (~a mod ".js"))]
+    [else (error "module names are either string or symbol")]))
