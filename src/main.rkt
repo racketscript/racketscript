@@ -14,11 +14,25 @@
          "assembler.rkt")
 
 (define build-mode (make-parameter 'js))
+(define skip-npm-install (make-parameter #f))
+(define js-output-file (make-parameter "compiled.js"))
+
 (define rapture-dir (simplify-path (build-path (find-system-path 'orig-dir)
                                                (find-system-path 'run-file)
                                                "../..")))
-(define js-bootstrap-file (make-parameter "bootstrap.js"))
-(define js-output-file (make-parameter "compiled.js"))
+
+(define (support-file f)
+  (build-path rapture-dir "src" "js-support" f))
+
+(define (module-file f)
+  (build-path (output-directory) "modules" f))
+
+(define (package-file f)
+  (build-path (output-directory) f))
+
+(define (copy-file+ fname dest)
+  (define-values (base name _) (split-path fname))
+  (copy-file fname (build-path dest name) #t))
 
 (define (racket->js filename)
   (~> (quick-expand filename)
@@ -29,7 +43,22 @@
 (define runtime-files
   (in-directory (build-path rapture-dir "src" "runtime")))
 
-(define (prepare-build-directory dir)
+(define (copy-build-files)
+  (copy-file+ (support-file "package.json")
+              (output-directory))
+  (copy-file+ (support-file "gulpfile.js")
+              (output-directory)))
+
+(define (copy-runtime-files)
+  (for ([f runtime-files])
+    (define-values (base fname _) (split-path f))
+    (copy-file f (module-file fname) #t)))
+
+(define (copy-support-files)
+  (void))
+
+(define (prepare-build-directory)
+  (define dir (output-directory))
   (define mkdir? 
     (cond
       [(directory-exists? dir) #f]
@@ -39,22 +68,19 @@
     (make-directory dir)
     (make-directory (build-path dir "modules")))
 
-
-  (for ([f runtime-files])
-    (define-values (base fname _) (split-path f))
-    (copy-file f (build-path dir "modules" fname) #t))
-
-  (copy-file (build-path rapture-dir "src" "js-support" (js-bootstrap-file))
-             (build-path dir (js-bootstrap-file))
-             #t))
+  (copy-build-files)
+  (copy-runtime-files)
+  (copy-support-files))
 
 (define (es6->es5 dir mod)
   #;(let ([compiled (build-path dir "modules" (js-output-file))])
     (when (file-exists? compiled)
       (delete-file compiled)))
   ;; TODO: Use NPM + some build tool to do this cleanly
-  (parameterize ([current-directory (build-path dir "modules")])
-    (system (~a "traceur" " --out " (js-output-file) " " mod ".js"))))
+  (parameterize ([current-directory (output-directory)])
+    (unless (skip-npm-install)
+      (system "npm install"))
+    (system "gulp")))
   
 (module+ main
   (define source
@@ -62,6 +88,7 @@
      #:program "rapture"
      #:once-each
      [("-d" "--build-dir") dir "Output directory" (output-directory dir)]
+     [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      #:once-any
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
@@ -71,7 +98,7 @@
   (define expanded (quick-expand source))
 
   (match (build-mode)
-    ['js (prepare-build-directory (output-directory))
+    ['js (prepare-build-directory)
          (~> (rename-program expanded)
              (absyn-top-level->il _)
              (assemble _))

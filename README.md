@@ -12,7 +12,14 @@ Following system packages are required -
 Then install following NodeJS and Racket modules -
 
     ## If you install locally, make sure they are in PATH
-    $ npm install -g traceur js-beautify
+    $ npm install -g traceur js-beautify gulp
+
+If you do not wish to pollute your root npm directory, you can set a
+custom global location by adding following line to your `~/.npmrc` -
+
+   prefix = /home/user/path/to/.npm-packages
+
+Then add `/prefix/path/above/bin` to your `PATH`.
 
     ## Racket dependencies
     $ raco pkg install threading
@@ -24,12 +31,13 @@ its advised to do pre-compile Racket sources to bytecode.
     $ make build
 
 ## Basic Usage
-
     
     $ rapture -h
+    
     rapture [ <option> ... ] <filename>
      where <option> is one of
       -d <dir>, --build-dir <dir> : Output directory
+      -n, --skip-npm-install : Skip NPM install phase
     / --ast : Expand and print AST
     | --il : Compile to intermediate langauge (IL)
     \ --js : Compile to JS
@@ -45,5 +53,4 @@ named `foobar.rkt`, run -
 
     $ rapture foobar.rkt
     
-This will produce bunch of files in output directory. Currently, you can
-run `bootstrap.js` in NodeJS.
+This will produce `dist/compiled.js` which can be executed using NodeJS.

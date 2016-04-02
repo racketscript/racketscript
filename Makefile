@@ -7,7 +7,7 @@
 ##               "
 
 setup:
-	npm install -g traceur js-beautify  ## these tools must be in PATH
+	npm install -g traceur js-beautify gulp  ## these tools must be in PATH
 	raco pkg install threading
 
 build:
