@@ -24,8 +24,8 @@ Then add `/prefix/path/above/bin` to your `PATH`.
     ## Racket dependencies
     $ raco pkg install threading
 
-The compiler is written in Typed Racket. To avoid long startups,
-its advised to do pre-compile Racket sources to bytecode.
+The compiler is written in Typed Racket. To avoid long startups, it is
+advised to pre-compile Racket sources to bytecode.
 
     # From source root
     $ make build
