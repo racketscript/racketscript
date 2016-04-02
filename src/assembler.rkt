@@ -18,39 +18,6 @@
          assemble-statement*
          assemble-statement)
 
-(: normalize-symbol (-> Symbol String))
-(define (normalize-symbol s)
-  ;; TODO: handle every weird character in symbol
-  ;; Since every identifier is suffixed with fresh symbol
-  ;; we don't have to worry about name clashes after this
-  ;; naive renaming
-  (: char-map (HashTable String String))
-  (define char-map
-    #hash(("-" . "_")
-          ("?" . "_p")
-          ("+" . "_plus_")
-          ("'" . "_prime_")
-          ("*" . "_star_")
-          ("/" . "_by_")
-          ("=" . "_eq_")
-          ("<" . "_lt_")
-          (">" . "_gt_")
-          ("!" . "_bang_")
-          ("." . "_dot_")
-          ("&" . "_and_")))
-  (define char-list (string->list (symbol->string s)))
-  (string-join
-   (map (λ ([ch : Char])
-          (define sch (string ch))
-          (cond
-            [(or (char-numeric? ch) (char-alphabetic? ch))
-             sch]
-            [(hash-has-key? char-map sch)
-             (hash-ref char-map sch)]
-            [else "_"]))
-        char-list)
-   ""))
-
 (: assemble (-> ILProgram Void))
 (define (assemble p)
   (assemble-statement* p (current-output-port)))
@@ -139,7 +106,9 @@
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* r* out)
-  (void)) ;;; TODO
+  (define emit (curry fprintf out))
+  (emit "import * as __$RACKETCORE from 'core.js';")
+  (emit "import * as __$RACKETKERNEL from 'kernel.js';")) ;;; TODO
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)
@@ -158,12 +127,12 @@
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
   (cond
-    [(symbol? d) (emit (~a "\"" d "\""))]
+    [(symbol? d) (emit (~a "__$RACKETCORE.Symbol.make('" d "')"))]
     [(string? d) (emit (~a "\"" d "\""))]
     [(number? d) (emit (~a d))]
     [(boolean? d) (emit (if d "true" "false"))]
     [(list? d)
-     (emit "__$RACKETJS.primitives.makeList(")
+     (emit "__$RACKETCORE.Cons.makeList(")
      (for/last? ([item last? d])
                 (match item
                   [(Quote v) (assemble-value v out)]

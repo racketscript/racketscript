@@ -5,6 +5,10 @@
          "absyn.rkt"
          "util.rkt")
 
+(require/typed "config.rkt"
+  [output-directory (Parameter String)]
+  [BASE-ENV (HashTable Symbol Symbol)])
+
 (provide rename-program
          rename-top-level-form
          rename-expr)
@@ -13,7 +17,7 @@
 
 (: rename-program (-> Program Program))
 (define (rename-program p)
-  (define-values (f _) (rename-top-level-form p (hash)))
+  (define-values (f _) (rename-top-level-form p BASE-ENV))
   f)
 
 (: rename-top-level-form (-> TopLevelForm RenameMap (Values TopLevelForm RenameMap)))
