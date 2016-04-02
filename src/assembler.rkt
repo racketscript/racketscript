@@ -18,6 +18,9 @@
          assemble-statement*
          assemble-statement)
 
+(require/typed "config.rkt"
+  [output-directory (Parameter String)])
+
 (: assemble (-> ILProgram Void))
 (define (assemble p)
   (assemble-statement* p (current-output-port)))
@@ -98,11 +101,13 @@
 (define (assemble-module mod out)
   (define emit (curry fprintf out))
   (match-define (ILModule id provides requires body) mod)
-
-  (assemble-requires* requires out)
-  (for ([b body])
-    (assemble-statement b out))
-  (assemble-provides* provides out))
+  (displayln (~a "INFO: Compiling " id))
+  (call-with-output-file (build-path (output-directory) (~a id ".js")) #:exists 'replace
+    (λ ([out : Output-Port])
+      (assemble-requires* requires out)
+      (for ([b body])
+        (assemble-statement b out))
+      (assemble-provides* provides out))))
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* r* out)
@@ -123,20 +128,23 @@
   (emit " };"))
 
 (: assemble-value (-> Any Output-Port Void))
-(define (assemble-value d out)
+(define (assemble-value v out)
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
-  (cond
-    [(symbol? d) (emit (~a "__$RACKETCORE.Symbol.make('" d "')"))]
-    [(string? d) (emit (~a "\"" d "\""))]
-    [(number? d) (emit (~a d))]
-    [(boolean? d) (emit (if d "true" "false"))]
-    [(list? d)
-     (emit "__$RACKETCORE.Cons.makeList(")
-     (for/last? ([item last? d])
-                (match item
-                  [(Quote v) (assemble-value v out)]
-                  [_ (assemble-value item out)])
-                (unless last?
-                  (emit ", ")))
-     (emit ")")]))
+  (match v
+    [(Quote d)
+     (cond
+       [(symbol? d) (emit (~a "__$RACKETCORE.Symbol.make('" d "')"))]
+       [(string? d) (emit (~a "\"" d "\""))]
+       [(number? d) (emit (~a d))]
+       [(boolean? d) (emit (if d "true" "false"))]
+       [(list? d)
+        (emit "__$RACKETCORE.Cons.makeList(")
+        (for/last? ([item last? d])
+                   (match item
+                     [(Quote v) (assemble-value v out)]
+                     [_ (assemble-value item out)])
+                   (unless last?
+                     (emit ", ")))
+        (emit ")")])]
+    [_ (error "TODO: Check how this thing actually works!")]))

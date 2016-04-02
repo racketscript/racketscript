@@ -8,6 +8,12 @@ function TypeCheck(v, t) {
     }
 }
 
+function CheckNumber(v) {
+    if (typeof v !== 'number') {
+	throw new Error("TypeError: '" + v + "' is not a number");
+    }
+}
+
 function zero_p(v) {
     return v === 0;
 }
@@ -28,12 +34,12 @@ var first = car;
 var rest = cdr;
 
 function sub1(v) {
-    TypeCheck(v, Number);
+    CheckNumber(v);
     return v - 1;
 }
 
 function add1(v) {
-    TypeCheck(v, Number);
+    CheckNumber(v);
     return v + 1;
 }
 
@@ -43,7 +49,7 @@ function displayln(v) {
 }
 
 function print_values(v) {
-    console.log(v.getAll());
+    //console.log(v);
 }
 
 function equal_p(v1, v2) {
@@ -54,7 +60,12 @@ function equal_p(v1, v2) {
 var values = RLIB.Values.make
 
 function call_with_values(generator, receiver) {
-    return receiver.apply(this, generator().getAll());
+    var values = generator();
+    if (values instanceof RLIB.Values) {
+	return receiver.apply(this, generator().getAll());
+    } else {
+	return receiver(values);
+    }
 }
 
 function not(v) {
