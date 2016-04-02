@@ -20,7 +20,7 @@
 (require "absyn.rkt"
          "util.rkt")
 
-(provide quick-convert
+(provide quick-expand
          open-read-module
          read-module
          convert
@@ -208,7 +208,7 @@
 (define (open-read-module in-path)
   (read-module (open-input-file in-path)))
 
-(define (quick-convert in-path)
+(define (quick-expand in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
   (convert (do-expand (open-read-module in-path) in-path) (build-path in-path)))
