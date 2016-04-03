@@ -108,6 +108,7 @@
   (define source
     (command-line
      #:program "rapture"
+     #:usage-help "Compile Racket to JavaScript"
      #:once-each
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
