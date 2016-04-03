@@ -15,9 +15,8 @@ Then install following NodeJS and Racket modules -
     $ npm install -g traceur js-beautify gulp
 
 If you do not wish to pollute your root npm directory, you can set a
-custom global location by adding following line to your `~/.npmrc` -
-
-   prefix = /home/user/path/to/.npm-packages
+custom global location by changing your `npmrc` (eg. 
+`echo "prefix = $HOME/.npm-packages" >> ~/.npmrc`
 
 Then add `/prefix/path/above/bin` to your `PATH`.
 
@@ -53,5 +52,6 @@ named `foobar.rkt`, run -
 
     $ rapture foobar.rkt
     
-This will produce `dist/compiled.js`. To execute inside NodeJS, execute `bootstrap.js`
-in output directory. For running in browser, include the Traceur runtime.
+This will produce `dist/compiled.js`. To execute inside NodeJS, execute
+`bootstrap.js` in output directory. For running in browser, include the Traceur
+runtime.
