@@ -18,6 +18,7 @@
     "dependencies": [
 	"gulp",
 	"gulp-concat",
-	"gulp-traceur"
+	"gulp-traceur",
+	"gulp-insert"
     ]
 }

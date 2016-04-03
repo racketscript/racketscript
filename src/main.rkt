@@ -7,6 +7,7 @@
          racket/format
          racket/path
          racket/file
+         racket/port
          threading
          "absyn.rkt"
          "expand.rkt"
@@ -43,6 +44,17 @@
   (define name (file-name-from-path fname))
   (copy-file fname (build-path dest name) #t))
 
+(define (format-copy-file src dest args)
+  (call-with-input-file src
+    (λ (in)
+      (call-with-output-file dest #:exists 'replace
+        (λ (out)
+          (fprintf out (apply format (port->string in) args)))))))
+
+(define (format-copy-file+ src dest args)
+  (define name (file-name-from-path src))
+  (format-copy-file src (build-path dest name) args))
+
 (define (racket->js filename)
   (~> (quick-expand filename)
       (rename-program _)
@@ -52,11 +64,12 @@
 (define runtime-files
   (in-directory (build-path rapture-dir "src" "runtime")))
 
-(define (copy-build-files)
+(define (copy-build-files default-module)
   (copy-file+ (support-file "package.json")
               (output-directory))
-  (copy-file+ (support-file "gulpfile.js")
-              (output-directory)))
+  (format-copy-file+ (support-file "gulpfile.js")
+                     (output-directory)
+                     (list default-module)))
 
 (define (copy-runtime-files)
   (for ([f runtime-files])
@@ -67,7 +80,7 @@
   (copy-file+ (support-file (js-bootstrap-file))
               (output-directory)))
 
-(define (prepare-build-directory)
+(define (prepare-build-directory default-module-name)
   (define dir (output-directory))
   (define mkdir? 
     (cond
@@ -77,7 +90,7 @@
     (make-directory* dir)
     (make-directory* (build-path dir "modules")))
 
-  (copy-build-files)
+  (copy-build-files default-module-name)
   (copy-runtime-files)
   (copy-support-files))
 
@@ -110,7 +123,7 @@
 
   (match (build-mode)
     ['expand (pretty-print (syntax->datum absyn))]
-    ['js (prepare-build-directory)
+    ['js (prepare-build-directory (~a (Module-id expanded)))
          (~> (rename-program expanded)
              (absyn-top-level->il _)
              (assemble _))
