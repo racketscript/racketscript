@@ -1,7 +1,8 @@
 #lang racket/base
 ;#lang typed/racket
 
-(require racket/format)
+(require racket/format
+         "util.rkt")
 
 (provide output-directory
          module-output-file
@@ -9,31 +10,46 @@
 
 (define output-directory (make-parameter "js-build"))
 
+(define KERNEL-MODULE-NAME "__$RACKETKERNEL")
+
+(define (add-import e p s)
+  (hash-set e s (string->symbol (~a p "." (normalize-symbol s)))))
+
+(define (add-kernel-import s e)
+  (add-import e KERNEL-MODULE-NAME s))
+
+(define (add-kernel-imports* e s*)
+  (foldl add-kernel-import e s*))
+
+(define CORE-IMPORTS
+  (hash ;; (inst hash Symbol Symbol)
+   '* '__$RACKETCORE.Number.multiply
+   '+ '__$RACKETCORE.Number.add
+   '- '__$RACKETCORE.Number.subtract
+   '/ '__$RACKETCORE.Number.divide))
+  
 ;(: BASE-ENV (HashTable Symbol Symbol))
-(define BASE-ENV (hash ;; (inst hash Symbol Symbol)
-                  '* '__$RACKETCORE.Number.multiply
-                  '+ '__$RACKETCORE.Number.add
-                  '- '__$RACKETCORE.Number.subtract
-                  '/ '__$RACKETCORE.Number.divide
-                  'zero? '__$RACKETKERNEL.zero_p
-                  'car '__$RACKETKERNEL.car
-                  'cdr '__$RACKETKERNEL.cdr
-                  'list '__$RACKETKERNEL.list
-                  'first '__$RACKETKERNEL.first
-                  'rest '__$RACKETKERNEL.rest
-                  'sub1 '__$RACKETKERNEL.sub1
-                  'add1 '__$RACKETKERNEL.add1
-                  'displayln '__$RACKETKERNEL.displayln
-                  'equal? '__$RACKETKERNEL.equal_p
-                  'values '__$RACKETKERNEL.values
-                  'call-with-values '__$RACKETKERNEL.call_with_values
-                  'not '__$RACKETKERNEL.not
-                  'empty? '__$RACKETKERNEL.empty_p
-                  'print-values '__$RACKETKERNEL.print_values
-                  'cons '__$RACKETKERNEL.cons
-                  'null? '__$RACKETKERNEL.null_p
-                  'empty? '__$RACKETKERNEL.empty_p
-                  ))
+(define BASE-ENV
+  (add-kernel-imports*
+   CORE-IMPORTS
+   '(zero?
+     car
+     cdr
+     list
+     first
+     rest
+     sub1
+     add1
+     displayln
+     equal?
+     values
+     call-with-values
+     not
+     empty?
+     print-values
+     cons
+     null?
+     empty?)))
 
 (define (module-output-file mod)
   (cond
