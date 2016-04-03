@@ -12,8 +12,8 @@
 ;(: BASE-ENV (HashTable Symbol Symbol))
 (define BASE-ENV (hash ;; (inst hash Symbol Symbol)
                   '* '__$RACKETCORE.Number.multiply
-                  '+ '__$RACKETKCORE.Number.add
-                  '- '__$RACKETKCORE.Number.subtract
+                  '+ '__$RACKETCORE.Number.add
+                  '- '__$RACKETCORE.Number.subtract
                   '/ '__$RACKETCORE.Number.divide
                   'zero? '__$RACKETKERNEL.zero_p
                   'car '__$RACKETKERNEL.car

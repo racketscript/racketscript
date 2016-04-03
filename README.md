@@ -53,4 +53,5 @@ named `foobar.rkt`, run -
 
     $ rapture foobar.rkt
     
-This will produce `dist/compiled.js` which can be executed using NodeJS.
+This will produce `dist/compiled.js`. To execute inside NodeJS, execute `bootstrap.js`
+in output directory. For running in browser, include the Traceur runtime.

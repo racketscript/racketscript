@@ -11,7 +11,7 @@ setup:
 	raco pkg install threading
 
 build:
-	raco make src/main.rkt
+	raco make -v src/main.rkt
 
 clean:
 	rm -rf src/compiled

@@ -16,6 +16,7 @@
 (define build-mode (make-parameter 'js))
 (define skip-npm-install (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
+(define js-bootstrap-file (make-parameter "bootstrap.js"))
 
 (define rapture-dir (simplify-path (build-path (find-system-path 'orig-dir)
                                                (find-system-path 'run-file)
@@ -55,7 +56,8 @@
     (copy-file f (module-file fname) #t)))
 
 (define (copy-support-files)
-  (void))
+  (copy-file+ (support-file (js-bootstrap-file))
+              (output-directory)))
 
 (define (prepare-build-directory)
   (define dir (output-directory))

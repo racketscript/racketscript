@@ -54,7 +54,15 @@ function print_values(v) {
 
 function equal_p(v1, v2) {
     /* TODO: compare values not references */
-    return v1 === v2;
+    var t1 = typeof v1;
+    var t2 = typeof v2;
+    if (t1 !== t2) {
+	return false;
+    } else if (t1 === 'object' && t2 === 'object') {
+	return v1.equals(v2);
+    } else {
+	return v1 === v2;
+    }
 }
 
 var values = RLIB.Values.make

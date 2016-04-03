@@ -7,6 +7,7 @@
 (require racket/string
          racket/format
          racket/match
+         racket/list
          racket/function
          "config.rkt"
          "util.rkt"
@@ -120,13 +121,14 @@
 (define (assemble-provides* p* out)
   (define emit (curry fprintf out))
 
-  (emit "export { ")
-  (for/last? ([p last? p*])
-     (emit (~a (ILProvide-id p)))
-     (unless last?
-       (emit ",")))
+  (unless (empty? p*)
+    (emit "export { ")
+    (for/last? ([p last? p*])
+               (emit (~a (ILProvide-id p)))
+               (unless last?
+                 (emit ",")))
 
-  (emit " };"))
+    (emit " };")))
 
 (: assemble-value (-> Any Output-Port Void))
 (define (assemble-value v out)
