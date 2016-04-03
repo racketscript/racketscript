@@ -134,20 +134,27 @@
 (define (assemble-value v out)
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
-  (match v
-    [(Quote d)
-     (cond
-       [(symbol? d) (emit (~a "__$RACKETCORE.Symbol.make('" d "')"))]
-       [(string? d) (emit (~a "\"" d "\""))]
-       [(number? d) (emit (~a d))]
-       [(boolean? d) (emit (if d "true" "false"))]
-       [(list? d)
-        (emit "__$RACKETCORE.Cons.makeList(")
-        (for/last? ([item last? d])
-                   (match item
-                     [(Quote v) (assemble-value v out)]
-                     [_ (assemble-value item out)])
-                   (unless last?
-                     (emit ", ")))
-        (emit ")")])]
-    [_ (error "TODO: Check how this thing actually works!")]))
+  
+  (cond
+    [(Quote? v) (assemble-value (Quote-datum v) out)]
+    [(symbol? v) (emit (~a "__$RACKETCORE.Symbol.make('" v "')"))]
+    [(string? v) (emit (~a "\"" v "\""))]
+    [(number? v) (emit (~a v))]
+    [(boolean? v) (emit (if v "true" "false"))]
+    [(empty? v) (emit "__$RACKETCORE.Cons.empty")]
+    [(list? v)
+     (emit "__$RACKETCORE.Cons.makeList(")
+     (for/last? ([item last? v])
+                (match item
+                  [(Quote v) (assemble-value v out)]
+                  [_ (assemble-value item out)])
+                (unless last?
+                  (emit ", ")))
+     (emit ")")]
+    [(cons? v)
+     (emit "__$RACKETCORE.Cons.make(")
+     (assemble-value (car v) out)
+     (emit ", ")
+     (assemble-value (cdr v) out)
+     (emit ")")]
+    [else (displayln v) (error "TODO: Check how this thing actually works!")]))

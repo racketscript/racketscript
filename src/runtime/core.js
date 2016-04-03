@@ -75,6 +75,8 @@ export function Cons(hd, tl) {
     this.tl = tl;
 }
 
+Cons.prototype.empty = []
+
 Cons.prototype.check = function(v) {
     if (v instanceof Cons === false) {
 	throw new Error("not a pair");

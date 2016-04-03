@@ -193,5 +193,5 @@
          (vector? d)
          (struct? d)
          (real? d))
-     (ILValue d)]
+     (ILValue (Quote-datum d))]
     [else (error (~a "unsupported value" d))]))
