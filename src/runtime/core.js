@@ -9,10 +9,18 @@ function TypeCheck(v, t) {
 /******* Numbers *******/
 
 export let Number = {
-    add: function(a, b) { return a + b },
-    subtract: function(a, b) { return a - b },
-    multiply: function(a, b) { return a * b },
-    divide: function(a, b) { return a / b }
+    add: function() {
+	return [].reduce.call(arguments, function(a, b) { return a + b; });
+    },
+    subtract: function() {
+	return [].reduce.call(arguments, function(a, b) { return a - b; });
+    },
+    multiply: function() {
+	return [].reduce.call(arguments, function(a, b) { return a * b; });
+    },
+    divide: function() {
+	return [].reduce.call(arguments, function(a, b) { return a / b; });
+    }
 }
     
 /******* Symbols *******/
