@@ -99,14 +99,17 @@
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      #:once-any
+     ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile to JS" (build-mode 'js)]
      #:args (filename) filename))
 
-  (define expanded (quick-expand source))
+  (define absyn (quick-expand source))
+  (define expanded (convert absyn (build-path source)))
 
   (match (build-mode)
+    ['expand (pretty-print (syntax->datum absyn))]
     ['js (prepare-build-directory)
          (~> (rename-program expanded)
              (absyn-top-level->il _)

@@ -211,5 +211,5 @@
 (define (quick-expand in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (convert (do-expand (open-read-module in-path) in-path) (build-path in-path)))
+  (do-expand (open-read-module in-path) in-path))
 
