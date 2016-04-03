@@ -5,6 +5,8 @@
          racket/pretty
          racket/system
          racket/format
+         racket/path
+         racket/file
          threading
          "absyn.rkt"
          "expand.rkt"
@@ -18,9 +20,15 @@
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 
-(define rapture-dir (simplify-path (build-path (find-system-path 'orig-dir)
-                                               (find-system-path 'run-file)
-                                               "../..")))
+(define rapture-dir
+  (~> (let ([dir (find-system-path 'orig-dir)]
+            [file (find-system-path 'run-file)])
+        (if (absolute-path? dir)
+            file
+            (build-path dir file)))
+      (path-only _)
+      (build-path _ "..")
+      (simplify-path _)))
 
 (define (support-file f)
   (build-path rapture-dir "src" "js-support" f))
@@ -32,7 +40,7 @@
   (build-path (output-directory) f))
 
 (define (copy-file+ fname dest)
-  (define-values (base name _) (split-path fname))
+  (define name (file-name-from-path fname))
   (copy-file fname (build-path dest name) #t))
 
 (define (racket->js filename)
@@ -52,7 +60,7 @@
 
 (define (copy-runtime-files)
   (for ([f runtime-files])
-    (define-values (base fname _) (split-path f))
+    (define fname (file-name-from-path f))
     (copy-file f (module-file fname) #t)))
 
 (define (copy-support-files)
@@ -63,12 +71,11 @@
   (define dir (output-directory))
   (define mkdir? 
     (cond
-      [(directory-exists? dir) #f]
       [(file-exists? dir) (error "Output directory path is not a directory")]
       [else #t]))
   (when mkdir?
-    (make-directory dir)
-    (make-directory (build-path dir "modules")))
+    (make-directory* dir)
+    (make-directory* (build-path dir "modules")))
 
   (copy-build-files)
   (copy-runtime-files)
@@ -89,7 +96,7 @@
     (command-line
      #:program "rapture"
      #:once-each
-     [("-d" "--build-dir") dir "Output directory" (output-directory dir)]
+     [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      #:once-any
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
