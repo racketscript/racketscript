@@ -22,11 +22,17 @@
   (foldl add-kernel-import e s*))
 
 (define CORE-IMPORTS
+  ;; TODO: Many of these could be represented using JS operators
   (hash ;; (inst hash Symbol Symbol)
    '* '__$RACKETCORE.Number.multiply
    '+ '__$RACKETCORE.Number.add
    '- '__$RACKETCORE.Number.subtract
-   '/ '__$RACKETCORE.Number.divide))
+   '/ '__$RACKETCORE.Number.divide
+   '< '__$RACKETCORE.Number.lt
+   '> '__$RACKETCORE.Number.gt
+   '<= '__$RACKETCORE.Number.lte
+   '>= '__$RACKETCORE.Number.gte
+   '= '__$RACKETCORE.Number.equal))
   
 ;(: BASE-ENV (HashTable Symbol Symbol))
 (define BASE-ENV
@@ -49,7 +55,12 @@
      print-values
      cons
      null?
-     empty?)))
+     empty?
+
+     ~a
+     string-append
+     display
+     )))
 
 (define (module-output-file mod)
   (cond

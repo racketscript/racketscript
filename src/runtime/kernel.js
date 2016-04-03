@@ -46,6 +46,11 @@ function displayln(v) {
     console.log(RLIB.toString(v));
 }
 
+function display(v) {
+    /* TODO: this is still line */
+    return displayln(v);
+}
+
 function print_values(v) {
     // TODO: Print single or multiple values
     //console.log(RLIB.toString(v));
@@ -100,6 +105,18 @@ function empty_p(v) {
 
 var null_p = empty_p;
 
+
+function _a() {
+    return [].reduce.call(arguments, function(x, r) {
+	return r + RLIB.toString(x);
+    }, "");
+}
+
+function string_append() {
+    return "".concat.call(arguments);
+}
+
+
 export {
     zero_p,
     car,
@@ -117,5 +134,10 @@ export {
     empty_p,
     cons,
     null_p,
-    print_values
+    print_values,
+
+    // non kernel functions
+    string_append,
+    _a,
+    display
 }
