@@ -51,7 +51,14 @@ Default output directory is named `js-build`. To compile a Racket file
 named `foobar.rkt`, run -
 
     $ rapture foobar.rkt
+
+    # Override default output directory
+    $ rapture -d /path/to/output/dir foobar.rkt
     
 This will produce `dist/compiled.js`. To execute inside NodeJS, execute
 `bootstrap.js` in output directory. For running in browser, include the Traceur
 runtime.
+
+A more robust (and less portable) way, is to run the ES6 modules generated in
+`modules` directly from Traceur. Goto `modules` output directory and execute
+`$ traceur foobar.js`.
