@@ -141,9 +141,9 @@
     [(string? v) (emit (~a "\"" v "\""))]
     [(number? v) (emit (~a v))]
     [(boolean? v) (emit (if v "true" "false"))]
-    [(empty? v) (emit "__$RACKETCORE.Cons.empty")]
+    [(empty? v) (emit "__$RACKETCORE.Empty")]
     [(list? v)
-     (emit "__$RACKETCORE.Cons.makeList(")
+     (emit "__$RACKETCORE.makeList(")
      (for/last? ([item last? v])
                 (match item
                   [(Quote v) (assemble-value v out)]
@@ -152,7 +152,7 @@
                   (emit ", ")))
      (emit ")")]
     [(cons? v)
-     (emit "__$RACKETCORE.Cons.make(")
+     (emit "__$RACKETCORE.Pair.make(")
      (assemble-value (car v) out)
      (emit ", ")
      (assemble-value (cdr v) out)

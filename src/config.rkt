@@ -27,9 +27,12 @@
                   'equal? '__$RACKETKERNEL.equal_p
                   'values '__$RACKETKERNEL.values
                   'call-with-values '__$RACKETKERNEL.call_with_values
-                  'not '__$RACKETKERNEL.bnot
+                  'not '__$RACKETKERNEL.not
                   'empty? '__$RACKETKERNEL.empty_p
                   'print-values '__$RACKETKERNEL.print_values
+                  'cons '__$RACKETKERNEL.cons
+                  'null? '__$RACKETKERNEL.null_p
+                  'empty? '__$RACKETKERNEL.empty_p
                   ))
 
 (define (module-output-file mod)

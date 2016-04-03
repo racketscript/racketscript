@@ -2,12 +2,6 @@
 
 import * as RLIB from "core.js";
 
-function TypeCheck(v, t) {
-    if (v instanceof t === false) {
-        throw new Error("TypeError: '" + v + "' is not " + t);
-    }
-}
-
 function CheckNumber(v) {
     if (typeof v !== 'number') {
 	throw new Error("TypeError: '" + v + "' is not a number");
@@ -19,16 +13,20 @@ function zero_p(v) {
 }
 
 function car(lst) {
-    RLIB.Cons.check(lst);
+    RLIB.Pair.check(lst);
     return lst.car();
 }
 
+function cons(v1, v2) {
+    return RLIB.Pair.make(v1, v2);
+}
+
 function cdr(lst) {
-    RLIB.Cons.check(lst);
+    RLIB.Pair.check(lst);
     return lst.cdr();
 }
 
-var list = RLIB.Cons.makeList
+var list = RLIB.makeList
 
 var first = car;
 var rest = cdr;
@@ -45,11 +43,12 @@ function add1(v) {
 
 function displayln(v) {
     /* TODO: Real thing takes port as well */
-    console.log(v);
+    console.log(RLIB.toString(v));
 }
 
 function print_values(v) {
-    //console.log(v);
+    // TODO: Print single or multiple values
+    //console.log(RLIB.toString(v));
 }
 
 function equal_p(v1, v2) {
@@ -84,21 +83,22 @@ function not(v) {
     }
 }
 
-function empty_p(v) {
+function list_p(v) {
     /* TODO: Make this iterative */
-    if (v instanceof Cons) {
-	var tail = Cons.cdr(v);
-	if (Cons.isEmpty(tail)) {
-	    return true;
-	} else {
-	    return empty_p(tail);
-	}
+    if (RLIB.isEmpty(v)) {
+	return true;
+    } else if (v instanceof RLIB.Pair) {
+	return list_p(v.cdr());
     } else {
 	return false;
     }
 }
 
-var null_p = empty_p
+function empty_p(v) {
+    return RLIB.isEmpty(v);
+}
+
+var null_p = empty_p;
 
 export {
     zero_p,
@@ -115,5 +115,7 @@ export {
     call_with_values,
     not,
     empty_p,
+    cons,
+    null_p,
     print_values
 }

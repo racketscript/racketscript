@@ -1,14 +1,187 @@
 "use strict"
 
-function TypeCheck(v, t) {
-    if (v[0] !== t) {
-	throw new Error("given value is not " + t);
+class Primitive {
+    constructor() {
+	//
     }
+
+    toString() {
+	throw new Error("Not Implemented");
+    }
+
+    toRawString() {
+	throw new Error("Not Implemented");
+    }
+
+    equals(v2) {
+	return this.isEqual(this, v2);
+    }
+
+    static make() {
+	throw new Error("Not Implemented");
+    }
+    
+    static check(v1) {
+	throw new Error("Not Implemented");
+    }
+
+    static isEqual(v1, v2) {
+	throw new Error("Not Implemented");
+    }
+}
+
+class Symbol extends Primitive {
+    constructor(v) {
+	super();
+	this.v = v;
+    }
+
+    toString() {
+	return this.v;
+    }
+
+    toRawString() {
+	return "'" + this.v;
+    }
+
+    static make(v) {
+	return new Symbol(v);
+    }
+
+    static isEqual(v1, v2) {
+	return v1.v === v2.v;
+    }
+
+    static check(v) {
+	if (v instanceof Symbol === false) {
+	    throw new Error("given value is not symbol");
+	}
+    }
+}
+
+class Values extends Primitive {
+    constructor(vals) {
+	super();
+	this.v = vals;
+    }
+
+    toString() {
+	throw new Error("Not Implemented");
+    }
+
+    toRawString() {
+	return this.toString();
+    }
+
+    getAt(i) {
+	return this.v[i];
+    }
+
+    getAll() {
+	return this.v;
+    }
+
+    static make() {
+	return new Values(arguments);
+    }
+    
+    static check(v1) {
+	if (v instanceof Values === false) {
+	    throw new Error("given value is not a values")
+	}
+    }
+
+    static isEqual(v1, v2) {
+	throw new Error("Not Implemented");
+    }
+}
+
+const Empty = [];
+
+function isEmpty(v) {
+    return (v instanceof Array) && v.length === 0;
+}
+
+class Pair extends Primitive {
+    constructor(hd, tl) {
+	super();
+	this.hd = hd;
+	this.tl = tl;
+    }
+
+    car() {
+	return this.hd;
+    }
+
+    cdr() {
+	return this.tl;
+    }
+
+    toString() {
+	var result = "(";
+	var rest = this;
+	while (!isEmpty(rest)) {
+	    if (rest instanceof Pair) {
+		var hd = rest.hd;
+		result += toString(hd) + " "
+	    } else {
+		result += " . " + toString(rest);
+		break;
+	    }
+	    rest = rest.tl;
+	}
+	result += ")";
+	return result;
+    }
+
+    toRawString() {
+	return this.toString();
+    }
+
+    static make(hd, tl) {
+	return new Pair(hd, tl);
+    }
+
+    static check(v) {
+	if (v instanceof Pair === false) {
+	    throw new Error("given value is not a Pair");
+	}
+    }
+
+    static isEqual(v1, v2) {
+	if (v1 instanceof Pair === false || v2 instanceof Pair === false) {
+	    return false;
+	}
+	
+	var hd1 = v1.hd;
+	var tl1 = v1.tl;
+	var hd2 = v2.hd;
+	var tl2 = v2.tl;
+
+	while (true) {
+	    if (hd1.equals(h2)) {
+		return isEqual(tl1, tl2);
+	    } else {
+		return false;
+	    }
+	}
+
+	return true;
+    }
+}
+
+function makeList() {
+    var len = arguments.length - 1;
+    var result = Empty; /* TODO: wrap this? */
+    while (len >= 0) {
+	result = Pair.make(arguments[len--], result);
+    }
+    return result;
 }
 
 /******* Numbers *******/
 
-export let Number = {
+var Number = {
     add: function() {
 	return [].reduce.call(arguments, function(a, b) { return a + b; });
     },
@@ -22,90 +195,34 @@ export let Number = {
 	return [].reduce.call(arguments, function(a, b) { return a / b; });
     }
 }
-    
-/******* Symbols *******/
 
-export function Symbol(v) {
-    this.v = v;
-}
+/******** Some polymorphic functions for convenience ********/
 
-Symbol.prototype.check = function(v) {
-    if (v instanceof Symbol === false) {
-	throw new Error("given value is not symbol");
+function toString(v) {
+    if (v instanceof Primitive) {
+	return v.toString();
+    } else {
+	return "" + v; //TODO: Figure out better way to do this? 
     }
 }
 
-Symbol.prototype.equal = function(v1, v2) {
-    /* NOTE: check if both are symbol? */
-    return v1.v == v2.v;
-}
-
-Symbol.prototype.make = function(v) {
-    return new Symbol(v);
-}
-
-/******* Values *******/
-
-export function Values() {
-    this.v = arguments
-}
-
-Values.prototype.check = function(v) {
-    if (v instanceof Values === false) {
-	throw new Error("not values");
+function isEqual(v1, v2) {
+    if (v instanceof Primitve) {
+	return v1.equals(v2);
+    } else {
+	return v1 === v2;
     }
 }
 
-Values.prototype.make = function() {
-    return new Values(arguments);
+
+export {
+    Symbol,
+    Values,
+    Empty,
+    isEmpty,
+    Pair,
+    makeList,
+    Number,
+    toString,
+    isEqual
 }
-
-Values.prototype.get = function(i) {
-    return this.v[i];
-}
-
-Values.prototype.getAll = function() {
-    return this.v;
-}
-
-/******* Pairs *******/
-
-export function Cons(hd, tl) {
-    this.hd = hd;
-    this.tl = tl;
-}
-
-Cons.prototype.empty = []
-
-Cons.prototype.check = function(v) {
-    if (v instanceof Cons === false) {
-	throw new Error("not a pair");
-    }
-}
-
-Cons.prototype.make = function(hd, tl) {
-    return new Cons(hd, tl);
-}
-
-Cons.prototype.car = function() {
-    return this.hd;
-}
-
-Cons.prototype.cdr = function() {
-    return this.tl;
-}
-
-Cons.prototype.isEmpty = function(v) {
-    return (v instanceof Array) && v.length === 0;
-}
-
-Cons.prototype.makeList = function() {
-    var len = arguments.length;
-    var result = []; /* TODO: wrap this? */
-    while (--len) {
-	result = Cons.make(arguments[len], result);
-    }
-    return result;
-}
-
-/******* Vector *******/
