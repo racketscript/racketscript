@@ -1,8 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require racket/base)
-
-(provide factorial)
+(provide factorial factorial/tail)
 
 (define (factorial n)
   (cond
