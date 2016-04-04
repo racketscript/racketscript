@@ -115,24 +115,26 @@
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
+     ["--ast-rename" "Expand and print AST after α-renaming" (build-mode 'absyn-rename)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile to JS" (build-mode 'js)]
      #:args (filename) filename))
 
-  (define absyn (quick-expand source))
-  (define expanded (convert absyn (build-path source)))
+  (define expanded (quick-expand source))
+  (define ast (convert expanded (build-path source)))
 
   (match (build-mode)
-    ['expand (pretty-print (syntax->datum absyn))]
-    ['js (prepare-build-directory (~a (Module-id expanded)))
-         (~> (rename-program expanded)
+    ['expand (pretty-print (syntax->datum ast))]
+    ['js (prepare-build-directory (~a (Module-id ast)))
+         (~> (rename-program ast)
              (absyn-top-level->il _)
              (assemble _))
-         (es6->es5 (output-directory) (~a (Module-id expanded)))]
-    ['il (~> (rename-program expanded)
+         (es6->es5 (output-directory) (~a (Module-id ast)))]
+    ['il (~> (rename-program ast)
              (absyn-top-level->il _)
              (pretty-print _))]
-    ['absyn  (~> (rename-program expanded)
-                 (pretty-print _))])
+    ['absyn (pretty-print ast)]
+    ['absyn-rename  (~> (rename-program ast)
+                        (pretty-print _))])
 
   (void))
