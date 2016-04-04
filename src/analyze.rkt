@@ -67,6 +67,7 @@
 
 (: rename-module (-> Module RenameMap Module))
 (define (rename-module mod symap)
+  (printf "[rename] ~a\n" (Module-id mod))
   (define new-symap (general-form*->symap (filter GeneralTopLevelForm? (Module-forms mod))
                                           symap
                                           #t))

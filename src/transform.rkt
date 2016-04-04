@@ -45,6 +45,7 @@
          [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
          [(SubModuleForm? form) '()])) ;; TODO
      forms))
+  (printf "[il] ~a\n" id)
   (ILModule id (unbox provides) '() mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))

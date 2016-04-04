@@ -103,7 +103,7 @@
 (define (assemble-module mod out)
   (define emit (curry fprintf out))
   (match-define (ILModule id provides requires body) mod)
-  (displayln (~a "INFO: Compiling " id))
+  (printf "[assemble] ~a\n" id)
   (call-with-output-file (module-output-file id) #:exists 'replace
     (λ ([out : Output-Port])
       (assemble-requires* requires out)

@@ -193,7 +193,9 @@
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
-     (Module (symbol->string (syntax-e #'name))
+     (define mod-id (symbol->string (syntax-e #'name)))
+     (printf "[absyn] ~a\n" mod-id)
+     (Module mod-id
              path
              (syntax->datum #'lang)
              (filter-map to-absyn (syntax->list #'(forms ...))))]
@@ -209,7 +211,7 @@
   (read-module (open-input-file in-path)))
 
 (define (quick-expand in-path)
+  (printf "[expand] ~a\n" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
   (do-expand (open-read-module in-path) in-path))
-
