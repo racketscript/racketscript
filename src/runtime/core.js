@@ -120,15 +120,20 @@ class Pair extends Primitive {
     toString() {
 	var result = "(";
 	var rest = this;
-	while (!isEmpty(rest)) {
+	while (true) {
 	    if (rest instanceof Pair) {
 		var hd = rest.hd;
-		result += toString(hd) + " "
+		result += toString(hd);
 	    } else {
 		result += " . " + toString(rest);
 		break;
 	    }
 	    rest = rest.tl;
+	    if (isEmpty(rest)) {
+		break;
+	    } else {
+		result += " ";
+	    }
 	}
 	result += ")";
 	return result;

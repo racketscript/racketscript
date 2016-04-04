@@ -56,6 +56,7 @@
      cons
      null?
      empty?
+     list?
 
      ~a
      string-append

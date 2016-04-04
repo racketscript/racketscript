@@ -122,6 +122,7 @@ export {
     car,
     cdr,
     list,
+    list_p,
     first,
     rest,
     sub1,
