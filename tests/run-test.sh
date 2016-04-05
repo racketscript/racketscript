@@ -5,13 +5,20 @@
 ## to see what went wrong
 
 TESTDIR="$1"
+PATTERN="$2"
 RAPTURE=`realpath ../bin/rapture`
 NODEJS=node
 TRACEUR=traceur
 
 if [ -z "$TESTDIR" ]; then
-    echo "usage: ./run-test.sh <testdir>"
+    echo "usage: ./run-test.sh <testdir> [pattern]"
     exit 1;
+fi
+
+if [ -z "$PATTERN" ]; then
+    PATTERN="*.rkt"
+else
+    PATTERN="$2.rkt"
 fi
 
 cd $TESTDIR
@@ -21,7 +28,7 @@ mkdir -p ./logs/
 
 OPTS=""
 
-for f in `ls *.rkt`; do
+for f in `ls $PATTERN`; do
     echo "+-------------------------------+"
     TESTCASE=${f%.rkt}
     echo "TESTCASE: $TESTCASE\n"
