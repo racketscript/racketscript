@@ -1,8 +1,13 @@
 #!/bin/sh
 
+## Run all test cases and see if any one fails to executes. Doesn't check
+## if the result is actually correct. Log files chould be checked manually
+## to see what went wrong
+
 TESTDIR="$1"
 RAPTURE=`realpath ../bin/rapture`
 NODEJS=node
+TRACEUR=traceur
 
 if [ -z "$TESTDIR" ]; then
     echo "usage: ./run-test.sh <testdir>"
@@ -10,17 +15,34 @@ if [ -z "$TESTDIR" ]; then
 fi
 
 cd $TESTDIR
+mkdir -p ./logs/
+
+OPTS=""
 
 for f in `ls *.rkt`; do
-    echo "==================================================================="
-    echo "TESTCASE: $f"
-    RACKET_OUTPUT=`racket $f`
-    echo "RACKET OUTPUT : $RACKET_OUTPUT"
+    echo "+-------------------------------+"
+    TESTCASE=${f%.rkt}
+    echo "TESTCASE: $TESTCASE\n"
+    echo "$TESTCASE\n\n====== RACKET OUTPUT ====== \n" > ./logs/$TESTCASE.out
+    racket $f >> ./logs/$TESTCASE.out 2>&1
 
-    mkdir -p ./builds/$f
-    $RAPTURE -d ./builds/$f $f 2>&1 > ./builds/$f.compile.out
-    RAPTURE_OUTPUT=`$NODEJS builds/$f/bootstrap.js 2> ./builds/$f.run.out`
-    echo "RAPTURE OUTPUT: $RAPTURE_OUTPUT"
+    echo "\n\n======= RAPTURE OUTPUT ====== \n" >> ./logs/$TESTCASE.out
+    $RAPTURE $OPTS $f >> ./logs/$TESTCASE.compile.out 2>&1
+
+    echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.out
+    cd js-build/modules
+    $TRACEUR $TESTCASE.js > ../../logs/$TESTCASE.rjs.out 2>&1
+
+    if [ "$?" -eq "0" ]; then
+        echo "OK. PASSED"
+    else
+        echo "!!!!! FAILED !!!!!"
+    fi
+
+    OPTS="-n"
+
+    echo ""
+    cd ../../
 
     # TODO: Check equality. But before that, output format should be same
 done
