@@ -1,6 +1,7 @@
-#lang typed/racket
+#lang typed/racket/base
 
 (require racket/format
+         racket/match
          "config.rkt"
          "util.rkt")
 
