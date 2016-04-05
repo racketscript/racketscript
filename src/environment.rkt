@@ -46,10 +46,10 @@
                                pairs*))])
     ((inst make-immutable-hash Symbol Symbol)
      (build-core-env
-      '((* . Number.multiply)
+      '((* . Number.mul)
         (+ . Number.add)
-        (- . Number.subtract)
-        (/ . Number.divide)
+        (- . Number.sub)
+        (/ . Number.div)
         (< . Number.lt)
         (> . Number.gt)
         (<= . Number.lte)

@@ -190,13 +190,13 @@ var Number = {
     add: function() {
 	return [].reduce.call(arguments, function(a, b) { return a + b });
     },
-    subtract: function() {
+    sub: function() {
 	return [].reduce.call(arguments, function(a, b) { return a - b }, 0);
     },
-    multiply: function() {
+    mul: function() {
 	return [].reduce.call(arguments, function(a, b) { return a * b }, 1);
     },
-    divide: function() {
+    div: function() {
 	return [].reduce.call(arguments, function(a, b) { return a / b }, 1);
     },
     compare: function(compare, operands) {
