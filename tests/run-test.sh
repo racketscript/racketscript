@@ -15,6 +15,8 @@ if [ -z "$TESTDIR" ]; then
 fi
 
 cd $TESTDIR
+
+rm -rf ./logs/
 mkdir -p ./logs/
 
 OPTS=""
@@ -23,27 +25,27 @@ for f in `ls *.rkt`; do
     echo "+-------------------------------+"
     TESTCASE=${f%.rkt}
     echo "TESTCASE: $TESTCASE\n"
-    echo "$TESTCASE\n\n====== RACKET OUTPUT ====== \n" > ./logs/$TESTCASE.out
-    racket $f >> ./logs/$TESTCASE.out 2>&1
+    echo "$TESTCASE\n\n====== RACKET OUTPUT ====== \n" > ./logs/$TESTCASE.log
+    racket $f >> ./logs/$TESTCASE.log 2>&1
 
-    echo "\n\n======= RAPTURE OUTPUT ====== \n" >> ./logs/$TESTCASE.out
-    $RAPTURE $OPTS $f >> ./logs/$TESTCASE.compile.out 2>&1
+    echo "\n\n======= RAPTURE OUTPUT ====== \n" >> ./logs/$TESTCASE.log
+    $RAPTURE $OPTS $f >> ./logs/$TESTCASE.log 2>&1
 
-    echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.out
+    echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.log
     cd js-build/modules
-    $TRACEUR $TESTCASE.js > ../../logs/$TESTCASE.rjs.out 2>&1
+    $TRACEUR $TESTCASE.js >> ../../logs/$TESTCASE.log 2>&1
+    RESULT=$?
+    cd ../../
 
-    if [ "$?" -eq "0" ]; then
-        echo "OK. PASSED"
+    if [ "$RESULT" -eq "0" ]; then
+        echo "OK.\n"
+        echo "PASSED   $TESTCASE" >> ./logs/summary.txt
     else
-        echo "!!!!! FAILED !!!!!"
+        echo "!!!!! FAILED !!!!!\n"
+        echo "FAILED   $TESTCASE" >> ./logs/summary.txt
     fi
 
     OPTS="-n"
-
-    echo ""
-    cd ../../
-
     # TODO: Check equality. But before that, output format should be same
 done
 
