@@ -35,6 +35,9 @@
 (define (support-file f)
   (build-path rapture-dir "src" "js-support" f))
 
+(define (runtime-file f)
+  (build-path rapture-dir "src" "runtime" f))
+
 (define (module-file f)
   (build-path (output-directory) "modules" f))
 
@@ -63,7 +66,9 @@
       (assemble _)))
 
 (define runtime-files
-  (in-directory (build-path rapture-dir "src" "runtime")))
+  #;(in-directory (build-path rapture-dir "src" "runtime")) ;; FIX: This blows up with backup files by editor
+  (list (runtime-file "core.js")
+        (runtime-file "kernel.js")))
 
 (define (copy-build-files default-module)
   (copy-file+ (support-file "package.json")
