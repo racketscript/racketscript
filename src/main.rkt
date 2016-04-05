@@ -18,6 +18,7 @@
 
 (define build-mode (make-parameter 'js))
 (define skip-npm-install (make-parameter #f))
+(define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 
@@ -102,7 +103,8 @@
   (parameterize ([current-directory (output-directory)])
     (unless (skip-npm-install)
       (system "npm install"))
-    (system "gulp")))
+    (unless (skip-gulp-build)
+      (system "gulp"))))
   
 (module+ main
   (define source
@@ -112,6 +114,7 @@
      #:once-each
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
+     [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]

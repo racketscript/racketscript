@@ -36,7 +36,7 @@ for f in `ls $PATTERN`; do
     racket $f >> ./logs/$TESTCASE.log 2>&1
 
     echo "\n\n======= RAPTURE OUTPUT ====== \n" >> ./logs/$TESTCASE.log
-    $RAPTURE $OPTS $f >> ./logs/$TESTCASE.log 2>&1
+    $RAPTURE $OPTS -g $f >> ./logs/$TESTCASE.log 2>&1
 
     echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.log
     cd js-build/modules
