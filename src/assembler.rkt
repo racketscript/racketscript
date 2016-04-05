@@ -92,7 +92,7 @@
     [(ILValuesMatch id vref index)
      (emit (~a "var " (normalize-symbol id)))
      (emit " = ")
-     (emit (~a (normalize-symbol vref) "[" index "]"))
+     (emit (~a (normalize-symbol vref) ".getAt(" index ")"))
      (emit ";")]
     [_ #:when (ILModule? stmt) (assemble-module stmt out)]
     [_ #:when (ILExpr? stmt)
@@ -124,7 +124,7 @@
   (unless (empty? p*)
     (emit "export { ")
     (for/last? ([p last? p*])
-               (emit (~a (ILProvide-id p)))
+               (emit (~a (normalize-symbol (ILProvide-id p))))
                (unless last?
                  (emit ",")))
 
