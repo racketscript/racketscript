@@ -29,14 +29,13 @@ mkdir -p ./logs/
 OPTS=""
 
 for f in `ls $PATTERN`; do
-    echo "+-------------------------------+"
     TESTCASE=${f%.rkt}
-    echo "TESTCASE: $TESTCASE\n"
+    echo "====> TESTCASE: $TESTCASE\n"
     echo "$TESTCASE\n\n====== RACKET OUTPUT ====== \n" > ./logs/$TESTCASE.log
     racket $f >> ./logs/$TESTCASE.log 2>&1
 
     echo "\n\n======= RAPTURE OUTPUT ====== \n" >> ./logs/$TESTCASE.log
-    $RAPTURE $OPTS -g $f >> ./logs/$TESTCASE.log 2>&1
+    $RAPTURE $OPTS --skip-gulp-build $f >> ./logs/$TESTCASE.log 2>&1
 
     echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.log
     cd js-build/modules
@@ -45,14 +44,14 @@ for f in `ls $PATTERN`; do
     cd ../../
 
     if [ "$RESULT" -eq "0" ]; then
-        echo "OK.\n"
+        echo "   OK.\n"
         echo "PASSED   $TESTCASE" >> ./logs/summary.txt
     else
-        echo "!!!!! FAILED !!!!!\n"
+        echo "   FAILED!\n"
         echo "FAILED   $TESTCASE" >> ./logs/summary.txt
     fi
 
-    OPTS="-n"
+    OPTS="--skip-npm-install"
     # TODO: Check equality. But before that, output format should be same
 done
 

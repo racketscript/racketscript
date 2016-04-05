@@ -8,6 +8,7 @@ Following system packages are required -
 
 - Racket 6.4 or higher
 - NodeJS and NPM
+- Make
 
 Then install following NodeJS and Racket modules -
 
@@ -34,10 +35,14 @@ advised to pre-compile Racket sources to bytecode.
     $ rapture -h
     
     rapture [ <option> ... ] <filename>
+      Compile Racket to JavaScript
      where <option> is one of
       -d <dir>, --build-dir <dir> : Output directory
       -n, --skip-npm-install : Skip NPM install phase
-    / --ast : Expand and print AST
+      -g, --skip-gulp-build : Skip Gulp build phase
+    / --expand : Fully expand Racket source
+    | --ast : Expand and print AST
+    | --ast-rename : Expand and print AST after α-renaming
     | --il : Compile to intermediate langauge (IL)
     \ --js : Compile to JS
       --help, -h : Show this help
@@ -61,4 +66,6 @@ runtime.
 
 A more robust (and less portable) way, is to run the ES6 modules generated in
 `modules` directly from Traceur. Goto `modules` output directory and execute
-`$ traceur foobar.js`.
+`$ traceur foobar.js`. If you use _skip-gulp-build_ option, run `gulp` in
+output directory to produce final output. To speed up later builds, you may
+want to skip NPM install phase by using _skip-npm-install_ flag.
