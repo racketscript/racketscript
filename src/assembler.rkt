@@ -10,6 +10,7 @@
          racket/list
          racket/function
          "config.rkt"
+         "environment.rkt"
          "util.rkt"
          "absyn.rkt"
          "il.rkt")
@@ -18,10 +19,6 @@
          assemble-module
          assemble-statement*
          assemble-statement)
-
-(require/typed "config.rkt"
-  [module-output-file (-> (U String Symbol) Path)]
-  [output-directory (Parameter String)])
 
 (: assemble (-> ILProgram Void))
 (define (assemble p)
@@ -114,8 +111,8 @@
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* r* out)
   (define emit (curry fprintf out))
-  (emit "import * as __$RACKETCORE from 'core.js';")
-  (emit "import * as __$RACKETKERNEL from 'kernel.js';")) ;;; TODO
+  (emit (~a "import * as " (jsruntime-core-module) " from 'core.js';"))
+  (emit (~a "import * as " (jsruntime-kernel-module) " from 'kernel.js';")))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)
@@ -137,13 +134,13 @@
   
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)]
-    [(symbol? v) (emit (~a "__$RACKETCORE.Symbol.make('" v "')"))]
+    [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]
     [(string? v) (emit (~a "\"" v "\""))]
     [(number? v) (emit (~a v))]
     [(boolean? v) (emit (if v "true" "false"))]
-    [(empty? v) (emit "__$RACKETCORE.Empty")]
+    [(empty? v) (emit (~a (name-in-module 'core 'Empty)))]
     [(list? v)
-     (emit "__$RACKETCORE.makeList(")
+     (emit (~a (name-in-module 'core 'makeList) "("))
      (for/last? ([item last? v])
                 (match item
                   [(Quote v) (assemble-value v out)]
@@ -152,7 +149,7 @@
                   (emit ", ")))
      (emit ")")]
     [(cons? v)
-     (emit "__$RACKETCORE.Pair.make(")
+     (emit (~a (name-in-module 'core 'Pair.make) "("))
      (assemble-value (car v) out)
      (emit ", ")
      (assemble-value (cdr v) out)

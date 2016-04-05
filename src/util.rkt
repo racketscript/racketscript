@@ -4,7 +4,8 @@
          racket/list
          racket/format
          racket/string
-         (for-syntax racket/base))
+         (for-syntax racket/base)
+         "config.rkt")
 
 (require/typed racket/string
   [string-prefix? (-> String String Boolean)])
@@ -37,6 +38,11 @@
   ;; Since every identifier is suffixed with fresh symbol
   ;; we don't have to worry about name clashes after this
   ;; naive renaming
+  (: should-rename? (-> String Boolean))
+  (define (should-rename? s)
+    (not (or
+          (string-prefix? s (jsruntime-core-module))
+          (string-prefix? s (jsruntime-kernel-module)))))
   (: char-map (HashTable String String))
   (define char-map
     #hash(("-" . "_")
@@ -52,8 +58,8 @@
           ("." . "_dot_")
           ("&" . "_and_")))
   (match (symbol->string s)
-    [str #:when (string-prefix? (symbol->string s) "__$RACKET") str] ;; TODO: Fix this HACK
-    [str (: char-list (Listof Char))
+    [str #:when (should-rename? str)
+         (: char-list (Listof Char))
          (define char-list (string->list str))
          (string-join
           (map (λ ([ch : Char])
@@ -65,7 +71,8 @@
                     (hash-ref char-map sch)]
                    [else "_"]))
                char-list)
-          "")]))
+          "")]
+    [str str]))
 
 (: flatten1 (∀ (A) (-> (Listof (Listof A)) (Listof A))))
 (define (flatten1 lst)

@@ -3,11 +3,8 @@
 (require racket/match
          racket/list
          "absyn.rkt"
+         "environment.rkt"
          "util.rkt")
-
-(require/typed "config.rkt"
-  [output-directory (Parameter String)]
-  [BASE-ENV (HashTable Symbol Symbol)])
 
 (provide rename-program
          rename-top-level-form
