@@ -75,6 +75,7 @@
       [(empty? f) (Module (Module-id mod)
                           (Module-path mod)
                           (Module-lang mod)
+                          (Module-ident-map mod)
                           (reverse fr))]
       [else
        (define-values (fn sn) (rename-module-level-form (car f) s))

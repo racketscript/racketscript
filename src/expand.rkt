@@ -30,6 +30,8 @@
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
 
+(define module-ident-sources (make-parameter #f))
+
 (define (do-expand stx in-path)
   ;; error checking
   (syntax-parse stx
@@ -161,7 +163,15 @@
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]
     [i:identifier
-     (syntax-e #'i)]
+     (match (identifier-binding #'i)
+       ['lexical (syntax-e #'i)]
+       [#f (syntax-e #'i)]
+       [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
+        (match-define (list mod-path self?) (index->path nom-src-mod))
+        (unless self?
+          (module-ident-sources (hash-set (module-ident-sources)
+                                          (syntax-e #'i) mod-path)))
+        (syntax-e #'i)])]
     [(_ ...) 
      (map to-absyn (syntax->list v))]
     [(a . b)
@@ -193,12 +203,16 @@
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
-     (define mod-id (symbol->string (syntax-e #'name)))
-     (printf "[absyn] ~a\n" mod-id)
-     (Module mod-id
-             path
-             (syntax->datum #'lang)
-             (filter-map to-absyn (syntax->list #'(forms ...))))]
+     (parameterize ([module-ident-sources (hash)])
+       (define mod-id (symbol->string (syntax-e #'name)))
+       (printf "[absyn] ~a\n" mod-id)
+       (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
+              [mod (module-ident-sources)])
+         (Module mod-id
+                 path
+                 (syntax->datum #'lang)
+                 (module-ident-sources)
+                 ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 

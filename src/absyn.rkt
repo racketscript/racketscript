@@ -74,6 +74,7 @@
 (struct Module ([id : (U Symbol String)]
                 [path : (Option Path)]
                 [lang : (U Symbol String)]
+                [ident-map : (HashTable Symbol (U Path Symbol))]
                 [forms : (Listof ModuleLevelForm)])
   #:transparent) ;; FIXME: path
 
