@@ -18,6 +18,7 @@
          (for-syntax racket/base))
 
 (require "absyn.rkt"
+         "config.rkt"
          "util.rkt")
 
 (provide quick-expand
@@ -105,8 +106,8 @@
 
 (define (require-parse r)
   (syntax-parse r
-    [v:str (Require (syntax-e #'v))]
-    [v:identifier (Require (syntax-e #'v))]
+    [v:str (Require (syntax-e #'v) #f)]
+    [v:identifier (Require (syntax-e #'v) #f)]
     [_ (error "unsupported require format")]))
 
 (define (provide-parse r)
@@ -154,7 +155,8 @@
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
     [(#%require x ...)
-     (map require-parse (syntax->list #'(x ...)))]
+     '()
+     #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
@@ -199,6 +201,17 @@
     [((~literal with-continuation-mark) e0 e1 e2)
      (error "with-continuation-mark is not supported")]))
 
+(define (prepare-imports ident-map)
+  (define (module-path->name mod-name)
+    (cond
+      [(equal? mod-name '#%kernel) (jsruntime-kernel-module)]
+      [(path-string? mod-name) ;; path string
+       (~a (gensym (file-name-from-path mod-name)))]))
+  
+  (for/fold ([result (hash)])
+            ([(_ mod-name) (in-hash ident-map)])
+    (hash-set result mod-name (module-path->name mod-name))))
+
 (define (convert mod path)
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
@@ -207,11 +220,12 @@
        (define mod-id (symbol->string (syntax-e #'name)))
        (printf "[absyn] ~a\n" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
-              [mod (module-ident-sources)])
+              [mod (module-ident-sources)]
+              [imports (assocs->hash-list (map reverse-pair (hash->list mod)))])
          (Module mod-id
                  path
                  (syntax->datum #'lang)
-                 (module-ident-sources)
+                 imports
                  ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))

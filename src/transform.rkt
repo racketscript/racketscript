@@ -36,7 +36,7 @@
   (define (add-provides! p*)
     (set-box! provides (append (unbox provides) p*)))
   
-  (match-define (Module id path lang ident-map forms) mod)
+  (match-define (Module id path lang imports forms) mod)
   (define mod-stms
     (append-map
      (λ ([form : ModuleLevelForm])

@@ -4,6 +4,7 @@
          racket/list
          racket/format
          racket/string
+         typed/rackunit
          (for-syntax racket/base)
          "config.rkt")
 
@@ -18,6 +19,8 @@
          split-before-last
          for/fold/last
          for/last?
+         reverse-pair
+         assocs->hash-list
          ++)
 
 (define ++ string-append)
@@ -31,6 +34,10 @@
                [k (car p)]
                [v (cdr p)])
           (loop (cdr p*) (hash-set h k v))))))
+
+(: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
+(define (reverse-pair p)
+  (cons (cdr p) (car p)))
 
 (: normalize-symbol (-> Symbol String))
 (define (normalize-symbol s)
@@ -90,6 +97,23 @@
   (match-define-values (ls (list v)) (split-at-right lst 1))
   (values ls v))
 
+(: assocs->hash-list : (∀ (A B) (-> (Listof (Pairof A B)) (HashTable A (Listof B)))))
+(define (assocs->hash-list assocs)
+  (: empty-hash (HashTable A (Listof B)))
+  (define empty-hash (hash))
+  (foldl (λ ([a* : (Pairof A B)] [result : (HashTable A (Listof B))])
+           (let ([key (car a*)]
+                 [val (cdr a*)])
+             (hash-update result key
+                          (λ ([v : (Listof B)]) (cons val v))
+                          (λ () '()))))
+         empty-hash
+         assocs))
+(module+ test
+  (check-equal? (assocs->hash-list '((a . b) (b . c) (c . d) (a . e) (c . f) (a . g)))
+                (hash 'a '(g e b)
+                      'b '(c)
+                      'c '(f d))))
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()

@@ -71,10 +71,11 @@
 
 ;;; Top Level Forms
 
+(define-type-alias ImportMap (HashTable ModuleName (Listof Symbol)))
 (struct Module ([id : (U Symbol String)]
                 [path : (Option Path)]
                 [lang : (U Symbol String)]
-                [ident-map : (HashTable Symbol (U Path Symbol))]
+                [imports : ImportMap]
                 [forms : (Listof ModuleLevelForm)])
   #:transparent) ;; FIXME: path
 
@@ -88,6 +89,8 @@
 
 (struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
 
+(define-type-alias ModuleName (U Symbol String Path))
 (define-type Require*  (Listof Require))
 (define-predicate Require*? Require*)
-(struct Require        ([id : Symbol]) #:transparent) ;; This more than just one field
+(struct Require        ([id : ModuleName]
+                        [ins : (Option Symbol)]) #:transparent)

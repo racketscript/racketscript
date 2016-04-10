@@ -21,6 +21,7 @@
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
+(define racket-collects-dir (make-parameter "/usr/share/racket/collects"))
 
 (define rapture-dir
   (~> (let ([dir (find-system-path 'orig-dir)]
@@ -88,7 +89,7 @@
 
 (define (prepare-build-directory default-module-name)
   (define dir (output-directory))
-  (define mkdir? 
+  (define mkdir?
     (cond
       [(file-exists? dir) (error "Output directory path is not a directory")]
       [else #t]))
@@ -102,8 +103,8 @@
 
 (define (es6->es5 dir mod)
   #;(let ([compiled (build-path dir "modules" (js-output-file))])
-    (when (file-exists? compiled)
-      (delete-file compiled)))
+      (when (file-exists? compiled)
+        (delete-file compiled)))
   ;; TODO: Use NPM + some build tool to do this cleanly
   (parameterize ([current-directory (output-directory)])
     (unless (skip-npm-install)
