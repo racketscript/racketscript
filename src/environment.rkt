@@ -58,7 +58,8 @@
         (= . Number.equal))))))
   
 (: BASE-ENV (HashTable Symbol Symbol))
-(define BASE-ENV
+(define BASE-ENV (hash))
+#;(define BASE-ENV
   (add-kernel-imports*
    CORE-IMPORTS
    '(zero?

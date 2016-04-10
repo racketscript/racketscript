@@ -13,7 +13,7 @@
   #:transparent)
 
 (struct ILProvide ([id : Symbol]) #:transparent)
-(struct ILRequire ([id : Symbol]) #:transparent)
+(struct ILRequire ([mod : ILModuleName] [idents* : (Listof Symbol)]) #:transparent)
 
 ;;; IL Statements
 

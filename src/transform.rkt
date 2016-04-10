@@ -37,6 +37,7 @@
     (set-box! provides (append (unbox provides) p*)))
   
   (match-define (Module id path lang imports forms) mod)
+  (printf "[il] ~a\n" id)
   (define mod-stms
     (append-map
      (λ ([form : ModuleLevelForm])
@@ -45,8 +46,12 @@
          [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
          [(SubModuleForm? form) '()])) ;; TODO
      forms))
-  (printf "[il] ~a\n" id)
-  (ILModule id (unbox provides) '() mod-stms))
+
+  (: requires* (Listof ILRequire))
+  (define requires* (for/list ([(mod-name idents) (in-hash imports)])
+                      (ILRequire (module-path->name mod-name)
+                                 idents)))
+  (ILModule id (unbox provides) requires* mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)

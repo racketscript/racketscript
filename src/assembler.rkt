@@ -111,10 +111,14 @@
         (call-with-output-file (module-output-file id) #:exists 'replace cb))))
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
-(define (assemble-requires* r* out)
+(define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
   (emit (~a "import * as " (jsruntime-core-module) " from 'core.js';"))
-  (emit (~a "import * as " (jsruntime-kernel-module) " from 'kernel.js';")))
+  (for ([req reqs*])
+    (match-define (ILRequire name idents) req)
+    (emit (~a "import "
+              "{" (string-join (map normalize-symbol idents) ", ") "} "
+              "from '" name "';"))))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)
