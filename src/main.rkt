@@ -121,6 +121,7 @@
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
+     ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
