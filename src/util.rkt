@@ -22,6 +22,7 @@
          reverse-pair
          assocs->hash-list
          module-path->name
+         collects-module?
          ++)
 
 (define ++ string-append)
@@ -95,6 +96,10 @@
     [(equal? mod-name '#%kernel) (jsruntime-kernel-module-path)]
     [(path-string? mod-name) (~a mod-name)]
     [else (error 'module-path->name "Don't know how to translate module name '~a'" mod-name)]))
+
+(: collects-module? (-> (U String Path) Boolean))
+(define (collects-module? mod-path)
+  (string-prefix? (~a mod-path) (racket-collects-dir)))
 
 (: append1 (∀ (A) (-> (Listof A) A (Listof A))))
 (define (append1 lst a)

@@ -51,7 +51,7 @@
   (define requires* (for/list ([(mod-name idents) (in-hash imports)])
                       (ILRequire (module-path->name mod-name)
                                  idents)))
-  (ILModule id (unbox provides) requires* mod-stms))
+  (ILModule (~a id) (unbox provides) requires* mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)

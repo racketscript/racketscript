@@ -116,9 +116,10 @@
   (emit (~a "import * as " (jsruntime-core-module) " from 'core.js';"))
   (for ([req reqs*])
     (match-define (ILRequire name idents) req)
-    (emit (~a "import "
-              "{" (string-join (map normalize-symbol idents) ", ") "} "
-              "from '" name "';"))))
+    (unless (collects-module? name)
+      (emit (~a "import "
+                "{" (string-join (map normalize-symbol idents) ", ") "} "
+                "from '" name "';")))))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)

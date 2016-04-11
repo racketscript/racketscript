@@ -2,6 +2,7 @@
 
 (provide output-directory
          print-to-stdout
+         racket-collects-dir
          jsruntime-core-module
          jsruntime-kernel-module
          jsruntime-kernel-module-path)

@@ -87,10 +87,10 @@
      display
      )))
 
-(: module-output-file (-> (U String Symbol) Path))
+(: module-output-file (-> (U String Symbol Path) Path))
 (define (module-output-file mod)
   (cond
-    [(or (string? mod) (symbol? mod))
+    [(or (string? mod) (symbol? mod) (path? mod))
      (build-path (output-directory) "modules" (~a mod ".js"))]
     [else (error "module names are either string or symbol")]))
 
