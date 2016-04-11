@@ -236,5 +236,6 @@
   (printf "[expand] ~a\n" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (parameterize ([current-directory (path-only in-path)])
+  (define full-path (path->complete-path in-path))
+  (parameterize ([current-directory (path-only full-path)])
     (do-expand (open-read-module in-path) in-path)))
