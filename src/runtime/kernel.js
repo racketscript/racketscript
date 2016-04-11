@@ -1,6 +1,6 @@
 "use strict"
 
-import * as RLIB from "core.js";
+import * as RLIB from "./core.js";
 
 function CheckNumber(v) {
     if (typeof v !== 'number') {
@@ -116,6 +116,15 @@ function string_append() {
     return "".concat.call(arguments);
 }
 
+var _times_ = RLIB.Number.mul;
+var _by_ = RLIB.Number.div;
+var _plus_ = RLIB.Number.add;
+var _ = RLIB.Number.sub;
+var _lt_ = RLIB.Number.lt;
+var _gt_ = RLIB.Number.gt;
+var _lt__eq_ = RLIB.Number.lte;
+var _gt__eq_ = RLIB.Number.gte;
+var _eq_ = RLIB.Number.equal;
 
 export {
     zero_p,
@@ -136,6 +145,17 @@ export {
     cons,
     null_p,
     print_values,
+
+    // operators
+    _times_,
+    _plus_,
+    _,
+    _by_,
+    _eq_,
+    _lt_,
+    _gt_,
+    _lt__eq_,
+    _gt__eq_,
 
     // non kernel functions
     string_append,

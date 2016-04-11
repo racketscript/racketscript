@@ -63,7 +63,7 @@
           ("?" . "_p")
           ("+" . "_plus_")
           ("'" . "_prime_")
-          ("*" . "_star_")
+          ("*" . "_times_")
           ("/" . "_by_")
           ("=" . "_eq_")
           ("<" . "_lt_")
@@ -139,14 +139,23 @@
 
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
+  ;; ES6 modules imports need "./" prefix for importing relatively
+  ;; to current module, rather than relative to main module. Weird :/
+  (: fix-for-down (-> Path Path))
+  (define (fix-for-down p)
+    (define p-str (~a p))
+    (if (string-prefix? p-str "..")
+        p
+        (build-path (~a "./" p-str))))
   ;; FIX: Later when collects is supports, don't use kernel instead
   (let ([src (assert (current-source-file) path?)]
         [collects? (collects-module? mod-path)])
-    (cast (find-relative-path (path-parent (module-output-file src))
-                              (if collects?
-                                  (jsruntime-kernel-module-path)
-                                  (module-output-file mod-path)))
-          Path)))
+    (fix-for-down
+     (cast (find-relative-path (path-parent (module-output-file src))
+                               (if collects?
+                                   (jsruntime-kernel-module-path)
+                                   (module-output-file mod-path)))
+           Path))))
 
 (: collects-module? (-> (U String Path) Boolean))
 (define (collects-module? mod-path)
