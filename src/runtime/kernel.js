@@ -12,6 +12,10 @@ function zero_p(v) {
     return v === 0;
 }
 
+function positive_p(v) {
+    return v > 0;
+}
+
 function car(lst) {
     RLIB.Pair.check(lst);
     return lst.car();
@@ -128,6 +132,7 @@ var _eq_ = RLIB.Number.equal;
 
 export {
     zero_p,
+    positive_p,
     car,
     cdr,
     list,
