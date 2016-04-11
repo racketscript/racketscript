@@ -39,7 +39,7 @@ for f in `ls $PATTERN`; do
 
     echo "\n\n======= EXECUTE OUTPUT ======= \n" >> ./logs/$TESTCASE.log
     cd js-build/modules
-    $TRACEUR $TESTCASE.js >> ../../logs/$TESTCASE.log 2>&1
+    $TRACEUR $TESTCASE.rkt.js >> ../../logs/$TESTCASE.log 2>&1
     RESULT=$?
     cd ../../
 
