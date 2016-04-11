@@ -179,6 +179,8 @@
           (module-ident-sources (hash-set (module-ident-sources)
                                           (syntax-e #'i) mod-path)))
         (syntax-e #'i)])]
+    [(define-syntaxes (i ...) b) #f]
+    [(begin-for-syntax (b ...)) #f]
     [(_ ...) 
      (map to-absyn (syntax->list v))]
     [(a . b)
