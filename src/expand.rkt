@@ -160,7 +160,11 @@
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
-     (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]
+     (define flist? (list? (syntax-e #'formals)))
+     (define fabsyn (if flist?
+                        (to-absyn #'formals)
+                        (list (syntax-e #'formals))))
+     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) flist?)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]

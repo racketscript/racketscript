@@ -100,13 +100,14 @@
 (: rename-expr (-> Expr RenameMap Expr))
 (define (rename-expr expr symap)
   (match expr
-    [(PlainLambda args exprs)
+    [(PlainLambda args exprs flist?)
      (define new-bindings (fresh-symap symap args #t))
      (PlainLambda (map (λ ([a : Symbol])
                          (lookup new-bindings a)) args)
                   (map (λ ([e : Expr])
                          (rename-expr e new-bindings))
-                       exprs))]
+                       exprs)
+                  flist?)]
     [(If expr t-branch f-branch)
      (If (rename-expr expr symap)
          (rename-expr t-branch symap)

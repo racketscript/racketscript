@@ -83,7 +83,7 @@
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr)
   (match expr
-    [(PlainLambda args body)
+    [(PlainLambda args body flist?)
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])
@@ -92,9 +92,14 @@
          (if last?
              (values (append stms s) v)
              (values (append stms s (list v)) v))))
-     (values '()
-             (ILLambda args
-                       (append1 body-stms (ILReturn body-value))))]
+     (define il-args (if flist?
+                      args
+                      '()))
+     (define stms (let ([stms (append1 body-stms (ILReturn body-value))])
+                    (if flist?
+                        stms
+                        (cons (ILVarDec (first args) 'arguments) stms))))
+     (values '() (ILLambda il-args stms))]
     [(If pred-e t-branch f-branch)
      (define-values (ps pe) (absyn-expr->il pred-e))
      (define-values (ts te) (absyn-expr->il t-branch))
