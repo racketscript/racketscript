@@ -8,8 +8,11 @@
          racket/path
          racket/file
          racket/port
+         racket/set
+         data/queue
          threading
          "absyn.rkt"
+         "util.rkt"
          "expand.rkt"
          "config.rkt"
          "analyze.rkt"
@@ -59,12 +62,6 @@
   (define name (file-name-from-path src))
   (format-copy-file src (build-path dest name) args))
 
-(define (racket->js filename)
-  (~> (quick-expand filename)
-      (rename-program _)
-      (absyn-top-level->il _)
-      (assemble _)))
-
 (define runtime-files
   #;(in-directory (build-path rapture-dir "src" "runtime")) ;; FIX: This blows up with backup files by editor
   (list (runtime-file "core.js")
@@ -100,17 +97,55 @@
   (copy-runtime-files)
   (copy-support-files))
 
-(define (es6->es5 dir mod)
-  #;(let ([compiled (build-path dir "modules" (js-output-file))])
-      (when (file-exists? compiled)
-        (delete-file compiled)))
+(define (es6->es5)
   ;; TODO: Use NPM + some build tool to do this cleanly
   (parameterize ([current-directory (output-directory)])
     (unless (skip-npm-install)
       (system "npm install"))
     (unless (skip-gulp-build)
       (system "gulp"))))
+
+(define (racket->js)
+  (define added (mutable-set))
+  (define pending (make-queue))
+
+  (define (put-to-pending! mod)
+    (unless (set-member? added mod)
+      (set-add! added mod)
+      (enqueue! pending mod)))
+
+  (put-to-pending! (main-source-file))
   
+  (let loop ()
+    (cond
+      [(queue-empty? pending)
+       (es6->es5)
+       (printf "Finished.")]
+      [else
+       (define next (dequeue! pending))
+       (current-source-file next)
+
+       (define expanded (quick-expand next))
+       (define ast (convert expanded (build-path next)))
+
+       ;; build directories to output build folder.
+       ;; TODO: Making directories after expanding and converting is weird
+       (when (equal? next (main-source-file))
+         (prepare-build-directory (~a (Module-id ast))))
+       (make-directory* (path-only (module-output-file next)))
+
+       (~> (rename-program ast)
+           (absyn-top-level->il _)
+           (assemble _))
+
+       (for ([(mod _) (in-hash (Module-imports ast))])
+         (match mod
+           ['#%kernel (void)]
+           [_ #:when (collects-module? mod) (void)]
+           [_ (put-to-pending! mod)]))
+       
+       (loop)])))
+
 (module+ main
   (define source
     (command-line
@@ -131,22 +166,23 @@
      (current-source-file (path->complete-path filename))
      (main-source-file (path->complete-path filename))
      filename))
-  
-  (define expanded (quick-expand source))
-  (define ast (convert expanded (build-path source)))
 
   (match (build-mode)
-    ['expand (pretty-print (syntax->datum expanded))]
-    ['js (prepare-build-directory (~a (Module-id ast)))
-         (~> (rename-program ast)
-             (absyn-top-level->il _)
-             (assemble _))
-         (es6->es5 (output-directory) (~a (Module-id ast)))]
-    ['il (~> (rename-program ast)
+    ['expand (~> (quick-expand source)
+                 (syntax->datum _)
+                 (pretty-print _))]
+    ['absyn (~> (quick-expand source)
+                (convert _ (build-path source))
+                (pretty-print _))]
+    ['absyn-rename  (~> (quick-expand source)
+                        (convert _ (build-path source))
+                        (rename-program _)
+                        (pretty-print _))]
+    ['il (~> (quick-expand source)
+             (convert _ (build-path source))
+             (rename-program _)
              (absyn-top-level->il _)
              (pretty-print _))]
-    ['absyn (pretty-print ast)]
-    ['absyn-rename  (~> (rename-program ast)
-                        (pretty-print _))])
+    ['js (racket->js)])
 
   (void))
