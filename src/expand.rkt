@@ -18,6 +18,7 @@
          (for-syntax racket/base))
 
 (require "absyn.rkt"
+         "config.rkt"
          "util.rkt")
 
 (provide quick-expand
@@ -29,6 +30,8 @@
 (define current-module (make-parameter (list #f)))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
+
+(define module-ident-sources (make-parameter #f))
 
 (define (do-expand stx in-path)
   ;; error checking
@@ -103,8 +106,8 @@
 
 (define (require-parse r)
   (syntax-parse r
-    [v:str (Require (syntax-e #'v))]
-    [v:identifier (Require (syntax-e #'v))]
+    [v:str (Require (syntax-e #'v) #f)]
+    [v:identifier (Require (syntax-e #'v) #f)]
     [_ (error "unsupported require format")]))
 
 (define (provide-parse r)
@@ -152,16 +155,32 @@
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
     [(#%require x ...)
-     (map require-parse (syntax->list #'(x ...)))]
+     #f
+     #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
-     (PlainLambda (to-absyn #'formals) (map to-absyn (syntax->list #'body)))]
+     (define flist? (list? (syntax-e #'formals)))
+     (define fabsyn (if flist?
+                        (to-absyn #'formals)
+                        (list (syntax-e #'formals))))
+     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) flist?)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]
+    [i:identifier #:when (quoted?) (syntax-e #'i)]
     [i:identifier
-     (syntax-e #'i)]
+     (match (identifier-binding #'i)
+       ['lexical (syntax-e #'i)]
+       [#f (syntax-e #'i)]
+       [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
+        (match-define (list mod-path self?) (index->path nom-src-mod))
+        (unless self?
+          (module-ident-sources (hash-set (module-ident-sources)
+                                          (syntax-e #'i) mod-path)))
+        (syntax-e #'i)])]
+    [(define-syntaxes (i ...) b) #f]
+    [(begin-for-syntax (b ...)) #f]
     [(_ ...) 
      (map to-absyn (syntax->list v))]
     [(a . b)
@@ -193,12 +212,17 @@
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
-     (define mod-id (symbol->string (syntax-e #'name)))
-     (printf "[absyn] ~a\n" mod-id)
-     (Module mod-id
-             path
-             (syntax->datum #'lang)
-             (filter-map to-absyn (syntax->list #'(forms ...))))]
+     (parameterize ([module-ident-sources (hash)])
+       (define mod-id (syntax-e #'name))
+       (printf "[absyn] ~a\n" mod-id)
+       (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
+              [mod (module-ident-sources)]
+              [imports (assocs->hash-list (map reverse-pair (hash->list mod)))])
+         (Module mod-id
+                 path
+                 (syntax->datum #'lang)
+                 imports
+                 ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
@@ -214,4 +238,6 @@
   (printf "[expand] ~a\n" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (do-expand (open-read-module in-path) in-path))
+  (define full-path (path->complete-path in-path))
+  (parameterize ([current-directory (path-only full-path)])
+    (do-expand (open-read-module in-path) in-path)))

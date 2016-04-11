@@ -7,6 +7,7 @@
          racket/function
          racket/list
          racket/format
+         racket/path
          "config.rkt"
          "util.rkt"
          "absyn.rkt"
@@ -36,7 +37,8 @@
   (define (add-provides! p*)
     (set-box! provides (append (unbox provides) p*)))
   
-  (match-define (Module id path lang forms) mod)
+  (match-define (Module id path lang imports forms) mod)
+  (printf "[il] ~a\n" id)
   (define mod-stms
     (append-map
      (λ ([form : ModuleLevelForm])
@@ -45,8 +47,17 @@
          [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
          [(SubModuleForm? form) '()])) ;; TODO
      forms))
-  (printf "[il] ~a\n" id)
-  (ILModule id (unbox provides) '() mod-stms))
+
+  (: requires* (Listof ILRequire))
+  (define requires*
+    (for/list ([(mod-name idents) (in-hash imports)])
+      (define name (module-path->name mod-name))
+      (define import-name
+        (match mod-name
+          ['#%kernel (jsruntime-import-path path (jsruntime-kernel-module-path))]
+          [_ (module->relative-import name)]))
+      (ILRequire import-name idents)))
+  (ILModule path (unbox provides) requires* mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)
@@ -72,7 +83,7 @@
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr)
   (match expr
-    [(PlainLambda args body)
+    [(PlainLambda args body flist?)
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])
@@ -81,9 +92,14 @@
          (if last?
              (values (append stms s) v)
              (values (append stms s (list v)) v))))
-     (values '()
-             (ILLambda args
-                       (append1 body-stms (ILReturn body-value))))]
+     (define il-args (if flist?
+                      args
+                      '()))
+     (define stms (let ([stms (append1 body-stms (ILReturn body-value))])
+                    (if flist?
+                        stms
+                        (cons (ILVarDec (first args) 'arguments) stms))))
+     (values '() (ILLambda il-args stms))]
     [(If pred-e t-branch f-branch)
      (define-values (ps pe) (absyn-expr->il pred-e))
      (define-values (ts te) (absyn-expr->il t-branch))

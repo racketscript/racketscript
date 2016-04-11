@@ -199,31 +199,31 @@ var Number = {
     div: function() {
 	return [].reduce.call(arguments, function(a, b) { return a / b }, 1);
     },
-    compare: function(compare, operands) {
+    compare: function(cmp, operands) {
 	if (operands.length < 2) {
 	    throw new Error("Error: atleast 2 arguments required");
 	}
 	for (var i = 1; i < operands.length; i++) {
-	    if (!compare(operands[i - 1], operands[i])) {
+	    if (!cmp(operands[i - 1], operands[i])) {
 		return false;
 	    }
 	}
 	return true;
     },
     lt: function() {
-	return this.compare(function(a, b) { return a < b }, arguments)
+	return Number.compare(function(a, b) { return a < b }, arguments)
     },
     lte: function() {
-	return this.compare(function(a, b) { return a <= b }, arguments)
+	return Number.compare(function(a, b) { return a <= b }, arguments)
     },
     gt: function() {
-	return this.compare(function(a, b) { return a > b }, arguments)
+	return Number.compare(function(a, b) { return a > b }, arguments)
     },
     gte: function() {
-	return this.compare(function(a, b) { return a >= b }, arguments)
+	return Number.compare(function(a, b) { return a >= b }, arguments)
     },
     equal: function() {
-	return this.compare(function(a, b) { return a === b }, arguments)
+	return Number.compare(function(a, b) { return a === b }, arguments)
     }
 }
 

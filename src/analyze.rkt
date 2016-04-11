@@ -12,6 +12,9 @@
 
 (define-type RenameMap (HashTable Symbol Symbol))
 
+#;(: module-rename-map (Parameter (HashTable ModuleName (Listof Symbol))))
+#;(define module-rename-map (make-parameter (hash)))
+
 (: rename-program (-> Program Program))
 (define (rename-program p)
   (define-values (f _) (rename-top-level-form p BASE-ENV))
@@ -75,6 +78,7 @@
       [(empty? f) (Module (Module-id mod)
                           (Module-path mod)
                           (Module-lang mod)
+                          (Module-imports mod)
                           (reverse fr))]
       [else
        (define-values (fn sn) (rename-module-level-form (car f) s))
@@ -96,13 +100,14 @@
 (: rename-expr (-> Expr RenameMap Expr))
 (define (rename-expr expr symap)
   (match expr
-    [(PlainLambda args exprs)
+    [(PlainLambda args exprs flist?)
      (define new-bindings (fresh-symap symap args #t))
      (PlainLambda (map (λ ([a : Symbol])
                          (lookup new-bindings a)) args)
                   (map (λ ([e : Expr])
                          (rename-expr e new-bindings))
-                       exprs))]
+                       exprs)
+                  flist?)]
     [(If expr t-branch f-branch)
      (If (rename-expr expr symap)
          (rename-expr t-branch symap)
@@ -174,5 +179,4 @@
       s))
 
 (: update-symap (-> RenameMap Symbol Symbol RenameMap))
-
 (define update-symap hash-set)

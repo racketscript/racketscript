@@ -57,7 +57,7 @@
 
 (define-type Begin      (Listof TopLevelForm))
 (define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
-(struct PlainLambda     ([args : Args] [exprs : (Listof Expr)]) #:transparent)
+(struct PlainLambda     ([args : Args] [exprs : (Listof Expr)] [flist? : Boolean]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
 (struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
 (struct LetRecValues    ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
@@ -71,9 +71,11 @@
 
 ;;; Top Level Forms
 
-(struct Module ([id : (U Symbol String)]
-                [path : (Option Path)]
-                [lang : (U Symbol String)]
+(define-type-alias ImportMap (HashTable ModuleName (Listof Symbol)))
+(struct Module ([id : Symbol]
+                [path : Path]
+                [lang : (U Symbol String (Listof Symbol))]
+                [imports : ImportMap]
                 [forms : (Listof ModuleLevelForm)])
   #:transparent) ;; FIXME: path
 
@@ -87,6 +89,11 @@
 
 (struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
 
+(define-type-alias ModuleName (U Symbol Path))
+;; Eg. '#%kernel is a module name that is symbol, we expect rest to
+;; be resolved concrete Paths.
+
 (define-type Require*  (Listof Require))
 (define-predicate Require*? Require*)
-(struct Require        ([id : Symbol]) #:transparent) ;; This more than just one field
+(struct Require        ([id : ModuleName]
+                        [ins : (Option Symbol)]) #:transparent)

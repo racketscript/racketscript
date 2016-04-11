@@ -101,18 +101,27 @@
   (define emit (curry fprintf out))
   (match-define (ILModule id provides requires body) mod)
   (printf "[assemble] ~a\n" id)
-  (call-with-output-file (module-output-file id) #:exists 'replace
-    (λ ([out : Output-Port])
-      (assemble-requires* requires out)
-      (for ([b body])
-        (assemble-statement b out))
-      (assemble-provides* provides out))))
+  (let ([cb (λ ([out : Output-Port])
+              (assemble-requires* requires out)
+              (for ([b body])
+                (assemble-statement b out))
+              (assemble-provides* provides out))])
+    (if (print-to-stdout)
+        (cb (current-output-port))
+        (call-with-output-file (module-output-file id) #:exists 'replace cb))))
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
-(define (assemble-requires* r* out)
+(define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
-  (emit (~a "import * as " (jsruntime-core-module) " from 'core.js';"))
-  (emit (~a "import * as " (jsruntime-kernel-module) " from 'kernel.js';")))
+  (emit (format "import * as ~a from '~a';"
+                (jsruntime-core-module)
+                (jsruntime-import-path (assert (current-source-file) path?)
+                                       (jsruntime-core-module-path))))
+  (for ([req reqs*])
+    (match-define (ILRequire name idents) req)
+    (emit (~a "import "
+              "{" (string-join (map normalize-symbol idents) ", ") "} "
+              "from '" name "';"))))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)

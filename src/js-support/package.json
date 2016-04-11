@@ -18,7 +18,7 @@
     "dependencies": [
 	"gulp",
 	"gulp-concat",
-	"gulp-traceur",
+	"gulp-traceur-cmdline",
 	"gulp-insert"
     ]
 }
