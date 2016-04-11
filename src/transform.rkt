@@ -7,6 +7,7 @@
          racket/function
          racket/list
          racket/format
+         racket/path
          "config.rkt"
          "util.rkt"
          "absyn.rkt"
@@ -48,12 +49,14 @@
      forms))
 
   (: requires* (Listof ILRequire))
-  (define requires* (for/list ([(mod-name idents) (in-hash imports)])
-                      (define name (module-path->name mod-name))
-                      (define import-name (if (symbol? mod-name)
-                                              name ;;HACK: FIX
-                                              (module->relative-import name)))
-                      (ILRequire import-name idents)))
+  (define requires*
+    (for/list ([(mod-name idents) (in-hash imports)])
+      (define name (module-path->name mod-name))
+      (define import-name
+        (match mod-name
+          ['#%kernel (jsruntime-import-path path (jsruntime-kernel-module-path))]
+          [_ (module->relative-import name)]))
+      (ILRequire import-name idents)))
   (ILModule path (unbox provides) requires* mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))

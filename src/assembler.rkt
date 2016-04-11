@@ -113,7 +113,10 @@
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
-  (emit (~a "import * as " (jsruntime-core-module) " from 'core.js';"))
+  (emit (format "import * as ~a from '~a';"
+                (jsruntime-core-module)
+                (jsruntime-import-path (assert (current-source-file) path?)
+                                       (jsruntime-core-module-path))))
   (for ([req reqs*])
     (match-define (ILRequire name idents) req)
     (emit (~a "import "

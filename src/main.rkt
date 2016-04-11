@@ -75,9 +75,10 @@
                      (list default-module)))
 
 (define (copy-runtime-files)
+  (make-directory* (build-path (output-directory) "runtime"))
   (for ([f runtime-files])
     (define fname (file-name-from-path f))
-    (copy-file f (module-file fname) #t)))
+    (copy-file f (build-path (output-directory) "runtime" fname) #t)))
 
 (define (copy-support-files)
   (copy-file+ (support-file (js-bootstrap-file))
@@ -120,7 +121,7 @@
     (cond
       [(queue-empty? pending)
        (es6->es5)
-       (printf "Finished.")]
+       (printf "Finished.\n")]
       [else
        (define next (dequeue! pending))
        (current-source-file next)
@@ -140,10 +141,10 @@
 
        (for ([(mod _) (in-hash (Module-imports ast))])
          (match mod
-           ['#%kernel (void)]
-           [_ #:when (collects-module? mod) (void)]
+           ['#%kernel (void)] ;; Doing this separately is simply easier
+           [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
-       
+
        (loop)])))
 
 (module+ main

@@ -26,6 +26,8 @@
          collects-module?
          module-output-file
          module->relative-import
+         jsruntime-import-path
+         path-parent
          ++)
 
 (define ++ string-append)
@@ -102,17 +104,23 @@
       p*
       (error 'path-parent "No parent for ~a" p)))
 
-(: module-path->name (-> (U Path Symbol String) Path)) ;; (-> ModuleName String)
+(: module-path->name (-> (U Path Symbol) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
     [(equal? mod-name '#%kernel) (jsruntime-kernel-module-path)]
-    [(string? mod-name) (string->path mod-name)]
     [(path? mod-name) mod-name]
     [else (error 'module-path->name "Don't know how to translate module name '~a'" mod-name)]))
 
 (: main-source-directory (-> Path))
 (define (main-source-directory)
   (path-parent (assert (main-source-file) path?)))
+
+(: jsruntime-import-path (-> Path Path Path))
+(define (jsruntime-import-path base runtime-fpath)
+  ;; TODO: Make runtime, modules, and everything united!
+  (cast (find-relative-path (path-parent (module-output-file base))
+                            runtime-fpath)
+        Path))
 
 (: module-output-file (-> Path Path))
 (define (module-output-file mod)
