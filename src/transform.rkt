@@ -88,13 +88,13 @@
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])
                       ([e last? body])
-         (define-values (s v) (absyn-expr->il e))
-         (if last?
-             (values (append stms s) v)
-             (values (append stms s (list v)) v))))
+                      (define-values (s v) (absyn-expr->il e))
+                      (if last?
+                          (values (append stms s) v)
+                          (values (append stms s (list v)) v))))
      (define il-args (if flist?
-                      args
-                      '()))
+                         args
+                         '()))
      (define stms (let ([stms (append1 body-stms (ILReturn body-value))])
                     (if flist?
                         stms
@@ -119,10 +119,10 @@
      (for/fold/last ([stms binding-stms]
                      [rv : ILExpr (ILValue (void))])
                     ([e last? body])
-       (define-values (s nv) (absyn-expr->il e))
-       (if last?
-           (values (append stms s) nv)
-           (values (append stms s (list nv)) nv)))]
+                    (define-values (s nv) (absyn-expr->il e))
+                    (if last?
+                        (values (append stms s) nv)
+                        (values (append stms s (list nv)) nv)))]
     [(LetRecValues bindings body)
      ;; FIXME: body same as LetValues, however using 'or' on pattern failed type checker
      (define binding-stms
@@ -133,24 +133,35 @@
      (for/fold/last ([stms binding-stms]
                      [rv : ILExpr (ILValue (void))])
                     ([e last? body])
-       (define-values (s nv) (absyn-expr->il e))
-       (if last?
-           (values (append stms s) nv)
-           (values (append stms s (list nv)) nv)))]
+                    (define-values (s nv) (absyn-expr->il e))
+                    (if last?
+                        (values (append stms s) nv)
+                        (values (append stms s (list nv)) nv)))]
     [(Set! id e)
      (values (let-values ([(stms v) (absyn-expr->il e)])
                (append1 stms
                         (ILAssign id v)))
              (ILValue (void)))]
     [(PlainApp lam args)
-     (let loop ([arg-stms : ILStatement* '()]      ;;; statements for computing arguments
-                [arg* : (Listof ILExpr) '()]       ;;; expressions passed to the lam
+     (: binops (Listof Symbol))
+     (define binops '(+ - * /)) ;;NOTE: Comparision operators work only on two operands TODO later
+
+     (: il-app/binop (-> Symbol (Listof ILExpr) (U ILApp ILBinaryOp)))
+     (define (il-app/binop v arg*)
+       (cond
+         [(and (equal? v '-) (length=? arg* 1)) (ILApp v arg*)]
+         [(and (equal? v '/) (length=? arg* 1)) (ILBinaryOp v (cons (ILValue 1) arg*))]
+         [(member v binops) (ILBinaryOp v arg*)]
+         [else (ILApp v arg*)]))
+     
+     (let loop ([arg-stms : ILStatement* '()] ;;; statements for computing arguments
+                [arg* : (Listof ILExpr) '()] ;;; expressions passed to the lam
                 [arg args])
        (match arg
          ['()
           (cond
             [(symbol? lam) (values arg-stms
-                                   (ILApp lam arg*))]
+                                   (il-app/binop lam arg*))]
             [else (define-values (stms v) (absyn-expr->il lam))
                   (values (append arg-stms stms)
                           (ILApp v arg*))])]

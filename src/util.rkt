@@ -28,9 +28,14 @@
          module->relative-import
          jsruntime-import-path
          path-parent
+         length=?
          ++)
 
 (define ++ string-append)
+
+(: length=? (-> (Listof Any) Natural Boolean))
+(define (length=? lst n)
+  (equal? (length lst) n))
 
 (: hash-set-pair* (∀ (A B) (-> (HashTable A B) (Listof (Pairof A B)) (HashTable A B))))
 (define (hash-set-pair* h pairs)

@@ -47,7 +47,7 @@
 (define-predicate ILExpr? ILExpr)
 
 (struct ILLambda   ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
-(struct ILBinaryOp ([operator : Symbol] [right : ILExpr] [left : ILExpr]) #:transparent)
+(struct ILBinaryOp ([operator : Symbol] [args : (Listof ILExpr)]) #:transparent)
 (struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
 

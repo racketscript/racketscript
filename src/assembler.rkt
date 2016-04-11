@@ -27,6 +27,17 @@
 (: assemble-expr (-> ILExpr Output-Port Void))
 (define (assemble-expr expr out)
   (define emit (curry fprintf out))
+  (: emit-args (-> (Listof ILExpr) String Void))
+  (define (emit-args args sep)
+    (let loop ([a* args])
+      (match a*
+        ['() (void)]
+        [(cons a '()) (assemble-expr a out)]
+        [(cons a tl)
+         (assemble-expr a out)
+         (emit sep)
+         (loop tl)])))
+  
   (match expr
     [(ILLambda args exprs)
      (emit "function(")
@@ -40,16 +51,10 @@
      (assemble-expr lam out)
      (unless (symbol? lam) (emit ")"))
      (emit "(")
-     (let loop ([a* args])
-       (match a*
-         ['() (void)]
-         [(cons a '()) (assemble-expr a out)]
-         [(cons a tl)
-          (assemble-expr a out)
-          (emit ",")
-          (loop tl)]))
+     (emit-args args ",")
      (emit ")")]
-    [(ILBinaryOp oper right left) (void)]
+    [(ILBinaryOp oper args)
+     (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]
     [_ #:when (symbol? expr) (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
