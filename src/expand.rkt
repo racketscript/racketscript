@@ -168,6 +168,7 @@
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]
+    [i:identifier #:when (quoted?) (syntax-e #'i)]
     [i:identifier
      (match (identifier-binding #'i)
        ['lexical (syntax-e #'i)]
@@ -235,6 +236,5 @@
   (printf "[expand] ~a\n" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (define full-path (path->complete-path in-path))
-  (parameterize ([current-directory (path-only full-path)])
+  (parameterize ([current-directory (path-only in-path)])
     (do-expand (open-read-module in-path) in-path)))
