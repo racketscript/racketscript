@@ -4,6 +4,7 @@
          print-to-stdout
          racket-collects-dir
          current-source-file
+         main-source-file
          jsruntime-core-module
          jsruntime-kernel-module
          jsruntime-kernel-module-path)
@@ -13,6 +14,9 @@
 (: current-source-file (Parameter (Option Path)))
 (define current-source-file (make-parameter #f))
 
+(: main-source-file (Parameter (Option Path)))
+(define main-source-file (make-parameter #f))
+
 (define jsruntime-kernel-module (make-parameter "$rjs_kernel"))
 (define jsruntime-core-module (make-parameter "$rjs_core"))
 
@@ -21,4 +25,4 @@
 (: print-to-stdout (Parameter Boolean))
 (define print-to-stdout (make-parameter #f))
 
-(define racket-collects-dir (make-parameter "/usr/share/racket/collects"))
+(define racket-collects-dir (make-parameter (build-path "/usr/share/racket/collects")))

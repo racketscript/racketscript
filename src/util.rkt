@@ -92,6 +92,15 @@
 (: fresh-id (-> Symbol Symbol))
 (define fresh-id gensym)
 
+(: path-parent (-> Path Path))
+;; Because `path-only` return type is `path-for-some-system` and that
+;; is not in any way helping
+(define (path-parent p)
+  (define p* (path-only p))
+  (if (path? p*)
+      p*
+      (error 'path-parent "No parent for ~a" p)))
+
 (: module-path->name (-> (U Path Symbol String) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
@@ -100,18 +109,28 @@
     [(path? mod-name) mod-name]
     [else (error 'module-path->name "Don't know how to translate module name '~a'" mod-name)]))
 
+(: main-source-directory (-> Path))
+(define (main-source-directory)
+  (path-parent (assert (main-source-file) path?)))
+    
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
-  (define base-p (current-source-file))
-  (assert base-p path?)
-  (define base (build-path (~a (path-only (~a base-p))))) ;; HACK AGIAN!
+  (define (fix-path-js p)
+    (build-path (~a p ".js")))
+  (define base (path-parent
+                (assert (current-source-file) path?)))
+  
+  (define (rename-collects m)
+    (build-path ".." ;; TODO: Problem is source at arbitrary level
+                (find-relative-path (racket-collects-dir) mod-path)))
+  
   (cond
-    [(collects-module? mod-path) mod-path]
-    [else (build-path (~a (find-relative-path base mod-path)))])) ;;HACK! For typechecker. FIX!
+    [(collects-module? mod-path) (fix-path-js (rename-collects mod-path))]
+    [else (fix-path-js (find-relative-path base mod-path))]))
 
 (: collects-module? (-> (U String Path) Boolean))
 (define (collects-module? mod-path)
-  (string-prefix? (~a mod-path) (racket-collects-dir)))
+  (string-prefix? (~a mod-path) (~a (racket-collects-dir))))
 
 (: append1 (∀ (A) (-> (Listof A) A (Listof A))))
 (define (append1 lst a)

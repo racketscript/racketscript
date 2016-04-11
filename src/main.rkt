@@ -129,6 +129,7 @@
      ["--js" "Compile to JS" (build-mode 'js)]
      #:args (filename)
      (current-source-file (path->complete-path filename))
+     (main-source-file (path->complete-path filename))
      filename))
   
   (define expanded (quick-expand source))
