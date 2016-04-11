@@ -74,7 +74,7 @@
 (define-type-alias ImportMap (HashTable ModuleName (Listof Symbol)))
 (struct Module ([id : Symbol]
                 [path : Path]
-                [lang : (U Symbol String)]
+                [lang : (U Symbol String (Listof Symbol))]
                 [imports : ImportMap]
                 [forms : (Listof ModuleLevelForm)])
   #:transparent) ;; FIXME: path

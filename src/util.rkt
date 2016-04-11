@@ -126,6 +126,8 @@
 (define (module-output-file mod)
   (cond
     [(collects-module? mod)
+     ;; TODO: Until we support enough language, lets just ignore collects
+     ;; and put everything in kernel
      (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])
        (path->complete-path
         (build-path (output-directory) "collects" (~a rel-collects ".js"))))]
@@ -137,9 +139,13 @@
 
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
-  (let ([src (assert (current-source-file) path?)])
+  ;; FIX: Later when collects is supports, don't use kernel instead
+  (let ([src (assert (current-source-file) path?)]
+        [collects? (collects-module? mod-path)])
     (cast (find-relative-path (path-parent (module-output-file src))
-                              (module-output-file mod-path))
+                              (if collects?
+                                  (jsruntime-kernel-module-path)
+                                  (module-output-file mod-path)))
           Path)))
 
 (: collects-module? (-> (U String Path) Boolean))
