@@ -72,8 +72,8 @@
 ;;; Top Level Forms
 
 (define-type-alias ImportMap (HashTable ModuleName (Listof Symbol)))
-(struct Module ([id : (U Symbol String)]
-                [path : (Option Path)]
+(struct Module ([id : Symbol]
+                [path : Path]
                 [lang : (U Symbol String)]
                 [imports : ImportMap]
                 [forms : (Listof ModuleLevelForm)])
@@ -89,7 +89,10 @@
 
 (struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
 
-(define-type-alias ModuleName (U Symbol String Path))
+(define-type-alias ModuleName (U Symbol Path))
+;; Eg. '#%kernel is a module name that is symbol, we expect rest to
+;; be resolved concrete Paths.
+
 (define-type Require*  (Listof Require))
 (define-predicate Require*? Require*)
 (struct Require        ([id : ModuleName]

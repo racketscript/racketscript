@@ -3,6 +3,7 @@
 (require racket/match
          racket/list
          racket/format
+         racket/path
          racket/string
          typed/rackunit
          (for-syntax racket/base)
@@ -23,6 +24,7 @@
          assocs->hash-list
          module-path->name
          collects-module?
+         module->relative-import
          ++)
 
 (define ++ string-append)
@@ -90,12 +92,22 @@
 (: fresh-id (-> Symbol Symbol))
 (define fresh-id gensym)
 
-(: module-path->name (-> (U String Path Symbol) String)) ;; (-> ModuleName String)
+(: module-path->name (-> (U Path Symbol String) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
     [(equal? mod-name '#%kernel) (jsruntime-kernel-module-path)]
-    [(path-string? mod-name) (~a mod-name)]
+    [(string? mod-name) (string->path mod-name)]
+    [(path? mod-name) mod-name]
     [else (error 'module-path->name "Don't know how to translate module name '~a'" mod-name)]))
+
+(: module->relative-import (-> Path Path))
+(define (module->relative-import mod-path)
+  (define base-p (current-source-file))
+  (assert base-p path?)
+  (define base (build-path (~a (path-only (~a base-p))))) ;; HACK AGIAN!
+  (cond
+    [(collects-module? mod-path) mod-path]
+    [else (build-path (~a (find-relative-path base mod-path)))])) ;;HACK! For typechecker. FIX!
 
 (: collects-module? (-> (U String Path) Boolean))
 (define (collects-module? mod-path)

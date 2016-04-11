@@ -155,7 +155,7 @@
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
     [(#%require x ...)
-     '()
+     #f
      #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
@@ -201,23 +201,12 @@
     [((~literal with-continuation-mark) e0 e1 e2)
      (error "with-continuation-mark is not supported")]))
 
-(define (prepare-imports ident-map)
-  (define (module-path->name mod-name)
-    (cond
-      [(equal? mod-name '#%kernel) (jsruntime-kernel-module)]
-      [(path-string? mod-name) ;; path string
-       (~a (gensym (file-name-from-path mod-name)))]))
-  
-  (for/fold ([result (hash)])
-            ([(_ mod-name) (in-hash ident-map)])
-    (hash-set result mod-name (module-path->name mod-name))))
-
 (define (convert mod path)
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
      (parameterize ([module-ident-sources (hash)])
-       (define mod-id (symbol->string (syntax-e #'name)))
+       (define mod-id (syntax-e #'name))
        (printf "[absyn] ~a\n" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
               [mod (module-ident-sources)]

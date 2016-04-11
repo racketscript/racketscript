@@ -21,7 +21,6 @@
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
-(define racket-collects-dir (make-parameter "/usr/share/racket/collects"))
 
 (define rapture-dir
   (~> (let ([dir (find-system-path 'orig-dir)]
@@ -128,13 +127,15 @@
      ["--ast-rename" "Expand and print AST after α-renaming" (build-mode 'absyn-rename)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile to JS" (build-mode 'js)]
-     #:args (filename) filename))
-
+     #:args (filename)
+     (current-source-file (path->complete-path filename))
+     filename))
+  
   (define expanded (quick-expand source))
   (define ast (convert expanded (build-path source)))
 
   (match (build-mode)
-    ['expand (pretty-print (syntax->datum ast))]
+    ['expand (pretty-print (syntax->datum expanded))]
     ['js (prepare-build-directory (~a (Module-id ast)))
          (~> (rename-program ast)
              (absyn-top-level->il _)
