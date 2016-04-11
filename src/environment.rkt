@@ -6,7 +6,6 @@
          "util.rkt")
 
 (provide name-in-module
-         module-output-file
          BASE-ENV)
 
 (define-type-alias RenameMap (HashTable Symbol Symbol))
@@ -86,11 +85,3 @@
      string-append
      display
      )))
-
-(: module-output-file (-> (U String Symbol Path) Path))
-(define (module-output-file mod)
-  (cond
-    [(or (string? mod) (symbol? mod) (path? mod))
-     (build-path (output-directory) "modules" (~a mod ".js"))]
-    [else (error "module names are either string or symbol")]))
-

@@ -24,6 +24,7 @@
          assocs->hash-list
          module-path->name
          collects-module?
+         module-output-file
          module->relative-import
          ++)
 
@@ -112,21 +113,26 @@
 (: main-source-directory (-> Path))
 (define (main-source-directory)
   (path-parent (assert (main-source-file) path?)))
-    
+
+(: module-output-file (-> Path Path))
+(define (module-output-file mod)
+  (cond
+    [(collects-module? mod)
+     (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])
+       (path->complete-path
+        (build-path (output-directory) "collects" (~a rel-collects ".js"))))]
+    [else
+     (let* ([main (assert (main-source-file) path?)]
+            [rel-path (find-relative-path (path-parent main) mod)])
+       (path->complete-path
+        (build-path (output-directory) "modules" (~a rel-path ".js"))))]))
+
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
-  (define (fix-path-js p)
-    (build-path (~a p ".js")))
-  (define base (path-parent
-                (assert (current-source-file) path?)))
-  
-  (define (rename-collects m)
-    (build-path ".." ;; TODO: Problem is source at arbitrary level
-                (find-relative-path (racket-collects-dir) mod-path)))
-  
-  (cond
-    [(collects-module? mod-path) (fix-path-js (rename-collects mod-path))]
-    [else (fix-path-js (find-relative-path base mod-path))]))
+  (let ([src (assert (current-source-file) path?)])
+    (cast (find-relative-path (path-parent (module-output-file src))
+                              (module-output-file mod-path))
+          Path)))
 
 (: collects-module? (-> (U String Path) Boolean))
 (define (collects-module? mod-path)
