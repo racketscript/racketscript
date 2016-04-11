@@ -1,12 +1,13 @@
 const gulp = require('gulp');
-const traceur = require('gulp-traceur');
+const traceur = require('gulp-traceur-cmdline');
 const concat = require('gulp-concat');
 const insert = require('gulp-insert');
 
+const target = "~a" + ".rkt.js";
+
 gulp.task('default', function() {
-    return gulp.src('modules/*.js')
-	.pipe(traceur({modules: 'bootstrap'}))
+    return gulp.src('modules/' + target)
+	.pipe(traceur({modules: 'inline'}))
         .pipe(concat('compiled.js'))
-	.pipe(insert.append('\n\n$traceurRuntime.getModule("~a.js");'))
 	.pipe(gulp.dest('dist'));
 });
