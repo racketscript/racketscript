@@ -10,6 +10,8 @@
          (only-in racket/list append-map last-pair filter-map first add-between)
          racket/path
          racket/bool
+         racket/list
+         racket/function
          racket/pretty
          racket/dict racket/match
          racket/format
@@ -184,7 +186,7 @@
     [(_ ...) 
      (map to-absyn (syntax->list v))]
     [(a . b)
-     (error "impropers are not supported")]
+     (cons (to-absyn #'a) (to-absyn #'b))]
     [#(_ ...) (error "vector not supported")]
     [_ #:when (box? (syntax-e v))
        (error "box not supportend")]

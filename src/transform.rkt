@@ -217,6 +217,7 @@
          (string? d)
          (integer? d)
          (list? d)
+         (cons? d)
          (boolean? d)
          (vector? d)
          (struct? d)
