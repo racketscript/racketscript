@@ -170,7 +170,7 @@
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)]
     [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]
-    [(string? v) (emit (~a "\"" v "\""))]
+    [(string? v) (write v out)]
     [(number? v) (emit (~a v))]
     [(boolean? v) (emit (if v "true" "false"))]
     [(empty? v) (emit (~a (name-in-module 'core 'Empty)))]
