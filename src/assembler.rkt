@@ -56,6 +56,16 @@
     [(ILBinaryOp oper args)
      (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]
+    [(ILField expr fieldname)
+     (assemble-expr expr out)
+     (emit (~a "." (normalize-symbol fieldname)))] ;; TODO: or assmeble-expr the symbol
+    [(ILSubscript expr fieldname)
+     (assemble-expr expr out)
+     (emit "[")
+     (if (symbol? fieldname)
+         (assemble-value (~a fieldname) out)
+         (assemble-value fieldname out))
+     (emit "]")]
     [_ #:when (symbol? expr) (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
 

@@ -42,6 +42,8 @@
 (define-type ILExpr (U ILLambda
                        ILBinaryOp
                        ILApp
+                       ILField
+                       ILSubscript
                        Symbol
                        ILValue))
 (define-predicate ILExpr? ILExpr)
@@ -49,6 +51,8 @@
 (struct ILLambda   ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
 (struct ILBinaryOp ([operator : Symbol] [args : (Listof ILExpr)]) #:transparent)
 (struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
+(struct ILField    ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
+(struct ILSubscript ([expr : ILExpr] [fieldname : (U Symbol Natural)]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
 
 ;; TODO: This is quickfix. Maybe think more about this
