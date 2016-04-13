@@ -51,13 +51,16 @@
 ;;;
 
 (define-type Args      (Listof Symbol))      ;;; FIXME: this doesn't match with formals in grammar
+(define-type Formals   (U Symbol
+                          (Listof Symbol)
+                          (Pairof (Listof Symbol) Symbol)))
 (define-type Binding   (Pairof Args Expr))
 
 ;;; Expressions 
 
 (define-type Begin      (Listof TopLevelForm))
 (define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
-(struct PlainLambda     ([args : Args] [exprs : (Listof Expr)] [flist? : Boolean]) #:transparent)
+(struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
 (struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
 (struct LetRecValues    ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)

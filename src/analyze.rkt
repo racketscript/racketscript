@@ -2,6 +2,7 @@
 
 (require racket/match
          racket/list
+         racket/function
          "absyn.rkt"
          "environment.rkt"
          "util.rkt")
@@ -100,14 +101,24 @@
 (: rename-expr (-> Expr RenameMap Expr))
 (define (rename-expr expr symap)
   (match expr
-    [(PlainLambda args exprs flist?)
-     (define new-bindings (fresh-symap symap args #t))
-     (PlainLambda (map (λ ([a : Symbol])
-                         (lookup new-bindings a)) args)
+    [(PlainLambda formals exprs)
+     (define flattened
+       (cond
+         [(symbol? formals) (list formals)]
+         [(list? formals) formals]
+         [(cons? formals) (append (car formals) (list (cdr formals)))]))
+     (define new-bindings (fresh-symap symap flattened #t))
+     (define look (curry lookup new-bindings))
+     (define new-formals
+       (cond
+         [(symbol? formals) (look formals)]
+         [(list? formals) (map look formals)]
+         [(cons? formals) (cons (map look (car formals))
+                                (look (cdr formals)))]))
+     (PlainLambda new-formals
                   (map (λ ([e : Expr])
                          (rename-expr e new-bindings))
-                       exprs)
-                  flist?)]
+                       exprs))]
     [(If expr t-branch f-branch)
      (If (rename-expr expr symap)
          (rename-expr t-branch symap)

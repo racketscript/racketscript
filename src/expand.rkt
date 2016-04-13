@@ -162,11 +162,13 @@
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
     [(#%plain-lambda formals . body)
-     (define flist? (list? (syntax-e #'formals)))
-     (define fabsyn (if flist?
-                        (to-absyn #'formals)
-                        (list (syntax-e #'formals))))
-     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) flist?)]
+     (define fabsyn (let ([f (to-absyn #'formals)])
+                      (cond
+                        [(or (list? f) (symbol? f)) f]
+                        [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
+                                     (cons fp fi))]
+                        [else (error 'plain-λ "invalid λ formals")])))
+     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]

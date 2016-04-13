@@ -10,6 +10,7 @@
          racket/path
          "config.rkt"
          "util.rkt"
+         "environment.rkt"
          "absyn.rkt"
          "il.rkt")
 
@@ -83,7 +84,33 @@
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr)
   (match expr
-    [(PlainLambda args body flist?)
+    [(PlainLambda formals body)
+     ;; TODO: This is terribly mixed up lower level details. Perhaps something with
+     ;;       IL can be improved this avoid this madness?
+     (: ->jslist (-> ILExpr ILExpr))
+     (define (->jslist f)
+       (ILApp (name-in-module 'core 'array_to_list) (list f)))
+     (define arguments-array (ILApp (name-in-module 'core 'arguments_to_array)
+                                    (list 'arguments)))
+     (define-values (il-formals stms-formals-init)
+       (cond
+         [(symbol? formals) (values '()
+                                    (list
+                                     (ILVarDec formals (->jslist arguments-array))))]
+         [(list? formals) (values formals '())]
+         [(cons? formals)
+          (define fi (car formals))
+          (define fp (cdr formals))
+          (define fi-len (length fi))
+          (values '()
+                  (append1
+                   (map (λ ([i : Natural] [f : Symbol])
+                          (ILVarDec f (ILSubscript 'arguments i)))
+                        (range fi-len)
+                        fi)
+                   (ILVarDec fp
+                             (->jslist (ILApp (name-in-module 'core 'arguments_slice)
+                                              (list arguments-array (ILValue fi-len)))))))]))
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])
@@ -92,14 +119,11 @@
                       (if last?
                           (values (append stms s) v)
                           (values (append stms s (list v)) v))))
-     (define il-args (if flist?
-                         args
-                         '()))
-     (define stms (let ([stms (append1 body-stms (ILReturn body-value))])
-                    (if flist?
-                        stms
-                        (cons (ILVarDec (first args) 'arguments) stms))))
-     (values '() (ILLambda il-args stms))]
+     (values '()
+             (ILLambda il-formals
+                       (append stms-formals-init
+                               body-stms
+                               (list (ILReturn body-value)))))]
     [(If pred-e t-branch f-branch)
      (define-values (ps pe) (absyn-expr->il pred-e))
      (define-values (ts te) (absyn-expr->il t-branch))

@@ -184,6 +184,10 @@ function makeList() {
     return result;
 }
 
+function array_to_list(lst) {
+    return makeList.apply(null, lst);
+}
+
 /******* Numbers *******/
 
 var Number = {
@@ -245,6 +249,15 @@ function isEqual(v1, v2) {
     }
 }
 
+function arguments_to_array(a) {
+    // arguments are not exactly array
+    return (a.length === 1 ? [a[0]] : Array.apply(null, a));
+}
+
+function arguments_slice(a, i) {
+    return [].slice.call(a, i);
+}
+
 export {
     Symbol,
     Values,
@@ -254,5 +267,8 @@ export {
     makeList,
     Number,
     toString,
-    isEqual
+    isEqual,
+    arguments_to_array,
+    arguments_slice,
+    array_to_list
 }
