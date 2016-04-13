@@ -44,6 +44,8 @@
                        ILApp
                        ILField
                        ILSubscript
+                       ILArray
+                       ILObject
                        Symbol
                        ILValue))
 (define-predicate ILExpr? ILExpr)
@@ -51,6 +53,8 @@
 (struct ILLambda   ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
 (struct ILBinaryOp ([operator : Symbol] [args : (Listof ILExpr)]) #:transparent)
 (struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
+(struct ILArray    ([items : (Listof ILExpr)]) #:transparent)
+(struct ILObject   ([items : (Listof (Pairof Symbol ILExpr))]) #:transparent)
 (struct ILField    ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
 (struct ILSubscript ([expr : ILExpr] [fieldname : (U Symbol Natural)]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific

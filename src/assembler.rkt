@@ -66,6 +66,17 @@
          (assemble-value (~a fieldname) out)
          (assemble-value fieldname out))
      (emit "]")]
+    [(ILArray items)
+     (emit "[")
+     (emit-args items ",")
+     (emit "]")]
+    [(ILObject items)
+     (emit "{")
+     (for/last? ([i last? items])
+                (emit (format "'~a':" (car i)))
+                (assemble-expr (cdr i) out)
+                (unless last?
+                  (emit ",")))]
     [_ #:when (symbol? expr) (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
 
