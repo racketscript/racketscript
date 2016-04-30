@@ -225,14 +225,14 @@
               (ILVarDec a v))]
     [_
      (define result-id (fresh-id 'let_result))
+     (: binding-stms ILStatement*)
      (define binding-stms
-       (for/fold ([stms : ILStatement* stms])
-                 ([i : Natural (range (length args))]
+       (for/list ([i : Natural (range (length args))]
                   [arg : Symbol args])
-         (append1 stms
-                  (ILValuesMatch arg result-id i))))
-     (cons (ILVarDec result-id v)
-           binding-stms)]))
+         (ILValuesMatch arg result-id i)))
+     (append stms
+             (cons (ILVarDec result-id v)
+                   binding-stms))]))
 
 (: absyn-value->il (-> Any ILValue))
 (define (absyn-value->il d)
