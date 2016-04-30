@@ -178,10 +178,16 @@
        ['lexical (syntax-e #'i)]
        [#f (syntax-e #'i)]
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
+        (define (rename n)
+          ;; TODO: quick hack for null keyword. Proabably out previous
+          ;; table of base symbols was actually useful
+          (cond 
+            [(equal? n 'null) 'racket_null]
+            [else n]))
         (match-define (list mod-path self?) (index->path nom-src-mod))
         (unless self?
           (module-ident-sources (hash-set (module-ident-sources)
-                                          (syntax-e #'i) mod-path)))
+                                          (rename (syntax-e #'i)) mod-path)))
         (syntax-e #'i)])]
     [(define-syntaxes (i ...) b) #f]
     [(begin-for-syntax (b ...)) #f]
