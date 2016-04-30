@@ -107,6 +107,7 @@ function empty_p(v) {
     return RLIB.isEmpty(v);
 }
 
+var racket_null = RLIB.Empty;
 var null_p = empty_p;
 
 
@@ -120,6 +121,36 @@ function string_append() {
     return "".concat.call(arguments);
 }
 
+function current_inspector() {
+    /* stub */
+    return false;
+}
+
+function make_struct_type(name, super_type, init_field_cnt, auto_field_cnt, auto_v,
+			  props, inspector, proc_spec, immutables, guard,
+			  constructor_name)
+{
+    return RLIB.makeStructType({
+	name: name.toString(),
+	super_type: super_type,
+	init_field_cnt: init_field_cnt,
+	auto_field_cnt: auto_field_cnt,
+	auto_v: auto_v,
+	props: props,
+	inspector: inspector,
+	proc_spec: proc_spec,
+	immutables: immutables,
+	guard: guard,
+	constructor_name: constructor_name
+    });
+}
+
+function make_struct_field_accessor(ref, index, field_name) {
+    return function(s) {
+	return ref(s, index);
+    }
+}
+
 var _times_ = RLIB.Number.mul;
 var _by_ = RLIB.Number.div;
 var _plus_ = RLIB.Number.add;
@@ -131,6 +162,7 @@ var _gt__eq_ = RLIB.Number.gte;
 var _eq_ = RLIB.Number.equal;
 
 export {
+    racket_null,
     zero_p,
     positive_p,
     car,
@@ -165,5 +197,8 @@ export {
     // non kernel functions
     string_append,
     _a,
-    display
+    display,
+    current_inspector,
+    make_struct_type,
+    make_struct_field_accessor
 }
