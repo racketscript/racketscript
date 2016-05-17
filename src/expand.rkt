@@ -21,6 +21,7 @@
 
 (require "absyn.rkt"
          "config.rkt"
+         "case-lambda.rkt"
          "util.rkt")
 
 (provide quick-expand
@@ -137,6 +138,7 @@
     ;; this is a simplification of the json output
     [(#%plain-app e0 e ...)
      (PlainApp (to-absyn #'e0) (map to-absyn (syntax->list #'(e ...))))]
+    [(#%expression e) (to-absyn #'e)]
     [(begin0 e0 e ...)
      (map to-absyn (syntax->list #'(e0 e ...)))]
     [(if e0 e1 e2)
@@ -161,6 +163,8 @@
      #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
+    [(case-lambda (formals body ...+) ...)
+     (to-absyn (expand #'(s-case-lambda [formals body ...] ...)))]
     [(#%plain-lambda formals . body)
      (define fabsyn (let ([f (to-absyn #'formals)])
                       (cond

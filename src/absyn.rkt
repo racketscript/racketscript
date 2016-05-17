@@ -1,5 +1,7 @@
 #lang typed/racket/base
 
+(require "il.rkt")
+
 (provide (all-defined-out))
 
 (define-type-alias Program TopLevelForm)
