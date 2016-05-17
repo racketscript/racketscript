@@ -188,6 +188,15 @@ function array_to_list(lst) {
     return makeList.apply(null, lst);
 }
 
+function list_to_array(lst) {
+    var r = [];
+    while (!isEmpty(lst)) {
+        r.push(lst.car());
+        lst = lst.cdr();
+    }
+    return r;
+}
+
 class Struct extends Primitive {
     constructor(name, fields) {
 	super();
@@ -333,5 +342,6 @@ export {
     arguments_to_array,
     arguments_slice,
     array_to_list,
+    list_to_array,
     makeStructType
 }

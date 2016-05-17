@@ -151,6 +151,29 @@ function make_struct_field_accessor(ref, index, field_name) {
     }
 }
 
+function length(lst) {
+    var len = 0;
+    while (true) {
+        if (RLIB.isEmpty(lst)) {
+            return len;
+        }
+        len += 1;
+        lst = lst.cdr();
+    }
+}
+
+function error(msg) {
+    /** todo **/
+    throw new Error(msg);
+}
+
+function apply() {
+    var lam = arguments[0];
+    var args = arguments[1];
+    return lam.apply(null, RLIB.list_to_array(args));
+}
+
+
 var _times_ = RLIB.Number.mul;
 var _by_ = RLIB.Number.div;
 var _plus_ = RLIB.Number.add;
@@ -182,6 +205,9 @@ export {
     cons,
     null_p,
     print_values,
+    length,
+    error,
+    apply,
 
     // operators
     _times_,
