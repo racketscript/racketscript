@@ -13,6 +13,7 @@
   [string-prefix? (-> String String Boolean)])
 
 (provide hash-set-pair*
+         #;improper->proper
          fresh-id
          normalize-symbol
          flatten1
@@ -50,6 +51,12 @@
 (: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
 (define (reverse-pair p)
   (cons (cdr p) (car p)))
+
+#;(define (improper->proper l)
+  (match l
+    [(cons a b) (cons a (improper->proper b))]
+    ['() '()]
+    [_ (cons l '())]))
 
 (: normalize-symbol (-> Symbol String))
 (define (normalize-symbol s)
