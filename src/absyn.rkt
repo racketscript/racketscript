@@ -8,7 +8,6 @@
 
 (define-type Expr (U Symbol
                      PlainLambda
-                     CaseLambda
                      PlainApp
                      If
                      Begin
@@ -61,7 +60,6 @@
 ;;; Expressions 
 
 (define-type Begin      (Listof TopLevelForm))
-(define-type CaseLambda (Listof (Pairof Args (Listof Expr))))
 (struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
 (struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
