@@ -36,6 +36,7 @@
 
 (define module-ident-sources (make-parameter #f))
 
+(require racket/pretty)
 (define (do-expand stx in-path)
   ;; error checking
   (syntax-parse stx
@@ -47,8 +48,9 @@
      (error 'do-expand "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
   ;; work
   
-  (parameterize ([current-namespace (make-base-namespace)])
-    (namespace-syntax-introduce (expand stx))))
+  (expand-case-lambda
+   (parameterize ([current-namespace (make-base-namespace)])
+     (namespace-syntax-introduce (expand stx)))))
 
 ;;;; Module paths
 
@@ -164,7 +166,7 @@
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
     [(case-lambda (formals body ...+) ...)
-     (to-absyn (expand #'(s-case-lambda [formals body ...] ...)))]
+     (error 'expand "case-lambda must be expanded already")]
     [(#%plain-lambda formals . body)
      (define fabsyn (let ([f (to-absyn #'formals)])
                       (cond

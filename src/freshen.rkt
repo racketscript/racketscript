@@ -79,6 +79,8 @@
      #:with fresh-body (freshen #'body
                                 (formals-dict-set sym-map #'xs #'fresh-xs))
      #'(#%plain-lambda fresh-xs . fresh-body)]
+    [(case-lambda (formals body ...+) ...)
+     (error 'expand "case-lambda must be expanded already")]
     [(let-values ([xs es] ...) b ...)
      #:with (fresh-xs ...) (generate-temporaries* #'(xs ...))
      #:with (fresh-es ...) (stx-map (λ (e)

@@ -1,9 +1,55 @@
 #lang racket
 
-(require (for-syntax syntax/parse
+(require syntax/parse
+         syntax/stx
+         (for-syntax syntax/parse
                      racket/stxparam))
 
-(provide s-case-lambda)
+(provide s-case-lambda
+         expand-case-lambda)
+
+(define (expand-case-lambda e)
+  (syntax-parse e
+    #:literal-sets ((kernel-literals))
+    [(case-lambda (formals body ...+) ...)
+     (expand-case-lambda (expand #'(s-case-lambda (formals body ...) ...)))]
+    [(module id path form ...)
+     #`(module id path #,@(stx-map expand-case-lambda #'(form ...)))]
+    [(#%plain-module-begin form ...)
+     #`(#%plain-module-begin #,@(stx-map expand-case-lambda #'(form ...)))]
+    [(#%module-begin form ...)
+     #`(#%module-begin #,@(stx-map expand-case-lambda #'(form ...)))]
+    [(#%expression v)
+     #`(#%expression #,(expand-case-lambda #'v))]
+    [(begin0 e0 e ...)
+     #`(begin0 #,@(stx-map expand-case-lambda #'(e0 e ...)))]
+    [(begin e ...)
+     #`(begin #,@(stx-map expand-case-lambda #'(e ...)))]
+    [(#%top . x) #`(#%top . #,(expand-case-lambda #'x))]
+    [(quote e) #'(quote e)]
+    [(~or (~literal module)
+          (~literal module*)
+          (~literal #%require)
+          (~literal quote)) e]
+    [(if e0 e1 e2)
+     #`(if #,(expand-case-lambda #'e0)
+           #,(expand-case-lambda #'e1)
+           #,(expand-case-lambda #'e2))]
+    [(#%plain-lambda xs . body)
+     #`(#%plain-lambda xs . #,(stx-map expand-case-lambda #'body))]
+    [(let-values ([xs es] ...) b ...)
+     #:with (es* ...) (stx-map expand-case-lambda #'(es ...))
+     #`(let-values ([xs es*] ...)
+         #,@(stx-map expand-case-lambda #'(b ...)))]
+    [(letrec-values ([xs es] ...) b ...)
+     #:with (es* ...) (stx-map expand-case-lambda #'(es ...))
+     #`(let-values ([xs es*] ...)
+         #,@(stx-map expand-case-lambda #'(b ...)))]
+    [(define-values (id ...) b)
+     #`(define-values (id ...) #,(expand-case-lambda #'b))]
+    [(e ...)
+     (stx-map expand-case-lambda #'(e ...))]
+    [_ e]))
 
 ;; s-case-lambda : Syntax -> Syntax
 ;; Transforms case-lambda to plain-lambda using nested if-else
@@ -56,6 +102,10 @@
     (s-case-lambda
      [(a b c) (* a b c)]
      [(a b) (+ a b)]))
+
+  (expand-case-lambda #'(case-lambda
+                          [(a b c) (* a b c)]
+                          [(a b) (+ a b)]))
 
   (check-equal? (lam1 8 2 3) (* 8 2 3) "match with first case")
   (check-equal? (lam1 3 4) (+ 3 4) "match with second case")
