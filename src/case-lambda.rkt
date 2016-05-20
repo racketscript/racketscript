@@ -103,10 +103,6 @@
      [(a b c) (* a b c)]
      [(a b) (+ a b)]))
 
-  (expand-case-lambda #'(case-lambda
-                          [(a b c) (* a b c)]
-                          [(a b) (+ a b)]))
-
   (check-equal? (lam1 8 2 3) (* 8 2 3) "match with first case")
   (check-equal? (lam1 3 4) (+ 3 4) "match with second case")
   (check-exn exn:fail? (λ () (lam1 3 4 5 6)) "no matching clause")

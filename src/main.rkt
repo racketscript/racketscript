@@ -15,7 +15,7 @@
          "util.rkt"
          "expand.rkt"
          "config.rkt"
-         "analyze.rkt"
+         "freshen.rkt"
          "transform.rkt"
          "assembler.rkt")
 
@@ -127,7 +127,8 @@
        (current-source-file next)
 
        (define expanded (quick-expand next))
-       (define ast (convert expanded (build-path next)))
+       (define renamed (freshen expanded))
+       (define ast (convert renamed (build-path next)))
 
        ;; build directories to output build folder.
        ;; TODO: Making directories after expanding and converting is weird
@@ -135,9 +136,7 @@
          (prepare-build-directory (~a (Module-id ast))))
        (make-directory* (path-only (module-output-file next)))
 
-       (~> (rename-program ast)
-           (absyn-top-level->il _)
-           (assemble _))
+       (assemble (absyn-top-level->il ast))
 
        (for ([(mod _) (in-hash (Module-imports ast))])
          (match mod
@@ -160,7 +159,7 @@
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
-     ["--ast-rename" "Expand and print AST after α-renaming" (build-mode 'absyn-rename)]
+     ["--rename" "Expand and print AST after α-renaming" (build-mode 'rename)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile to JS" (build-mode 'js)]
      #:args (filename)
@@ -175,13 +174,13 @@
     ['absyn (~> (quick-expand source)
                 (convert _ (build-path source))
                 (pretty-print _))]
-    ['absyn-rename  (~> (quick-expand source)
-                        (convert _ (build-path source))
-                        (rename-program _)
-                        (pretty-print _))]
+    ['rename  (~> (quick-expand source)
+                  (freshen _)
+                  (syntax->datum _)
+                  (pretty-print _))]
     ['il (~> (quick-expand source)
+             (freshen _)
              (convert _ (build-path source))
-             (rename-program _)
              (absyn-top-level->il _)
              (pretty-print _))]
     ['js (racket->js)])
