@@ -173,6 +173,18 @@ function apply() {
     return lam.apply(null, RLIB.list_to_array(args));
 }
 
+function vector() {
+    var items = RLIB.arguments_to_array(arguments);
+    return new RLIB.Vector(items, true);
+}
+
+function vector_ref(vec, i) {
+    return vec.ref(i);
+}
+
+function vector_set_bang_(vec, i, v) {
+    vec.set(i, v);
+}
 
 var _times_ = RLIB.Number.mul;
 var _by_ = RLIB.Number.div;
@@ -208,6 +220,9 @@ export {
     length,
     error,
     apply,
+    vector,
+    vector_ref,
+    vector_set_bang_,
 
     // operators
     _times_,

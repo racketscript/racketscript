@@ -197,6 +197,59 @@ function list_to_array(lst) {
     return r;
 }
 
+class Vector extends Primitive {
+    constructor(items, mutable) {
+	super();
+	this.mutable = mutable;
+	this.items = items;
+    }
+
+    isMutable() {
+	return this.mutable;
+    }
+
+    ref(n) {
+	if (n < 0 || n > this.items.length) {
+	    throw new Exception("vector-ref: index out of range");
+	}
+
+	return this.items[n];
+    }
+
+    set(n, v) {
+	if (n < 0 || n > this.items.length) {
+	    throw new Exception("vector-set: index out of range");
+	} else if (!this.mutable) {
+	    throw new Exception("vector-set: immutable vector");
+	}
+	this.items[n] = v;
+    }
+
+    length() {
+	return this.size;
+    }
+
+    toString() {
+	var items = "";
+	for (var i = 0; i < this.items.length; i++) {
+	    items += this.items[i].toString();
+	    if (i != this.items.length - 1) {
+		items += " ";
+	    }
+	}
+	return "#(" + items + ")";
+    }
+
+    toRawString() {
+	return this.toString();
+    }
+}
+
+function makeVector(size, init) {
+    var r = new Array(size);
+    return r.fill(init);
+}
+
 class Struct extends Primitive {
     constructor(name, fields) {
 	super();
@@ -335,6 +388,8 @@ export {
     Empty,
     isEmpty,
     Pair,
+    Vector,
+    makeVector,
     makeList,
     Number,
     toString,
