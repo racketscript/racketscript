@@ -95,8 +95,12 @@
     #:literal-sets ((kernel-literals))
     [x:id (dict-ref sym-map #'x #'x)]
     [(#%top . x) #`(#%top . #,(freshen #'x sym-map))]
-    [(module name _ ...) e]
-    [(module* name _ ...) e]
+    [(module name forms ...)
+     #:with (fresh-forms ...) (stx-map (λ (f) (freshen f sym-map)) #'(forms ...))
+     #'(module name fresh-forms ...)]
+    [(module* name forms ...)
+     #:with (forms-forms ...) (stx-map (λ (f) (freshen f sym-map)) #'(forms ...))
+     #'(module* name forms-forms ...)]
     [(#%require x ...) e]
     [(quote d) e]
     [((#%declare _) _) e]
@@ -157,6 +161,11 @@
      ;; define-values in an internal-defintion context reduces
      ;; to let-values. 
      #`(define-values (id ...) #,(freshen #'b sym-map))]
+    #;[(#%plain-app lam arg ...)
+     #:with fresh-lam (freshen #'lam sym-map)
+     #:with (fresh-arg ...) (stx-map (λ (e) (freshen e sym-map)) #'(arg ...))
+     (displayln "Calling plaing-app")
+     #'(#%plain-app fresh-lam fresh-arg ...)]
     [(e ...)
      #:with fresh-es (stx-map (λ (e) (freshen e sym-map)) #'(e ...))
      #'fresh-es]
