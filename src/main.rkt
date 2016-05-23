@@ -173,6 +173,7 @@
                  (syntax->datum _)
                  (pretty-print _))]
     ['absyn (~> (quick-expand source)
+                (freshen _)
                 (convert _ (build-path source))
                 (pretty-print _))]
     ['rename  (~> (quick-expand source)
