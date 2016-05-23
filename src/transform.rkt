@@ -89,8 +89,8 @@
      ;;       IL can be improved this avoid this madness?
      (: ->jslist (-> ILExpr ILExpr))
      (define (->jslist f)
-       (ILApp (name-in-module 'core 'array_to_list) (list f)))
-     (define arguments-array (ILApp (name-in-module 'core 'arguments_to_array)
+       (ILApp (name-in-module 'core 'Pair.listFromArray) (list f)))
+     (define arguments-array (ILApp (name-in-module 'core 'argumentsToArray)
                                     (list 'arguments)))
      (define-values (il-formals stms-formals-init)
        (cond
@@ -102,15 +102,16 @@
           (define fi (car formals))
           (define fp (cdr formals))
           (define fi-len (length fi))
-          (values '()
-                  (append1
-                   (map (λ ([i : Natural] [f : Symbol])
-                          (ILVarDec f (ILSubscript 'arguments i)))
-                        (range fi-len)
-                        fi)
-                   (ILVarDec fp
-                             (->jslist (ILApp (name-in-module 'core 'arguments_slice)
-                                              (list arguments-array (ILValue fi-len)))))))]))
+          (values
+           '()
+           (append1
+            (map (λ ([i : Natural] [f : Symbol])
+                   (ILVarDec f (ILSubscript 'arguments i)))
+                 (range fi-len)
+                 fi)
+            (ILVarDec fp
+                      (->jslist (ILApp (name-in-module 'core 'sliceArguments)
+                                       (list arguments-array (ILValue fi-len)))))))]))
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])

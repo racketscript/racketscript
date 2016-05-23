@@ -1,10 +1,11 @@
-"use strict"
+import * as rcore from "./core.js";
 
-import * as RLIB from "./core.js";
+var RacketCoreError = rcore.RacketCoreError;
 
 function CheckNumber(v) {
     if (typeof v !== 'number') {
-	throw new Error("TypeError: '" + v + "' is not a number");
+	throw new RacketCoreError("TypeError",
+				  "" + v + "' is not a number");
     }
 }
 
@@ -17,21 +18,20 @@ function positive_p(v) {
 }
 
 function car(lst) {
-    RLIB.Pair.check(lst);
+    rcore.Pair.check(lst);
     return lst.car();
 }
 
 function cons(v1, v2) {
-    return RLIB.Pair.make(v1, v2);
+    return rcore.Pair.make(v1, v2);
 }
 
 function cdr(lst) {
-    RLIB.Pair.check(lst);
+    rcore.Pair.check(lst);
     return lst.cdr();
 }
 
-var list = RLIB.makeList
-
+var list = rcore.makeList
 var first = car;
 var rest = cdr;
 
@@ -47,7 +47,7 @@ function add1(v) {
 
 function displayln(v) {
     /* TODO: Real thing takes port as well */
-    console.log(RLIB.toString(v));
+    console.log(rcore.toString(v));
 }
 
 function display(v) {
@@ -73,11 +73,13 @@ function equal_p(v1, v2) {
     }
 }
 
-var values = RLIB.Values.make
+function values() {
+    return rcore.Values.make(arguments);
+}
 
 function call_with_values(generator, receiver) {
     var values = generator();
-    if (values instanceof RLIB.Values) {
+    if (rcore.Values.check(values)) {
 	return receiver.apply(this, generator().getAll());
     } else {
 	return receiver(values);
@@ -94,9 +96,9 @@ function not(v) {
 
 function list_p(v) {
     /* TODO: Make this iterative */
-    if (RLIB.isEmpty(v)) {
+    if (rcore.Pair.isEmpty(v)) {
 	return true;
-    } else if (v instanceof RLIB.Pair) {
+    } else if (rcore.Pair.check(v)) {
 	return list_p(v.cdr());
     } else {
 	return false;
@@ -104,16 +106,16 @@ function list_p(v) {
 }
 
 function empty_p(v) {
-    return RLIB.isEmpty(v);
+    return rcore.Pair.isEmpty(v);
 }
 
-var racket_null = RLIB.Empty;
+var racket_null = rcore.Pair.Empty;
 var null_p = empty_p;
 
 
 function _a() {
     return [].reduce.call(arguments, function(x, r) {
-	return r + RLIB.toString(x);
+	return r + rcore.toString(x);
     }, "");
 }
 
@@ -130,7 +132,7 @@ function make_struct_type(name, super_type, init_field_cnt, auto_field_cnt, auto
 			  props, inspector, proc_spec, immutables, guard,
 			  constructor_name)
 {
-    return RLIB.makeStructType({
+    return rcore.Struct.makeStructType({
 	name: name.toString(),
 	super_type: super_type,
 	init_field_cnt: init_field_cnt,
@@ -154,7 +156,7 @@ function make_struct_field_accessor(ref, index, field_name) {
 function length(lst) {
     var len = 0;
     while (true) {
-        if (RLIB.isEmpty(lst)) {
+        if (rcore.Pair.isEmpty(lst)) {
             return len;
         }
         len += 1;
@@ -164,37 +166,39 @@ function length(lst) {
 
 function error(msg) {
     /** todo **/
-    throw new Error(msg);
+    throw new RacketCoreError(msg);
 }
 
 function apply() {
     var lam = arguments[0];
     var args = arguments[1];
-    return lam.apply(null, RLIB.list_to_array(args));
+    return lam.apply(null, rcore.Pair.listToArray(args));
 }
 
 function vector() {
-    var items = RLIB.arguments_to_array(arguments);
-    return RLIB.Vector.make(items, true);
+    var items = rcore.argumentsToArray(arguments);
+    return rcore.Vector.make(items, true);
 }
 
 function vector_ref(vec, i) {
+    rcore.Vector.check(vec);
     return vec.ref(i);
 }
 
 function vector_set_bang_(vec, i, v) {
+    rcore.Vector.check(vec);
     vec.set(i, v);
 }
 
-var _times_ = RLIB.Number.mul;
-var _by_ = RLIB.Number.div;
-var _plus_ = RLIB.Number.add;
-var _ = RLIB.Number.sub;
-var _lt_ = RLIB.Number.lt;
-var _gt_ = RLIB.Number.gt;
-var _lt__eq_ = RLIB.Number.lte;
-var _gt__eq_ = RLIB.Number.gte;
-var _eq_ = RLIB.Number.equal;
+var _times_ = rcore.Number.mul;
+var _by_ = rcore.Number.div;
+var _plus_ = rcore.Number.add;
+var _ = rcore.Number.sub;
+var _lt_ = rcore.Number.lt;
+var _gt_ = rcore.Number.gt;
+var _lt__eq_ = rcore.Number.lte;
+var _gt__eq_ = rcore.Number.gte;
+var _eq_ = rcore.Number.equal;
 
 export {
     racket_null,

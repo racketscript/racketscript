@@ -175,7 +175,7 @@
     [(boolean? v) (emit (if v "true" "false"))]
     [(empty? v) (emit (~a (name-in-module 'core 'Empty)))]
     [(list? v)
-     (emit (~a (name-in-module 'core 'makeList) "("))
+     (emit (~a (name-in-module 'core 'Pair.makeList) "("))
      (for/last? ([item last? v])
                 (match item
                   [(Quote v) (assemble-value v out)]

@@ -63,8 +63,9 @@
   (format-copy-file src (build-path dest name) args))
 
 (define runtime-files
-  #;(in-directory (build-path rapture-dir "src" "runtime")) ;; FIX: This blows up with backup files by editor
-  (list (runtime-file "core.js")
+  (in-directory (build-path rapture-dir "src" "runtime"))
+  ;; FIX: This blows up with backup files by editor
+  #;(list (runtime-file "core.js")
         (runtime-file "kernel.js")))
 
 (define (copy-build-files default-module)
