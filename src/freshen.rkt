@@ -161,10 +161,9 @@
      ;; define-values in an internal-defintion context reduces
      ;; to let-values. 
      #`(define-values (id ...) #,(freshen #'b sym-map))]
-    #;[(#%plain-app lam arg ...)
+    [(#%plain-app lam arg ...)
      #:with fresh-lam (freshen #'lam sym-map)
      #:with (fresh-arg ...) (stx-map (λ (e) (freshen e sym-map)) #'(arg ...))
-     (displayln "Calling plaing-app")
      #'(#%plain-app fresh-lam fresh-arg ...)]
     [(e ...)
      #:with fresh-es (stx-map (λ (e) (freshen e sym-map)) #'(e ...))
