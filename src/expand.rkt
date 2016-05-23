@@ -37,7 +37,6 @@
 
 (define module-ident-sources (make-parameter #f))
 
-(require racket/pretty)
 (define (do-expand stx in-path)
   ;; error checking
   (syntax-parse stx

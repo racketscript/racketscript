@@ -5,6 +5,7 @@
          racket-collects-dir
          current-source-file
          main-source-file
+         ffi-call-id
          jsruntime-core-module
          jsruntime-kernel-module
          jsruntime-core-module-path
@@ -30,4 +31,7 @@
 (: print-to-stdout (Parameter Boolean))
 (define print-to-stdout (make-parameter #f))
 
-(define racket-collects-dir (make-parameter (build-path "/usr/share/racket/collects")))
+(define racket-collects-dir (make-parameter
+                             (build-path "/usr/share/racket/collects")))
+
+(define ffi-call-id (make-parameter '$))
