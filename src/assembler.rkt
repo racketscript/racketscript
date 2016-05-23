@@ -183,6 +183,15 @@
                 (unless last?
                   (emit ", ")))
      (emit ")")]
+    [(vector? v)
+     (emit (~a (name-in-module 'core 'Vector.make) "(["))
+     (for/last? ([item last? (vector->list (cast v (Vectorof Any)))]) ;; HACK
+                (match item
+                  [(Quote v) (assemble-value v out)]
+                  [_ (assemble-value item out)])
+                (unless last?
+                  (emit ", ")))
+     (emit "], true)")]
     [(cons? v)
      (emit (~a (name-in-module 'core 'Pair.make) "("))
      (assemble-value (car v) out)

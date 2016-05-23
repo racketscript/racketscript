@@ -243,6 +243,10 @@ class Vector extends Primitive {
     toRawString() {
 	return this.toString();
     }
+
+    static make(items, mutable) {
+	return new Vector(items, mutable);
+    }
 }
 
 function makeVector(size, init) {

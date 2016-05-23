@@ -175,7 +175,7 @@ function apply() {
 
 function vector() {
     var items = RLIB.arguments_to_array(arguments);
-    return new RLIB.Vector(items, true);
+    return RLIB.Vector.make(items, true);
 }
 
 function vector_ref(vec, i) {

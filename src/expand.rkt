@@ -14,6 +14,7 @@
          racket/function
          racket/pretty
          racket/dict racket/match
+         racket/vector
          racket/format
          racket/extflonum
          racket/syntax
@@ -201,7 +202,7 @@
      (map to-absyn (syntax->list v))]
     [(a . b)
      (cons (to-absyn #'a) (to-absyn #'b))]
-    [#(_ ...) (error "vector not supported")]
+    [#(_ ...) (vector-map to-absyn (syntax-e v))]
     [_ #:when (box? (syntax-e v))
        (error "box not supportend")]
     [_ #:when (exact-integer? (syntax-e v))
