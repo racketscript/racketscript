@@ -18,7 +18,7 @@ class Primitive {
 	return this.toString();
     }
 
-    equals(v2) {
+    equals(v) {
 	throw new RacketCoreError("Not Implemented");
     }
 }
