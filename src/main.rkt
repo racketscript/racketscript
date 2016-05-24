@@ -51,6 +51,12 @@
   (define name (file-name-from-path fname))
   (copy-file fname (build-path dest name) #t))
 
+(define (copy-all from-dir to-dir)
+  (for ([f (in-directory from-dir)])
+    (define fname (file-name-from-path f))
+    (when (file-exists? f)
+      (copy-file f (build-path to-dir fname) #t))))
+
 (define (format-copy-file src dest args)
   (call-with-input-file src
     (λ (in)
@@ -62,12 +68,6 @@
   (define name (file-name-from-path src))
   (format-copy-file src (build-path dest name) args))
 
-(define runtime-files
-  (in-directory (build-path rapture-dir "src" "runtime"))
-  ;; FIX: This blows up with backup files by editor
-  #;(list (runtime-file "core.js")
-        (runtime-file "kernel.js")))
-
 (define (copy-build-files default-module)
   (copy-file+ (support-file "package.json")
               (output-directory))
@@ -76,10 +76,14 @@
                      (list default-module)))
 
 (define (copy-runtime-files)
-  (make-directory* (build-path (output-directory) "runtime"))
-  (for ([f runtime-files])
-    (define fname (file-name-from-path f))
-    (copy-file f (build-path (output-directory) "runtime" fname) #t)))
+  (define runtime-root (build-path rapture-dir "src" "runtime"))
+  (define runtime-core (build-path runtime-root "core"))
+  (define o-runtime-root (build-path (output-directory) "runtime"))
+  (define o-runtime-core (build-path o-runtime-root "core"))
+  (make-directory* o-runtime-root)
+  (make-directory* o-runtime-core)
+  (copy-all runtime-root o-runtime-root)
+  (copy-all runtime-core o-runtime-core))
 
 (define (copy-support-files)
   (copy-file+ (support-file (js-bootstrap-file))

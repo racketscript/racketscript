@@ -1,4 +1,4 @@
-import * as Primitive from "./core-primitive.js";
+import * as Primitive from "./primitive.js";
 
 export
 function isEqual(v1, v2) {

@@ -1,7 +1,7 @@
-import {default as Primitive} from "./core-primitive.js";
-import RacketCoreError from "./core-error.js";
-import * as rutils from "./core-utils.js";
-import * as Values from "./core-values.js";
+import {default as Primitive} from "./primitive.js";
+import RacketCoreError from "./error.js";
+import * as rutils from "./utils.js";
+import * as Values from "./values.js";
 
 class Struct extends Primitive {
     constructor(name, fields) {

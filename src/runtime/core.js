@@ -1,14 +1,14 @@
 // Exports classes for creating basic data types and
 // operation on them
-import {default as Number} from "./core-numbers.js";
-import {default as RacketCoreError} from "./core-error.js";
-import * as Pair from "./core-pair.js";
-import * as Primitive from "./core-primitive.js";
-import * as Struct from "./core-struct.js";
-import * as Symbol from "./core-symbol.js";
-import * as Values from "./core-values.js";
-import * as Vector from "./core-vector.js";
-import * as rutils from "./core-utils.js";
+import {default as Number} from "./core/numbers.js";
+import {default as RacketCoreError} from "./core/error.js";
+import * as Pair from "./core/pair.js";
+import * as Primitive from "./core/primitive.js";
+import * as Struct from "./core/struct.js";
+import * as Symbol from "./core/symbol.js";
+import * as Values from "./core/values.js";
+import * as Vector from "./core/vector.js";
+import * as rutils from "./core/utils.js";
 
 /**
    Convert JS `arguments` object to plain JS array
@@ -47,4 +47,4 @@ export {
     RacketCoreError
 }
 
-export {isEqual, toString} from "./core-utils.js";
+export {isEqual, toString} from "./core/utils.js";
