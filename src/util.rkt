@@ -58,8 +58,8 @@
     ['() '()]
     [_ (cons l '())]))
 
-(: normalize-symbol (-> Symbol String))
-(define (normalize-symbol s)
+(: normalize-symbol (->* (Symbol) ((Listof String)) String))
+(define (normalize-symbol s [ignores '()])
   ;; TODO: handle every weird character in symbol
   ;; Since every identifier is suffixed with fresh symbol
   ;; we don't have to worry about name clashes after this
@@ -91,6 +91,7 @@
           (map (λ ([ch : Char])
                  (define sch (string ch))
                  (cond
+                   [(member (string ch) ignores) sch]
                    [(or (char-numeric? ch) (char-alphabetic? ch))
                     sch]
                    [(hash-has-key? char-map sch)

@@ -47,12 +47,22 @@
        (assemble-statement e out))
      (emit "}")]
     [(ILApp lam args)
-     (unless (symbol? lam) (emit "("))
-     (assemble-expr lam out)
-     (unless (symbol? lam) (emit ")"))
-     (emit "(")
-     (emit-args args ",")
-     (emit ")")]
+     (cond
+       [(equal? lam FFI-CALL-ID)
+        (match args
+          [(cons (ILValue new-lam) new-args) #:when (symbol? new-lam)
+           (emit (normalize-symbol new-lam '(".")))
+           (emit "(")
+           (emit-args new-args ",")
+           (emit ")")]
+          [_ (error 'assemble-expr "λ in ffi call must be symbol")])]
+       [else
+        (unless (symbol? lam) (emit "("))
+        (assemble-expr lam out)
+        (unless (symbol? lam) (emit ")"))
+        (emit "(")
+        (emit-args args ",")
+        (emit ")")])]
     [(ILBinaryOp oper args)
      (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]

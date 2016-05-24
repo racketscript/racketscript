@@ -5,7 +5,7 @@
          racket-collects-dir
          current-source-file
          main-source-file
-         ffi-call-id
+         FFI-CALL-ID
          jsruntime-core-module
          jsruntime-kernel-module
          jsruntime-core-module-path
@@ -34,4 +34,4 @@
 (define racket-collects-dir (make-parameter
                              (build-path "/usr/share/racket/collects")))
 
-(define ffi-call-id (make-parameter '$))
+(define FFI-CALL-ID '$)
