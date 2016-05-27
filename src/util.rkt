@@ -5,12 +5,18 @@
          racket/format
          racket/path
          racket/string
+         racket/file
          typed/rackunit
          (for-syntax racket/base)
-         "config.rkt")
+         "config.rkt"
+         "util-untyped.rkt")
 
 (require/typed racket/string
   [string-prefix? (-> String String Boolean)])
+
+(require/typed "util-untyped.rkt"
+  [links-module? (-> Path-String
+                     (Option (Pairof String (Pairof Path-String '()))))])
 
 (provide hash-set-pair*
          #;improper->proper
@@ -137,13 +143,23 @@
 
 (: module-output-file (-> Path Path))
 (define (module-output-file mod)
+  (define collects? (collects-module? mod))
+  (define links? (links-module? mod))
   (cond
-    [(collects-module? mod)
-     ;; TODO: Until we support enough language, lets just ignore collects
-     ;; and put everything in kernel
+    [collects?
      (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])
        (path->complete-path
         (build-path (output-directory) "collects" (~a rel-collects ".js"))))]
+    [links?
+     (match-define (list name root-path) links?)
+     (define rel-path (find-relative-path root-path mod))
+     (define output-path
+       (build-path (output-directory) "links" name (~a rel-path ".js")))
+     ;; because we just created root links directory, but files could be
+     ;; deep arbitrarily inside
+     (make-directory* (assert (path-only output-path) path?))
+     ;; TODO: doesn't handle arbitrary deep files for now
+     (path->complete-path output-path)]
     [else
      (let* ([main (assert (main-source-file) path?)]
             [rel-path (find-relative-path (path-parent main) mod)])
@@ -162,17 +178,24 @@
         (build-path (~a "./" p-str))))
   ;; FIX: Later when collects is supports, don't use kernel instead
   (let ([src (assert (current-source-file) path?)]
-        [collects? (collects-module? mod-path)])
+        [collects? (collects-module? mod-path)]
+        [links-module? (links-module? mod-path)])
     (fix-for-down
      (cast (find-relative-path (path-parent (module-output-file src))
-                               (if collects?
-                                   (jsruntime-kernel-module-path)
-                                   (module-output-file mod-path)))
+                               (cond
+                                 [collects? (jsruntime-kernel-module-path)]
+                                 [else (module-output-file mod-path)]))
            Path))))
 
-(: collects-module? (-> (U String Path) Boolean))
+(: collects-module? (-> (U String Path) (Option Path)))
 (define (collects-module? mod-path)
-  (string-prefix? (~a mod-path) (~a (racket-collects-dir))))
+  (let loop ([collects (current-library-collection-paths)])
+    (match collects
+      ['() #f]
+      [(cons ch ct)
+       (if (string-prefix? (~a mod-path) (~a ch))
+           ch
+           (loop ct))])))
 
 (: append1 (∀ (A) (-> (Listof A) A (Listof A))))
 (define (append1 lst a)
