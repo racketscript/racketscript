@@ -31,7 +31,7 @@ function cdr(lst) {
     return lst.cdr();
 }
 
-var list = rcore.makeList
+var list = rcore.Pair.makeList
 var first = car;
 var rest = cdr;
 
@@ -190,6 +190,32 @@ function vector_set_bang_(vec, i, v) {
     vec.set(i, v);
 }
 
+function map() {
+    var fn = arguments[0];
+    if (arguments.length < 2) {
+	error("map: " + "needs at-least two arguments");
+    }
+    var lst_len = length(arguments[1]);
+    for (var i = 1; i < arguments.length; i++) {
+	if (length(arguments[i]) != lst_len) {
+	    error("map: " + "all input lists must have equal length");
+	}
+    }
+
+    var n_args = arguments.length - 1;
+    var result = [];
+    for (var i = 0; i < lst_len; i++) {
+	var args = [];
+	for (var j = 1; j <= n_args; j++) {
+	    args.push(car(arguments[j]));
+	    arguments[j] = cdr(arguments[j]);
+	    result.push(fn.apply(null, args));
+	}
+    }
+
+    return rcore.Pair.listFromArray(result);
+}
+
 var _times_ = rcore.Number.mul;
 var _by_ = rcore.Number.div;
 var _plus_ = rcore.Number.add;
@@ -245,5 +271,6 @@ export {
     display,
     current_inspector,
     make_struct_type,
-    make_struct_field_accessor
-}
+    make_struct_field_accessor,
+    map
+};
