@@ -111,8 +111,8 @@
     [(#%expression v)
      #`(#%expression #,(freshen #'v sym-map))]
     [(set! s:id e)
-     #:with fresh-s (freshen* #'s sym-map)
-     #:with fresh-e (freshen* #'e sym-map)
+     #:with fresh-s (freshen #'s sym-map)
+     #:with fresh-e (freshen #'e sym-map)
      #`(set! fresh-s fresh-e)]
     [(begin0 e0 e ...)
      #`(begin0 #,@(stx-map (λ (e)
@@ -132,7 +132,8 @@
                                 (formals-dict-set sym-map #'xs #'fresh-xs))
      #'(#%plain-lambda fresh-xs . fresh-body)]
     [(case-lambda (formals body ...+) ...)
-     (error 'expand "case-lambda must be expanded already")]
+     e
+     #;(error 'expand "case-lambda must be expanded already")]
     [(let-values ([xs es] ...) b ...)
      #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
      #:with (fresh-es ...) (stx-map (λ (e)
