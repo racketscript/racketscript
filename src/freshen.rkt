@@ -131,9 +131,15 @@
      #:with fresh-body (freshen #'body
                                 (formals-dict-set sym-map #'xs #'fresh-xs))
      #'(#%plain-lambda fresh-xs . fresh-body)]
-    [(case-lambda (formals body ...+) ...)
-     e
-     #;(error 'expand "case-lambda must be expanded already")]
+    [(case-lambda . clauses)
+     (define (freshen-clause clause)
+       (syntax-parse clause
+         [(xs . body)
+          #:with fresh-xs (formals-freshen #'xs)
+          #:with fresh-body (freshen #'body
+                                     (formals-dict-set sym-map #'xs #'fresh-xs))
+          #'(fresh-xs . fresh-body)]))
+     #`(case-lambda #,(stx-map freshen-clause #'clauses))]
     [(let-values ([xs es] ...) b ...)
      #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
      #:with (fresh-es ...) (stx-map (λ (e)
@@ -214,4 +220,11 @@
                                           (#%plain-lambda (x) x)))))
   (run+print (freshen* #'(#%plain-lambda (x)
                                          ((#%plain-lambda (y) x)
-                                          (#%plain-lambda (x) x))))))
+                                          (#%plain-lambda (x) x)))))
+  
+  (run+print (freshen* #'(case-lambda
+                           [(x y) (+ x y)]
+                           [(x y z) (* x y z)])))
+
+  (run+print (freshen* (expand #'(define (foo a b [c d])
+                                   (+ a b))))))
