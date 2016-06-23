@@ -177,8 +177,8 @@
      (CaseLambda
       (stx-map (λ (c)
                  (syntax-parse c
-                   [(formals . body) (cons (formals->absyn #'formals)
-                                           (stx-map to-absyn #'body))]))
+                   [(formals . body) (PlainLambda (formals->absyn #'formals)
+                                                  (stx-map to-absyn #'body))]))
                #'clauses))]
     [(#%plain-lambda formals . body)
      (define fabsyn (formals->absyn #'formals))

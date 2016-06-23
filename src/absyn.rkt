@@ -62,7 +62,7 @@
 
 (define-type Begin      (Listof TopLevelForm))
 (struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
-(struct CaseLambda      ([clauses : (Listof (Pairof Formals (Listof Expr)))]) #:transparent)
+(struct CaseLambda      ([clauses : (Listof PlainLambda)]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
 (struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
 (struct LetRecValues    ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
