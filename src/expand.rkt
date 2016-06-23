@@ -18,6 +18,7 @@
          racket/format
          racket/extflonum
          racket/syntax
+         syntax/stx
          (for-syntax racket/base))
 
 (require "absyn.rkt"
@@ -48,9 +49,8 @@
      (error 'do-expand "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
   ;; work
   
-  (expand-case-lambda
-   (parameterize ([current-namespace (make-base-namespace)])
-     (namespace-syntax-introduce (expand stx)))))
+  (parameterize ([current-namespace (make-base-namespace)])
+    (namespace-syntax-introduce (expand stx))))
 
 ;;;; Module paths
 
@@ -126,6 +126,14 @@
     (match l
       [(cons a b) (cons a (proper b))]
       [_ null]))
+
+  (define (formals->absyn formals)
+    (let ([f (to-absyn formals)])
+      (cond
+        [(or (list? f) (symbol? f)) f]
+        [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
+                     (cons fp fi))]
+        [else (error 'λ "invalid λ formals")])))
   
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
@@ -165,15 +173,15 @@
      #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
      (map provide-parse (syntax->list #'(x ...)))]
-    [(case-lambda (formals body ...+) ...)
-     (error 'expand "case-lambda must be expanded already")]
+    [(case-lambda . clauses)
+     (CaseLambda
+      (stx-map (λ (c)
+                 (syntax-parse c
+                   [(formals . body) (cons (formals->absyn #'formals)
+                                           (stx-map to-absyn #'body))]))
+               #'clauses))]
     [(#%plain-lambda formals . body)
-     (define fabsyn (let ([f (to-absyn #'formals)])
-                      (cond
-                        [(or (list? f) (symbol? f)) f]
-                        [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
-                                     (cons fp fi))]
-                        [else (error 'plain-λ "invalid λ formals")])))
+     (define fabsyn (formals->absyn #'formals))
      (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
