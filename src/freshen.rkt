@@ -139,7 +139,7 @@
           #:with fresh-body (freshen #'body
                                      (formals-dict-set sym-map #'xs #'fresh-xs))
           #'(fresh-xs . fresh-body)]))
-     #`(case-lambda #,(stx-map freshen-clause #'clauses))]
+     #`(case-lambda #,@(stx-map freshen-clause #'clauses))]
     [(let-values ([xs es] ...) b ...)
      #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
      #:with (fresh-es ...) (stx-map (λ (e)
