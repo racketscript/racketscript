@@ -153,6 +153,10 @@
                 (jsruntime-core-module)
                 (jsruntime-import-path (assert (current-source-file) path?)
                                        (jsruntime-core-module-path))))
+  (emit (format "import * as ~a from '~a';"
+                (jsruntime-kernel-module)
+                (jsruntime-import-path (assert (current-source-file) path?)
+                                       (jsruntime-kernel-module-path))))
   (for ([req reqs*])
     (match-define (ILRequire name idents) req)
     (emit (~a "import "
