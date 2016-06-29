@@ -15,11 +15,12 @@
   [string-prefix? (-> String String Boolean)])
 
 (require/typed "util-untyped.rkt"
+  [improper->proper (-> (Pairof Any Any) (Listof Any))]
   [links-module? (-> Path-String
                      (Option (Pairof String (Pairof Path-String '()))))])
 
 (provide hash-set-pair*
-         #;improper->proper
+         improper->proper
          fresh-id
          normalize-symbol
          flatten1
@@ -57,12 +58,6 @@
 (: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
 (define (reverse-pair p)
   (cons (cdr p) (car p)))
-
-#;(define (improper->proper l)
-  (match l
-    [(cons a b) (cons a (improper->proper b))]
-    ['() '()]
-    [_ (cons l '())]))
 
 (: normalize-symbol (->* (Symbol) ((Listof String)) String))
 (define (normalize-symbol s [ignores '()])

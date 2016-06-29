@@ -1,6 +1,7 @@
 #lang racket
 
-(provide links-module?)
+(provide links-module?
+         improper->proper)
 
 (define (links-module? mod-path)
   (define (match-link? dir link)
@@ -36,3 +37,9 @@
       [(cons #f tl) (loop tl)]
       [(cons hd tl) (or (find-link hd)
                         (loop tl))])))
+
+(define (improper->proper l)
+  (match l
+    [(cons a b) (cons a (improper->proper b))]
+    ['() '()]
+    [_ (cons l '())]))
