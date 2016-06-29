@@ -125,6 +125,8 @@
                        (append stms-formals-init
                                body-stms
                                (list (ILReturn body-value)))))]
+    [(CaseLambda clauses)
+     (absyn-expr->il (expand-case-lambda expr))]
     [(If pred-e t-branch f-branch)
      (define-values (ps pe) (absyn-expr->il pred-e))
      (define-values (ts te) (absyn-expr->il t-branch))
@@ -249,3 +251,38 @@
          (real? d))
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
+
+(: expand-case-lambda (-> CaseLambda PlainLambda))
+(define (expand-case-lambda clam)
+  (define args (fresh-id 'args))
+  (define apply-js-name (name-in-module 'kernel 'apply))
+  (: body Expr)
+  (define body
+    (let loop : Expr ([clauses* (CaseLambda-clauses clam)])
+      (match clauses*
+        ['() (PlainApp 'error (list (Quote "case-lambda: invalid case")))]
+        [(cons hd tl)
+         (If ((get-formals-predicate hd) args)
+             (PlainApp apply-js-name (list hd args))
+             (loop tl))])))
+  (PlainLambda args (list body)))
+   
+(: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
+(define (get-formals-predicate c)
+  ;; TODO: Use binary ops instead of function call for cmp
+  (define frmls (PlainLambda-formals c))
+  (define length-js-name (name-in-module 'kernel 'length))
+  (cond
+    [(symbol? frmls) (λ (_) (Quote #t))]
+    [(list? frmls)
+     (λ ([v : Expr])
+       (PlainApp (name-in-module 'kernel 'equal_p)
+                 (list 
+                  (PlainApp length-js-name (list v))
+                  (Quote (length frmls)))))]
+    [(cons? frmls)
+     (λ ([v : Expr])
+       (PlainApp (name-in-module 'kernel '_gt__eq_)
+                 (list
+                  (PlainApp length-js-name (list v))
+                  (Quote (sub1 (length (improper->proper frmls)))))))]))
