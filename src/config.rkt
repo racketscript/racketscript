@@ -34,4 +34,4 @@
 (define racket-collects-dir (make-parameter
                              (build-path "/usr/share/racket/collects")))
 
-(define FFI-CALL-ID '$)
+(define FFI-CALL-ID '#%js-ffi)
