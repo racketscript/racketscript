@@ -204,12 +204,13 @@
                                           (rename (syntax-e #'i)) mod-path)))
         (syntax-e #'i)])]
     [(define-syntaxes (i ...) b) #f]
-    [(begin-for-syntax (b ...)) #f]
+    [(begin-for-syntax b ...) #f]
     [(_ ...) 
      (map to-absyn (syntax->list v))]
     [(a . b)
      (cons (to-absyn #'a) (to-absyn #'b))]
     [#(_ ...) (vector-map to-absyn (syntax-e v))]
+    [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
     [_ #:when (box? (syntax-e v))
        (error "box not supportend")]
     [_ #:when (exact-integer? (syntax-e v))
@@ -230,7 +231,10 @@
     [_ #:when (byte-pregexp? (syntax-e v))
        (error "byte-pregexp not supported")]
     [((~literal with-continuation-mark) e0 e1 e2)
-     (error "with-continuation-mark is not supported")]))
+     (error "with-continuation-mark is not supported")]
+    [_ (displayln "unsupported form =>")
+       (pretty-print (syntax->datum v))
+       (error 'expand)]))
 
 (define (convert mod path)
   (syntax-parse mod
