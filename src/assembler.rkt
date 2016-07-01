@@ -56,15 +56,17 @@
     [(ILBinaryOp oper args)
      (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]
-    [(ILRef expr fieldname)
-     (assemble-expr expr out)
-     (emit (~a "." (normalize-symbol fieldname)))] ;; TODO: or assmeble-expr the symbol
-    [(ILIndex expr fieldname)
-     (assemble-expr expr out)
+    [(ILRef e s)
+     (if (symbol? e)
+         (emit (normalize-symbol e))
+         (assemble-expr e out))
+     (emit (~a "." (normalize-symbol s)))]
+    [(ILIndex e e0)
+     (if (symbol? e)
+         (emit (normalize-symbol e))
+         (assemble-expr e out))
      (emit "[")
-     (if (symbol? fieldname)
-         (assemble-value (~a fieldname) out)
-         (assemble-value fieldname out))
+     (assemble-expr e0 out)
      (emit "]")]
     [(ILArray items)
      (emit "[")
@@ -107,14 +109,6 @@
      (emit "} else { ")
      (assemble-statement* f-branch out)
      (emit "}")]
-    [(ILRef e s)
-     (assemble-expr e out)
-     (emit (~a "." (normalize-symbol s)))]
-    [(ILIndex e e0)
-     (assemble-expr e out)
-     (emit "[")
-     (assemble-expr e0 out)
-     (emit "]")]
     [(ILAssign lv rv)
      (assemble-expr lv out)
      (emit " = ")
@@ -178,7 +172,6 @@
 (define (assemble-value v out)
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
-  
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)]
     [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]

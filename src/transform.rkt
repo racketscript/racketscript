@@ -176,7 +176,12 @@
                 (for/fold ([il il])
                           ([x xs])
                   (match-define (Quote s) x) ;; Previous phase wrap the symbol in quote
-                  (ILRef il (cast s Symbol))))]
+                  ;; HACK: To avoid wrapping the base symbol into Symbol class
+                  ;; We have to generate code context sensitively
+                  (if (ILValue? il)
+                      (ILRef (cast (ILValue-v il) Symbol)
+                             (cast s Symbol))
+                      (ILRef il (cast s Symbol)))))]
        [(list (Quote 'index) b xs ...)
         (define-values (stms il) (absyn-expr->il b))
         (for/fold ([stms stms]
@@ -184,7 +189,10 @@
                   ([x xs])
           (define-values (x-stms s-il) (absyn-expr->il x))
           (values (append stms x-stms)
-                  (ILIndex il s-il)))]
+                  (if (ILValue? il)
+                      (ILIndex (cast (ILValue-v il) Symbol)
+                               s-il)
+                      (ILIndex il s-il))))]
        [(list (Quote 'app) lam args ...)
         (define-values (stms il) (absyn-expr->il lam))
         (define-values (stms* args*)
