@@ -68,6 +68,9 @@
      (emit "[")
      (assemble-expr e0 out)
      (emit "]")]
+    [(ILNew v)
+     (emit "new ")
+     (assemble-expr v out)]
     [(ILArray items)
      (emit "[")
      (emit-args items ",")
