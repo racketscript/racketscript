@@ -42,8 +42,8 @@
 (define-type ILExpr (U ILLambda
                        ILBinaryOp
                        ILApp
-                       ILField
-                       ILSubscript
+                       ILIndex
+                       ILRef
                        ILArray
                        ILObject
                        Symbol
@@ -55,8 +55,8 @@
 (struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
 (struct ILArray    ([items : (Listof ILExpr)]) #:transparent)
 (struct ILObject   ([items : (Listof (Pairof Symbol ILExpr))]) #:transparent)
-(struct ILField    ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
-(struct ILSubscript ([expr : ILExpr] [fieldname : (U Symbol Natural)]) #:transparent)
+(struct ILRef      ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
+(struct ILIndex    ([expr : ILExpr] [fieldname : ILExpr]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
 
 ;; TODO: This is quickfix. Maybe think more about this
