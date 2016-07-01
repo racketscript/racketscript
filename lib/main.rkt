@@ -1,5 +1,6 @@
 #lang racket/base
 
+(provide $ #%js-ffi $/new)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -19,6 +20,7 @@
 ;;   + 'app
 ;;   + 'var
 ;;   + 'assign
+;;   + 'new
 (define #%js-ffi
   (λ _
     (error 'rapture "can't make JS ffi calls in Racket")))
@@ -36,20 +38,20 @@
     [(_ v:id) #`'v]
     ;; Symbols <: Expr so so just try to parse them first
     ;; Since symbols are static, we can use JS subscript syntax
-    [(_ b:expr xs:symbol ... (~datum <$>) ys:expr ...)
+    [(_ b:expr xs:symbol ...+ (~datum <$>) ys:expr ...)
      #`(#%js-ffi 'app (#%js-ffi 'ref b xs ...) ys ...)]
-    [(_ b:expr xs:symbol ... (~datum <:=>) ys:expr)
+    [(_ b:expr xs:symbol ...+ (~datum <:=>) ys:expr)
      #`(#%js-ffi 'assign (#%js-ffi 'ref b xs ...) ys)]
-    [(_ b:expr xs:symbol ...)
+    [(_ b:expr xs:symbol ...+)
      #`(#%js-ffi 'ref b xs ...)]
     ;; For everything else use JS indexing. They must
     ;; evaluate to String or something that JS can translate
     ;; to meaningful string
-    [(_ b:expr xs:expr ... (~datum <:=>) ys:expr)
+    [(_ b:expr xs:expr ...+ (~datum <:=>) ys:expr)
      #`(#%js-ffi 'assign (#%js-ffi 'index b xs ...) ys)]
-    [(_ b:expr xs:expr ... (~datum <$>) ys:expr ...)
+    [(_ b:expr xs:expr ...+ (~datum <$>) ys:expr ...)
      #`(#%js-ffi 'app (#%js-ffi 'index b xs ...) ys ...)]
-    [(_ b:expr xs:expr ...)
+    [(_ b:expr xs:expr ...+)
      #`(#%js-ffi 'index b xs ...)]
     [_ (error '$ "no match")]))
 

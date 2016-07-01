@@ -75,7 +75,6 @@
 (define (absyn-provide->il form)
   (map (λ ([f : Provide]) (ILProvide (Provide-id f))) form))
      
-
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
 ;;; statements in JS. However, since expression always has a
@@ -106,7 +105,7 @@
            '()
            (append1
             (map (λ ([i : Natural] [f : Symbol])
-                   (ILVarDec f (ILSubscript 'arguments i)))
+                   (ILVarDec f (ILIndex 'arguments (ILValue i))))
                  (range fi-len)
                  fi)
             (ILVarDec fp
@@ -169,6 +168,46 @@
                (append1 stms
                         (ILAssign id v)))
              (ILValue (void)))]
+    [(PlainApp '#%js-ffi args)
+     (match args
+       [(list (Quote 'ref) b xs ...)
+        (define-values (stms il) (absyn-expr->il b))
+        (values stms
+                (for/fold ([il il])
+                          ([x xs])
+                  (match-define (Quote s) x) ;; Previous phase wrap the symbol in quote
+                  (ILRef il (cast s Symbol))))]
+       [(list (Quote 'index) b xs ...)
+        (define-values (stms il) (absyn-expr->il b))
+        (for/fold ([stms stms]
+                   [il il])
+                  ([x xs])
+          (define-values (x-stms s-il) (absyn-expr->il x))
+          (values (append stms x-stms)
+                  (ILIndex il s-il)))]
+       [(list (Quote 'app) lam args ...)
+        (define-values (stms il) (absyn-expr->il lam))
+        (define-values (stms* args*)
+          (for/fold ([stms : ILStatement* stms]
+                     [args-val : (Listof ILExpr) '()])
+                    ([a args])
+            (define-values (a-stms a-il) (absyn-expr->il a))
+            (values (append stms a-stms)
+                    (append args-val (list a-il)))))
+        (values stms*
+                (ILApp il args*))]
+       [(list (Quote 'assign) lv rv)
+        (define-values (lv-stms lv-il) (absyn-expr->il lv))
+        (define-values (rv-stms rv-il) (absyn-expr->il rv))
+        (values (append lv-stms
+                        rv-stms
+                        (list (ILAssign (cast lv-il ILLValue) rv-il)))
+                (ILValue (void)))]
+       [(list (Quote 'new) lv)
+        (define-values (stms il) (absyn-expr->il lv))
+        (values stms
+                (ILNew (cast il ILLValue)))]
+       [_ (displayln args) (error 'absyn-expr->il "unknown ffi form")])]
     [(PlainApp lam args)
      (: binops (Listof Symbol))
      (define binops '(+ - * /)) ;;NOTE: Comparision operators work only on two operands TODO later
@@ -180,7 +219,7 @@
          [(and (equal? v '/) (length=? arg* 1)) (ILBinaryOp v (cons (ILValue 1) arg*))]
          [(member v binops) (ILBinaryOp v arg*)]
          [else (ILApp v arg*)]))
-     
+
      (let loop ([arg-stms : ILStatement* '()] ;;; statements for computing arguments
                 [arg* : (Listof ILExpr) '()] ;;; expressions passed to the lam
                 [arg args])

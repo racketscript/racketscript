@@ -47,29 +47,19 @@
        (assemble-statement e out))
      (emit "}")]
     [(ILApp lam args)
-     (cond
-       [(equal? lam FFI-CALL-ID)
-        (match args
-          [(cons (ILValue new-lam) new-args) #:when (symbol? new-lam)
-           (emit (normalize-symbol new-lam '(".")))
-           (emit "(")
-           (emit-args new-args ",")
-           (emit ")")]
-          [_ (error 'assemble-expr "λ in ffi call must be symbol")])]
-       [else
-        (unless (symbol? lam) (emit "("))
-        (assemble-expr lam out)
-        (unless (symbol? lam) (emit ")"))
-        (emit "(")
-        (emit-args args ",")
-        (emit ")")])]
+     (unless (symbol? lam) (emit "("))
+     (assemble-expr lam out)
+     (unless (symbol? lam) (emit ")"))
+     (emit "(")
+     (emit-args args ",")
+     (emit ")")]
     [(ILBinaryOp oper args)
      (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]
-    [(ILField expr fieldname)
+    [(ILRef expr fieldname)
      (assemble-expr expr out)
      (emit (~a "." (normalize-symbol fieldname)))] ;; TODO: or assmeble-expr the symbol
-    [(ILSubscript expr fieldname)
+    [(ILIndex expr fieldname)
      (assemble-expr expr out)
      (emit "[")
      (if (symbol? fieldname)
@@ -117,8 +107,16 @@
      (emit "} else { ")
      (assemble-statement* f-branch out)
      (emit "}")]
-    [(ILAssign id rv)
-     (emit (~a (normalize-symbol id)))
+    [(ILRef e s)
+     (assemble-expr e out)
+     (emit (~a "." (normalize-symbol s)))]
+    [(ILIndex e e0)
+     (assemble-expr e out)
+     (emit "[")
+     (assemble-expr e0 out)
+     (emit "]")]
+    [(ILAssign lv rv)
+     (assemble-expr lv out)
      (emit " = ")
      (assemble-expr rv out)
      (emit ";")]
