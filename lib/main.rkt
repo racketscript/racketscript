@@ -35,7 +35,8 @@
 
 (define-syntax ($ stx)
   (syntax-parse stx
-    [(_ v:id) #`'v]
+    [(_ v:id)
+     #`(#%js-ffi 'var 'v)]
     ;; Symbols <: Expr so so just try to parse them first
     ;; Since symbols are static, we can use JS subscript syntax
     [(_ b:expr xs:symbol ...+ (~datum <$>) ys:expr ...)

@@ -206,4 +206,6 @@
      (emit ", ")
      (assemble-value (cdr v) out)
      (emit ")")]
+    [(void? v)
+     (emit "null")]
     [else (displayln v) (error "TODO: Check how this thing actually works!")]))

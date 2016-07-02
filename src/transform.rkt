@@ -170,6 +170,7 @@
              (ILValue (void)))]
     [(PlainApp '#%js-ffi args)
      (match args
+       [(list (Quote 'var) (Quote var)) (values '() (cast var Symbol))]
        [(list (Quote 'ref) b xs ...)
         (define-values (stms il) (absyn-expr->il b))
         (values stms
