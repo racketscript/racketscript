@@ -181,7 +181,7 @@
     [(string? v) (write v out)]
     [(number? v) (emit (~a v))]
     [(boolean? v) (emit (if v "true" "false"))]
-    [(empty? v) (emit (~a (name-in-module 'core 'Empty)))]
+    [(empty? v) (emit (~a (name-in-module 'core 'Pair.Empty)))]
     [(list? v)
      (emit (~a (name-in-module 'core 'Pair.makeList) "("))
      (for/last? ([item last? v])

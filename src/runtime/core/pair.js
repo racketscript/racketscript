@@ -2,7 +2,7 @@ import {default as Primitive} from "./primitive.js";
 import RacketCoreError from "./error.js";
 import * as rutils from "./utils.js";
 
-const Empty = [];
+export const Empty = [];
 
 export
 function isEmpty(v) {
