@@ -137,7 +137,7 @@
   
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
-    [v:str (Quote (syntax-e #'v))]
+    [v:str (syntax-e #'v)]
     ;; special case when under quote to avoid the "interesting"
     ;; behavior of various forms
     [(_ ...) 
