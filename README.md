@@ -22,7 +22,7 @@ custom global location by changing your `npmrc` (eg.
 Then add `/prefix/path/above/bin` to your `PATH`.
 
     ## Racket dependencies
-    $ raco pkg install threading cover
+    $ raco pkg install threading graph cover glob
 
 The compiler is written in Typed Racket. To avoid long startups, it is
 advised to pre-compile Racket sources to bytecode.

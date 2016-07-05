@@ -23,7 +23,7 @@ build:
 
 setup:
 	npm install -g traceur js-beautify gulp  ## these tools must be in PATH
-	raco pkg install threading cover glob
+	raco pkg install threading cover glob graph
 
 clean:
 	rm -rf src/compiled
