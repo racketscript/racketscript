@@ -73,6 +73,14 @@ function equal_p(v1, v2) {
     }
 }
 
+function eqv_p(v1, v2) {
+    return rcore.isEqv(v1, v2);
+}
+
+function eq_p(v1, v2) {
+    return rcore.isEq(v1, v2);
+}
+
 function values() {
     return rcore.Values.make(arguments);
 }
@@ -240,6 +248,8 @@ export {
     add1,
     displayln,
     equal_p,
+    eqv_p,
+    eq_p,
     values,
     call_with_values,
     not,

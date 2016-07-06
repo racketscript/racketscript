@@ -47,4 +47,4 @@ export {
     RacketCoreError
 }
 
-export {isEqual, toString} from "./core/utils.js";
+export {isEq, isEqv, isEqual, toString} from "./core/utils.js";
