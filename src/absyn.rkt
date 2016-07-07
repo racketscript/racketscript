@@ -61,6 +61,7 @@
 ;;; Expressions 
 
 (define-type Begin      (Listof TopLevelForm))
+(struct Begin0          ([expr0 : Expr] [expr* : (Listof Expr)]) #:transparent)
 (struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
 (struct CaseLambda      ([clauses : (Listof PlainLambda)]) #:transparent)
 (struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)

@@ -30,7 +30,8 @@
          open-read-module
          read-module
          convert
-         to-absyn)
+         to-absyn
+         to-absyn/top)
 
 (define current-module (make-parameter (list #f)))
 (define current-phase (make-parameter 0))
@@ -149,8 +150,12 @@
     [(#%plain-app e0 e ...)
      (PlainApp (to-absyn #'e0) (map to-absyn (syntax->list #'(e ...))))]
     [(#%expression e) (to-absyn #'e)]
+    [(begin e ...)
+     (map to-absyn (syntax->list #'(e ...)))]
     [(begin0 e0 e ...)
-     (map to-absyn (syntax->list #'(e0 e ...)))]
+     (Begin0
+       (to-absyn #'e0)
+       (map to-absyn (syntax->list #'(e ...))))]
     [(if e0 e1 e2)
      (If (to-absyn #'e0) (to-absyn #'e1) (to-absyn #'e2))]
     [(let-values ([xs es] ...) b ...)
@@ -210,6 +215,8 @@
     [(a . b)
      (cons (to-absyn #'a) (to-absyn #'b))]
     [#(_ ...) (vector-map to-absyn (syntax-e v))]
+    [_ #:when (number? (syntax-e v)) (syntax-e v)]
+    [_ #:when (boolean? (syntax-e v)) (syntax-e v)]
     [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
     [_ #:when (box? (syntax-e v))
        (error "box not supportend")]
@@ -253,6 +260,10 @@
                  ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
+
+(define (to-absyn/top stx)
+  (parameterize ([module-ident-sources (hash)])
+    (to-absyn stx)))
 
 ;;; Read modules
 
