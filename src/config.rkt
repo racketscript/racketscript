@@ -6,12 +6,16 @@
          current-source-file
          main-source-file
          FFI-CALL-ID
+         test-environment?
          jsruntime-core-module
          jsruntime-kernel-module
          jsruntime-core-module-path
          jsruntime-kernel-module-path)
 
-(define output-directory (make-parameter "js-build"))
+(define FFI-CALL-ID '#%js-ffi)
+
+(: output-directory (Parameter String))
+(define output-directory  (make-parameter "js-build"))
 
 (: current-source-file (Parameter (Option Path)))
 (define current-source-file (make-parameter #f))
