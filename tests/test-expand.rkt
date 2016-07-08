@@ -169,6 +169,17 @@
      (PlainApp 'displayln (list 'b))
      (PlainApp 'displayln (list 'c))))))
 
+;;; Case Lambda
+
+(check-equal?
+ (to-absyn/expand (expand #'(case-lambda
+                              [(a b) (+ a b)]
+                              [(a b c) (* a b c)])))
+ (CaseLambda
+  (list
+   (PlainLambda '(a b) (list (PlainApp '+ '(a b))))
+   (PlainLambda '(a b c) (list (PlainApp '* '(a b c)))))))
+
 ;;; Check module
 
 (test-case "simple module"
