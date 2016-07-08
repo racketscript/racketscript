@@ -22,6 +22,7 @@
 (provide hash-set-pair*
          improper->proper
          fresh-id
+         fresh-id-counter
          normalize-symbol
          flatten1
          append1
@@ -38,6 +39,9 @@
          path-parent
          length=?
          ++)
+
+(: fresh-id-counter (Parameter Nonnegative-Integer))
+(define fresh-id-counter (make-parameter 0))
 
 (define ++ string-append)
 
@@ -107,7 +111,12 @@
   (foldl (inst append A) '() lst))
 
 (: fresh-id (-> Symbol Symbol))
-(define fresh-id gensym)
+(define fresh-id
+  (if (test-environment?)
+      gensym
+      (λ (id)
+        (fresh-id-counter (add1 (fresh-id-counter)))
+        (string->symbol (~a id (fresh-id-counter))))))
 
 (: path-parent (-> Path Path))
 ;; Because `path-only` return type is `path-for-some-system` and that
