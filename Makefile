@@ -21,7 +21,13 @@ build:
 
 setup:
 	npm install -g traceur js-beautify gulp  ## these tools must be in PATH
-	raco pkg install threading
+	raco pkg install threading cover
 
 clean:
 	rm -rf src/compiled
+
+
+coverage:
+	@echo "    RAPTURE COVERAGE    "
+	@echo "++++++++++++++++++++++++"
+	raco cover -d ./coverage src/

@@ -22,7 +22,7 @@ custom global location by changing your `npmrc` (eg.
 Then add `/prefix/path/above/bin` to your `PATH`.
 
     ## Racket dependencies
-    $ raco pkg install threading
+    $ raco pkg install threading cover
 
 The compiler is written in Typed Racket. To avoid long startups, it is
 advised to pre-compile Racket sources to bytecode.
@@ -31,18 +31,19 @@ advised to pre-compile Racket sources to bytecode.
     $ make build
 
 ## Basic Usage
-    
+
     $ rapture -h
-    
+
     rapture [ <option> ... ] <filename>
       Compile Racket to JavaScript
      where <option> is one of
       -d <dir>, --build-dir <dir> : Output directory
       -n, --skip-npm-install : Skip NPM install phase
       -g, --skip-gulp-build : Skip Gulp build phase
+      --stdout : Print compiled JS to standard output
     / --expand : Fully expand Racket source
     | --ast : Expand and print AST
-    | --ast-rename : Expand and print AST after α-renaming
+    | --rename : Expand and print AST after α-renaming
     | --il : Compile to intermediate langauge (IL)
     \ --js : Compile to JS
       --help, -h : Show this help
@@ -50,7 +51,6 @@ advised to pre-compile Racket sources to bytecode.
      /|\ Brackets indicate mutually exclusive options.
      Multiple single-letter switches can be combined after one `-'; for
       example: `-h-' is the same as `-h --'
-
 
 Default output directory is named `js-build`. To compile a Racket file
 named `foobar.rkt`, run -
