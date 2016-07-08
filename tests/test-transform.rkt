@@ -13,11 +13,21 @@
 (define-syntax-rule (values->list e)
   (call-with-values (λ () e) list))
 
-(define-syntax-rule (check-ilexpr expr stms val)
+(define-syntax-rule (ilcheck fn form result ...)
   (parameterize ([fresh-id-counter 0])
     (check-equal?
-     (values->list (absyn-expr->il expr))
-     (list stms val))))
+     (values->list (fn form))
+     (list result ...))))
+
+
+(define-syntax-rule (check-ilexpr expr stms val)
+  (ilcheck absyn-expr->il expr stms val))
+
+(define-syntax-rule (check-iltoplevel form stms)
+  (ilcheck absyn-top-level->il form stms))
+
+(define-syntax-rule (check-ilgtl form stms)
+  (ilcheck absyn-gtl-form->il form stms))
 
 ;; enable test environment
 (test-environment? #t)
@@ -48,7 +58,8 @@
                  'x
                  (ILApp
                   (name-in-module 'core 'Pair.listFromArray)
-                  (list (ILApp (name-in-module 'core 'argumentsToArray) '(arguments)))))
+                  (list (ILApp (name-in-module 'core 'argumentsToArray)
+                               '(arguments)))))
                 (ILReturn 'x))))
 
 ;; If expressions
@@ -82,8 +93,14 @@
               (list (ILVarDec 'a (ILValue 1)) (ILVarDec 'b (ILValue 2))
                     'a)
               'b)
-(check-ilexpr (LetValues (list (cons '(a) (If (Quote #t) (Quote 'yes) (Quote 'false)))
-                               (cons '(b) (PlainApp '+ (list (Quote 1) (Quote 2)))))
+(check-ilexpr (LetValues (list (cons '(a)
+                                     (If (Quote #t)
+                                         (Quote 'yes)
+                                         (Quote 'false)))
+                               (cons '(b)
+                                     (PlainApp '+
+                                               (list
+                                                (Quote 1) (Quote 2)))))
                          (list (PlainApp 'list '(a b))))
               (list
                (ILIf
@@ -91,7 +108,9 @@
                 (list (ILVarDec 'if_res1 (ILValue 'yes)))
                 (list (ILVarDec 'if_res1 (ILValue 'false))))
                (ILVarDec 'a 'if_res1)
-               (ILVarDec 'b (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
+               (ILVarDec 'b (ILBinaryOp '+
+                                        (list
+                                         (ILValue 1) (ILValue 2)))))
               (ILApp 'list '(a b)))
 
 
@@ -102,53 +121,90 @@
               (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
 (check-ilexpr (PlainApp '- (list (Quote 1) (Quote 2) (Quote 3)))
               '()
-              (ILBinaryOp '- (list (ILValue 1) (ILValue 2) (ILValue 3))))
+              (ILBinaryOp '-
+                          (list
+                           (ILValue 1) (ILValue 2) (ILValue 3))))
 
 ;; Case Lambda
 
-(check-ilexpr (CaseLambda
-               (list
-                (PlainLambda '(a b) (list (PlainApp '+ '(a b))))
-                (PlainLambda '(a b c) (list (PlainApp '* '(a b c))))))
-              '()
-              (ILLambda
-               '()
-               (list
-                (ILVarDec
-                 'args1
-                 (ILApp
-                  (name-in-module 'core 'Pair.listFromArray)
-                  (list (ILApp (name-in-module 'core 'argumentsToArray) '(arguments)))))
-                (ILIf
-                 (ILApp
-                  (name-in-module 'kernel 'equal_p)
-                  (list (ILApp (name-in-module 'kernel 'length) '(args1)) (ILValue 2)))
-                 (list
-                  (ILVarDec
-                   'if_res3
-                   (ILApp
-                    (name-in-module 'kernel 'apply)
+(check-ilexpr
+ (CaseLambda
+  (list
+   (PlainLambda '(a b) (list (PlainApp '+ '(a b))))
+   (PlainLambda '(a b c) (list (PlainApp '* '(a b c))))))
+ '()
+ (ILLambda
+  '()
+  (list
+   (ILVarDec
+    'args1
+    (ILApp
+     (name-in-module 'core 'Pair.listFromArray)
+     (list (ILApp (name-in-module 'core 'argumentsToArray)
+                  '(arguments)))))
+   (ILIf
+    (ILApp
+     (name-in-module 'kernel 'equal_p)
+     (list (ILApp (name-in-module 'kernel 'length) '(args1))
+           (ILValue 2)))
+    (list
+     (ILVarDec
+      'if_res3
+      (ILApp
+       (name-in-module 'kernel 'apply)
+       (list
+        (ILLambda '(a b)
+                  (list (ILReturn (ILBinaryOp '+ '(a b)))))
+        'args1))))
+    (list
+     (ILIf
+      (ILApp
+       (name-in-module 'kernel 'equal_p)
+       (list (ILApp '$rjs_kernel.length '(args1))
+             (ILValue 3)))
+      (list
+       (ILVarDec
+        'if_res2
+        (ILApp
+         (name-in-module 'kernel 'apply)
+         (list
+          (ILLambda '(a b c)
                     (list
-                     (ILLambda '(a b) (list (ILReturn (ILBinaryOp '+ '(a b)))))
-                     'args1))))
-                 (list
-                  (ILIf
-                   (ILApp
-                    (name-in-module 'kernel 'equal_p)
-                    (list (ILApp '$rjs_kernel.length '(args1)) (ILValue 3)))
-                   (list
-                    (ILVarDec
-                     'if_res2
-                     (ILApp
-                      (name-in-module 'kernel 'apply)
-                      (list
-                       (ILLambda '(a b c) (list (ILReturn (ILBinaryOp '* '(a b c)))))
-                       'args1))))
-                   (list
-                    (ILVarDec
-                     'if_res2
-                     (ILApp 'error (list (ILValue "case-lambda: invalid case"))))))
-                  (ILVarDec 'if_res3 'if_res2)))
-                (ILReturn 'if_res3))))
+                     (ILReturn (ILBinaryOp '* '(a b c)))))
+          'args1))))
+      (list
+       (ILVarDec
+        'if_res2
+        (ILApp 'error
+               (list (ILValue "case-lambda: invalid case"))))))
+     (ILVarDec 'if_res3 'if_res2)))
+   (ILReturn 'if_res3))))
 
-;; FFI
+;; FFI -----------------------------------------------------------------------
+
+;;; Top Level -----------------------------------------------------------------
+
+(check-iltoplevel
+ (list (PlainApp 'displayln (list (Quote "hello")))
+       (PlainApp 'write (list (Quote "what" ) 'out)))
+ (list
+  (ILApp 'displayln (list (ILValue "hello")))
+  (ILApp 'write (list (ILValue "what") 'out))))
+
+;;; Top Level -----------------------------------------------------------------
+
+(check-ilgtl
+ (DefineValues '(x) (Quote 42))
+ (list (ILVarDec 'x (ILValue 42))))
+
+(check-ilgtl
+ (DefineValues '(x ident)
+   (PlainApp 'values
+             (list (Quote 42)
+                   (PlainLambda '(x) '(x)))))
+ (list
+  (ILVarDec
+   'let_result1
+   (ILApp 'values (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
+  (ILValuesMatch 'x 'let_result1 0)
+  (ILValuesMatch 'ident 'let_result1 1)))
