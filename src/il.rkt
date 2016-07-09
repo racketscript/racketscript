@@ -60,7 +60,7 @@
 (struct ILRef      ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
 (struct ILIndex    ([expr : ILExpr] [fieldname : ILExpr]) #:transparent)
 (struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
-(struct ILNew      ([v : (U Symbol ILRef ILIndex)]))
+(struct ILNew      ([v : (U Symbol ILRef ILIndex ILApp)]))
 
 ;; TODO: This is quickfix. Maybe think more about this
 (struct ILValuesMatch ([id : Symbol] [vref : Symbol] [index : Natural]) #:transparent)

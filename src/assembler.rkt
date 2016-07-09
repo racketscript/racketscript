@@ -57,9 +57,14 @@
      (emit-args args (~a oper))]
     [(ILValue v) (assemble-value v out)]
     [(ILRef e s)
-     (if (symbol? e)
-         (emit (normalize-symbol e))
-         (assemble-expr e out))
+     (cond
+       [(symbol? e) (emit (normalize-symbol e))]
+       [(ILRef? e)
+        (assemble-expr e out)]
+       [else
+        (emit "(")
+        (assemble-expr e out)
+        (emit ")")])
      (emit (~a "." (normalize-symbol s)))]
     [(ILIndex e e0)
      (if (symbol? e)
@@ -109,7 +114,7 @@
      (assemble-expr expr out)
      (emit ") {")
      (assemble-statement* t-branch out)
-     (emit "} else { ")
+     (emit "} else {")
      (assemble-statement* f-branch out)
      (emit "}")]
     [(ILAssign lv rv)
@@ -176,7 +181,7 @@
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
   (cond
-    [(Quote? v) (assemble-value (Quote-datum v) out)]
+    [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
     [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]
     [(string? v) (write v out)]
     [(number? v) (emit (~a v))]
@@ -209,3 +214,132 @@
     [(void? v)
      (emit "null")]
     [else (displayln v) (error "TODO: Check how this thing actually works!")]))
+
+[module+ test
+  (require typed/rackunit
+           racket/port)
+
+  ;; TODO: Replace with this, but fails to typecheck.
+  #;(define-syntax-rule (define/check name fn)
+    (define-binary-check (name il-actual expected-out)
+      (let ([out-port (open-output-string)])
+       (equal? (begin (fn il-actual out-port)
+                       (get-output-string out-port))
+                expected-out))))
+
+  (define-syntax-rule (check-asm fn il out-str msg)
+    (let ([out-port (open-output-string)])
+      (check-equal? (begin (fn il out-port)
+                           (get-output-string out-port))
+                    out-str
+                    msg)))
+
+  (define-syntax-rule (define/check name fn)
+    (define-syntax name
+      (syntax-rules ()
+        [(_ il out-str) (check-asm fn il out-str "")]
+        [(_ il out-str msg) (check-asm fn il out-str msg)])))
+
+  (define/check check-expr      assemble-expr)
+  (define/check check-stm       assemble-statement)
+  (define/check check-value     assemble-value)
+  (define/check check-requires  assemble-requires*)
+
+  ;;; Values ------------------------------------------------------------------
+
+  ;; Numbers
+  (check-value 12 "12")
+  
+  ;; Strings
+  (check-value "Hello World!" "\"Hello World!\"")
+  (check-value 'hello (format "~a('hello')" (name-in-module 'core 'Symbol.make)))
+
+  ;; Booleans
+  (check-value #t "true")
+  (check-value #f "false")
+
+  ;; Lists and pairs
+  (check-value '() (~a (name-in-module 'core 'Pair.Empty)))
+  (check-value '(1) (~a (name-in-module 'core 'Pair.makeList) "(1)"))
+  (check-value '(1 2) (~a (name-in-module 'core 'Pair.makeList) "(1, 2)"))
+  (check-value '(1 2 (3 4) 5) (format "~a(1, 2, ~a(3, 4), 5)"
+                                      (name-in-module 'core 'Pair.makeList)
+                                      (name-in-module 'core 'Pair.makeList)))
+  (check-value '(1 . 2) (format "~a(1, 2)" (name-in-module 'core 'Pair.make)))
+  (check-value '(1 2 . 3) (format "~a(1, ~a(2, 3))"
+                                  (name-in-module 'core 'Pair.make)
+                                  (name-in-module 'core 'Pair.make)))
+
+  (check-value (void) "null")
+
+  ;; Vectors
+  (check-value #(1 2 3) (format "~a([1, 2, 3], true)"
+                                (name-in-module 'core 'Vector.make))
+               "immutable vector")
+  (check-value #(1 2 3 (4 5)) (format "~a([1, 2, 3, ~a(4, 5)], true)"
+                                       (name-in-module 'core 'Vector.make)
+                                       (name-in-module 'core 'Pair.makeList))
+               "immutable vector with nested list")
+
+  ;;; Expressions -------------------------------------------------------------
+
+  ;; Values most should be covered above
+  (check-expr (ILValue "Hello World!") "\"Hello World!\"")
+  (check-expr (ILValue 12) "12")
+
+  ;; Lambda
+  (check-expr (ILLambda '(x) (list 'x))
+              "function(x) {x;}")
+  (check-expr (ILLambda '(x) (list (ILReturn 'x)))
+              "function(x) {return x;}")
+  (check-expr (ILLambda '(a b c) (list (ILReturn (ILBinaryOp '+ '(a b c)))))
+              "function(a, b, c) {return a+b+c;}")
+
+  ;; Application
+  (check-expr (ILApp 'add (list 'a 'b)) "add(a,b)")
+  (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar"))) "add(\"foo\",\"bar\")")
+  (check-expr (ILApp (ILLambda '(x) (list (ILReturn 'x))) (list (ILValue "Hello")))
+              "(function(x) {return x;})(\"Hello\")")
+
+  ;; Rest
+  (check-expr 'foobar "foobar"  "assemble an identifier")
+  (check-expr (ILIndex 'arr 'i) "arr[i]" "object indexing")
+  (check-expr (ILIndex 'arr (ILBinaryOp '+ (list 'i (ILValue 1))))
+              "arr[i+1]"
+              "object indexing with expression")
+  (check-expr (ILRef 'document 'write)
+              "document.write"
+              "object field ref")
+  (check-expr (ILRef (ILNew (ILApp 'Array (list (ILValue 10) (ILValue 0)))) 'property)
+              "(new Array(10,0)).property"
+              "create object via expression and get a field with expression in paren")
+  (check-expr (ILRef (ILRef (ILRef 'global 'window) 'document) 'write)
+              "global.window.document.write"
+              "successive refs to object shouldn't generate parens")
+
+  ;; NOTE: These are some cases whose output could be improved in future by reducing
+  ;; unnecessary parens
+  (check-expr (ILRef (ILApp (ILRef 'Array 'sort) '(a lt)) 'size)
+              "((Array.sort)(a,lt)).size")
+  (check-expr (ILRef (ILApp 'sort '(a lt)) 'size)
+              "(sort(a,lt)).size")
+
+
+  ;;; Statements --------------------------------------------------------------
+
+  ;; declaration
+  (check-stm (ILVarDec 'sum (ILBinaryOp '+ (list (ILValue 2) (ILValue 4))))
+             "var sum = 2+4;")
+  (check-stm (ILVarDec 'sum (ILLambda '(a b) (list (ILReturn (ILBinaryOp '+ '(a b))))))
+             "var sum = function(a, b) {return a+b;};")
+  (check-stm (ILAssign 'sum (ILBinaryOp '+ '(a b))) "sum = a+b;")
+  (check-stm (ILIf (ILBinaryOp '< '(a b)) (list (ILValue #t)) (list (ILValue #f)))
+             "if (a<b) {true;} else {false;}")
+
+  ;;; Requires ----------------------------------------------------------------
+  ;; TODO
+
+  ;;; Provides ----------------------------------------------------------------
+  ;; TODO
+  
+  ]
