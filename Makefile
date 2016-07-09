@@ -6,7 +6,7 @@
 ##               #
 ##               "
 
-.PHONY: all build setup clean
+.PHONY: all build setup clean coverage
 
 all: build
 
