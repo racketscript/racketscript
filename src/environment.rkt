@@ -5,8 +5,7 @@
          "config.rkt"
          "util.rkt")
 
-(provide name-in-module
-         BASE-ENV)
+(provide name-in-module)
 
 (: name-in-module (-> Symbol Symbol Symbol))
 (define (name-in-module mod name)
@@ -14,6 +13,3 @@
     ['core (string->symbol (~a (jsruntime-core-module) "." name))]
     ['kernel (string->symbol (~a (jsruntime-kernel-module) "." name))]
     [_ (error "Invalid module name")]))
-
-(: BASE-ENV (HashTable Symbol Symbol))
-(define BASE-ENV (hash))

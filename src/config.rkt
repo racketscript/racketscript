@@ -12,6 +12,7 @@
          jsruntime-core-module-path
          jsruntime-kernel-module-path)
 
+;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
 
 (: output-directory (Parameter String))
@@ -23,10 +24,12 @@
 (: main-source-file (Parameter (Option Path)))
 (define main-source-file (make-parameter #f))
 
-(: jsruntime-kernel-module (Parameter String))
-(define jsruntime-kernel-module (make-parameter "$rjs_kernel"))
+;;; ---------------------------------------------------------------------------
 
+(: jsruntime-kernel-module (Parameter String))
 (: jsruntime-core-module (Parameter String))
+;; Name of kernel/core module object used in JavaScript environment
+(define jsruntime-kernel-module (make-parameter "$rjs_kernel"))
 (define jsruntime-core-module (make-parameter "$rjs_core"))
 
 (: jsruntime-kernel-module-path (-> Path))
@@ -43,12 +46,14 @@
                "runtime"
                "core.js")))
 
-(: print-to-stdout (Parameter Boolean))
-(define print-to-stdout (make-parameter #f))
+;;; ---------------------------------------------------------------------------
 
 (: racket-collects-dir (Parameter Path))
 (define racket-collects-dir (make-parameter
                              (build-path "/usr/share/racket/collects")))
+
+(: print-to-stdout (Parameter Boolean))
+(define print-to-stdout (make-parameter #f))
 
 (: test-environment? (Parameter Boolean))
 (define test-environment? (make-parameter #f))

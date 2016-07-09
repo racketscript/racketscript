@@ -41,15 +41,49 @@
          ++)
 
 (: fresh-id-counter (Parameter Nonnegative-Integer))
+;; Used when test-environment? is true.
 (define fresh-id-counter (make-parameter 0))
 
 (define ++ string-append)
 
+(: path-parent (-> Path Path))
+;; Because `path-only` return type is `path-for-some-system` and that
+;; is not in any way helping
+(define (path-parent p)
+  (define p* (path-only p))
+  (if (path? p*)
+      p*
+      (error 'path-parent "No parent for ~a" p)))
+
 (: length=? (-> (Listof Any) Natural Boolean))
 (define (length=? lst n)
   (equal? (length lst) n))
+(module+ test
+  (check-false (length=? '() 1))
+  (check-true (length=? '(1 2) 2)))
 
-(: hash-set-pair* (∀ (A B) (-> (HashTable A B) (Listof (Pairof A B)) (HashTable A B))))
+(: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
+(define (reverse-pair p)
+  (cons (cdr p) (car p)))
+
+(: flatten1 (∀ (A) (-> (Listof (Listof A)) (Listof A))))
+;; Flatten a list of list upto one level
+(define (flatten1 lst)
+  (foldl (inst append A) '() lst))
+
+(: append1 (∀ (A) (-> (Listof A) A (Listof A))))
+(define (append1 lst a)
+  (append lst (list a)))
+
+(: split-before-last : (∀ (A) (-> (Listof A) (Values (Listof A) A))))
+;; Returns lst with its last element and the last element
+(define (split-before-last lst)
+  (match-define-values (ls (list v)) (split-at-right lst 1))
+  (values ls v))
+
+(: hash-set-pair* (∀ (A B) (-> (HashTable A B) (Listof (Pairof A B))
+                               (HashTable A B))))
+;; Update given hash `h` with given list of (key, value) pairs.
 (define (hash-set-pair* h pairs)
   (let loop ([p* pairs] [h h])
     (if (empty? p*)
@@ -58,12 +92,38 @@
                [k (car p)]
                [v (cdr p)])
           (loop (cdr p*) (hash-set h k v))))))
+(module+ test
+  (check-equal? (hash-set-pair* (hash) '()) (hash))
+  (check-equal? (hash-set-pair* (hash) (list '(a . b) '(c . d)))
+                '#hash((a . b) (c . d))))
 
-(: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
-(define (reverse-pair p)
-  (cons (cdr p) (car p)))
+(: assocs->hash-list : (∀ (A B) (-> (Listof (Pairof A B))
+                                    (HashTable A (Listof B)))))
+;; Takes a list of (key, value) pairs `assocs` and returns a hash
+;; with all values pointed by same key folded into a list
+(define (assocs->hash-list assocs)
+  (: empty-hash (HashTable A (Listof B)))
+  (define empty-hash (hash))
+  (foldl (λ ([a* : (Pairof A B)] [result : (HashTable A (Listof B))])
+           (let ([key (car a*)]
+                 [val (cdr a*)])
+             (hash-update result key
+                          (λ ([v : (Listof B)]) (cons val v))
+                          (λ () '()))))
+         empty-hash
+         assocs))
+(module+ test
+  (check-equal?
+   (assocs->hash-list '((a . b) (b . c) (c . d) (a . e) (c . f) (a . g)))
+   (hash 'a '(g e b)
+         'b '(c)
+         'c '(f d))))
+
+;;; Identifier renaming -------------------------------------------------------
 
 (: normalize-symbol (->* (Symbol) ((Listof String)) String))
+;;; NOTE: Just normalizing is still not a safe way to translate to JS.
+;;; 
 (define (normalize-symbol s [ignores '()])
   ;; TODO: handle every weird character in symbol
   ;; Since every identifier is suffixed with fresh symbol
@@ -105,10 +165,14 @@
                char-list)
           "")]
     [str str]))
-
-(: flatten1 (∀ (A) (-> (Listof (Listof A)) (Listof A))))
-(define (flatten1 lst)
-  (foldl (inst append A) '() lst))
+(module+ test
+  (check-equal? (normalize-symbol 'foobar) "foobar")
+  (check-equal? (normalize-symbol '+) "_plus_")
+  (check-equal? (normalize-symbol 'hello-world) "hello_world")
+  (check-equal? (normalize-symbol 'document.write+print (list "." "+")) "document.write+print"
+                "characters in ignores parameter is not replaced")
+  (check-equal? (normalize-symbol 'document.write (list ".")) "document.write"
+                "characters in ignores parameter is not replaced"))
 
 (: fresh-id (-> Symbol Symbol))
 (define fresh-id
@@ -117,22 +181,24 @@
       (λ (id)
         (fresh-id-counter (add1 (fresh-id-counter)))
         (string->symbol (~a id (fresh-id-counter))))))
+(module+ test
+  (check-equal?
+   (parameterize ([test-environment? #t]
+                  [fresh-id-counter 0])
+     (list (fresh-id 'foo)
+           (fresh-id-counter)))
+   (list 'foo1 1)
+   "fresh-id counter should get incremented"))
 
-(: path-parent (-> Path Path))
-;; Because `path-only` return type is `path-for-some-system` and that
-;; is not in any way helping
-(define (path-parent p)
-  (define p* (path-only p))
-  (if (path? p*)
-      p*
-      (error 'path-parent "No parent for ~a" p)))
+;;; Paths that we use every now and then --------------------------------------
 
 (: module-path->name (-> (U Path Symbol) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
     [(equal? mod-name '#%kernel) (jsruntime-kernel-module-path)]
     [(path? mod-name) mod-name]
-    [else (error 'module-path->name "Don't know how to translate module name '~a'" mod-name)]))
+    [else (error 'module-path->name
+                 "Don't know how to translate module name '~a'" mod-name)]))
 
 (: main-source-directory (-> Path))
 (define (main-source-directory)
@@ -144,6 +210,8 @@
   (cast (find-relative-path (path-parent (module-output-file base))
                             runtime-fpath)
         Path))
+
+;;; Module path renaming ------------------------------------------------------
 
 (: module-output-file (-> Path Path))
 (define (module-output-file mod)
@@ -201,32 +269,7 @@
            ch
            (loop ct))])))
 
-(: append1 (∀ (A) (-> (Listof A) A (Listof A))))
-(define (append1 lst a)
-  (append lst (list a)))
-
-(: split-before-last : (∀ (A) (-> (Listof A) (Values (Listof A) A))))
-(define (split-before-last lst)
-  (match-define-values (ls (list v)) (split-at-right lst 1))
-  (values ls v))
-
-(: assocs->hash-list : (∀ (A B) (-> (Listof (Pairof A B)) (HashTable A (Listof B)))))
-(define (assocs->hash-list assocs)
-  (: empty-hash (HashTable A (Listof B)))
-  (define empty-hash (hash))
-  (foldl (λ ([a* : (Pairof A B)] [result : (HashTable A (Listof B))])
-           (let ([key (car a*)]
-                 [val (cdr a*)])
-             (hash-update result key
-                          (λ ([v : (Listof B)]) (cons val v))
-                          (λ () '()))))
-         empty-hash
-         assocs))
-(module+ test
-  (check-equal? (assocs->hash-list '((a . b) (b . c) (c . d) (a . e) (c . f) (a . g)))
-                (hash 'a '(g e b)
-                      'b '(c)
-                      'c '(f d))))
+;;; ---------------------------------------------------------------------------
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()
