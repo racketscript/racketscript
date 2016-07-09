@@ -1,23 +1,34 @@
 #lang racket/base
 
 (require racket/cmdline
-         racket/match
-         racket/pretty
-         racket/system
-         racket/format
-         racket/path
          racket/file
+         racket/format
+         racket/match
+         racket/path
          racket/port
+         racket/pretty
          racket/set
+         racket/system
+
          data/queue
          threading
+
          "absyn.rkt"
-         "util.rkt"
-         "expand.rkt"
+         "assembler.rkt"
          "config.rkt"
+         "expand.rkt"
          "freshen.rkt"
          "transform.rkt"
-         "assembler.rkt")
+         "util.rkt")
+
+(provide build-mode
+         current-source-file
+         main-source-file
+         output-directory
+         prepare-build-directory
+         racket->js
+         skip-gulp-build
+         skip-npm-install)
 
 (define build-mode (make-parameter 'js))
 (define skip-npm-install (make-parameter #f))
@@ -25,6 +36,8 @@
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 
+;; Path
+;; Root directory of Rapture project
 (define rapture-dir
   (~> (let ([dir (find-system-path 'orig-dir)]
             [file (find-system-path 'run-file)])
@@ -35,28 +48,44 @@
       (build-path _ "..")
       (simplify-path _)))
 
+;; Path-String -> Path
+;; Return path of support file named f
 (define (support-file f)
   (build-path rapture-dir "src" "js-support" f))
 
+;; PathString -> Path
+;; Return path of runtime file named f
 (define (runtime-file f)
   (build-path rapture-dir "src" "runtime" f))
 
+;; Path-String -> Path
+;; Return path of module file named f in output directory
 (define (module-file f)
   (build-path (output-directory) "modules" f))
 
+;; Path-String -> Path
+;; Return path of support file named f
 (define (package-file f)
   (build-path (output-directory) f))
 
-(define (copy-file+ fname dest)
+;; Path-String Path-String -> Void
+;; Copies file named fname to dest folder keeping
+;; the original name same as before
+(define (copy-file+ fname dest-dir)
   (define name (file-name-from-path fname))
-  (copy-file fname (build-path dest name) #t))
+  (copy-file fname (build-path dest-dir name) #t))
 
+;; Path-String Path-String -> Void
+;; Copies all files in from-dir to to-dir *non-recursively*
 (define (copy-all from-dir to-dir)
   (for ([f (in-directory from-dir)])
     (define fname (file-name-from-path f))
     (when (file-exists? f)
       (copy-file f (build-path to-dir fname) #t))))
 
+;; Path-String Path-String (Listof Any) -> Void
+;; Copies a Racket string patterned styled file `src` to `dest` file
+;; with args applied to fill up format
 (define (format-copy-file src dest args)
   (call-with-input-file src
     (λ (in)
@@ -64,10 +93,18 @@
         (λ (out)
           (fprintf out (apply format (port->string in) args)))))))
 
-(define (format-copy-file+ src dest args)
+;; Path-String Path-String (Listof Any) -> Void
+;; Like format-copy-file except that dest is a directory.
+(define (format-copy-file+ src dest-dir args)
   (define name (file-name-from-path src))
-  (format-copy-file src (build-path dest name) args))
+  (format-copy-file src (build-path dest-dir name) args))
 
+;; String -> Void
+;; Puts a NPM and Gulp related files in output directory
+;; with default-module set as the entry point module
+;;
+;; default-module is just the name of module excluding any file
+;; extensions.
 (define (copy-build-files default-module)
   (copy-file+ (support-file "package.json")
               (output-directory))
@@ -75,6 +112,7 @@
                      (output-directory)
                      (list default-module)))
 
+;; -> Void
 (define (copy-runtime-files)
   (define runtime-root (build-path rapture-dir "src" "runtime"))
   (define runtime-core (build-path runtime-root "core"))
@@ -85,10 +123,17 @@
   (copy-all runtime-root o-runtime-root)
   (copy-all runtime-core o-runtime-core))
 
+;; -> Void
 (define (copy-support-files)
   (copy-file+ (support-file (js-bootstrap-file))
               (output-directory)))
 
+;; String -> Void
+;; Create output build directory tree with all NPM, Gulp. Runtime and
+;; other support files
+;;
+;; default-module-name: is just the name of entry point module with
+;; the file extension
 (define (prepare-build-directory default-module-name)
   (define dir (output-directory))
   (define mkdir?
@@ -103,6 +148,8 @@
   (copy-runtime-files)
   (copy-support-files))
 
+;; -> Void
+;; Install and build dependenciese to translate ES5 to ES5
 (define (es6->es5)
   ;; TODO: Use NPM + some build tool to do this cleanly
   (parameterize ([current-directory (output-directory)])
@@ -111,6 +158,9 @@
     (unless (skip-gulp-build)
       (system "gulp"))))
 
+;; -> Void
+;; For given global parameters starts build process starting
+;; with entry point module and all its dependencies
 (define (racket->js)
   (define added (mutable-set))
   (define pending (make-queue))
