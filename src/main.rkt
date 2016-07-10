@@ -80,7 +80,7 @@
 ;; Path-String Path-String -> Void
 ;; Copies all files in from-dir to to-dir *non-recursively*
 (define (copy-all from-dir to-dir)
-  (for ([f (in-directory from-dir)])
+ (for ([f (in-directory from-dir)])
     (define fname (file-name-from-path f))
     (when (file-exists? f)
       (copy-file f (build-path to-dir fname) #t))))
@@ -172,7 +172,7 @@
       (set-add! added mod)
       (enqueue! pending mod)))
 
-  (put-to-pending! (main-source-file))
+  (put-to-pending! (path->complete-path (main-source-file)))
   
   (let loop ()
     (cond
@@ -220,9 +220,10 @@
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile to JS" (build-mode 'js)]
      #:args (filename)
-     (current-source-file (path->complete-path filename))
-     (main-source-file (path->complete-path filename))
-     filename))
+     (let ([complete-filename (path->complete-path filename)])
+       (current-source-file complete-filename)
+       (main-source-file complete-filename)
+       complete-filename)))
 
   (match (build-mode)
     ['expand (~> (quick-expand source)

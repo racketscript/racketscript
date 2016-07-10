@@ -77,38 +77,7 @@
       p))
   (map path-string xs))
 
-(define (resolve-module mod-name)
-  (if (memv mod-name (list "." ".."))
-    (list mod-name)
-    (with-handlers
-      ([exn:fail:filesystem:missing-module?
-         (lambda (e)
-           (make-path-strings
-             (append (current-module) (list (desymbolize mod-name)))))])
-      (list
-        (full-path-string
-          (resolve-module-path mod-name #f))))))
-
 ;;;; conversion and expansion
-
-(define (expanded-module)
-  (let ([mod (car (current-module))]
-        [path (cdr (current-module))])
-    (if (not mod)
-      ;; If we don't have the module name, encode it relative to
-      ;; the current module
-      (if (null? path) '(".") (map (λ (_) "..") (cdr (current-module))))
-      (list (full-path-string mod)))))
-
-(define (list-module-path p)
-  (if (not (path? (car p)))
-    (append (expanded-module) (map desymbolize (cdr p)))
-    (map desymbolize p)))
-
-(define (symbol-module-path p)
-  (if (string=? (symbol->string p) "expanded module")
-    (expanded-module)
-    (list (symbol->string p))))
 
 (define (require-parse r)
   (syntax-parse r
@@ -249,7 +218,9 @@
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
-     (parameterize ([module-ident-sources (hash)])
+     (parameterize ([module-ident-sources (hash)]
+                    [current-module path]
+                    [current-directory (path-only path)])
        (define mod-id (syntax-e #'name))
        (printf "[absyn] ~a\n" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
