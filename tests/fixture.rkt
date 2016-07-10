@@ -4,15 +4,27 @@
          glob
          "../src/main.rkt")
 
-(define clean-output-before-test (make-parameter #f))
 (define tests-root-dir (build-path rapture-dir "tests"))
+
+;; Do a complete cleanup for previous build directory before starting
+;; tests.
+(define clean-output-before-test (make-parameter #f))
+
+;; Turning if false would ignore all standard output
+;; produced by compiler
 (define rapture-stdout? (make-parameter #f))
 
+;; DEFAULT PARAMETER VALUES ---------------------------------------------------
+
+;; Path-String Input-Port Input-Port -> (list String String)
 (define (log-and-return fpath in-p-out in-p-err)
   ;; TODO: Log outputs
   (list (port->string in-p-out)
         (port->string in-p-err)))
 
+;; Path-String -> (list String String)
+;; Runs module in file fpath in Racket interpreter and return
+;; stdout and stderr produced
 (define (run-in-racket fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* "/usr/bin/racket"
@@ -20,9 +32,9 @@
   (control 'wait)
   (log-and-return fpath in-p-out in-p-err))
 
-(define (results-equal? racket js)
-  (equal? racket js))
-
+;; Path-String -> (list String String)
+;; Runs module in file fpath in Racket interpreter and return
+;; stdout and stderr produced
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* "/usr/bin/node" ;; TODO: Get this from $PATH
@@ -30,6 +42,14 @@
   (control 'wait)
   (log-and-return fpath in-p-out in-p-err))
 
+;; String String -> Boolean
+;; Compare the outputs produced
+(define (results-equal? racket js)
+  (equal? racket js))
+
+;; Path-String -> Void
+;; Rackunit check for Rapture. Executes module at file fpath
+;; in Racket and NodeJS and compare their outputs
 (define-simple-check (check-rapture fpath)
   ;; First compile to JS
   (define compile-result
@@ -50,6 +70,12 @@
      (match-define (list j-p-out j-p-err) (run-in-nodejs fpath))
      (results-equal? r-p-out j-p-out)]))
 
+;; -> Void
+;; Initialize test environment.
+;; 1. Build directory structure and install packages
+;;    if necessary
+;; 2. Always remove old compiled module outputs
+;; 3. Always skip-npm-install to save time
 (define (setup)
   (when (clean-output-before-test)
     (delete-directory/files (output-directory)))
@@ -59,13 +85,15 @@
   (for ([f (glob (~a (output-directory) "/modules" "/*"))])
     (delete-file f))
 
-  (skip-npm-install #t)
-  (skip-gulp-build  #t)
-
   (prepare-build-directory "") ;; We don't care about bootstrap file
-  (parameterize ([current-directory (output-directory)])
-    (system "npm install")))
+  (unless (skip-npm-install)
+    (parameterize ([current-directory (output-directory)])
+      (system "npm install")
+      (skip-npm-install #t))))
 
+;; Glob-Pattern -> Void
+;; If tc-search-pattern is simply a path to directory, run all test
+;; cases in that directory otherwise use glob pattern
 (define (run-tests tc-search-pattern)
   (setup)
 
@@ -76,19 +104,24 @@
 
   (for ([test testcases]
         [i (in-naturals 1)])
-    (displayln (format "\nTEST (~a/~a) => ~a " i (length testcases) test))
+    (displayln (format "TEST (~a/~a) => ~a " i (length testcases) test))
     (check-rapture test)))
 
+(skip-npm-install #f) ;; For setup we need to install packages
 (module+ main
+  ;; For setup we keep this on by default, and later turned off
+
   (define tc-search-pattern
     (command-line
      #:program "rapture-fixture"
-     #:usage-help "Run Rapture test programs"
+     #:usage-help "Run Rapture test programs and compare against Racket"
      #:once-each
-     ["--clean" "Clean previous build directory and reinstall packages"
+     [("-c" "--clean") "Clean previous build directory and reinstall packages"
       (clean-output-before-test #t)]
-     ["--rapture-out" "Show rapture output"
+     [("-o" "--rapture-out") "Show rapture output"
       (rapture-stdout? #t)]
+     [("-n" "--skip-npm") "Skip NPM install on setup"
+      (skip-npm-install #t)]
      #:args (pattern)
      pattern))
   
