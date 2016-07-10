@@ -56,7 +56,7 @@
   ;; clean the compiled modules always, to avoid
   ;; cases where compilation fails but it anyway
   ;; proceeds with last module output
-  (for ([f (glob (~a (output-directory) "modules" "/*"))])
+  (for ([f (glob (~a (output-directory) "/modules" "/*"))])
     (delete-file f))
 
   (skip-npm-install #t)
