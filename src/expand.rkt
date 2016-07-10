@@ -263,7 +263,7 @@
 
   (check-equal? (to-absyn/expand #'42)
                 (Quote 42))
-  (check-equal? (to-absyn/expand "Hello World")
+  (check-equal? (to-absyn/expand #'"Hello World")
                 (Quote "Hello World"))
   (check-equal? (to-absyn/expand #`'symbol)
                 (Quote 'symbol))
@@ -439,9 +439,9 @@
                                         (provide foo)
                                         (define (foo name)
                                           (displayln "Hello"))))
-                                   (string->path "test-expand.rkt")))
+                                   (build-path "/tmp/" "rapture-test-expand.rkt")))
     (check-equal? (Module-id module-output) 'foo)
-    (check-equal? (Module-path module-output) (string->path "test-expand.rkt"))
+    (check-equal? (Module-path module-output) (string->path "/tmp/rapture-test-expand.rkt"))
     (check-equal? (Module-forms module-output)
                   (list
                    (list (Provide 'foo))
