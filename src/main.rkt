@@ -7,6 +7,7 @@
          racket/path
          racket/port
          racket/pretty
+         racket/runtime-path
          racket/set
          racket/system
          syntax/moddep
@@ -37,14 +38,12 @@
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 
+(define-runtime-path rapture-main-module ".")
+
 ;; Path
 ;; Root directory of Rapture project
 (define rapture-dir
-  (~> (let ([dir (find-system-path 'orig-dir)]
-            [file (find-system-path 'run-file)])
-        (if (absolute-path? file)
-            file
-            (build-path dir file)))
+  (~> rapture-main-module
       (path-only _)
       (build-path _ "..")
       (simplify-path _)))
