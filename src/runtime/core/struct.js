@@ -21,7 +21,7 @@ class Struct extends Primitive {
 		fields += " ";
 	    }
 	}
-	return "(struct:" + this.name + " " + fields + ")";
+	return "#(struct:" + this.name + " " + fields + ")";
     }
 
     toRawString() {

@@ -209,6 +209,8 @@
                                           (rename (syntax-e #'i)) mod-path)))
         (syntax-e #'i)])]
     [(define-syntaxes (i ...) b) #f]
+    [(set! s e)
+     (Set! (syntax-e #'s) (to-absyn #'e))]
     [(begin-for-syntax b ...) #f]
     [(_ ...) 
      (map to-absyn (syntax->list v))]

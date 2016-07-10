@@ -9,6 +9,7 @@
          racket/pretty
          racket/set
          racket/system
+         syntax/moddep
 
          data/queue
          threading
@@ -21,12 +22,12 @@
          "transform.rkt"
          "util.rkt")
 
-(provide build-mode
-         current-source-file
+(provide current-source-file
          main-source-file
          output-directory
          prepare-build-directory
          racket->js
+         rapture-dir
          skip-gulp-build
          skip-npm-install)
 
@@ -41,12 +42,13 @@
 (define rapture-dir
   (~> (let ([dir (find-system-path 'orig-dir)]
             [file (find-system-path 'run-file)])
-        (if (absolute-path? dir)
+        (if (absolute-path? file)
             file
             (build-path dir file)))
       (path-only _)
       (build-path _ "..")
       (simplify-path _)))
+(displayln (~a "Rapture root directory: " rapture-dir))
 
 ;; Path-String -> Path
 ;; Return path of support file named f

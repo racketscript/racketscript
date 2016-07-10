@@ -13,5 +13,9 @@
     [else (factorial/tail (sub1 n) (* n a))]))
 
 
+(displayln (factorial 0))
 (displayln (factorial 5))
+(displayln (factorial 6))
+(displayln (factorial/tail 0 1))
 (displayln (factorial/tail 5 1))
+(displayln (factorial/tail 6 1))

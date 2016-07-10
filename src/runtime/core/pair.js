@@ -32,7 +32,7 @@ class Pair extends Primitive {
 		var hd = rest.hd;
 		result += rutils.toString(hd);
 	    } else {
-		result += " . " + rutils.toString(rest);
+		result += ". " + rutils.toString(rest);
 		break;
 	    }
 	    rest = rest.tl;

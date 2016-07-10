@@ -47,7 +47,15 @@ function add1(v) {
 
 function displayln(v) {
     /* TODO: Real thing takes port as well */
-    console.log(rcore.toString(v));
+    if (v === true) {
+	console.log("#t");
+    } else if (v === false) {
+	console.log("#f");
+    } else if (v === undefined || v === null) {
+	console.log("#<void>");
+    } else {
+	console.log(rcore.toString(v));
+    }
 }
 
 function display(v) {
