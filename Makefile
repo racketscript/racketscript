@@ -6,7 +6,7 @@
 ##               #
 ##               "
 
-.PHONY: all build setup clean coverage unit-test integration-test test-all
+.PHONY: all build setup clean coverage-unit-test coverage unit-test integration-test test
 
 all: build
 
@@ -30,10 +30,15 @@ clean:
 
 ## Coverage recipes
 
+coverage-unit-test:
+	@echo "    RAPTURE COVERAGE UNIT-TEST    "
+	@echo "++++++++++++++++++++++++++++++++++"
+	raco cover -d ./coverage/unit src/
+
 coverage:
 	@echo "    RAPTURE COVERAGE    "
 	@echo "++++++++++++++++++++++++"
-	raco cover -d ./coverage src/
+	raco cover -d ./coverage/all src/ tests/fixture.rkt
 
 ## Test recipes
 
@@ -47,7 +52,7 @@ integration-test:
 	@echo "++++++++++++++++++++++++++++++++"
 	raco test -t tests/fixture.rkt
 
-all-test:
+test:
 	@echo "     RAPTURE TEST       "
 	@echo "++++++++++++++++++++++++"
 	raco test -t src/ tests/fixture.rkt
