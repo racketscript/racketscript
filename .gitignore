@@ -1,4 +1,7 @@
 compiled/
+coverage/
+tmp/
+js-build/
 
 # common backups, autosaves, lock files, OS meta-files
 *~
