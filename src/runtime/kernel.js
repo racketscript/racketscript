@@ -64,8 +64,9 @@ function display(v) {
 }
 
 function print_values(v) {
-    // TODO: Print single or multiple values
-    //console.log(RLIB.toString(v));
+    if (v !== undefined && v !== null) {
+	displayln(v);
+    }
 }
 
 function equal_p(v1, v2) {
