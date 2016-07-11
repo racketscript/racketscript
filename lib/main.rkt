@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new)
+(provide $ #%js-ffi $/new $/obj $/array)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -21,6 +21,8 @@
 ;;   + 'var
 ;;   + 'assign
 ;;   + 'new
+;;   + 'object
+;;   + 'array
 (define #%js-ffi
   (λ _
     (error 'rapture "can't make JS ffi calls in Racket")))
@@ -60,3 +62,13 @@
   (syntax-parse stx
     [(_ v:expr)
      #`(#%js-ffi 'new v)]))
+
+(define-syntax ($/obj stx)
+  (syntax-parse stx
+    [(_ [k:symbol v:expr] ...)
+     #`(#%js-ffi 'object (cons k v) ...)]))
+
+(define-syntax ($/array stx)
+  (syntax-parse stx
+    [(_ e:expr ...)
+     #`(#%js-ffi 'array e ...)]))
