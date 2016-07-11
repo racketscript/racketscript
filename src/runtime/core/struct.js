@@ -17,7 +17,7 @@ class Struct extends Primitive {
 	var fields = "";
 	for (var i = 0; i < this.fields.length; i++) {
 	    fields += this.fields[i].toString();
-	    if (i != this.fields.length - 1) {
+	    if (i !== this.fields.length - 1) {
 		fields += " ";
 	    }
 	}
@@ -40,12 +40,12 @@ class Struct extends Primitive {
     }
 
     equals(v) {
-	if (this.name != v.name ||
-	    this.fields.length != v.fields.length) {
+	if (this.name !== v.name ||
+	    this.fields.length !== v.fields.length) {
 	    return false;
 	}
 
-	for (var i = 0; i < this.fields.lengh; i++) {
+	for (var i = 0; i < this.fields.length; i++) {
 	    if (!rutils.isEqual(this.fields[i], v.fields[i])) {
 		return false;
 	    }
