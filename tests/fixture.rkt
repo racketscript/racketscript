@@ -1,3 +1,4 @@
+#!/usr/bin/env racket
 #lang racket
 
 (require rackunit
@@ -5,6 +6,9 @@
          "../src/main.rkt")
 
 (define tests-root-dir (build-path rapture-dir "tests"))
+
+;; Print Racket and JS output of test programs to stdout
+(define print-output (make-parameter #f))
 
 ;; Do a complete cleanup for previous build directory before starting
 ;; tests.
@@ -17,10 +21,17 @@
 ;; DEFAULT PARAMETER VALUES ---------------------------------------------------
 
 ;; Path-String Input-Port Input-Port -> (list String String)
-(define (log-and-return fpath in-p-out in-p-err)
+(define (log-and-return fpath kind in-p-out in-p-err)
   ;; TODO: Log outputs
-  (list (port->string in-p-out)
-        (port->string in-p-err)))
+  (let ([p-out (port->string in-p-out)]
+        [p-err (port->string in-p-err)])
+    (when (print-output)
+      (displayln (~a ">>>>>>>>>>>>>>>>>>>>>> `" kind "` STDOUT"))
+      (displayln p-out)
+      (displayln (~a "---------------------- `"kind "` STDERR"))
+      (displayln p-err)
+      (displayln "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"))
+    (list p-out p-err)))
 
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
@@ -30,7 +41,7 @@
     (process* "/usr/bin/racket"
               (~a fpath)))
   (control 'wait)
-  (log-and-return fpath in-p-out in-p-err))
+  (log-and-return fpath 'racket in-p-out in-p-err))
 
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
@@ -40,7 +51,7 @@
     (process* "/usr/bin/node" ;; TODO: Get this from $PATH
               (build-path (output-directory) "bootstrap.js")))
   (control 'wait)
-  (log-and-return fpath in-p-out in-p-err))
+  (log-and-return fpath 'nodejs in-p-out in-p-err))
 
 ;; String String -> Boolean
 ;; Compare the outputs produced
@@ -122,6 +133,9 @@
       (rapture-stdout? #t)]
      [("-n" "--skip-npm") "Skip NPM install on setup"
       (skip-npm-install #t)]
+     #:once-any
+     [("-p" "--print-ouput") "Run program in NodeJS and display output"
+      (print-output #t)]
      #:args (pattern)
      pattern))
   
