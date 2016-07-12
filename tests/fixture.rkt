@@ -38,7 +38,7 @@
 ;; stdout and stderr produced
 (define (run-in-racket fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* "/usr/bin/racket"
+    (process* (find-executable-path "racket")
               (~a fpath)))
   (control 'wait)
   (log-and-return fpath 'racket in-p-out in-p-err))
@@ -48,7 +48,7 @@
 ;; stdout and stderr produced
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* "/usr/bin/node" ;; TODO: Get this from $PATH
+    (process* (find-executable-path "node")
               (build-path (output-directory) "bootstrap.js")))
   (control 'wait)
   (log-and-return fpath 'nodejs in-p-out in-p-err))
