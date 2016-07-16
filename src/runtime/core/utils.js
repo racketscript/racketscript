@@ -26,3 +26,12 @@ function toString(v) {
 	return "" + v;
     }
 }
+
+export
+function attachReadOnlyProperty(o, k, v) {
+    return Object.defineProperty(o, k, {
+	value: v,
+	writable: false,
+	configurable: false
+    });
+}
