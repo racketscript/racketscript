@@ -91,8 +91,8 @@ export
 function listToArray(lst) {
     var r = [];
     while (!isEmpty(lst)) {
-        r.push(lst.car());
-        lst = lst.cdr();
+        r.push(lst.hd);
+        lst = lst.tl;
     }
     return r;
 }

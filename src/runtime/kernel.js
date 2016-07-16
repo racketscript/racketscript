@@ -65,7 +65,12 @@ function display(v) {
 
 function print_values(v) {
     if (v !== undefined && v !== null) {
-	displayln(v);
+	if (typeof(v) == 'string') {
+	    //TODO: Hack. Special cases
+	    console.log('"' + v + '"');
+	} else {
+	    displayln(v);
+	}
     }
 }
 
@@ -145,26 +150,34 @@ function current_inspector() {
     return false;
 }
 
-function make_struct_type(name, super_type, init_field_cnt, auto_field_cnt, auto_v,
-			  props, inspector, proc_spec, immutables, guard,
-			  constructor_name)
+function make_struct_type(name,
+			  superType,
+			  initFieldCount,
+			  autoFieldCount,
+			  autoV,
+			  props,
+			  inspector,
+			  procSpec,
+			  immutables,
+			  guard,
+			  constructorName)
 {
     return rcore.Struct.makeStructType({
 	name: name.toString(),
-	super_type: super_type,
-	init_field_cnt: init_field_cnt,
-	auto_field_cnt: auto_field_cnt,
-	auto_v: auto_v,
+	superType: superType,
+	initFieldCount: initFieldCount,
+	autoFieldCount: autoFieldCount,
+	autoV: autoV,
 	props: props,
 	inspector: inspector,
-	proc_spec: proc_spec,
+	procSpec: procSpec,
 	immutables: immutables,
 	guard: guard,
-	constructor_name: constructor_name
+	constructorName: constructorName
     });
 }
 
-function make_struct_field_accessor(ref, index, field_name) {
+function make_struct_field_accessor(ref, index, fieldName) {
     return function(s) {
 	return ref(s, index);
     }
@@ -243,6 +256,31 @@ var _lt__eq_ = rcore.Number.lte;
 var _gt__eq_ = rcore.Number.gte;
 var _eq_ = rcore.Number.equal;
 
+// Structs
+
+function struct_type_p(v) {
+    return rcore.Struct.isStructType(v);
+}
+
+function make_struct_type_property(name, guard, supers, canImpersonate) {
+    return rcore.Struct.makeStructTypeProperty({
+	name: name,
+	guard: guard,
+	supers: supers,
+	canImpersonate: canImpersonate
+    });
+}
+
+function check_struct_type(name, what) {
+    // TODO: in define-struct.rkt. See struct/super.rkt
+    if (what) {
+	if (!rcore.Struct.isStructType(v)) {
+	    throw new RacketCoreError("not a struct-type");
+	}
+	return what;
+    }
+}
+
 export {
     racket_null,
     zero_p,
@@ -289,7 +327,12 @@ export {
     _a,
     display,
     current_inspector,
+    map,
+
+    //structs
+    struct_type_p,
     make_struct_type,
+    make_struct_type_property,
     make_struct_field_accessor,
-    map
+    check_struct_type
 };
