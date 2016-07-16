@@ -1,5 +1,5 @@
 import {default as Primitive} from "./primitive.js";
-import RacketCoreError from "./error.js";
+import {RacketCoreError} from "./error.js";
 import * as rutils from "./utils.js";
 
 class Vector extends Primitive {

@@ -1,4 +1,4 @@
-import {default as RacketCoreError} from "./error.js";
+import {RacketCoreError} from "./error.js";
 
 export default Number = {
     add: function() {

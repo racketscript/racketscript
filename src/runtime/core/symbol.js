@@ -1,5 +1,4 @@
 import {default as Primitive} from "./primitive.js";
-import RacketCoreError from "./error.js";
 
 class Symbol extends Primitive {
     constructor(v) {

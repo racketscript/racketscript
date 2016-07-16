@@ -1,12 +1,19 @@
-/**
- * RacketCoreError: String String -> Void
- * A custom error object for Racket runtime
- */
-export default
-function RacketCoreError(lab, message) {
-    this.name = 'RacketCoreError';
-    this.message = (lab + ": ") + message;
-    this.stack = (new Error()).stack;
+
+function makeError(name) {
+    let e = function(message) {
+	this.name = name;
+	this.message = message;
+	this.stack = (new Error()).stack;
+	if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+	} else {
+            this.stack = (new Error()).stack;
+	}
+    }
+    e.prototype = Object.create(Error.prototype);
+    e.prototype.constructor = e;
+    return e;
 }
-RacketCoreError.prototype = Object.create(Error.prototype);
-RacketCoreError.prototype.constructor = RacketCoreError;
+
+export let RacketCoreError = makeError("RacketCoreError");
+export let RacketContractError = makeError("RacketContractError");

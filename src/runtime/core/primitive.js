@@ -1,4 +1,4 @@
-import RacketCoreError from "./error.js";
+import {RacketCoreError} from "./error.js";
 
 /**
    Base class for various compound data types

@@ -1,5 +1,4 @@
 import {default as Primitive} from "./primitive.js";
-import RacketCoreError from "./error.js";
 import * as rutils from "./utils.js";
 
 export const Empty = [];

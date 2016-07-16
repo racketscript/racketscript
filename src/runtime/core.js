@@ -1,7 +1,7 @@
 // Exports classes for creating basic data types and
 // operation on them
 import {default as Number} from "./core/numbers.js";
-import {default as RacketCoreError} from "./core/error.js";
+import {RacketCoreError} from "./core/error.js";
 import * as Pair from "./core/pair.js";
 import * as Primitive from "./core/primitive.js";
 import * as Struct from "./core/struct.js";
