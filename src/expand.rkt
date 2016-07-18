@@ -6,53 +6,64 @@
 ;;
 ;; Copyright (c) 2013 Sam Tobin-Hochstadt, Jeremy Siek, Carl Friedrich Bolz
 
-(require syntax/parse syntax/modresolve
-         (only-in racket/list append-map last-pair filter-map first add-between)
-         racket/path
-         racket/bool
-         racket/list
-         racket/function
-         racket/pretty
+(require racket/bool
          racket/dict racket/match
-         racket/vector
-         racket/format
          racket/extflonum
+         racket/format
+         racket/function
+         racket/list
+         racket/path
+         racket/pretty
          racket/syntax
+         racket/vector
+         syntax/modresolve
          syntax/stx
-         (for-syntax racket/base))
+         syntax/parse
+         (only-in racket/list
+                  append-map
+                  last-pair
+                  filter-map
+                  first
+                  add-between)
 
-(require "absyn.rkt"
-         "config.rkt"
+         (for-syntax racket/base)
+
+         "absyn.rkt"
          "case-lambda.rkt"
+         "config.rkt"
+         "moddeps.rkt"
          "util.rkt")
 
-(provide quick-expand
+(provide convert
          open-read-module
+         global-export-tree
+         global-module-rename-map
          read-module
-         convert
          to-absyn
-         to-absyn/top)
+         to-absyn/top
+         quick-expand)
 
 (define current-module (make-parameter (list #f)))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
 
+;;;----------------------------------------------------------------------------
+;;;; Module dependencies and exports
+;;;; Refer `moddeps.rkt`.
+
+;; (Parameter (Maybe ExportTree))
+(define global-export-tree (make-parameter #f))
+;; (Parameter (Maybe (Hash ModulePath Symbol)))
+(define global-module-rename-map (make-parameter #f))
+
+;; (Parameter (Maybe (Hash ModulePath (Listof Symbol))))
+;; A map between module and list of identifiers imported from that
+;; module which we know is used by current module. The path is of the module
+;; where the binding is actually implmented, not where it is being imported
+;; at this point
 (define module-ident-sources (make-parameter #f))
 
-(define (do-expand stx in-path)
-  ;; error checking
-  (syntax-parse stx
-    [((~and mod-datum (~datum module)) n:id lang:expr . rest)
-     (void)]
-    [((~and mod-datum (~datum module)) . rest)
-     (error 'do-expand "got ill-formed module: ~a\n" (syntax->datum #'rest))]
-    [rest
-     (error 'do-expand "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
-  ;; work
-  
-  (parameterize ([current-namespace (make-base-namespace)])
-    (namespace-syntax-introduce (expand stx))))
-
+;;;----------------------------------------------------------------------------
 ;;;; Module paths
 
 (define (index->path i)
@@ -77,7 +88,8 @@
       p))
   (map path-string xs))
 
-;;;; conversion and expansion
+;;;-----------------------------------------------------------------------------
+;;;; Conversion and expansion
 
 (define (require-parse r)
   (syntax-parse r
@@ -104,13 +116,13 @@
         [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
                      (cons fp fi))]
         [else (error 'λ "invalid λ formals")])))
-  
+
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [v:str (syntax-e #'v)]
     ;; special case when under quote to avoid the "interesting"
     ;; behavior of various forms
-    [(_ ...) 
+    [(_ ...)
      #:when (quoted?)
      (map to-absyn (syntax->list v))]
     [(module _ ...) #f] ;; ignore these
@@ -169,7 +181,7 @@
         (define (rename n)
           ;; TODO: quick hack for null keyword. Proabably out previous
           ;; table of base symbols was actually useful
-          (cond 
+          (cond
             [(equal? n 'null) 'racket_null]
             [else n]))
         (match-define (list mod-path self?) (index->path nom-src-mod))
@@ -181,7 +193,7 @@
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
     [(begin-for-syntax b ...) #f]
-    [(_ ...) 
+    [(_ ...)
      (map to-absyn (syntax->list v))]
     [(a . b)
      (cons (to-absyn #'a) (to-absyn #'b))]
@@ -238,6 +250,22 @@
   (parameterize ([module-ident-sources (hash)])
     (to-absyn stx)))
 
+(define (do-expand stx in-path)
+  ;; error checking
+  (syntax-parse stx
+    [((~and mod-datum (~datum module)) n:id lang:expr . rest)
+     (void)]
+    [((~and mod-datum (~datum module)) . rest)
+     (error 'do-expand
+            "got ill-formed module: ~a\n" (syntax->datum #'rest))]
+    [rest
+     (error 'do-expand
+            "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
+  ;; work
+
+  (parameterize ([current-namespace (make-base-namespace)])
+    (namespace-syntax-introduce (expand stx))))
+
 ;;; Read modules
 
 (define (read-module input)
@@ -253,6 +281,8 @@
   (define full-path (path->complete-path in-path))
   (parameterize ([current-directory (path-only full-path)])
     (do-expand (open-read-module in-path) in-path)))
+
+;;;----------------------------------------------------------------------------
 
 (module+ test
   (require rackunit)
@@ -383,7 +413,7 @@
              'or-part
              (PlainApp 'even? (list (PlainApp 'sub1 '(n)))))))))))))
     (list (PlainApp 'even? (list (Quote 50))))))
-  
+
 ;;; Begin expressions
 
   (check-equal?
