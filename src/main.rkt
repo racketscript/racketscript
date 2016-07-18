@@ -20,6 +20,7 @@
          "config.rkt"
          "expand.rkt"
          "freshen.rkt"
+         "moddeps.rkt"
          "transform.rkt"
          "util.rkt")
 
@@ -223,6 +224,15 @@
        (current-source-file complete-filename)
        (main-source-file complete-filename)
        complete-filename)))
+
+  ;; Initialize global-export-tree so that we can import each
+  ;; module as an object and follow identifier's from there.
+  (display "Resolving module dependencies and identifiers... ")
+  (global-export-tree (get-export-tree source))
+  (global-module-rename-map (make-module-name-map
+                             (module-deps/tsort-inv
+                              (get-module-deps source))))
+  (displayln "Done!")
 
   (match (build-mode)
     ['expand (~> (quick-expand source)
