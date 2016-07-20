@@ -78,16 +78,19 @@
 ;; identifiers with their corresponding origin module. If
 ;; identifier maps to #f, it is defined in mod-path itself.
 (define (get-exports/modpath mod-path)
-  (~> (resolve-module-path mod-path #f)
-      (get-module-code _)
-      (get-exports mod-path _ )
-      (make-immutable-hash _)))
+  (define-values (exports exported-syntax)
+    (cond
+      [(symbol? mod-path) (values '() '())] ;; TODO
+      [else (~> (resolve-module-path mod-path #f)
+                (get-module-code _)
+                (module-compiled-exports _))]))
+  (make-immutable-hash (parse-exports mod-path exports)))
 
-;; ModulePath CompiledModule -> ExportOriginMap
-;; Like get-exports/modpath, except it takes compiled module
-;; code. mod-path is source path of mod-code. We need this to
-;; resolve path indexes produced by `module-compiled-exports`
-(define (get-exports mod-path mod-code)
+;; ModulePath Exports -> ExportOriginMap
+;; Takes in result of module->exports or module-compiled-exports
+;; and returns an ExportOriginMap. mod-path is required to
+;; resolve path indexes in exports
+(define (parse-exports mod-path exports)
   ;; Takes a module exports entry in form (Pairof Symbol (Listof
   ;; ModPathIndex)) and return (list Symbol (Maybe ModPathIndex))
   (define (fix-entry e)
@@ -101,7 +104,6 @@
                   (? module-path-index? mod) _ (? symbol? orig-name) _) ...))
        (cons id (cons (resolve-module-path-index (first mod) mod-path)
                       (first orig-name)))]))
-  (define-values (exports _) (module-compiled-exports mod-code))
   (for/fold ([r '()])
             ([i* exports])
     (match i*
@@ -136,7 +138,7 @@
         (match (resolve-module-path-index mod path)
           [#f (void)]
           [`(submod ,path ,mod) (void)]
-          [(? symbol? b) (void)]
+          [(? symbol? b) (hash-set! graph b '())]
           [`,resolved-path (define new-mod (simplify-path resolved-path))
                            (hash-update! graph path (λ (v) (cons new-mod v)))
                            (unless (hash-ref graph new-mod #f)
