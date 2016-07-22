@@ -8,16 +8,25 @@
          racket/list
          racket/format
          racket/path
+         racket/set
          "config.rkt"
+         "global.rkt"
          "util.rkt"
          "environment.rkt"
          "absyn.rkt"
          "il.rkt")
 
+(require/typed "global.rkt"
+  [global-unreachable-idents (HashTable Path (Setof Symbol))])
+
 (provide absyn-top-level->il
          absyn-gtl-form->il
          absyn-expr->il
          absyn-module->il)
+
+(define-type-alias ModuleObjectNameMap (HashTable (U Path Symbol) Symbol))
+(: module-object-name-map (Parameter ModuleObjectNameMap))
+(define module-object-name-map (make-parameter ((inst hash (U Path Symbol) Symbol))))
 
 (: absyn-top-level->il (-> TopLevelForm ILStatement*))
 (define (absyn-top-level->il form)
@@ -40,25 +49,52 @@
   
   (match-define (Module id path lang imports forms) mod)
   (printf "[il] ~a\n" id)
-  (define mod-stms
-    (append-map
-     (λ ([form : ModuleLevelForm])
-       (cond
-         [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
-         [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
-         [(SubModuleForm? form) '()])) ;; TODO
-     forms))
+
+  (define imported-mod-path-list (set->list imports))
 
   (: requires* (Listof ILRequire))
   (define requires*
-    (for/list ([(mod-name idents) (in-hash imports)])
-      (define name (module-path->name mod-name))
+    (for/list ([mod-path imported-mod-path-list]
+               [counter (in-naturals)])
+      (define mod-obj-name (string->symbol (~a "M" counter))) ;; FIXME: Make a unique name in module
       (define import-name
-        (match mod-name
+        (match mod-path
           ['#%kernel (jsruntime-import-path path (jsruntime-kernel-module-path))]
-          [_ (module->relative-import name)]))
-      (ILRequire import-name idents)))
-  (ILModule path (unbox provides) requires* mod-stms))
+          [_ (module->relative-import (cast mod-path Path))]))
+      (ILRequire import-name mod-obj-name)))
+
+  (define mod-stms
+    (parameterize ([module-object-name-map ;; Names we will use for module objects in JS
+                    (for/fold ([acc (module-object-name-map)])
+                              ([req requires*]
+                               [mod-path imported-mod-path-list])
+                      (hash-set acc
+                                mod-path
+                                (ILRequire-name req)))])
+      (append-map
+       (λ ([form : ModuleLevelForm])
+         (cond
+           [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
+           [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
+           [(SubModuleForm? form) '()])) ;; TODO
+       forms)))
+
+  ;; Due to macro expansion we may have identifiers which are not actually
+  ;; exported by that particular module. We find such identifiers here
+  ;; and put them in provide list
+  (: unreachable-ident-provides (Listof ILProvide))
+  (define unreachable-ident-provides
+    (let ([ident-set ((inst hash-ref! Path (Setof Symbol))
+                      global-unreachable-idents
+                      path
+                      set)])
+      (for/list ([ident (in-set ident-set)])
+        (ILProvide ident))))
+
+  (ILModule path
+            (append (unbox provides) unreachable-ident-provides)
+            requires*
+            mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
 (define (absyn-gtl-form->il form)
@@ -218,16 +254,22 @@
                 (ILNew (cast il ILLValue)))]
        [_ (displayln args) (error 'absyn-expr->il "unknown ffi form")])]
     [(PlainApp lam args)
-     (: binops (Listof Symbol))
-     (define binops '(+ - * /)) ;;NOTE: Comparision operators work only on two operands TODO later
+     ;;NOTE: Comparision operators work only on two operands TODO later
+     (: binops (Listof ImportedIdent))
+     (define binops (map (λ ([b : Symbol]) (ImportedIdent b '#%kernel)) '(+ - * /)))
 
-     (: il-app/binop (-> Symbol (Listof ILExpr) (U ILApp ILBinaryOp)))
+     (: il-app/binop (-> Ident (Listof ILExpr) (U ILApp ILBinaryOp)))
      (define (il-app/binop v arg*)
+       (define v-il (let-values ([(_ v) (absyn-expr->il v)])
+                      v))
        (cond
-         [(and (equal? v '-) (length=? arg* 1)) (ILApp v arg*)]
-         [(and (equal? v '/) (length=? arg* 1)) (ILBinaryOp v (cons (ILValue 1) arg*))]
-         [(member v binops) (ILBinaryOp v arg*)]
-         [else (ILApp v arg*)]))
+         [(and (equal? v (ImportedIdent '- '#%kernel)) (length=? arg* 1))
+          (ILApp v-il arg*)]
+         [(and (equal? v (ImportedIdent '/ '#%kernel)) (length=? arg* 1))
+          (ILBinaryOp '/ (cons (ILValue 1) arg*))]
+         [(and (ImportedIdent? v) (member v binops))
+          (ILBinaryOp (ImportedIdent-id v) arg*)]
+         [else (ILApp v-il arg*)]))
 
      (let loop ([arg-stms : ILStatement* '()] ;;; statements for computing arguments
                 [arg* : (Listof ILExpr) '()] ;;; expressions passed to the lam
@@ -235,7 +277,7 @@
        (match arg
          ['()
           (cond
-            [(symbol? lam) (values arg-stms
+            [(Ident? lam) (values arg-stms
                                    (il-app/binop lam arg*))]
             [else (define-values (stms v) (absyn-expr->il lam))
                   (values (append arg-stms stms)
@@ -263,7 +305,13 @@
      (define-values (tl-stms v) (absyn-expr->il tl))
      (values (append hd-stms tl-stms)
              v)]
-    [_ #:when (symbol? expr) (values '() expr)]
+    [(LocalIdent id) (values '() id)]
+    [(TopLevelIdent id) (values '() id)]
+    [(ImportedIdent id src)
+     ;; find the name of object of imported js module and make a ref
+     ;; to access this
+     (define mod-obj-name (hash-ref (module-object-name-map) src))
+     (values '() (ILRef (assert mod-obj-name symbol?) id))]
     [_ (error (~a "unsupported expr " expr))]))
 
 (: absyn-binding->il (-> Binding ILStatement*))
@@ -303,47 +351,51 @@
 (: expand-case-lambda (-> CaseLambda PlainLambda))
 (define (expand-case-lambda clam)
   (define args (fresh-id 'args))
-  (define apply-js-name (name-in-module 'kernel 'apply))
+  (define apply-js-name (ImportedIdent 'apply '#%kernel))
   (: body Expr)
   (define body
     (let loop : Expr ([clauses* (CaseLambda-clauses clam)])
-      (match clauses*
-        ['() (PlainApp 'error (list (Quote "case-lambda: invalid case")))]
-        [(cons hd tl)
-         (If ((get-formals-predicate hd) args)
-             (PlainApp apply-js-name (list hd args))
-             (loop tl))])))
+         (match clauses*
+           ['() (PlainApp (ImportedIdent 'error '#%kernel)
+                          (list (Quote "case-lambda: invalid case")))]
+           [(cons hd tl)
+            (If ((get-formals-predicate hd) (LocalIdent args))
+                (PlainApp apply-js-name (list hd (LocalIdent args)))
+                (loop tl))])))
   (PlainLambda args (list body)))
    
 (: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
 (define (get-formals-predicate c)
   ;; TODO: Use binary ops instead of function call for cmp
   (define frmls (PlainLambda-formals c))
-  (define length-js-name (name-in-module 'kernel 'length))
+  (define length-js-name (ImportedIdent 'length '#%kernel))
   (cond
     [(symbol? frmls) (λ (_) (Quote #t))]
     [(list? frmls)
      (λ ([v : Expr])
-       (PlainApp (name-in-module 'kernel 'equal_p)
+       (PlainApp (ImportedIdent 'equal? '#%kernel)
                  (list 
                   (PlainApp length-js-name (list v))
                   (Quote (length frmls)))))]
     [(cons? frmls)
      (λ ([v : Expr])
-       (PlainApp (name-in-module 'kernel '_gt__eq_)
+       (PlainApp (ImportedIdent '>= '#%kernel)
                  (list
                   (PlainApp length-js-name (list v))
                   (Quote (sub1 (length (improper->proper frmls)))))))]))
 
 
 (module+ test
-  (require typed/rackunit)
+  (require typed/rackunit
+           racket/pretty)
  
   (define-syntax-rule (values->list e)
     (call-with-values (λ () e) list))
 
   (define-syntax-rule (ilcheck fn form result ...)
-    (parameterize ([fresh-id-counter 0])
+    (parameterize ([fresh-id-counter 0]
+                   [module-object-name-map
+                    (hash '#%kernel 'kernel)])
       (check-equal?
        (values->list (fn form))
        (list result ...))))
@@ -357,6 +409,19 @@
   (define-syntax-rule (check-ilgtl form stms)
     (ilcheck absyn-gtl-form->il form stms))
 
+  (define LI LocalIdent)
+  (define LI* (λ s* ((inst map LocalIdent Symbol) LocalIdent (cast s* (Listof Symbol)))))
+
+  (: kident (-> Symbol ImportedIdent))
+  (define (kident s) (ImportedIdent s '#%kernel))
+
+  (define-syntax-rule (convert+print fn absyn)
+    (parameterize ([fresh-id-counter 0]
+                   [module-object-name-map
+                    (hash '#%kernel 'kernel)])
+      (pretty-print
+       (values->list (fn absyn)))))
+  
   ;; enable test environment
   (test-environment? #t)
 
@@ -374,10 +439,10 @@
 
   ;; Function application
 
-  (check-ilexpr (PlainLambda '(x) (list 'x))
+  (check-ilexpr (PlainLambda '(x) (LI* 'x))
                 '()
                 (ILLambda '(x) (list (ILReturn 'x))))
-  (check-ilexpr (PlainLambda 'x (list 'x))
+  (check-ilexpr (PlainLambda 'x (LI* 'x))
                 '()
                 (ILLambda
                  '()
@@ -389,7 +454,6 @@
                     (list (ILApp (name-in-module 'core 'argumentsToArray)
                                  '(arguments)))))
                   (ILReturn 'x))))
-
   ;; If expressions
 
   (check-ilexpr (If (Quote #t) (Quote 'yes) (Quote 'no))
@@ -402,22 +466,21 @@
 
   ;; Lambdas
 
-  (check-ilexpr (PlainLambda '(x) (list 'x))
+  (check-ilexpr (PlainLambda '(x) (LI* 'x))
                 '()
                 (ILLambda
                  '(x)
                  (list (ILReturn 'x))))
   (check-ilexpr (PlainLambda '(a b)
-                             (list (PlainApp 'list '(a b))))
+                             (list (PlainApp (LocalIdent 'list) (LI* 'a 'b))))
                 '()
                 (ILLambda '(a b)
                           (list (ILReturn (ILApp 'list '(a b))))))
   
-
   ;; Let expressions
   (check-ilexpr (LetValues (list (cons '(a) (Quote 1))
                                  (cons '(b) (Quote 2)))
-                           '(a b))
+                           (LI* 'a 'b))
                 (list (ILVarDec 'a (ILValue 1)) (ILVarDec 'b (ILValue 2))
                       'a)
                 'b)
@@ -426,10 +489,10 @@
                                            (Quote 'yes)
                                            (Quote 'false)))
                                  (cons '(b)
-                                       (PlainApp '+
+                                       (PlainApp (kident '+)
                                                  (list
                                                   (Quote 1) (Quote 2)))))
-                           (list (PlainApp 'list '(a b))))
+                           (list (PlainApp (LocalIdent 'list) (LI* 'a 'b))))
                 (list
                  (ILIf
                   (ILValue #t)
@@ -441,13 +504,12 @@
                                            (ILValue 1) (ILValue 2)))))
                 (ILApp 'list '(a b)))
 
-
   ;; Binary operations
 
-  (check-ilexpr (PlainApp '+ (list (Quote 1) (Quote 2)))
+  (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
                 '()
                 (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
-  (check-ilexpr (PlainApp '- (list (Quote 1) (Quote 2) (Quote 3)))
+  (check-ilexpr (PlainApp (kident '-) (list (Quote 1) (Quote 2) (Quote 3)))
                 '()
                 (ILBinaryOp '-
                             (list
@@ -458,8 +520,8 @@
   (check-ilexpr
    (CaseLambda
     (list
-     (PlainLambda '(a b) (list (PlainApp '+ '(a b))))
-     (PlainLambda '(a b c) (list (PlainApp '* '(a b c))))))
+     (PlainLambda '(a b) (list (PlainApp (kident 'add) (LI* 'a 'b))))
+     (PlainLambda '(a b c) (list (PlainApp (kident 'mul) (LI* 'a 'b 'c))))))
    '()
    (ILLambda
     '()
@@ -472,38 +534,38 @@
                     '(arguments)))))
      (ILIf
       (ILApp
-       (name-in-module 'kernel 'equal_p)
-       (list (ILApp (name-in-module 'kernel 'length) '(args1))
+       (ILRef 'kernel 'equal?)
+       (list (ILApp (ILRef 'kernel 'length) '(args1))
              (ILValue 2)))
       (list
        (ILVarDec
         'if_res3
         (ILApp
-         (name-in-module 'kernel 'apply)
+         (ILRef 'kernel 'apply)
          (list
           (ILLambda '(a b)
-                    (list (ILReturn (ILBinaryOp '+ '(a b)))))
+                    (list (ILReturn (ILApp (ILRef 'kernel 'add) '(a b)))))
           'args1))))
       (list
        (ILIf
         (ILApp
-         (name-in-module 'kernel 'equal_p)
-         (list (ILApp '$rjs_kernel.length '(args1))
+         (ILRef 'kernel 'equal?)
+         (list (ILApp (ILRef 'kernel 'length) '(args1))
                (ILValue 3)))
         (list
          (ILVarDec
           'if_res2
           (ILApp
-           (name-in-module 'kernel 'apply)
+           (ILRef 'kernel 'apply)
            (list
             (ILLambda '(a b c)
                       (list
-                       (ILReturn (ILBinaryOp '* '(a b c)))))
+                       (ILReturn (ILApp (ILRef 'kernel 'mul) '(a b c)))))
             'args1))))
         (list
          (ILVarDec
           'if_res2
-          (ILApp 'error
+          (ILApp (ILRef 'kernel 'error)
                  (list (ILValue "case-lambda: invalid case"))))))
        (ILVarDec 'if_res3 'if_res2)))
      (ILReturn 'if_res3))))
@@ -513,11 +575,11 @@
   ;; Top Level ----------------------------------------------------------------
 
   (check-iltoplevel
-   (list (PlainApp 'displayln (list (Quote "hello")))
-         (PlainApp 'write (list (Quote "what" ) 'out)))
+   (list (PlainApp (kident 'displayln) (list (Quote "hello")))
+         (PlainApp (kident 'write) (list (Quote "what" ) (LocalIdent 'out))))
    (list
-    (ILApp 'displayln (list (ILValue "hello")))
-    (ILApp 'write (list (ILValue "what") 'out))))
+    (ILApp (ILRef 'kernel 'displayln) (list (ILValue "hello")))
+    (ILApp (ILRef 'kernel 'write) (list (ILValue "what") 'out))))
 
   ;; General Top Level --------------------------------------------------------
 
@@ -527,12 +589,12 @@
 
   (check-ilgtl
    (DefineValues '(x ident)
-     (PlainApp 'values
+     (PlainApp (kident 'values)
                (list (Quote 42)
-                     (PlainLambda '(x) '(x)))))
+                     (PlainLambda '(x) (LI* 'x)))))
    (list
     (ILVarDec
      'let_result1
-     (ILApp 'values (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
+     (ILApp (ILRef 'kernel 'values) (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
     (ILValuesMatch 'x 'let_result1 0)
     (ILValuesMatch 'ident 'let_result1 1))))

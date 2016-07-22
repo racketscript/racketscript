@@ -20,6 +20,7 @@
          "config.rkt"
          "expand.rkt"
          "freshen.rkt"
+         "global.rkt"
          "moddeps.rkt"
          "transform.rkt"
          "util.rkt")
@@ -195,7 +196,7 @@
 
        (assemble (absyn-top-level->il ast))
 
-       (for ([(mod _) (in-hash (Module-imports ast))])
+       (for ([mod (in-set (Module-imports ast))])
          (match mod
            ['#%kernel (void)] ;; Doing this separately is simply easier
            [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
@@ -225,13 +226,10 @@
        (main-source-file complete-filename)
        complete-filename)))
 
-  ;; Initialize global-export-tree so that we can import each
+  ;; Initialize global-export-graph so that we can import each
   ;; module as an object and follow identifier's from there.
   (display "Resolving module dependencies and identifiers... ")
-  (global-export-tree (get-export-tree source))
-  (global-module-rename-map (make-module-name-map
-                             (module-deps/tsort-inv
-                              (get-module-deps source))))
+  (global-export-graph (get-export-tree source))
   (displayln "Done!")
 
   (match (build-mode)

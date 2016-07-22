@@ -7,7 +7,6 @@
 (provide follow-symbol
          get-export-tree
          get-module-deps
-         make-module-name-map
          module-deps/tsort
          module-deps/tsort-inv)
 
@@ -42,28 +41,30 @@
 ;;   car is path of module from which identifier is imported and
 ;;   cdr is name of this identifier in that module.
 
-;; ExportTree ResolvedModulePath Symbol -> (Pairof (Listof ModulePath) Symbol)
+;; ExportTree ResolvedModulePath Symbol -> (Maybe (Pairof (Listof ModulePath) Symbol))
 ;; Track the modules from where id is imported starting from
 ;; src. We except id to be present in src. Only exports are
 ;; checked at each level, not imports. Returned value is a
 ;; a pair, where car is list of modules to follow and cdr is
 ;; the identifier name exported by module where it is defined
-;; WHERE: `id` must expoted at src
+;; #f is returned if id is not exported.
 (define (follow-symbol tree src id)
   (define (result src* id*)
     (cons (reverse src*) (first id*)))
   (let loop ([src* (list src)]
              [id* (list id)])
-    (define module-exports (hash-ref tree (first src*)))
-    (match (hash-ref module-exports (first id*))
-      [(cons (? symbol? next-module) next-id)
-       ;; When module name is a symbol such as #%kernel, #%unsafe ...
-       (result (cons next-module src*)
-               (cons next-id id*))]
-      [(cons next-module next-id)
-       (loop (cons next-module src*)
-             (cons next-id id*))]
-      [#f (result src* id*)])))
+    (define module-exports (hash-ref tree (first src*) #f))
+    (and module-exports
+         (match (hash-ref module-exports (first id*) '())
+           [(cons (? symbol? next-module) next-id)
+            ;; When module name is a symbol such as #%kernel, #%unsafe ...
+            (result (cons next-module src*)
+                    (cons next-id id*))]
+           [(cons next-module next-id)
+            (loop (cons next-module src*)
+                  (cons next-id id*))]
+           [#f (result src* id*)]
+           ['() #f]))))
 
 ;; ModulePath -> ExportTree
 ;; Return whole tree of exports with its source starting
@@ -145,11 +146,3 @@
                              (build-graph new-mod))]))))
   (build-graph mod-path)
   graph)
-
-
-;; (Listof ModuleName) -> (Map ModuleName Symbol)
-;; Maps each module name with a unique name
-(define (make-module-name-map mods)
-  (for/hash ([m mods]
-             [i (in-naturals)])
-    (values m (string->symbol (format "m~a" i)))))

@@ -14,6 +14,7 @@
          racket/list
          racket/path
          racket/pretty
+         racket/set
          racket/syntax
          racket/vector
          syntax/modresolve
@@ -31,37 +32,26 @@
          "absyn.rkt"
          "case-lambda.rkt"
          "config.rkt"
+         "global.rkt"
          "moddeps.rkt"
          "util.rkt")
 
 (provide convert
          open-read-module
-         global-export-tree
-         global-module-rename-map
          read-module
          to-absyn
          to-absyn/top
          quick-expand)
 
-(define current-module (make-parameter (list #f)))
+(define current-module (make-parameter #f))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
 
 ;;;----------------------------------------------------------------------------
-;;;; Module dependencies and exports
-;;;; Refer `moddeps.rkt`.
+;;;; Module dependencies and imports
 
-;; (Parameter (Maybe ExportTree))
-(define global-export-tree (make-parameter #f))
-;; (Parameter (Maybe (Hash ModulePath Symbol)))
-(define global-module-rename-map (make-parameter #f))
-
-;; (Parameter (Maybe (Hash ModulePath (Listof Symbol))))
-;; A map between module and list of identifiers imported from that
-;; module which we know is used by current module. The path is of the module
-;; where the binding is actually implmented, not where it is being imported
-;; at this point
-(define module-ident-sources (make-parameter #f))
+;; (Setof (U ModulePath Symbol))
+(define current-module-imports (make-parameter (set)))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module paths
@@ -91,7 +81,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;;; Conversion and expansion
 
-(define (require-parse r)
+#;(define (require-parse r)
   (syntax-parse r
     [v:str (Require (syntax-e #'v) #f)]
     [v:identifier (Require (syntax-e #'v) #f)]
@@ -110,12 +100,13 @@
       [_ null]))
 
   (define (formals->absyn formals)
-    (let ([f (to-absyn formals)])
-      (cond
-        [(or (list? f) (symbol? f)) f]
-        [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
-                     (cons fp fi))]
-        [else (error 'λ "invalid λ formals")])))
+    (parameterize ([quoted? #t])
+      (let ([f (to-absyn formals)])
+        (cond
+          [(or (list? f) (symbol? f)) f]
+          [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
+                       (cons fp fi))]
+          [else (error 'λ "invalid λ formals")]))))
 
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
@@ -174,9 +165,11 @@
     [(#%top . x) (TopId (syntax-e #'x))]
     [i:identifier #:when (quoted?) (syntax-e #'i)]
     [i:identifier
+     (define ident-sym (syntax-e #'i))
+
      (match (identifier-binding #'i)
-       ['lexical (syntax-e #'i)]
-       [#f (syntax-e #'i)]
+       ['lexical (LocalIdent ident-sym)]
+       [#f (TopLevelIdent ident-sym)]
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
         (define (rename n)
           ;; TODO: quick hack for null keyword. Proabably out previous
@@ -184,11 +177,34 @@
           (cond
             [(equal? n 'null) 'racket_null]
             [else n]))
-        (match-define (list mod-path self?) (index->path nom-src-mod))
-        (unless self?
-          (module-ident-sources (hash-set (module-ident-sources)
-                                          (rename (syntax-e #'i)) mod-path)))
-        (syntax-e #'i)])]
+        (match-define (list src-mod-path self?) (index->path src-mod)) ;; from where we import
+        (cond
+          [self? (LocalIdent ident-sym)]
+          [else
+           ;; Add the module from where we actual import this, so that we import this, and
+           ;; any side-effects due to this module is actually executed
+           (match-define (list nom-mod-path _) (index->path nom-src-mod))
+           (current-module-imports (set-add (current-module-imports) nom-mod-path))
+
+           ;; And still add the actual module where identifier is defined for easy
+           ;; and compact import. NOTE:In future we may want to remove this and
+           ;; compute this with moddeps information.
+           (current-module-imports (set-add (current-module-imports) src-mod-path))
+
+           ;; If we can't follow this symbol, we probably got this
+           ;; because of some macro expansion. TODO: As we process
+           ;; modules in topological order, we can save this
+           ;; identifier, so that when we export this identifier from
+           ;; its source module processed later.
+           (unless (follow-symbol (global-export-graph)
+                                  src-mod-path
+                                  src-id)
+             (hash-update! global-unreachable-idents
+                           src-mod-path
+                           (λ (s*)
+                             (set-add s* mod-src-id))
+                           (set mod-src-id)))
+           (ImportedIdent src-id src-mod-path)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
@@ -230,14 +246,13 @@
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
-     (parameterize ([module-ident-sources (hash)]
-                    [current-module path]
+     (parameterize ([current-module path]
+                    [current-module-imports (set)]
                     [current-directory (path-only path)])
        (define mod-id (syntax-e #'name))
        (printf "[absyn] ~a\n" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
-              [mod (module-ident-sources)]
-              [imports (assocs->hash-list (map reverse-pair (hash->list mod)))])
+              [imports (current-module-imports)])
          (Module mod-id
                  path
                  (syntax->datum #'lang)
@@ -247,8 +262,7 @@
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
 (define (to-absyn/top stx)
-  (parameterize ([module-ident-sources (hash)])
-    (to-absyn stx)))
+  (to-absyn stx))
 
 (define (do-expand stx in-path)
   ;; error checking
@@ -287,7 +301,15 @@
 (module+ test
   (require rackunit)
   (define-syntax-rule (to-absyn/expand stx)
-    (to-absyn/top (expand stx)))
+    (parameterize ([global-export-graph (hash)])
+      (to-absyn/top (expand stx))))
+  (define (ident i)
+    (match (identifier-binding i)
+      ['lexical (LocalIdent (syntax-e i))]
+      [#f (TopLevelIdent (syntax-e i))]
+      [(list mod-path mod-id _ _ _ _ _)
+       (match-define (list mod-path* _) (index->path mod-path))
+       (ImportedIdent mod-id mod-path*)]))
 
 ;;; Check values
 
@@ -312,23 +334,23 @@
   ;; Check lambdas
 
   (check-equal? (to-absyn/expand #`(λ (x) x))
-                (PlainLambda '(x) (list 'x)))
+                (PlainLambda '(x) (list (LocalIdent 'x))))
   (check-equal? (to-absyn/expand #`(λ x x))
-                (PlainLambda 'x (list 'x)))
-  (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (apply + c))))
+                (PlainLambda 'x (list (LocalIdent 'x))))
+  (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c))))
                 (PlainLambda
                  '((a b) . c)
                  (list
-                  (PlainApp '+
-                            (list 'a 'b
-                                  (PlainApp 'apply (list '+ 'c)))))))
-
+                  (PlainApp (ident #'+)
+                            (list (LocalIdent 'a) (LocalIdent'b)
+                                  (PlainApp (TopId'reduce)
+                                            (list (ident #'+) (LocalIdent 'c))))))))
   ;; Check application
 
   (check-equal? (to-absyn/expand #`(displayln "hello"))
-                (PlainApp 'displayln (list (Quote "hello"))))
+                (PlainApp (ident #'displayln) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
-                (PlainApp (PlainLambda '(x) '(x))
+                (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
                           (list (Quote 42))))
 
   ;; If expresion
@@ -346,13 +368,14 @@
                                      a b))
                 (LetValues (list (cons '(a) (Quote 1))
                                  (cons '(b) (Quote 2)))
-                           (list 'a 'b))
+                           (list (LocalIdent 'a) (LocalIdent 'b)))
                 "let values")
+
   (check-equal? (to-absyn/expand #'(let-values ([(a) '(1 2)] [(b) (+ 2 4)])
                                      a b))
                 (LetValues (list (cons '(a) (Quote '(1 2)))
-                                 (cons '(b) (PlainApp '+ (list (Quote 2) (Quote 4)))))
-                           (list 'a 'b)))
+                                 (cons '(b) (PlainApp (ident #'+) (list (Quote 2) (Quote 4)))))
+                           (list (LocalIdent 'a) (LocalIdent 'b))))
 
   (check-equal? (to-absyn/expand
                  #`(define-values (fact)
@@ -364,15 +387,15 @@
                   (PlainLambda
                    '(n)
                    (list
-                    (If (PlainApp 'zero? '(n))
+                    (If (PlainApp (ident #'zero?) (list (LocalIdent 'n)))
                         (Quote 0)
                         (PlainApp
-                         '*
-                         (list 'n
+                         (ident #'*)
+                         (list (LocalIdent 'n)
                                (PlainApp
                                 (TopId 'fact)
-                                (list (PlainApp 'sub1 (list 'n)))))))))))
-
+                                (list (PlainApp (ident #'sub1)
+                                                (list (LocalIdent 'n))))))))))))
   (check-equal?
    (to-absyn/expand
     #`(letrec-values
@@ -390,29 +413,33 @@
      (cons
       '(even? odd?)
       (PlainApp
-       'values
+       (ident #'values)
        (list
         (PlainLambda
          '(n)
          (list
           (LetValues
-           (list (cons '(or-part) (PlainApp 'zero? '(n))))
+           (list (cons '(or-part) (PlainApp (ident #'zero?) (list (LocalIdent 'n)))))
            (list
             (If
-             'or-part
-             'or-part
-             (PlainApp 'odd? (list (PlainApp 'sub1 '(n)))))))))
+             (LocalIdent 'or-part)
+             (LocalIdent 'or-part)
+             (PlainApp (LocalIdent 'odd?)
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))
         (PlainLambda
          '(n)
          (list
           (LetValues
-           (list (cons '(or-part) (PlainApp 'not (list (PlainApp 'zero? '(n))))))
+           (list (cons '(or-part) (PlainApp (ident #'not)
+                                            (list (PlainApp (ident #'zero?)
+                                                            (list (LocalIdent 'n)))))))
            (list
             (If
-             'or-part
-             'or-part
-             (PlainApp 'even? (list (PlainApp 'sub1 '(n)))))))))))))
-    (list (PlainApp 'even? (list (Quote 50))))))
+             (LocalIdent 'or-part)
+             (LocalIdent 'or-part)
+             (PlainApp (LocalIdent 'even?)
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))))))
+    (list (PlainApp (LocalIdent 'even?) (list (Quote 50))))))
 
 ;;; Begin expressions
 
@@ -422,19 +449,19 @@
                         (displayln "Begin")
                         (displayln "Expression")))
    (list
-    (PlainApp 'displayln (list (Quote "Hello!")))
-    (PlainApp 'displayln (list (Quote "Begin")))
-    (PlainApp 'displayln (list (Quote "Expression")))))
+    (PlainApp (ident #'displayln) (list (Quote "Hello!")))
+    (PlainApp (ident #'displayln) (list (Quote "Begin")))
+    (PlainApp (ident #'displayln) (list (Quote "Expression")))))
 
   (check-equal?
    (to-absyn/expand #'(begin0 (displayln "Hello!")
                         (displayln "Begin")
                         (displayln "Expression")))
    (Begin0
-     (PlainApp 'displayln (list (Quote "Hello!")))
+     (PlainApp (ident #'displayln) (list (Quote "Hello!")))
      (list
-      (PlainApp 'displayln (list (Quote "Begin")))
-      (PlainApp 'displayln (list (Quote "Expression"))))))
+      (PlainApp (ident #'displayln) (list (Quote "Begin")))
+      (PlainApp (ident #'displayln) (list (Quote "Expression"))))))
 
   (check-equal?
    (to-absyn/expand #'(define (foobar a b c)
@@ -446,9 +473,9 @@
      (PlainLambda
       '(a b c)
       (list
-       (PlainApp 'displayln (list 'a))
-       (PlainApp 'displayln (list 'b))
-       (PlainApp 'displayln (list 'c))))))
+       (PlainApp (ident #'displayln) (list (LocalIdent'a)))
+       (PlainApp (ident #'displayln) (list (LocalIdent'b)))
+       (PlainApp (ident #'displayln) (list (LocalIdent'c)))))))
 
 ;;; Case Lambda
 
@@ -458,18 +485,24 @@
                                 [(a b c) (* a b c)])))
    (CaseLambda
     (list
-     (PlainLambda '(a b) (list (PlainApp '+ '(a b))))
-     (PlainLambda '(a b c) (list (PlainApp '* '(a b c)))))))
+     (PlainLambda '(a b) (list (PlainApp (ident #'+)
+                                         (list (LocalIdent 'a) (LocalIdent 'b)))))
+     (PlainLambda '(a b c) (list (PlainApp (ident #'*)
+                                           (list (LocalIdent 'a)
+                                                 (LocalIdent 'b)
+                                                 (LocalIdent 'c))))))))
 
 ;;; Check module
 
   (test-case "simple module"
-    (define module-output (convert (expand
-                                    #'(module foo racket/base
-                                        (provide foo)
-                                        (define (foo name)
-                                          (displayln "Hello"))))
-                                   (build-path "/tmp/" "rapture-test-expand.rkt")))
+    (define module-output
+      (parameterize ([global-export-graph (hash)])
+        (convert (expand
+                  #'(module foo racket/base
+                      (provide foo)
+                      (define (foo name)
+                        (displayln "Hello"))))
+                 (build-path "/tmp/" "rapture-test-expand.rkt"))))
     (check-equal? (Module-id module-output) 'foo)
     (check-equal? (Module-path module-output) (string->path "/tmp/rapture-test-expand.rkt"))
     (check-equal? (Module-forms module-output)
@@ -479,4 +512,5 @@
                      '(foo)
                      (PlainLambda '(name)
                                   (list
-                                   (PlainApp 'displayln (list (Quote "Hello"))))))))))
+                                   (PlainApp (ident #'displayln)
+                                             (list (Quote "Hello"))))))))))

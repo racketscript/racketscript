@@ -6,7 +6,7 @@
 
 (define-type-alias Program TopLevelForm)
 
-(define-type Expr (U Symbol
+(define-type Expr (U Ident
                      PlainLambda
                      CaseLambda
                      PlainApp
@@ -61,6 +61,10 @@
 ;;; Expressions 
 
 (define-type Begin      (Listof TopLevelForm))
+(define-type Ident      (U LocalIdent ImportedIdent TopLevelIdent))
+(struct LocalIdent      ([id : Symbol]) #:transparent)
+(struct ImportedIdent   ([id : Symbol] [src-mod : Module-Path]) #:transparent)
+(struct TopLevelIdent   ([id : Symbol]) #:transparent)
 (struct Begin0          ([expr0 : Expr] [expr* : (Listof Expr)]) #:transparent)
 (struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
 (struct CaseLambda      ([clauses : (Listof PlainLambda)]) #:transparent)
@@ -74,6 +78,7 @@
 (struct VarRef          ([var : (Option (U Symbol TopId))]) #:transparent)
 
 (define-predicate Begin? Begin)
+(define-predicate Ident? Ident)
 
 ;;; Top Level Forms
 
@@ -81,7 +86,7 @@
 (struct Module ([id : Symbol]
                 [path : Path]
                 [lang : (U Symbol String (Listof Symbol))]
-                [imports : ImportMap]
+                [imports : (Setof (U Path Symbol))]
                 [forms : (Listof ModuleLevelForm)])
   #:transparent) ;; FIXME: path
 

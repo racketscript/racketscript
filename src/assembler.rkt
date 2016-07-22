@@ -158,10 +158,10 @@
                 (jsruntime-import-path (assert (current-source-file) path?)
                                        (jsruntime-kernel-module-path))))
   (for ([req reqs*])
-    (match-define (ILRequire name idents) req)
-    (emit (~a "import "
-              "{" (string-join (map normalize-symbol idents) ", ") "} "
-              "from '" name "';"))))
+    (match-define (ILRequire mod obj-name) req)
+    (emit (format "import * as ~a from \"~a\";"
+                  obj-name
+                  mod))))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)

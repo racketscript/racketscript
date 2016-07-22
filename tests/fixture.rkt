@@ -3,7 +3,9 @@
 
 (require rackunit
          glob
-         "../src/main.rkt")
+         "../src/global.rkt"
+         "../src/main.rkt"
+         "../src/moddeps.rkt")
 
 (define tests-root-dir (build-path rapture-dir "tests"))
 
@@ -66,6 +68,7 @@
   (define compile-result
     (let ([test-path (build-path tests-root-dir fpath)])
       (parameterize ([main-source-file test-path]
+                     [global-export-graph (get-export-tree test-path)]
                      [current-source-file test-path]
                      [current-output-port (if (rapture-stdout?)
                                               (current-output-port)
