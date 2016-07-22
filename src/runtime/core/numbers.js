@@ -7,9 +7,15 @@ export default Number = {
 	});
     },
     sub: function() {
-	return [].reduce.call(arguments, function(a, b) {
-	    return a - b
-	}, 0);
+	if (arguments.length === 1) {
+	    return -arguments[0];
+	} else {
+	    let result = arguments[0];
+	    for (var i = 1; i < arguments.length; ++i) {
+		result -= arguments[i];
+	    }
+	    return result;
+	}
     },
     mul: function() {
 	return [].reduce .call(arguments, function(a, b) {
@@ -17,9 +23,15 @@ export default Number = {
 	}, 1);
     },
     div: function() {
-	return [].reduce.call(arguments, function(a, b) {
-	    return a / b
-	}, 1);
+	if (arguments.length === 1) {
+	    return 1 / arguments[0];
+	} else {
+	    var result = arguments[0];
+	    for (var i = 1; i < arguments.length; ++i) {
+		result /= arguments[i];
+	    }
+	    return result;
+	}
     },
     compare: function(cmp, operands) {
 	if (operands.length < 2) {
