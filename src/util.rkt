@@ -255,7 +255,7 @@
     (fix-for-down
      (cast (find-relative-path (path-parent (module-output-file src))
                                (cond
-                                 [collects? (jsruntime-kernel-module-path)]
+                                 [collects? (module-output-file mod-path)]
                                  [else (module-output-file mod-path)]))
            Path))))
 
