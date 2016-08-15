@@ -93,9 +93,16 @@
 
 (define (provide-parse r)
   (syntax-parse r
-    [v:str (Provide (syntax-e #'v))]
-    [v:identifier (Provide (syntax-e #'v))]
-    [_ (error "unsupported provide form")]))
+    [v:str (list (Provide (syntax-e #'v)))]
+    [v:identifier (list (Provide (syntax-e #'v)))]
+    [((~datum for-meta) 0 p ...)
+     (stx-map (λ (pv) (Provide (syntax-e pv))) #'(p ...))]
+    [((~datum for-meta) 1 p ...) '()]
+    [((~datum for-syntax) p ...) '()]
+    [((~datum rename) p ...) '()]
+    [((~datum protect) p ...) '()]
+    [((~datum all-from-except) p ...) '()]
+    [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
 (define (to-absyn v)
   (define (proper l)
@@ -149,11 +156,12 @@
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
+    [(quote-syntax e ...) '()]
     [(#%require x ...)
      #f
      #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
-     (map provide-parse (syntax->list #'(x ...)))]
+     (append-map provide-parse (syntax->list #'(x ...)))]
     [(case-lambda . clauses)
      (CaseLambda
       (stx-map (λ (c)
