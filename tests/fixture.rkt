@@ -73,16 +73,18 @@
                      [current-output-port (if (rapture-stdout?)
                                               (current-output-port)
                                               (open-output-nowhere))])
-          (skip-gulp-build #f) ;;TODO: Remove this to speed up
-          (racket->js)
-          #t)))
+        (skip-gulp-build #f) ;;TODO: Remove this to speed up
+        (racket->js)
+        #t)))
 
   (cond
     [(false? compile-result) #f]
     [else
      (match-define (list r-p-out r-p-err) (run-in-racket fpath))
      (match-define (list j-p-out j-p-err) (run-in-nodejs fpath))
-     (results-equal? r-p-out j-p-out)]))
+     (if (results-equal? r-p-out j-p-out)
+         (begin (displayln "✔") #t)
+         (begin (displayln "✘") #f))]))
 
 ;; -> Void
 ;; Initialize test environment.
@@ -118,7 +120,7 @@
 
   (for ([test testcases]
         [i (in-naturals 1)])
-    (displayln (format "TEST (~a/~a) => ~a " i (length testcases) test))
+    (display (format "TEST (~a/~a) => ~a " i (length testcases) test))
     (check-rapture test)))
 
 (skip-npm-install #f) ;; For setup we need to install packages
@@ -137,7 +139,7 @@
      [("-n" "--skip-npm") "Skip NPM install on setup"
       (skip-npm-install #t)]
      #:once-any
-     [("-p" "--print-ouput") "Run program in NodeJS and display output"
+     [("-p" "--print-output") "Run program in NodeJS and display output"
       (print-output #t)]
      #:args (pattern)
      pattern))
