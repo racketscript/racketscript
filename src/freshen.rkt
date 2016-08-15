@@ -102,12 +102,13 @@
      #:with (forms-forms ...) (stx-map (λ (f) (freshen f sym-map)) #'(forms ...))
      #'(module* name forms-forms ...)]
     [(#%require x ...) e]
-    [(quote d) e]
-    [((#%declare _) _) e]
+    [((~datum quote-syntax) d) e]
+    [((~datum quote) d) e]
+    [(#%declare _) e]
     #;[(~or (~datum module)
-          (~datum module*)
-          (~datum #%require)
-          (~datum quote)) e]
+            (~datum module*)
+            (~datum #%require)
+            (~datum quote)) e]
     [(#%expression v)
      #`(#%expression #,(freshen #'v sym-map))]
     [(set! s:id e)
@@ -146,15 +147,15 @@
                                       (freshen e sym-map))
                                     #'(es ...))
      (define sym-map* (bindings-dict-set sym-map
-                                        #'(xs ...)
-                                        #'(fresh-xs ...)))
+                                         #'(xs ...)
+                                         #'(fresh-xs ...)))
      #`(let-values ([fresh-xs fresh-es] ...)
          #,@(stx-map (λ (b) (freshen b sym-map*)) #'(b ...)))]
     [(letrec-values ([xs es] ...) b ...)
      #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
      (define sym-map* (bindings-dict-set sym-map
-                                        #'(xs ...)
-                                        #'(fresh-xs ...)))
+                                         #'(xs ...)
+                                         #'(fresh-xs ...)))
      (with-syntax ([(fresh-es ...) (stx-map (λ (e)
                                               (freshen e sym-map*))
                                             #'(es ...))])
@@ -172,6 +173,10 @@
      #:with fresh-lam (freshen #'lam sym-map)
      #:with (fresh-arg ...) (stx-map (λ (e) (freshen e sym-map)) #'(arg ...))
      #'(#%plain-app fresh-lam fresh-arg ...)]
+    [(#%plain-module-begin form ...)
+     #:with (fresh-form ...) (stx-map (λ (f) (freshen f sym-map)) #'(form ...))
+     #'(#%plain-module-begin fresh-form ...)]
+    [(#%provide p ...) e]
     [(e ...)
      #:with fresh-es (stx-map (λ (e) (freshen e sym-map)) #'(e ...))
      #'fresh-es]
