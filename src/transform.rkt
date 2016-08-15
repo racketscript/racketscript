@@ -305,13 +305,29 @@
      (define-values (tl-stms v) (absyn-expr->il tl))
      (values (append hd-stms tl-stms)
              v)]
+    ['() (values '() (ILValue (void)))]
     [(LocalIdent id) (values '() id)]
     [(TopLevelIdent id) (values '() id)]
+    [(Begin0 expr0 expr*)
+     (define expr0-id (fresh-id 'begin-res))
+     (absyn-expr->il
+      (LetValues (list (cons `(,expr0-id) expr0))
+                 (append1 expr* (LocalIdent expr0-id))))]
     [(ImportedIdent id src)
+     ;; HACK HACK HACK!
      ;; find the name of object of imported js module and make a ref
      ;; to access this
+     (: rename (-> Symbol Symbol))
+     (define (rename n)
+       ;; TODO: quick hack for null keyword. Proabably out previous
+       ;; table of base symbols was actually useful
+       (cond
+         [(equal? n 'null) 'racket_null]
+         [(equal? n 'void) 'rvoid]
+         [else n]))
+     (define new-id (if (equal? src '#%kernel) (rename id) id))
      (define mod-obj-name (hash-ref (module-object-name-map) src))
-     (values '() (ILRef (assert mod-obj-name symbol?) id))]
+     (values '() (ILRef (assert mod-obj-name symbol?) new-id))]
     [_ (error (~a "unsupported expr " expr))]))
 
 (: absyn-binding->il (-> Binding ILStatement*))

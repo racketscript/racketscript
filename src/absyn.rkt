@@ -12,11 +12,13 @@
                      PlainApp
                      If
                      Begin
+                     Begin0
                      LetValues
                      LetRecValues
                      TopId
                      Set!
                      Quote
+                     Box
                      ;; QuoteSyntax
                      ;; WithContinuationMark
                      VarRef))
@@ -76,6 +78,7 @@
 (struct PlainApp        ([lam : Expr] [args : (Listof Expr)]) #:transparent) ;; Special case of (PlainApp '()) produces '()
 (struct TopId           ([id : Symbol]) #:transparent)
 (struct VarRef          ([var : (Option (U Symbol TopId))]) #:transparent)
+(struct Box             ([expr : Expr]) #:transparent)
 
 (define-predicate Begin? Begin)
 (define-predicate Ident? Ident)
