@@ -338,12 +338,15 @@
   (cond
     [(or (symbol? d)
          (string? d)
+         (bytes? d)
          (integer? d)
          (list? d)
          (cons? d)
+         (hash? d)
          (boolean? d)
          (vector? d)
          (struct? d)
+         (keyword? d)
          (real? d))
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))

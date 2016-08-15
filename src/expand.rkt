@@ -215,10 +215,12 @@
      (cons (to-absyn #'a) (to-absyn #'b))]
     [#(_ ...) (vector-map to-absyn (syntax-e v))]
     [_ #:when (number? (syntax-e v)) (syntax-e v)]
+    [_ #:when (bytes? (syntax-e v)) (syntax-e v)]
     [_ #:when (boolean? (syntax-e v)) (syntax-e v)]
     [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
+    [_ #:when (hash? (syntax-e v)) (syntax-e v)]
     [_ #:when (box? (syntax-e v))
-       (error "box not supportend")]
+       (Box (to-absyn (unbox (syntax-e v))))]
     [_ #:when (exact-integer? (syntax-e v))
        (Quote (syntax-e v))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]
@@ -229,13 +231,13 @@
     [_ #:when (char? (syntax-e v))
        (Quote (syntax-e v))]
     [_ #:when (regexp? (syntax-e v))
-       (error "regexp not supported")]
+       (Quote (syntax-e v))]
     [_ #:when (pregexp? (syntax-e v))
-       (error "prefexp? not supported")]
+       (Quote (syntax-e v))]
     [_ #:when (byte-regexp? (syntax-e v))
-       (error "byte-regexp? not supported")]
+       (Quote (syntax-e v))]
     [_ #:when (byte-pregexp? (syntax-e v))
-       (error "byte-pregexp not supported")]
+       (Quote (syntax-e v))]
     [((~literal with-continuation-mark) e0 e1 e2)
      (error "with-continuation-mark is not supported")]
     [_ (displayln "unsupported form =>")

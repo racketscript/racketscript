@@ -183,8 +183,15 @@
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
     [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]
+    [(keyword? v) (emit (~a (name-in-module 'core 'Keyword.make) "('" v "')"))]
     [(string? v) (write v out)]
-    [(number? v) (emit (~a v))]
+    [(number? v)
+     (match v
+       [+inf.0 (emit "Infinity")]
+       [-inf.0 (emit "-Infinity")]
+       [+nan.0 (emit "NaN")]
+       [+nan.f  (emit "NaN")]
+       [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
     [(empty? v) (emit (~a (name-in-module 'core 'Pair.Empty)))]
     [(list? v)
@@ -205,12 +212,26 @@
                 (unless last?
                   (emit ", ")))
      (emit "], true)")]
+    [(hash? v)
+     (emit "{}")]
     [(cons? v)
      (emit (~a (name-in-module 'core 'Pair.make) "("))
      (assemble-value (car v) out)
      (emit ", ")
      (assemble-value (cdr v) out)
      (emit ")")]
+    [(char? v)
+     (write (~a v) out)]
+    [(bytes? v)
+     (define byte-vals
+       (string-join (map number->string (bytes->list v)) ","))
+     (emit (format "new Uint8Array([~a])" byte-vals))]
+    [(regexp? v)
+     (define s (string-replace (cast (object-name v) String) "/" "\\/"))
+     (write (format "/~a/" s) out)]
+    [(byte-regexp? v)
+     (define s (string-replace (bytes->string/utf-8 (cast (object-name v) Bytes)) "/" "\\/"))
+     (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
     [else (displayln v) (error "TODO: Check how this thing actually works!")]))

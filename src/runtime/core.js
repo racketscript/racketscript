@@ -6,6 +6,7 @@ import * as Pair from "./core/pair.js";
 import * as Primitive from "./core/primitive.js";
 import * as Struct from "./core/struct.js";
 import * as Symbol from "./core/symbol.js";
+import * as Keyword from "./core/keyword.js";
 import * as Values from "./core/values.js";
 import * as Vector from "./core/vector.js";
 import * as rutils from "./core/utils.js";
@@ -40,6 +41,7 @@ export {
     Primitive,
     Struct,
     Symbol,
+    Keyword,
     Values,
     Vector,
     argumentsToArray,
