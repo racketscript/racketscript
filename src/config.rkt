@@ -1,5 +1,7 @@
 #lang typed/racket/base
 
+(require racket/match)
+
 (provide output-directory
          print-to-stdout
          racket-collects-dir
@@ -7,10 +9,9 @@
          main-source-file
          FFI-CALL-ID
          test-environment?
+         jsruntime-module-path
          jsruntime-core-module
-         jsruntime-kernel-module
-         jsruntime-core-module-path
-         jsruntime-kernel-module-path)
+         jsruntime-kernel-module)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -32,19 +33,19 @@
 (define jsruntime-kernel-module (make-parameter "$rjs_kernel"))
 (define jsruntime-core-module (make-parameter "$rjs_core"))
 
-(: jsruntime-kernel-module-path (-> Path))
-(define (jsruntime-kernel-module-path)
-  (path->complete-path
-   (build-path (output-directory)
-               "runtime"
-               "kernel.js")))
-
-(: jsruntime-core-module-path (-> Path))
-(define (jsruntime-core-module-path)
-  (path->complete-path
-   (build-path (output-directory)
-               "runtime"
-               "core.js")))
+(: jsruntime-module-path (-> Symbol Path))
+(define (jsruntime-module-path mod)
+  (let ([mod-name (match mod
+                    ['#%kernel "kernel.js"]
+                    ['#%utils "utils.js"]
+                    ['#%unsafe "unsafe.js"]
+                    ['#%flfxnum "flfxnum.js"]
+                    ['core "core.js"]
+                    [_ "rest.js"])])
+    (path->complete-path
+     (build-path (output-directory)
+                 "runtime"
+                 mod-name))))
 
 ;;; ---------------------------------------------------------------------------
 

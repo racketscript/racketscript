@@ -59,7 +59,7 @@
       (define mod-obj-name (string->symbol (~a "M" counter))) ;; FIXME: Make a unique name in module
       (define import-name
         (match mod-path
-          ['#%kernel (jsruntime-import-path path (jsruntime-kernel-module-path))]
+          [(? symbol? _) (jsruntime-import-path path (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
       (ILRequire import-name mod-obj-name)))
 

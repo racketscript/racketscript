@@ -195,7 +195,7 @@
 (: module-path->name (-> (U Path Symbol) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
-    [(equal? mod-name '#%kernel) (jsruntime-kernel-module-path)]
+    [(symbol? mod-name) (jsruntime-module-path mod-name)] ;; #%kernel, #%utils
     [(path? mod-name) mod-name]
     [else (error 'module-path->name
                  "Don't know how to translate module name '~a'" mod-name)]))

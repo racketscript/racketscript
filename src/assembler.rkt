@@ -152,11 +152,11 @@
   (emit (format "import * as ~a from '~a';"
                 (jsruntime-core-module)
                 (jsruntime-import-path (assert (current-source-file) path?)
-                                       (jsruntime-core-module-path))))
+                                       (jsruntime-module-path 'core))))
   (emit (format "import * as ~a from '~a';"
                 (jsruntime-kernel-module)
                 (jsruntime-import-path (assert (current-source-file) path?)
-                                       (jsruntime-kernel-module-path))))
+                                       (jsruntime-module-path '#%kernel))))
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name) req)
     (emit (format "import * as ~a from \"~a\";"

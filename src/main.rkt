@@ -198,10 +198,9 @@
 
        (for ([mod (in-set (Module-imports ast))])
          (match mod
-           ['#%kernel (void)] ;; Doing this separately is simply easier
-           [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
+           [(? symbol? _) (void)]
+           [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
-
        (loop)])))
 
 (module+ main
