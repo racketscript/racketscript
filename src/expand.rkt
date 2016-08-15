@@ -177,15 +177,28 @@
     [(#%top . x) (TopId (syntax-e #'x))]
     [i:identifier #:when (quoted?) (syntax-e #'i)]
     [i:identifier
+     (define (rename-module mpath)
+       ;; Rename few modules for simpler compilation
+       (cond
+         [(symbol? mpath) '#%kernel]
+         [(collects-module? mpath) '#%kernel]
+         [else mpath]))
      (define ident-sym (syntax-e #'i))
 
      (match (identifier-binding #'i)
        ['lexical (LocalIdent ident-sym)]
        [#f (TopLevelIdent ident-sym)]
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
-        (match-define (list src-mod-path self?) (index->path src-mod)) ;; from where we import
+        ;; from where we import
+        (match-define (list src-mod-path-orig self?) (index->path src-mod))
+        (define src-mod-path (rename-module src-mod-path-orig))
+
         (cond
           [self? (LocalIdent ident-sym)]
+          [(not (equal? src-mod-path src-mod-path-orig))
+           ;;HACK: renamed module. Don't do much. Use orignial id
+           (current-module-imports (set-add (current-module-imports) src-mod-path))
+           (ImportedIdent mod-src-id src-mod-path)]
           [else
            ;; Add the module from where we actual import this, so that we import this, and
            ;; any side-effects due to this module is actually executed
@@ -203,7 +216,7 @@
            ;; identifier, so that when we export this identifier from
            ;; its source module processed later.
            (unless (follow-symbol (global-export-graph)
-                                  src-mod-path
+                                  src-mod-path-orig
                                   src-id)
              (hash-update! global-unreachable-idents
                            src-mod-path

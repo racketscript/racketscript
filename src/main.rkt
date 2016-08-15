@@ -200,7 +200,7 @@
        (for ([mod (in-set (Module-imports ast))])
          (match mod
            [(? symbol? _) (void)]
-           [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
+           [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
        (loop)])))
 
