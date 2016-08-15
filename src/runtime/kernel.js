@@ -198,6 +198,12 @@ function make_struct_field_accessor(ref, index, fieldName) {
     }
 }
 
+function make_struct_field_mutator(set, index, fieldName) {
+    return function(s, v) {
+	return set(s, index, v);
+    }
+}
+
 function length(lst) {
     var len = 0;
     while (true) {
@@ -296,6 +302,50 @@ function check_struct_type(name, what) {
     }
 }
 
+function string() {
+    var result = "";
+    for (var v in arguments) {
+	result += arguments[v];
+    }
+    return result;
+}
+
+function for_each(lam, lst) {
+    map(lam, lst);
+    return null;
+}
+
+function rvoid() {
+    return null;
+}
+
+var prop_evt = make_struct_type_property("prop:evt").getAt(0)
+var prop_procedure = make_struct_type_property("prop:procedure").getAt(0)
+var prop_checked_procedure = make_struct_type_property("prop:checked-procedure").getAt(0)
+var prop_impersonator_of = make_struct_type_property("prop:impersonator-of").getAt(0)
+var prop_method_arity_error = make_struct_type_property("prop:method-arity-error").getAt(0)
+var prop_incomplete_arity = make_struct_type_property("prop:incomplete-arity").getAt(0)
+var prop_arity_string = make_struct_type_property("prop:arity-string").getAt(0)
+
+function current_output_port() {}
+function output_port_p() { return false; }
+function raise_argument_error() { return false; }
+function current_print() { return displayln; }
+function make_thread_cell() { return null; }
+function make_continuation_prompt_tag() { return null; }
+function gensym() { return null; }
+function system_type() { return null; }
+function format() { return null; }
+function string__gt_bytes_by_utf_8() { return null; }
+function byte_regexp() { return null; }
+function make_weak_hash() { return null; }
+function procedure_arity() { return 0; }
+function make_keyword_checker() { return 0; }
+function integer_p() { return 0; }
+function arity_at_least_p() { return 0; }
+function make_hasheq() { return 0; }
+function hash_set_bang_() { return 0; }
+
 export {
     racket_null,
     zero_p,
@@ -325,6 +375,9 @@ export {
     vector,
     vector_ref,
     vector_set_bang_,
+    string,
+    newline,
+    rvoid,
 
     // operators
     _times_,
@@ -343,11 +396,40 @@ export {
     display,
     current_inspector,
     map,
+    for_each,
 
     //structs
     struct_type_p,
     make_struct_type,
     make_struct_type_property,
     make_struct_field_accessor,
-    check_struct_type
+    make_struct_field_mutator,
+    check_struct_type,
+    prop_evt,
+
+    // dummies
+    current_output_port,
+    output_port_p,
+    current_print,
+    raise_argument_error,
+    make_thread_cell,
+    make_continuation_prompt_tag,
+    gensym,
+    system_type,
+    format,
+    string__gt_bytes_by_utf_8,
+    byte_regexp,
+    make_weak_hash,
+    prop_checked_procedure,
+    prop_impersonator_of,
+    prop_method_arity_error,
+    prop_incomplete_arity,
+    prop_arity_string,
+    prop_procedure,
+    procedure_arity,
+    make_keyword_checker,
+    integer_p,
+    arity_at_least_p,
+    make_hasheq,
+    hash_set_bang_
 };
