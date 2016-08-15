@@ -45,22 +45,37 @@ function add1(v) {
     return v + 1;
 }
 
+var buffer = "";
+
 function displayln(v) {
     /* TODO: Real thing takes port as well */
     if (v === true) {
-	console.log("#t");
+	console.log(buffer + "#t");
     } else if (v === false) {
-	console.log("#f");
+	console.log(buffer + "#f");
     } else if (v === undefined || v === null) {
-	console.log("#<void>");
+	console.log(buffer + "#<void>");
     } else {
-	console.log(rcore.toString(v));
+	console.log(buffer + rcore.toString(v));
     }
+    buffer = "";
 }
 
 function display(v) {
     /* TODO: this is still line */
-    return displayln(v);
+    if (v === true) {
+	buffer += "#t";
+    } else if (v === false) {
+	buffer += "#f";
+    } else if (v === undefined || v === null) {
+	buffer += "#<void>";
+    } else {
+	buffer += rcore.toString(v);
+    }
+}
+
+function newline() {
+    return displayln("");
 }
 
 function print_values(v) {
@@ -103,8 +118,8 @@ function call_with_values(generator, receiver) {
     var values = generator();
     if (rcore.Values.check(values)) {
 	return receiver.apply(this, generator().getAll());
-    } else {
-	return receiver(values);
+    } else if (values !== undefined && values !== null) {
+	return receiver.apply(this, [values]);
     }
 }
 
