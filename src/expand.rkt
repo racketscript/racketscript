@@ -41,6 +41,7 @@
          read-module
          to-absyn
          to-absyn/top
+         used-idents
          quick-expand)
 
 (define current-module (make-parameter #f))
@@ -52,6 +53,9 @@
 
 ;; (Setof (U ModulePath Symbol))
 (define current-module-imports (make-parameter (set)))
+
+;; A list of idents used so far while compiling current project
+(define used-idents (make-parameter (hash)))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module paths
@@ -171,20 +175,14 @@
        ['lexical (LocalIdent ident-sym)]
        [#f (TopLevelIdent ident-sym)]
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
-        (define (rename n)
-          ;; TODO: quick hack for null keyword. Proabably out previous
-          ;; table of base symbols was actually useful
-          (cond
-            [(equal? n 'null) 'racket_null]
-            [else n]))
         (match-define (list src-mod-path self?) (index->path src-mod)) ;; from where we import
         (cond
           [self? (LocalIdent ident-sym)]
           [else
            ;; Add the module from where we actual import this, so that we import this, and
            ;; any side-effects due to this module is actually executed
-           (match-define (list nom-mod-path _) (index->path nom-src-mod))
-           (current-module-imports (set-add (current-module-imports) nom-mod-path))
+           ;(match-define (list nom-mod-path _) (index->path nom-src-mod))
+           ;(current-module-imports (set-add (current-module-imports) nom-mod-path))
 
            ;; And still add the actual module where identifier is defined for easy
            ;; and compact import. NOTE:In future we may want to remove this and
@@ -204,10 +202,15 @@
                            (λ (s*)
                              (set-add s* mod-src-id))
                            (set mod-src-id)))
+           (used-idents (hash-update (used-idents)
+                                     src-mod-path
+                                     (λ (i*) (set-add i* (list src-id (current-module))))
+                                     (set (list src-id  (current-module)))))
            (ImportedIdent src-id src-mod-path)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
+    [(with-continuation-mark p ...) (Quote #f)]
     [(begin-for-syntax b ...) #f]
     [(_ ...)
      (map to-absyn (syntax->list v))]

@@ -39,6 +39,7 @@
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
+(define dump-debug-info (make-parameter #f))
 
 (define-runtime-path rapture-main-module ".")
 
@@ -213,6 +214,8 @@
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
      ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
+     ["--dump-debug-info" "Dumps some debug information in output directory"
+      (dump-debug-info #t)]
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
@@ -249,5 +252,10 @@
              (absyn-top-level->il _)
              (pretty-print _))]
     ['js (racket->js)])
+
+  ;; Dump debug information
+  (with-output-to-file (build-path (output-directory) "debug.txt") #:exists 'truncate
+    (λ ()
+      (pretty-print (used-idents))))
 
   (void))
