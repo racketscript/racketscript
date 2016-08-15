@@ -79,6 +79,9 @@
            [(SubModuleForm? form) '()])) ;; TODO
        forms)))
 
+
+  ;; Compute `provides` from this modoule
+
   ;; Due to macro expansion we may have identifiers which are not actually
   ;; exported by that particular module. We find such identifiers here
   ;; and put them in provide list
@@ -91,8 +94,21 @@
       (for/list ([ident (in-set ident-set)])
         (ILProvide ident))))
 
+  ;; Since we get identifiers directly from defining module, we keep
+  ;; track of defines, and excludes re-exports here
+  (: top-level-defines (Setof Symbol))
+  (define top-level-defines (list->set
+                             (append-map DefineValues-ids
+                                         (filter DefineValues? forms))))
+
+  (: final-provides (Listof ILProvide))
+  (define final-provides
+    (filter (λ ([p : ILProvide])
+              (set-member? top-level-defines (ILProvide-id p) ))
+            (append (unbox provides) unreachable-ident-provides)))
+
   (ILModule path
-            (append (unbox provides) unreachable-ident-provides)
+            final-provides
             requires*
             mod-stms))
 
