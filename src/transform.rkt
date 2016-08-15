@@ -25,6 +25,7 @@
          absyn-module->il)
 
 (define-type-alias ModuleObjectNameMap (HashTable (U Path Symbol) Symbol))
+
 (: module-object-name-map (Parameter ModuleObjectNameMap))
 (define module-object-name-map (make-parameter ((inst hash (U Path Symbol) Symbol))))
 
@@ -46,7 +47,7 @@
   (: add-provides! (-> (Listof ILProvide) Void))
   (define (add-provides! p*)
     (set-box! provides (append (unbox provides) p*)))
-  
+
   (match-define (Module id path lang imports forms) mod)
   (printf "[il] ~a\n" id)
 
@@ -126,7 +127,7 @@
 (: absyn-provide->il (-> Provide* (Listof ILProvide)))
 (define (absyn-provide->il form)
   (map (λ ([f : Provide]) (ILProvide (Provide-id f))) form))
-     
+
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
 ;;; statements in JS. However, since expression always has a
@@ -398,7 +399,7 @@
                 (PlainApp apply-js-name (list hd (LocalIdent args)))
                 (loop tl))])))
   (PlainLambda args (list body)))
-   
+
 (: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
 (define (get-formals-predicate c)
   ;; TODO: Use binary ops instead of function call for cmp
@@ -409,7 +410,7 @@
     [(list? frmls)
      (λ ([v : Expr])
        (PlainApp (ImportedIdent 'equal? '#%kernel)
-                 (list 
+                 (list
                   (PlainApp length-js-name (list v))
                   (Quote (length frmls)))))]
     [(cons? frmls)
@@ -423,7 +424,7 @@
 (module+ test
   (require typed/rackunit
            racket/pretty)
- 
+
   (define-syntax-rule (values->list e)
     (call-with-values (λ () e) list))
 
@@ -456,7 +457,7 @@
                     (hash '#%kernel 'kernel)])
       (pretty-print
        (values->list (fn absyn)))))
-  
+
   ;; enable test environment
   (test-environment? #t)
 
@@ -511,7 +512,7 @@
                 '()
                 (ILLambda '(a b)
                           (list (ILReturn (ILApp 'list '(a b))))))
-  
+
   ;; Let expressions
   (check-ilexpr (LetValues (list (cons '(a) (Quote 1))
                                  (cons '(b) (Quote 2)))

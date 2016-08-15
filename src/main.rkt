@@ -82,8 +82,8 @@
 ;; Path-String Path-String -> Void
 ;; Copies all files in from-dir to to-dir *non-recursively*
 (define (copy-all from-dir to-dir)
- (for ([f (in-directory from-dir)])
-    (define fname (file-name-from-path f))
+ (for ([f (in-directory from-dir)]) 
+   (define fname (file-name-from-path f))
     (when (file-exists? f)
       (copy-file f (build-path to-dir fname) #t))))
 
