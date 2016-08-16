@@ -44,7 +44,7 @@ class Struct extends Primitive {
 	// Later when we instantiate the subtype, its guard will be
 	// called in its constructor, hence maintaining the required
 	// order
-	var guardLambda = this._desc._options.guard;
+	let guardLambda = this._desc._options.guard;
 	if (guardLambda) {
 	    let guardFields = fields.concat(callerName ||
 					    this._desc._options.constructorName ||
@@ -54,9 +54,9 @@ class Struct extends Primitive {
 
 	// Initialize current and super instance
 	this._superStructInstance = false /* Struct instance of super-type */
-	var superType = this._desc.getSuperType();
+	let superType = this._desc.getSuperType();
 	if (superType !== false) {
-	    var superInitFields = fields.slice(0, superType._totalInitFields);
+	    let superInitFields = fields.slice(0, superType._totalInitFields);
 	    this._fields = fields.slice(superType._totalInitFields);
 	    this._superStructInstance = superType.getStructConstructor()
 		.apply(null, superInitFields);
@@ -65,15 +65,15 @@ class Struct extends Primitive {
 	}
 
 	// Auto fields
-	var autoV = this._desc.autoV; /* Initial value for auto fields */
-	for (var i = 0; i < this._desc.autoFieldCount; i++) {
+	let autoV = this._desc.autoV; /* Initial value for auto fields */
+	for (let i = 0; i < this._desc.autoFieldCount; i++) {
 	    this._fields.push(autoV);
 	}
     }
 
     toString() {
-	var fields = "";
-	for (var i = 0; i < this._fields.length; i++) {
+	let fields = "";
+	for (let i = 0; i < this._fields.length; i++) {
 	    fields += this._fields[i].toString();
 	    if (i !== this._fields.length - 1) {
 		fields += " ";
@@ -92,7 +92,7 @@ class Struct extends Primitive {
 	    return false;
 	}
 
-	for (var i = 0; i < this._fields.length; i++) {
+	for (let i = 0; i < this._fields.length; i++) {
 	    if (!RUtils.isEqual(this._fields[i], v._fields[i])) {
 		return false;
 	    }
@@ -142,13 +142,12 @@ class StructTypeDescriptor extends Primitive {
 	// supers in struct-type-property are also added when
 	// attached. However propeties attached to super types of this
 	// struct are not added here and will have to be followed.
-	var props = options.props && Pair.listToArray(options.props);
+	let props = options.props && Pair.listToArray(options.props);
 	this._options.props = {}
 	if (props) {
 	    // TODO: If prop is already added, then check associated
 	    // values with eq?, else raise contract-errorx
-	    for (var p in props) {
-		let prop = props[p];
+	    for (let prop of props) {
 		prop.hd.attachToStructTypeDescriptor(this, prop.tl)
 	    }
 	}
@@ -164,7 +163,7 @@ class StructTypeDescriptor extends Primitive {
 	}
 
 	// Immutables
-	var immutables = options.immutables || []
+	let immutables = options.immutables || []
 	this._options.immutables = new Set(Pair.listToArray(immutables))
 	this._options.immutables.forEach((e) => {
 	    if (e < 0 || e >= options.initFieldCount) {
@@ -213,7 +212,7 @@ class StructTypeDescriptor extends Primitive {
 	return RUtils.attachReadOnlyProperty((s, pos) => {
 	    C.type(s, Struct);
 
-	    var sobj = s._maybeFindSuperInstance(this);
+	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise(RacketCoreError, "accessor applied to invalid type")
 	    }
@@ -226,7 +225,7 @@ class StructTypeDescriptor extends Primitive {
 	return RUtils.attachReadOnlyProperty((s, pos, v) => {
 	    C.type(s, Struct);
 
-	    var sobj = s._maybeFindSuperInstance(this);
+	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise(RacketCoreError, "mutator applied to invalid type")
 	    }
@@ -333,7 +332,7 @@ class StructTypeProperty extends Primitive {
 
 export
 function makeStructTypeProperty(options) {
-    var stProp = StructTypeProperty.make(options);
+    let stProp = StructTypeProperty.make(options);
 
     return Values.make([
 	stProp,
@@ -346,7 +345,7 @@ function makeStructTypeProperty(options) {
 
 export
 function makeStructType(options) {
-    var descriptor = new StructTypeDescriptor(options);
+    let descriptor = new StructTypeDescriptor(options);
 
     return Values.make([
 	descriptor,

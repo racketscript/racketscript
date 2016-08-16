@@ -10,8 +10,8 @@ class Vector extends Primitive {
     }
 
     toString() {
-	var items = "";
-	for (var i = 0; i < this.items.length; i++) {
+	let items = "";
+	for (let i = 0; i < this.items.length; i++) {
 	    items += this.items[i].toString();
 	    if (i != this.items.length - 1) {
 		items += " ";
@@ -50,14 +50,14 @@ class Vector extends Primitive {
     }
 
     equals(v) {
-	var items1 = this.items;
-	var items2 = v.items;
+	let items1 = this.items;
+	let items2 = v.items;
 
 	if (items1.length != items2.length) {
 	    return false;
 	}
 
-	for (var i = 0; i < items1.length; i++) {
+	for (let i = 0; i < items1.length; i++) {
 	    if (!rutils.isEqual(items1[i], items2[i])) {
 		return false;
 	    }
@@ -75,7 +75,7 @@ function make(items, mutable) {
 
 export
 function makeInit(size, init) {
-    var r = new Array(size);
+    let r = new Array(size);
     return r.fill(init);
 }
 

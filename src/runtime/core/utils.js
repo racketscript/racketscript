@@ -27,8 +27,7 @@ function toString(v) {
     }
 }
 
-export
-function attachReadOnlyProperty(o, k, v) {
+export function attachReadOnlyProperty(o, k, v) {
     return Object.defineProperty(o, k, {
 	value: v,
 	writable: false,

@@ -24,11 +24,11 @@ class Pair extends Primitive {
     }
 
     toString() {
-	var result = "(";
-	var rest = this;
+	let result = "(";
+	let rest = this;
 	while (true) {
 	    if (check(rest)) {
-		var hd = rest.hd;
+		let hd = rest.hd;
 		result += rutils.toString(hd);
 	    } else {
 		result += ". " + rutils.toString(rest);
@@ -50,10 +50,10 @@ class Pair extends Primitive {
     }
 
     equals(v) {
-	var hd1 = this.hd;
-	var tl1 = this.tl;
-	var hd2 = v.hd;
-	var tl2 = v.tl;
+	let hd1 = this.hd;
+	let tl1 = this.tl;
+	let hd2 = v.hd;
+	let tl2 = v.tl;
 
 	while (true) {
 	    if (rutils.isEqual(hd1, hd2)) {
@@ -79,8 +79,8 @@ function make(hd, tl) {
 
 export
 function makeList() {
-    var len = arguments.length - 1;
-    var result = Empty; /* TODO: wrap this? */
+    let len = arguments.length - 1;
+    let result = Empty; /* TODO: wrap this? */
     while (len >= 0) {
 	result = make(arguments[len--], result);
     }
@@ -89,15 +89,28 @@ function makeList() {
 
 export
 function listToArray(lst) {
-    var r = [];
-    while (!isEmpty(lst)) {
-        r.push(lst.hd);
-        lst = lst.tl;
-    }
+    let r = [];
+    listForEach(lst, (x) => r.push(x));
     return r;
 }
 
 export
 function listFromArray(lst) {
     return makeList.apply(null, lst);
+}
+
+export
+function listForEach(lst, fn) {
+    while (!isEmpty(lst)) {
+	fn(lst.hd);
+	lst = lst.tl;
+    }
+}
+
+export
+function listMap(lst, fn) {
+    let result = [];
+    let mapper = (x) => result.push(result, fn(x));
+    listForEach(lst, mapper);
+    return listFromArray(result);
 }
