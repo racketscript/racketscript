@@ -1,5 +1,5 @@
-import {default as Primitive} from "./primitive.js";
-import * as rutils from "./utils.js";
+import {Primitive} from "./primitive.js";
+import * as $ from "./lib.js";
 
 export const Empty = [];
 
@@ -20,9 +20,9 @@ class Pair extends Primitive {
 	while (true) {
 	    if (check(rest)) {
 		let hd = rest.hd;
-		result += rutils.toString(hd);
+		result += $.toString(hd);
 	    } else {
-		result += ". " + rutils.toString(rest);
+		result += ". " + $.toString(rest);
 		break;
 	    }
 	    rest = rest.tl;
@@ -49,8 +49,8 @@ class Pair extends Primitive {
 	let tl2 = v.tl;
 
 	while (true) {
-	    if (rutils.isEqual(hd1, hd2)) {
-		return rutils.isEqual(tl1, tl2);
+	    if ($.isEqual(hd1, hd2)) {
+		return $.isEqual(tl1, tl2);
 	    } else {
 		return false;
 	    }

@@ -275,7 +275,7 @@ var _lt_ = rcore.Number.lt;
 var _gt_ = rcore.Number.gt;
 var _lt__eq_ = rcore.Number.lte;
 var _gt__eq_ = rcore.Number.gte;
-var _eq_ = rcore.Number.equal;
+var _eq_ = rcore.Number.equals;
 
 // Structs
 

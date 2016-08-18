@@ -1,11 +1,10 @@
-import {RacketCoreError} from "./error.js";
-import {hashString} from "../third-party/hash.js";
+import * as $ from "./lib.js";
 
 /**
    Base class for various compound data types
    such as structs, pairs, values, ...
 */
-export default class Primitive {
+export class Primitive {
     constructor() {
 	// Abstract base class
 	// if (new.target === Primitive) {
@@ -14,7 +13,7 @@ export default class Primitive {
     }
 
     toString() {
-	throw new RacketCoreError("Not Implemented");
+	throw new $.RacketCoreError("Not Implemented");
     }
 
     toRawString() {
@@ -22,11 +21,11 @@ export default class Primitive {
     }
 
     mutable() {
-	throw new RacketCoreError("Not Implemented");
+	throw new $.RacketCoreError("Not Implemented");
     }
 
     equals(v) {
-	throw new RacketCoreError("Not Implemented");
+	throw new $.RacketCoreError("Not Implemented {0}", v);
     }
 
     eqv(v) {
@@ -38,7 +37,7 @@ export default class Primitive {
     }
 
     hashEqual() {
-	return hashString(this.toRawString());
+	return $.hashString(this.toRawString());
     }
 
     hashCode() {

@@ -1,6 +1,5 @@
-import {default as Primitive} from "./primitive.js";
-import {RacketCoreError} from "./error.js";
-import * as rutils from "./utils.js";
+import {Primitive} from "./primitive.js";
+import * as $ from "./lib.js";
 
 class Vector extends Primitive {
     constructor(items, mutable) {
@@ -30,7 +29,7 @@ class Vector extends Primitive {
 
     ref(n) {
 	if (n < 0 || n > this.items.length) {
-	    throw new RacketCoreError("vector-ref", "index out of range");
+	    throw new $.RacketCoreError("vector-ref", "index out of range");
 	}
 
 	return this.items[n];
@@ -40,7 +39,7 @@ class Vector extends Primitive {
 	if (n < 0 || n > this.items.length) {
 	    throw new ("vector-set", "index out of range");
 	} else if (!this.mutable) {
-	    throw new RacketCoreError("vector-set", "immutable vector");
+	    throw new $.RacketCoreError("vector-set", "immutable vector");
 	}
 	this.items[n] = v;
     }
@@ -60,7 +59,7 @@ class Vector extends Primitive {
 	}
 
 	for (let i = 0; i < items1.length; i++) {
-	    if (!rutils.isEqual(items1[i], items2[i])) {
+	    if (!$.isEqual(items1[i], items2[i])) {
 		return false;
 	    }
 	}

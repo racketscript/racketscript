@@ -1,5 +1,5 @@
-import {default as Primitive} from "./primitive.js";
-import {RacketCoreError} from "./error.js";
+import {Primitive} from "./primitive.js";
+import {RacketCoreError} from "./lib.js";
 
 class Values extends Primitive {
     constructor(vals) {

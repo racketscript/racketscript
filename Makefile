@@ -6,7 +6,7 @@
 ##               #
 ##               "
 
-.PHONY: all build setup clean coverage-unit-test coverage unit-test integration-test test
+.PHONY: all build setup setup-extra clean coverage-unit-test coverage unit-test integration-test test eslint jshint
 
 all: build
 
@@ -22,8 +22,12 @@ build:
 	raco make -v src/main.rkt
 
 setup:
-	npm install -g traceur js-beautify gulp  ## these tools must be in PATH
-	raco pkg install threading cover glob graph
+	npm install -g traceur gulp ## these tools must be in PATH
+	raco pkg install threading glob graph
+
+setup-extra:
+	npm install -g js-beautify eslint jshint
+	raco pkg install cover
 
 clean:
 	rm -rf src/compiled
@@ -39,6 +43,18 @@ coverage:
 	@echo "    RAPTURE COVERAGE    "
 	@echo "++++++++++++++++++++++++"
 	raco cover -d ./coverage/all src/ tests/fixture.rkt
+
+## JavaScript
+
+eslint:
+	@echo "    RAPTURE RUNTIME LINT    "
+	@echo "++++++++++++++++++++++++++++"
+	eslint ./src/runtime/ || true
+
+jshint:
+	@echo "    RAPTURE RUNTIME LINT    "
+	@echo "++++++++++++++++++++++++++++"
+	jshint ./src/runtime/ || true
 
 ## Test recipes
 

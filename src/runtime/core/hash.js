@@ -1,21 +1,19 @@
-import {default as Primitive} from "./primitive.js";
-import {RacketCoreError} from "./error.js";
-import * as rutils from "./utils.js";
+import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
-import {hamt} from "../third-party/hamt.js";
+import {Primitive} from "./primitive.js";
 
 let hashConfigs = {
     eq: {
-	hash: rutils.hashEq,
-	keyEq: rutils.isEq
+	hash: $.hashEq,
+	keyEq: $.isEq
     },
     eqv: {
-	hash: rutils.hashEqv,
-	keyEq: rutils.isEqv
+	hash: $.hashEqv,
+	keyEq: $.isEqv
     },
     equal: {
-	hash: rutils.hashEqual,
-	keyEq: rutils.isEqual
+	hash: $.hashEqual,
+	keyEq: $.isEqual
     }
 }
 
@@ -32,9 +30,9 @@ class Hash extends Primitive {
 	let i = 0;
 	for (let [k, v] of this._h) {
 	    items += "(";
-	    items += rutils.toString(k);
+	    items += $.toString(k);
 	    items += " . ";
-	    items += rutils.toString(v);
+	    items += $.toString(v);
 	    items += ")";
 	    if (++i != this._h.size) {
 		items += " ";
@@ -91,7 +89,7 @@ class Hash extends Primitive {
 
 	for (let [key, val] of this._h) {
 	    let vv = v._h.get(key);
-	    if (vv === undefined || !rutils.isEqual(val, vv)) {
+	    if (vv === undefined || !$.isEqual(val, vv)) {
 		return false;
 	    }
 	}
@@ -108,7 +106,7 @@ export function make(items, type, mutable) {
     let h = items.reduce((acc, item) => {
 	let [k, v] = item;
 	return acc.set(k, v);
-    }, hamt.make(hashConfigs[type]));
+    }, $.hamt.make(hashConfigs[type]));
     return new Hash(h, type, mutable);
 }
 

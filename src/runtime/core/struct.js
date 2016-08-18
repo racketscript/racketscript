@@ -1,8 +1,7 @@
 import * as C from "./check.js";
-import {RacketCoreError} from "./error.js";
+import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
-import {default as Primitive} from "./primitive.js";
-import * as RUtils from "./utils.js";
+import {Primitive} from "./primitive.js";
 import * as Values from "./values.js";
 
 // This module implements Racket structs via three classes which
@@ -37,7 +36,7 @@ class Struct extends Primitive {
 
 	C.eq(fields.length,
 	     this._desc._totalInitFields,
-	     RacketCoreError,
+	     $.RacketCoreError,
 	     "arity mismatch");
 
 	// Guard's are applied starting from subtype to supertype
@@ -93,7 +92,7 @@ class Struct extends Primitive {
 	}
 
 	for (let i = 0; i < this._fields.length; i++) {
-	    if (!RUtils.isEqual(this._fields[i], v._fields[i])) {
+	    if (!$.isEqual(this._fields[i], v._fields[i])) {
 		return false;
 	    }
 	}
@@ -109,9 +108,9 @@ class Struct extends Primitive {
     }
 
     setField(n, v) {
-	C.truthy(n >= this._fields.length, RacketCoreError,
+	C.truthy(n >= this._fields.length, $.RacketCoreError,
 		 "invalid field at position");
-	C.truthy(this._desc.immutables.has(n), RacketCoreError,
+	C.truthy(this._desc.immutables.has(n), $.RacketCoreError,
 		 "field is immutable");
 	this._fields[n] = v;
     }
@@ -193,13 +192,13 @@ class StructTypeDescriptor extends Primitive {
     }
 
     getStructConstructor() {
-	return RUtils.attachReadOnlyProperty((...args) => {
+	return $.attachReadOnlyProperty((...args) => {
 	    return new Struct(this, args);
 	}, "racketProcedureType", "struct-constructor");
     }
 
     getStructPredicate() {
-	return RUtils.attachReadOnlyProperty((s) => {
+	return $.attachReadOnlyProperty((s) => {
 	    if(!(s instanceof Struct)) {
 		return false;
 	    }
@@ -209,12 +208,12 @@ class StructTypeDescriptor extends Primitive {
     }
 
     getStructAccessor() {
-	return RUtils.attachReadOnlyProperty((s, pos) => {
+	return $.attachReadOnlyProperty((s, pos) => {
 	    C.type(s, Struct);
 
 	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise(RacketCoreError, "accessor applied to invalid type")
+		C.raise($.RacketCoreError, "accessor applied to invalid type")
 	    }
 
 	    return sobj.getField(pos);
@@ -222,12 +221,12 @@ class StructTypeDescriptor extends Primitive {
     }
 
     getStructMutator() {
-	return RUtils.attachReadOnlyProperty((s, pos, v) => {
+	return $.attachReadOnlyProperty((s, pos, v) => {
 	    C.type(s, Struct);
 
 	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise(RacketCoreError, "mutator applied to invalid type")
+		C.raise($.RacketCoreError, "mutator applied to invalid type")
 	    }
 
 	    return sobj.setField(pos, v);
@@ -303,11 +302,11 @@ class StructTypeProperty extends Primitive {
 	    } else if (v instanceof Struct) {
 		var desc = v._desc;
 	    } else {
-		C.raise(RacketCoreError, "invalid argument to accessor");
+		C.raise($.RacketCoreError, "invalid argument to accessor");
 	    }
 
 	    return desc._findProperty(this) ||
-		C.raise(RacketCoreError, "property not in struct");
+		C.raise($.RacketCoreError, "property not in struct");
 	}
     }
 

@@ -162,7 +162,7 @@
                  (range fi-len)
                  fi)
             (ILVarDec fp
-                      (->jslist (ILApp (name-in-module 'core 'sliceArguments)
+                      (->jslist (ILApp (name-in-module 'core 'argumentsSlice)
                                        (list arguments-array (ILValue fi-len)))))))]))
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]

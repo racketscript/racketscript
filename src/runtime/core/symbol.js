@@ -1,5 +1,5 @@
-import {default as Primitive} from "./primitive.js";
-import {internedMake} from "./utils.js";
+import {Primitive} from "./primitive.js";
+import {internedMake} from "./lib.js";
 
 class Symbol extends Primitive {
     constructor(v) {

@@ -1,6 +1,5 @@
-import {default as Primitive} from "./primitive.js";
-import {hashString} from "../third-party/hash.js";
-import {internedMake} from "./utils.js";
+import {Primitive} from "./primitive.js";
+import {internedMake} from "./lib.js";
 
 class Keyword extends Primitive {
     constructor(v) {
