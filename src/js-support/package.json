@@ -19,6 +19,7 @@
 	"gulp",
 	"gulp-concat",
 	"gulp-traceur-cmdline",
-	"gulp-insert"
+	"gulp-insert",
+	"hamt_plus"
     ]
 }

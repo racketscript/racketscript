@@ -302,6 +302,33 @@ function check_struct_type(name, what) {
     }
 }
 
+// Hashes
+
+function make_immutable_hash(assocs) {
+    return rcore.Hash.makeFromAssocs(assocs, "equal", false);
+}
+
+function hash(...vals) {
+    if (vals.length % 2 !== 0) {
+	throw new Error("invalid number of arguments");
+    }
+
+    let items = [];
+    for (let i = 0; i < vals.length; i += 2) {
+	items.push([vals[i], vals[i + 1]]);
+    }
+
+    return rcore.Hash.makeEqual(items, false);
+}
+
+function hash_ref(h, k, fail) {
+    return h.ref(k, fail);
+}
+
+function hash_set(h, k, v) {
+    return h.set(k, v);
+}
+
 function string() {
     var result = "";
     for (var v in arguments) {
@@ -406,6 +433,12 @@ export {
     make_struct_field_mutator,
     check_struct_type,
     prop_evt,
+
+    // hash
+    hash_ref,
+    hash_set,
+    hash,
+    make_immutable_hash,
 
     // dummies
     current_output_port,

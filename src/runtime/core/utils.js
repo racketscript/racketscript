@@ -1,7 +1,8 @@
 import * as Primitive from "./primitive.js";
+import {hash} from "../third-party/hash.js";
 
-export
-function isEqual(v1, v2) {
+/* Equality checks */
+export function isEqual(v1, v2) {
     if (Primitive.check(v1)) {
 	return v1.equals(v2);
     } else {
@@ -9,17 +10,30 @@ function isEqual(v1, v2) {
     }
 }
 
-
-export
-function isEq(v1, v2) {
-    /* FIXME: We are not handling special case for Symbol */
+export function isEq(v1, v2) {
+    // FIXME: We are not handling special case for Symbol
     return v1 === v2;
 }
 
 export let isEqv = isEq;
 
-export
-function toString(v) {
+/* Hash functions */
+
+export function hashEq(o) {
+    return hash(o, false, false);
+}
+
+export function hashEqv(o) {
+    return hash(o, true, false);
+}
+
+export function hashEqual(o) {
+    return hash(o, true, true);
+}
+
+/* Other helpers */
+
+export function toString(v) {
     if (Primitive.check(v)) {
 	return v.toString();
     } else {

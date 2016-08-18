@@ -238,11 +238,20 @@
     [(a . b)
      (cons (to-absyn #'a) (to-absyn #'b))]
     [#(_ ...) (vector-map to-absyn (syntax-e v))]
+    [_ #:when (hash? (syntax-e v))
+       (define val (syntax-e v))
+       (define keys (to-absyn (datum->syntax #'lex (hash-keys val))))
+       (define vals (to-absyn (datum->syntax #'lex (hash-values val))))
+       (define hash-maker
+         (cond
+           [(hash-eq? val) make-immutable-hasheq]
+           [(hash-eqv? val) make-immutable-hasheqv]
+           [(hash-equal? val) make-immutable-hash]))
+       (hash-maker (map cons keys vals))]
     [_ #:when (number? (syntax-e v)) (syntax-e v)]
     [_ #:when (bytes? (syntax-e v)) (syntax-e v)]
     [_ #:when (boolean? (syntax-e v)) (syntax-e v)]
     [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
-    [_ #:when (hash? (syntax-e v)) (syntax-e v)]
     [_ #:when (box? (syntax-e v))
        (Box (to-absyn (unbox (syntax-e v))))]
     [_ #:when (exact-integer? (syntax-e v))

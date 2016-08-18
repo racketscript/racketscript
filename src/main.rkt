@@ -118,14 +118,14 @@
 
 ;; -> Void
 (define (copy-runtime-files)
-  (define runtime-root (build-path rapture-dir "src" "runtime"))
-  (define runtime-core (build-path runtime-root "core"))
-  (define o-runtime-root (build-path (output-directory) "runtime"))
-  (define o-runtime-core (build-path o-runtime-root "core"))
-  (make-directory* o-runtime-root)
-  (make-directory* o-runtime-core)
-  (copy-all runtime-root o-runtime-root)
-  (copy-all runtime-core o-runtime-core))
+  (define (docopy p)
+    (define src (build-path rapture-dir "src" p))
+    (define dest (build-path (output-directory) p))
+    (make-directory* dest)
+    (copy-all src dest))
+  (docopy "runtime/")
+  (docopy "runtime/core")
+  (docopy "runtime/third-party"))
 
 ;; -> Void
 (define (copy-support-files)

@@ -9,6 +9,7 @@ import * as Symbol from "./core/symbol.js";
 import * as Keyword from "./core/keyword.js";
 import * as Values from "./core/values.js";
 import * as Vector from "./core/vector.js";
+import * as Hash from "./core/hash.js";
 import * as rutils from "./core/utils.js";
 
 /**
@@ -44,9 +45,18 @@ export {
     Keyword,
     Values,
     Vector,
+    Hash,
     argumentsToArray,
     sliceArguments,
     RacketCoreError
 }
 
-export {isEq, isEqv, isEqual, toString} from "./core/utils.js";
+export {
+    toString,
+    isEq,
+    isEqv,
+    isEqual,
+    hashEqual,
+    hashEq,
+    hashEqv
+} from "./core/utils.js";

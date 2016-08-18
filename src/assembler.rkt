@@ -213,7 +213,24 @@
                   (emit ", ")))
      (emit "], true)")]
     [(hash? v)
-     (emit "{}")]
+     (: maker Symbol)
+     (define maker (cond
+                     [(hash-eq? v) 'Hash.makeEq]
+                     [(hash-eqv? v) 'Hash.makeEqv]
+                     [(hash-equal? v) 'Hash.makeEqual]
+                     [else (error 'assemble-value "unknown hash type")]))
+     (define mutable (not (immutable? v)))
+     (emit (~a (name-in-module 'core maker) "(["))
+     (for/last? ([key last? (hash-keys v)]
+                 [val _ (hash-values v)])
+       (emit "[")
+       (assemble-value key out)
+       (emit ",")
+       (assemble-value val out)
+       (emit "]")
+       (unless last?
+         (emit ", ")))
+     (emit "], false)")]
     [(cons? v)
      (emit (~a (name-in-module 'core 'Pair.make) "("))
      (assemble-value (car v) out)
