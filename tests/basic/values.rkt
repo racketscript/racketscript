@@ -17,3 +17,4 @@
 
 (displayln '(1 2 3 4 5))
 (displayln '(1 2 "string" 4 5))
+(displayln '(1 2 ("string" "in" ("quotes" "!")) 4 5))

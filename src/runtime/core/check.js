@@ -1,31 +1,26 @@
-export
-function raise(exp, msg) {
+export function raise(exp, msg) {
     throw new exp(msg)
 }
 
-export
-function truthy(val, exp, msg="") {
+export function truthy(val, exp, msg="") {
     if (val !== true) {
 	raise(exp, msg);
     }
     return true;
 }
 
-export
-function falsy(val, exp, msg="") {
+export function falsy(val, exp, msg="") {
     return truthy(val === false, exp, msg);
 }
 
-export
-function type(val, type, msg="") {
+export function type(val, type, msg="") {
     if  (val instanceof type) {
 	return true;
     }
     raise(TypeError, msg + "(" + val + " : " + typeof(val) + " != " + type.name + ")");
 }
 
-export
-function eq(val1, val2, exp, msg) {
+export function eq(val1, val2, exp, msg) {
     if (val1 !== val2) {
 	raise(exp, msg);
     }

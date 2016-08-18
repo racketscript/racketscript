@@ -1,4 +1,6 @@
 import {default as Primitive} from "./primitive.js";
+import {hashString} from "../third-party/hash.js";
+import {internedMake} from "./utils.js";
 
 class Keyword extends Primitive {
     constructor(v) {
@@ -15,17 +17,15 @@ class Keyword extends Primitive {
     }
 
     equals(v) {
-	return this.v === v.v;
+	return check(v) && this.v === v.v;
     }
 }
 
 
-export
-function make(v) {
+export let make = internedMake(v => {
     return new Keyword(v);
-}
+});
 
-export
-function check(v) {
+export function check(v) {
     return (v instanceof Keyword)
 }

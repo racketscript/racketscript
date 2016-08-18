@@ -25,12 +25,10 @@ class Values extends Primitive {
 }
 
 
-export
-function make(vals) {
+export function make(vals) {
     return new Values(vals);
 }
 
-export
-function check(v) {
+export function check(v) {
     return (v instanceof Values);
 }

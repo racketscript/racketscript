@@ -34,3 +34,15 @@ export function attachReadOnlyProperty(o, k, v) {
 	configurable: false
     });
 }
+
+export function internedMake(f) {
+    let cache = {};
+    return (v) => {
+	if (v in cache) {
+	    return cache[v];
+	}
+	let result = f(v);
+	cache[v] = result;
+	return result;
+    }
+}

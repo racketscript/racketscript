@@ -3,8 +3,7 @@ import * as rutils from "./utils.js";
 
 export const Empty = [];
 
-export
-function isEmpty(v) {
+export function isEmpty(v) {
     return (v instanceof Array) && v.length === 0;
 }
 
@@ -13,14 +12,6 @@ class Pair extends Primitive {
 	super();
 	this.hd = hd;
 	this.tl = tl;
-    }
-
-    car() {
-	return this.hd;
-    }
-
-    cdr() {
-	return this.tl;
     }
 
     toString() {
@@ -50,6 +41,8 @@ class Pair extends Primitive {
     }
 
     equals(v) {
+	check(v);
+
 	let hd1 = this.hd;
 	let tl1 = this.tl;
 	let hd2 = v.hd;
@@ -65,20 +58,25 @@ class Pair extends Primitive {
 
 	return true;
     }
+
+    car() {
+	return this.hd;
+    }
+
+    cdr() {
+	return this.tl;
+    }
 }
 
-export
-function check(v) {
+export function check(v) {
     return (v instanceof Pair);
 }
 
-export
-function make(hd, tl) {
+export function make(hd, tl) {
     return new Pair(hd, tl);
 }
 
-export
-function makeList() {
+export function makeList() {
     let len = arguments.length - 1;
     let result = Empty; /* TODO: wrap this? */
     while (len >= 0) {
@@ -87,28 +85,24 @@ function makeList() {
     return result;
 }
 
-export
-function listToArray(lst) {
+export function listToArray(lst) {
     let r = [];
     listForEach(lst, (x) => r.push(x));
     return r;
 }
 
-export
-function listFromArray(lst) {
+export function listFromArray(lst) {
     return makeList.apply(null, lst);
 }
 
-export
-function listForEach(lst, fn) {
+export function listForEach(lst, fn) {
     while (!isEmpty(lst)) {
 	fn(lst.hd);
 	lst = lst.tl;
     }
 }
 
-export
-function listMap(lst, fn) {
+export function listMap(lst, fn) {
     let result = [];
     let mapper = (x) => result.push(result, fn(x));
     listForEach(lst, mapper);

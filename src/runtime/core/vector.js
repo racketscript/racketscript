@@ -24,7 +24,7 @@ class Vector extends Primitive {
 	return "'" + this.toString();
     }
 
-    isMutable() {
+    mutable() {
 	return this.mutable;
     }
 
@@ -50,6 +50,8 @@ class Vector extends Primitive {
     }
 
     equals(v) {
+	check(v);
+
 	let items1 = this.items;
 	let items2 = v.items;
 
@@ -67,19 +69,16 @@ class Vector extends Primitive {
     }
 }
 
-export
-function make(items, mutable) {
+export function make(items, mutable) {
     return new Vector(items, mutable);
 }
 
 
-export
-function makeInit(size, init) {
+export function makeInit(size, init) {
     let r = new Array(size);
     return r.fill(init);
 }
 
-export
-function check(v1) {
+export function check(v1) {
     return (v1 instanceof Vector);
 }

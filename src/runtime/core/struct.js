@@ -87,7 +87,7 @@ class Struct extends Primitive {
     }
 
     equals(v) {
-	if (this._desc !== v.desc ||
+	if (!check(v, this._desc) ||
 	    this._fields.length !== v._fields.length) {
 	    return false;
 	}
@@ -330,8 +330,7 @@ class StructTypeProperty extends Primitive {
 
 /*****************************************************************************/
 
-export
-function makeStructTypeProperty(options) {
+export function makeStructTypeProperty(options) {
     let stProp = StructTypeProperty.make(options);
 
     return Values.make([
@@ -343,8 +342,7 @@ function makeStructTypeProperty(options) {
 
 /*****************************************************************************/
 
-export
-function makeStructType(options) {
+export function makeStructType(options) {
     let descriptor = new StructTypeDescriptor(options);
 
     return Values.make([
@@ -356,7 +354,14 @@ function makeStructType(options) {
     ])
 }
 
-export
-function isStructType(v) {
+export function isStructType(v) {
     return v instanceof StructTypeDescriptor;
+}
+
+export function isStructInstance(v) {
+    return v instanceof Struct;
+}
+
+export function check(v, desc) {
+    return isStructInstance(v) && v._desc == desc;
 }
