@@ -108,9 +108,9 @@ class Struct extends Primitive {
     }
 
     setField(n, v) {
-	C.truthy(n >= this._fields.length, $.RacketCoreError,
+	C.truthy(n < this._fields.length, $.RacketCoreError,
 		 "invalid field at position");
-	C.truthy(this._desc.immutables.has(n), $.RacketCoreError,
+	C.falsy(this._desc.isFieldImmutable(n), $.RacketCoreError,
 		 "field is immutable");
 	this._fields[n] = v;
     }
@@ -162,8 +162,8 @@ class StructTypeDescriptor extends Primitive {
 	}
 
 	// Immutables
-	let immutables = options.immutables || []
-	this._options.immutables = new Set(Pair.listToArray(immutables))
+	let immutables = options.immutables || new Set([]);
+	this._options.immutables = new Set(Pair.listToArray(immutables));
 	this._options.immutables.forEach((e) => {
 	    if (e < 0 || e >= options.initFieldCount) {
 		C.raise("invalid index in immutables provided");
@@ -255,6 +255,9 @@ class StructTypeDescriptor extends Primitive {
 	return undefined;
     }
 
+    isFieldImmutable(n) {
+	return this._options.immutables.has(n);
+    }
 }
 
 /*****************************************************************************/
