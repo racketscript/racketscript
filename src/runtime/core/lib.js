@@ -7,7 +7,7 @@ export {hamt} from "../third-party/hamt.js";
 // Equality Checks */
 
 export function isEqual(v1, v2) {
-    if (v1 === v2 || v1.valueOf() === v2.valueOf()) {
+    if (isEqv(v1, v2)) {
 	return true;
     } else if (typeof v1 === 'object' && typeof v2 === 'object' &&
 	       v1.constructor !== v2.constructor) {
@@ -23,7 +23,9 @@ export function isEqual(v1, v2) {
 export function isEqv(v1, v2) {
     // NOTE: We are not handling special case for Symbol.
     // Symbols and keywords are interned, so that's ok.
-    return v1.valueOf() === v2.valueOf();
+    return v1 === v2 || (typeof v1.valueOf === 'function' &&
+			 typeof v2.valueOf === 'function' &&
+			 v1.valueOf() === v2.valueOf());
 }
 
 export function isEq(v1, v2) {
