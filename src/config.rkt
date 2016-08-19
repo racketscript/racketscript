@@ -11,7 +11,8 @@
          test-environment?
          jsruntime-module-path
          jsruntime-core-module
-         jsruntime-kernel-module)
+         jsruntime-kernel-module
+         skip-assemble-kernel-import)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -24,6 +25,9 @@
 
 (: main-source-file (Parameter (Option Path)))
 (define main-source-file (make-parameter #f))
+
+(: skip-assemble-kernel-import (Parameter Boolean))
+(define skip-assemble-kernel-import (make-parameter #f)) ;; TODO: Remove
 
 ;;; ---------------------------------------------------------------------------
 

@@ -32,7 +32,7 @@
 (: absyn-top-level->il (-> TopLevelForm ILStatement*))
 (define (absyn-top-level->il form)
   (cond
-    [(Module? form) (list (absyn-module->il form))]
+    [(Module? form) (error 'absyn-top-level->il "Not supported. Todo.")]
     [(Expr? form)
      (define-values (stmt v) (absyn-expr->il form))
      (append1 stmt v)]
@@ -60,7 +60,8 @@
       (define mod-obj-name (string->symbol (~a "M" counter))) ;; FIXME: Make a unique name in module
       (define import-name
         (match mod-path
-          [(? symbol? _) (jsruntime-import-path path (jsruntime-module-path mod-path))]
+          [(? symbol? _) (jsruntime-import-path path
+                                                (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
       (ILRequire import-name mod-obj-name)))
 

@@ -127,14 +127,12 @@
      (emit " = ")
      (emit (~a (normalize-symbol vref) ".getAt(" index ")"))
      (emit ";")]
-    [_ #:when (ILModule? stmt) (assemble-module stmt out)]
     [_ #:when (ILExpr? stmt)
        (assemble-expr stmt out)
        (emit ";")]))
 
-(: assemble-module (-> ILModule Output-Port Void))
-(define (assemble-module mod out)
-  (define emit (curry fprintf out))
+(: assemble-module (-> ILModule (Option Output-Port) Void))
+(define (assemble-module mod maybeout)
   (match-define (ILModule id provides requires body) mod)
   (printf "[assemble] ~a\n" id)
   (let ([cb (λ ([out : Output-Port])
@@ -142,21 +140,22 @@
               (for ([b body])
                 (assemble-statement b out))
               (assemble-provides* provides out))])
-    (if (print-to-stdout)
-        (cb (current-output-port))
+    (if maybeout
+        (cb maybeout)
         (call-with-output-file (module-output-file id) #:exists 'replace cb))))
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
   (emit (format "import * as ~a from '~a';"
-                (jsruntime-core-module)
-                (jsruntime-import-path (assert (current-source-file) path?)
-                                       (jsruntime-module-path 'core))))
-  (emit (format "import * as ~a from '~a';"
-                (jsruntime-kernel-module)
-                (jsruntime-import-path (assert (current-source-file) path?)
-                                       (jsruntime-module-path '#%kernel))))
+                  (jsruntime-core-module)
+                  (jsruntime-import-path (assert (current-source-file) path?)
+                                         (jsruntime-module-path 'core))))
+  (unless (skip-assemble-kernel-import)
+    (emit (format "import * as ~a from '~a';"
+                  (jsruntime-kernel-module)
+                  (jsruntime-import-path (assert (current-source-file) path?)
+                                         (jsruntime-module-path '#%kernel)))))
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name) req)
     (emit (format "import * as ~a from \"~a\";"

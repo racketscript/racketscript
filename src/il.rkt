@@ -22,8 +22,7 @@
                             ILIf
                             ILValuesMatch
                             ILAssign
-                            ILExpr
-                            ILModule)) ;;NOTE: Adding ILModule here feels hacky
+                            ILExpr))
 (define-predicate ILStatement? ILStatement)
 
 (define-type-alias ILStatement* (Listof ILStatement))

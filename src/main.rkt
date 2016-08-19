@@ -195,7 +195,7 @@
          (prepare-build-directory (~a (Module-id ast))))
        (make-directory* (path-only (module-output-file next)))
 
-       (assemble (absyn-top-level->il ast))
+       (assemble-module (absyn-module->il ast) #f)
 
        (for ([mod (in-set (Module-imports ast))])
          (match mod
