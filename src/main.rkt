@@ -281,7 +281,7 @@
     ['il (~> (quick-expand source)
              (freshen _)
              (convert _ (build-path source))
-             (absyn-top-level->il _)
+             (absyn-module->il _)
              (pretty-print _))]
     ['js (racket->js)])
 

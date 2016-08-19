@@ -224,7 +224,7 @@
                (append1 stms
                         (ILAssign id v)))
              (ILValue (void)))]
-    [(PlainApp '#%js-ffi args)
+    [(PlainApp (ImportedIdent '#%js-ffi _) args)
      (match args
        [(list (Quote 'var) (Quote var)) (values '() (cast var Symbol))]
        [(list (Quote 'ref) b xs ...)
