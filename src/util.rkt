@@ -136,7 +136,8 @@
           (string-prefix? s (jsruntime-kernel-module)))))
   (: char-map (HashTable String String))
   (define char-map
-    #hash(("-" . "_")
+    #hash(("$" . "$")
+          ("-" . "_")
           ("?" . "_p")
           ("+" . "_plus_")
           ("'" . "_prime_")
@@ -149,6 +150,8 @@
           ("." . "_dot_")
           ("&" . "_and_")))
   (match (symbol->string s)
+    ["null" "rnull"]
+    ["void" "rvoid"]
     [str #:when (should-rename? str)
          (: char-list (Listof Char))
          (define char-list (string->list str))

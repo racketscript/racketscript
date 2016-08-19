@@ -7,8 +7,11 @@ export {hamt} from "../third-party/hamt.js";
 // Equality Checks */
 
 export function isEqual(v1, v2) {
-    if (v1 === v2) {
+    if (v1 === v2 || v1.valueOf() === v2.valueOf()) {
 	return true;
+    } else if (typeof v1 === 'object' && typeof v2 === 'object' &&
+	       v1.constructor !== v2.constructor) {
+	return false;
     } else if (typeof v1.equals === 'function') {
 	// Its a Primitive instance
 	return v1.equals(v2) || false;

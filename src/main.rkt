@@ -4,6 +4,7 @@
          racket/file
          racket/format
          racket/match
+         racket/list
          racket/path
          racket/port
          racket/pretty
@@ -16,6 +17,7 @@
          threading
 
          "absyn.rkt"
+         "il.rkt"
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
@@ -162,6 +164,34 @@
     (unless (skip-gulp-build)
       (system "gulp"))))
 
+;;;; Generate stub module
+
+(define (make-stub-ilmodule mod)
+  (define idents (~> (hash-ref (used-idents) mod)
+                     (set-map _ first)
+                     (remove-duplicates _)))
+  (ILModule (build-path (output-directory)
+                        "runtime"
+                        (substring (~a mod ".rkt.js") 2))
+            (map ILProvide idents)
+            (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
+                             '$$mod))
+            (append
+             (list
+              (ILVarDec '$$ (ILRef '$$mod 'exports)))
+             (for/list ([id idents])
+               (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
+
+(define (write-stub-module ilmod)
+  (call-with-output-file (ILModule-id ilmod)
+    #:exists 'replace
+    (λ (out)
+      (assemble-module ilmod out))))
+
+(define (generate-stub-module mod)
+  (parameterize ([skip-assemble-kernel-import #t])
+    (write-stub-module (make-stub-ilmodule mod))))
+
 ;; -> Void
 ;; For given global parameters starts build process starting
 ;; with entry point module and all its dependencies
@@ -179,6 +209,8 @@
   (let loop ()
     (cond
       [(queue-empty? pending)
+       (printf "Writing stub modules.\n")
+       (generate-stub-module '#%kernel)
        (es6->es5)
        (printf "Finished.\n")]
       [else

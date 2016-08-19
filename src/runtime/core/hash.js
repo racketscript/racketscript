@@ -2,7 +2,7 @@ import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
 import {Primitive} from "./primitive.js";
 
-let hashConfigs = {
+const hashConfigs = {
     eq: {
 	hash: $.hashEq,
 	keyEq: $.isEq

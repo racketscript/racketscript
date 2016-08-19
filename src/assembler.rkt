@@ -87,7 +87,8 @@
                 (assemble-expr (cdr i) out)
                 (unless last?
                   (emit ",")))]
-    [_ #:when (symbol? expr) (emit (~a (normalize-symbol expr)))]
+    [_ #:when (symbol? expr)
+       (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
 
 (: assemble-statement* (-> ILStatement* Output-Port Void))

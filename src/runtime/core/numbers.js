@@ -72,3 +72,7 @@ export function gte() {
 export function equals() {
     return compare(function(a, b) { return a === b }, arguments)
 }
+
+export function check(v) {
+    return typeof v === 'number';
+}

@@ -18,6 +18,8 @@
 
 (require/typed "global.rkt"
   [global-unreachable-idents (HashTable Path (Setof Symbol))])
+(require/typed "expand.rkt"
+  [register-ident-use! (-> (U Path Symbol) Symbol Void)])
 
 (provide absyn-top-level->il
          absyn-gtl-form->il
@@ -332,20 +334,11 @@
       (LetValues (list (cons `(,expr0-id) expr0))
                  (append1 expr* (LocalIdent expr0-id))))]
     [(ImportedIdent id src)
-     ;; HACK HACK HACK!
-     ;; find the name of object of imported js module and make a ref
-     ;; to access this
-     (: rename (-> Symbol Symbol))
-     (define (rename n)
-       ;; TODO: quick hack for null keyword. Proabably out previous
-       ;; table of base symbols was actually useful
-       (cond
-         [(equal? n 'null) 'racket_null]
-         [(equal? n 'void) 'rvoid]
-         [else n]))
-     (define new-id (if (equal? src '#%kernel) (rename id) id))
+     (when (symbol? src)
+       ;; TODO: need to move this ident-use out of expand
+       (register-ident-use! src id))
      (define mod-obj-name (hash-ref (module-object-name-map) src))
-     (values '() (ILRef (assert mod-obj-name symbol?) new-id))]
+     (values '() (ILRef (assert mod-obj-name symbol?) id))]
     [_ (error (~a "unsupported expr " expr))]))
 
 (: absyn-binding->il (-> Binding ILStatement*))

@@ -86,8 +86,7 @@ class Struct extends Primitive {
     }
 
     equals(v) {
-	if (!check(v, this._desc) ||
-	    this._fields.length !== v._fields.length) {
+	if (!check(v, this._desc)) {
 	    return false;
 	}
 
@@ -162,7 +161,7 @@ class StructTypeDescriptor extends Primitive {
 	}
 
 	// Immutables
-	let immutables = options.immutables || new Set([]);
+	let immutables = options.immutables || [];
 	this._options.immutables = new Set(Pair.listToArray(immutables));
 	this._options.immutables.forEach((e) => {
 	    if (e < 0 || e >= options.initFieldCount) {

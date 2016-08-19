@@ -1,5 +1,5 @@
-export function raise(exp, msg) {
-    throw new exp(msg)
+export function raise(exp, ...args) {
+    throw new exp.apply(this, args);
 }
 
 export function truthy(val, exp, msg="") {

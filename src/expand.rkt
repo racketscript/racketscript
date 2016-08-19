@@ -42,6 +42,7 @@
          to-absyn
          to-absyn/top
          used-idents
+         register-ident-use!
          quick-expand)
 
 (define current-module (make-parameter #f))
@@ -56,6 +57,13 @@
 
 ;; A list of idents used so far while compiling current project
 (define used-idents (make-parameter (hash)))
+
+;; Updates `used-ident` by adding identifier `id` imported from `mod-path`.
+(define (register-ident-use! mod-path id)
+  (used-idents (hash-update (used-idents)
+                            mod-path
+                            (λ (i*) (set-add i* (list id (current-module))))
+                            (set (list id (current-module))))))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module paths
@@ -195,10 +203,6 @@
 
         (cond
           [self? (LocalIdent ident-sym)]
-          [(not (equal? src-mod-path src-mod-path-orig))
-           ;;HACK: renamed module. Don't do much. Use orignial id
-           (current-module-imports (set-add (current-module-imports) src-mod-path))
-           (ImportedIdent mod-src-id src-mod-path)]
           [else
            ;; Add the module from where we actual import this, so that we import this, and
            ;; any side-effects due to this module is actually executed
@@ -223,11 +227,17 @@
                            (λ (s*)
                              (set-add s* mod-src-id))
                            (set mod-src-id)))
-           (used-idents (hash-update (used-idents)
-                                     src-mod-path
-                                     (λ (i*) (set-add i* (list src-id (current-module))))
-                                     (set (list src-id  (current-module)))))
-           (ImportedIdent src-id src-mod-path)])])]
+
+           ;; If the moduele is renamed use the id name used at the importing
+           ;; module rather than defining module. Since renamed, module currently
+           ;; are #%kernel which we write ourselves in JS we prefer original name.
+           ;; TODO: We potentially might have clashes, but its unlikely.
+           (define effective-id (if (not (equal? src-mod-path src-mod-path-orig))
+                                    mod-src-id
+                                    src-id))
+
+           (register-ident-use! src-mod-path effective-id)
+           (ImportedIdent effective-id src-mod-path)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]

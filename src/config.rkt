@@ -40,12 +40,12 @@
 (: jsruntime-module-path (-> Symbol Path))
 (define (jsruntime-module-path mod)
   (let ([mod-name (match mod
-                    ['#%kernel "kernel.js"]
-                    ['#%utils "utils.js"]
-                    ['#%unsafe "unsafe.js"]
-                    ['#%flfxnum "flfxnum.js"]
+                    ['#%kernel "kernel.rkt.js"]
+                    ['#%utils "utils.rkt.js"]
+                    ['#%unsafe "unsafe.rkt.js"]
+                    ['#%flfxnum "flfxnum.rkt.js"]
                     ['core "core.js"]
-                    [_ "rest.js"])])
+                    [_ "rest.rkt.js"])])
     (path->complete-path
      (build-path (output-directory)
                  "runtime"

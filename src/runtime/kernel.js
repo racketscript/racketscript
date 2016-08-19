@@ -1,183 +1,169 @@
-import * as rcore from "./core.js";
+import * as Core from "./core.js";
 
-var RacketCoreError = rcore.RacketCoreError;
+/* --------------------------------------------------------------------------*/
+// Helpers
 
-function CheckNumber(v) {
-    if (typeof v !== 'number') {
-	throw new RacketCoreError("TypeError",
-				  "" + v + "' is not a number");
+function checkContractExn(type, what) {
+    if (!type.check(what)) {
+	throw new Core.RacketContractError("expected a {0}, but given {1}", type, what);
     }
 }
 
-function zero_p(v) {
-    return v === 0;
+function isNumber(v) {
+    return typeof v === 'number';
 }
 
-function positive_p(v) {
-    return v > 0;
+/* --------------------------------------------------------------------------*/
+// All exports go in exports
+
+export const exports = {};
+
+/* --------------------------------------------------------------------------*/
+// Equality
+
+exports["equal?"] = Core.isEqual;
+exports["eqv?"] = Core.isEqv;
+exports["eq?"] = Core.isEq;
+
+/* --------------------------------------------------------------------------*/
+// Values
+
+exports["values"] = function () {
+    return Core.Values.make(arguments);
 }
 
-function car(lst) {
-    rcore.Pair.check(lst);
-    return lst.car();
-}
-
-function cons(v1, v2) {
-    return rcore.Pair.make(v1, v2);
-}
-
-function cdr(lst) {
-    rcore.Pair.check(lst);
-    return lst.cdr();
-}
-
-var list = rcore.Pair.makeList
-var first = car;
-var rest = cdr;
-
-function sub1(v) {
-    CheckNumber(v);
-    return v - 1;
-}
-
-function add1(v) {
-    CheckNumber(v);
-    return v + 1;
-}
-
-var buffer = "";
-
-function displayln(v) {
-    /* TODO: Real thing takes port as well */
-    if (v === true) {
-	console.log(buffer + "#t");
-    } else if (v === false) {
-	console.log(buffer + "#f");
-    } else if (v === undefined || v === null) {
-	console.log(buffer + "#<void>");
-    } else {
-	console.log(buffer + rcore.toString(v));
-    }
-    buffer = "";
-}
-
-function display(v) {
-    /* TODO: this is still line */
-    if (v === true) {
-	buffer += "#t";
-    } else if (v === false) {
-	buffer += "#f";
-    } else if (v === undefined || v === null) {
-	buffer += "#<void>";
-    } else {
-	buffer += rcore.toString(v);
-    }
-}
-
-function newline() {
-    return displayln("");
-}
-
-function print_values(v) {
-    if (v !== undefined && v !== null) {
-	if (typeof(v) == 'string') {
-	    //TODO: Hack. Special cases
-	    console.log('"' + v + '"');
-	} else {
-	    displayln(v);
-	}
-    }
-}
-
-function equal_p(v1, v2) {
-    /* TODO: compare values not references */
-    var t1 = typeof v1;
-    var t2 = typeof v2;
-    if (t1 !== t2) {
-	return false;
-    } else if (t1 === 'object' && t2 === 'object') {
-	return v1.equals(v2);
-    } else {
-	return v1 === v2;
-    }
-}
-
-function eqv_p(v1, v2) {
-    return rcore.isEqv(v1, v2);
-}
-
-function eq_p(v1, v2) {
-    return rcore.isEq(v1, v2);
-}
-
-function values() {
-    return rcore.Values.make(arguments);
-}
-
-function call_with_values(generator, receiver) {
+exports["call-with-values"] = function (generator, receiver) {
     var values = generator();
-    if (rcore.Values.check(values)) {
+    if (Core.Values.check(values)) {
 	return receiver.apply(this, generator().getAll());
     } else if (values !== undefined && values !== null) {
 	return receiver.apply(this, [values]);
     }
 }
 
-function not(v) {
-    if (v === false) {
+/* --------------------------------------------------------------------------*/
+// Void
+
+exports["void"] = function () {
+    return null;
+}
+
+exports["void?"] = function (v) {
+    return v === null || v === undefined;
+}
+
+/* --------------------------------------------------------------------------*/
+// Numbers
+
+exports["number?"] = Core.Number.check;
+
+exports["integer?"] = Number.isInteger;
+
+exports["zero?"] = function (v) {
+    return v === 0;
+}
+
+exports["positive?"] = function (v) {
+    checkContractExn(Core.Number, v);
+    return v > 0;
+}
+
+exports["negative?"] = function (v) {
+    checkContractExn(Core.Number, v);
+    return v < 0;
+}
+
+exports["add1"] = function (v) {
+    checkContractExn(Core.Number, v);
+    return v + 1;
+}
+
+exports["sub1"] = function (v) {
+    checkContractExn(Core.Number, v);
+    return v - 1;
+}
+
+exports["*"] = Core.Number.mul;
+exports["/"] = Core.Number.div;
+exports["+"] = Core.Number.add;
+exports["-"] = Core.Number.sub;
+exports["<"] = Core.Number.lt;
+exports[">"] = Core.Number.gt;
+exports["<="] = Core.Number.lte;
+exports[">="] = Core.Number.gte;
+exports["="] = Core.Number.equals;
+
+/* -------------------------------------------------------------------------*/
+// Boolean
+
+exports["not"] = function (v) {
+    return v === false || false;
+}
+
+/* --------------------------------------------------------------------------*/
+// Pairs
+
+exports["car"] = function (pair) {
+    checkContractExn(Core.Pair, pair);
+    return pair.car();
+}
+
+exports["cdr"] = function (pair) {
+    checkContractExn(Core.Pair, pair);
+    return pair.cdr();
+}
+
+exports["cons"] = function (hd, tl) {
+    return Core.Pair.make(hd, tl);
+}
+
+// Lists
+
+exports["null"] = Core.Pair.Empty;
+
+exports["list"] = Core.Pair.makeList;
+exports["first"] = exports["car"]; //TODO: Should be list
+exports["rest"] = exports["cdr"];
+
+exports["list?"] = function isList(v) {
+    //TODO: Make this iterative
+    if (Core.Pair.isEmpty(v)) {
 	return true;
+    } else if (Core.Pair.check(v)) {
+	return isList(v.cdr());
     } else {
 	return false;
     }
 }
 
-function list_p(v) {
-    /* TODO: Make this iterative */
-    if (rcore.Pair.isEmpty(v)) {
-	return true;
-    } else if (rcore.Pair.check(v)) {
-	return list_p(v.cdr());
-    } else {
-	return false;
-    }
+exports["empty?"] = Core.Pair.isEmpty;
+exports["null?"] = Core.Pair.isEmpty;
+
+var length = exports["length"] = function (lst) {
+    return Core.Pair.listLength(lst);
 }
 
-function empty_p(v) {
-    return rcore.Pair.isEmpty(v);
+exports["for-each"] = function (lam, lst) {
+    map(lam, lst);
+    return null;
 }
 
-var racket_null = rcore.Pair.Empty;
-var null_p = empty_p;
+/* --------------------------------------------------------------------------*/
+// Structs
 
-
-function _a() {
-    return [].reduce.call(arguments, function(x, r) {
-	return r + rcore.toString(x);
-    }, "");
-}
-
-function string_append() {
-    return "".concat.call(arguments);
-}
-
-function current_inspector() {
-    /* stub */
-    return false;
-}
-
-function make_struct_type(name,
-			  superType,
-			  initFieldCount,
-			  autoFieldCount,
-			  autoV,
-			  props,
-			  inspector,
-			  procSpec,
-			  immutables,
-			  guard,
-			  constructorName)
+exports["make-struct-type"] = function (name,
+				  superType,
+				  initFieldCount,
+				  autoFieldCount,
+				  autoV,
+				  props,
+				  inspector,
+				  procSpec,
+				  immutables,
+				  guard,
+				  constructorName)
 {
-    return rcore.Struct.makeStructType({
+    return Core.Struct.makeStructType({
 	name: name.toString(),
 	superType: superType,
 	initFieldCount: initFieldCount,
@@ -192,99 +178,24 @@ function make_struct_type(name,
     });
 }
 
-function make_struct_field_accessor(ref, index, fieldName) {
-    return function(s) {
+exports["make-struct-field-accessor"] = function (ref, index, fieldName) {
+    return function (s) {
 	return ref(s, index);
     }
 }
 
-function make_struct_field_mutator(set, index, fieldName) {
-    return function(s, v) {
+exports["make-struct-field-mutator"] = function (set, index, fieldName) {
+    return function (s, v) {
 	return set(s, index, v);
     }
 }
 
-function length(lst) {
-    var len = 0;
-    while (true) {
-        if (rcore.Pair.isEmpty(lst)) {
-            return len;
-        }
-        len += 1;
-        lst = lst.cdr();
-    }
+exports["struct-type?"] = function (v) {
+    return Core.Struct.isStructType(v);
 }
 
-function error(msg) {
-    /** todo **/
-    throw new RacketCoreError(msg);
-}
-
-function apply() {
-    var lam = arguments[0];
-    var args = arguments[1];
-    return lam.apply(null, rcore.Pair.listToArray(args));
-}
-
-function vector() {
-    var items = rcore.argumentsToArray(arguments);
-    return rcore.Vector.make(items, true);
-}
-
-function vector_ref(vec, i) {
-    rcore.Vector.check(vec);
-    return vec.ref(i);
-}
-
-function vector_set_bang_(vec, i, v) {
-    rcore.Vector.check(vec);
-    vec.set(i, v);
-}
-
-function map() {
-    var fn = arguments[0];
-    if (arguments.length < 2) {
-	error("map: " + "needs at-least two arguments");
-    }
-    var lst_len = length(arguments[1]);
-    for (var i = 1; i < arguments.length; i++) {
-	if (length(arguments[i]) != lst_len) {
-	    error("map: " + "all input lists must have equal length");
-	}
-    }
-
-    var n_args = arguments.length - 1;
-    var result = [];
-    for (var i = 0; i < lst_len; i++) {
-	var args = [];
-	for (var j = 1; j <= n_args; j++) {
-	    args.push(car(arguments[j]));
-	    arguments[j] = cdr(arguments[j]);
-	    result.push(fn.apply(null, args));
-	}
-    }
-
-    return rcore.Pair.listFromArray(result);
-}
-
-var _times_ = rcore.Number.mul;
-var _by_ = rcore.Number.div;
-var _plus_ = rcore.Number.add;
-var _ = rcore.Number.sub;
-var _lt_ = rcore.Number.lt;
-var _gt_ = rcore.Number.gt;
-var _lt__eq_ = rcore.Number.lte;
-var _gt__eq_ = rcore.Number.gte;
-var _eq_ = rcore.Number.equals;
-
-// Structs
-
-function struct_type_p(v) {
-    return rcore.Struct.isStructType(v);
-}
-
-function make_struct_type_property(name, guard, supers, canImpersonate) {
-    return rcore.Struct.makeStructTypeProperty({
+exports["make-struct-type-property"] = function (name, guard, supers, canImpersonate) {
+    return Core.Struct.makeStructTypeProperty({
 	name: name,
 	guard: guard,
 	supers: supers,
@@ -292,23 +203,43 @@ function make_struct_type_property(name, guard, supers, canImpersonate) {
     });
 }
 
-function check_struct_type(name, what) {
+exports["check-struct-type"] = function (name, what) {
     // TODO: in define-struct.rkt. See struct/super.rkt
     if (what) {
-	if (!rcore.Struct.isStructType(v)) {
+	if (!Core.Struct.isStructType(v)) {
 	    throw new RacketCoreError("not a struct-type");
 	}
 	return what;
     }
 }
 
+
+/* --------------------------------------------------------------------------*/
+// Vectors
+
+exports["vector"] = function () {
+    var items = Core.argumentsToArray(arguments);
+    return Core.Vector.make(items, true);
+}
+
+exports["vector-ref"] = function (vec, i) {
+    Core.Vector.check(vec);
+    return vec.ref(i);
+}
+
+exports["vector-set!"] = function (vec, i, v) {
+    Core.Vector.check(vec);
+    vec.set(i, v);
+}
+
+/* --------------------------------------------------------------------------*/
 // Hashes
 
-function make_immutable_hash(assocs) {
+exports["make-immutable-hash"] = function (assocs) {
     return rcore.Hash.makeFromAssocs(assocs, "equal", false);
 }
 
-function hash(...vals) {
+exports["hash"] = function (...vals) {
     if (vals.length % 2 !== 0) {
 	throw new Error("invalid number of arguments");
     }
@@ -318,151 +249,127 @@ function hash(...vals) {
 	items.push([vals[i], vals[i + 1]]);
     }
 
-    return rcore.Hash.makeEqual(items, false);
+    return Core.Hash.makeEqual(items, false);
 }
 
-function hash_ref(h, k, fail) {
+exports["hash-ref"] = function (h, k, fail) {
     return h.ref(k, fail);
 }
 
-function hash_set(h, k, v) {
+exports["hash-set"] = function (h, k, v) {
     return h.set(k, v);
 }
 
-function string() {
-    var result = "";
+/* --------------------------------------------------------------------------*/
+// Higher Order Functions
+
+exports["apply"] = function (lam, args) {
+    return lam.apply(null, Core.Pair.listToArray(args));
+}
+
+
+exports["map"] = function map(fn, ...lists) {
+    if (lists.length <= 0) {
+	error("map: needs at-least two arguments");
+    }
+
+    var lst_len = length(lists[0]);
+    for (let i = 0; i < lists.length; i++) {
+	if (length(lists[i]) != lst_len) {
+	    error("map: all input lists must have equal length");
+	}
+    }
+
+    var result = [];
+    for (let i = 0; i < lst_len; i++) {
+	let args = [];
+	for (var j = 0; j < lists.length; j++) {
+	    args.push(lists[j].car());
+	    lists[j] = lists[j].cdr();
+	}
+	result.push(fn.apply(null, args));
+    }
+
+    return Core.Pair.listFromArray(result);
+}
+
+/* --------------------------------------------------------------------------*/
+// Strings
+
+exports["~a"] = function () {
+    return [].reduce.call(arguments, function (x, r) {
+	return r + Core.toString(x);
+    }, "");
+}
+
+exports["string-append"] = function () {
+    return "".concat.call(arguments);
+}
+
+exports["string"] = function () {
+    var resultn = "";
     for (var v in arguments) {
 	result += arguments[v];
     }
     return result;
 }
 
-function for_each(lam, lst) {
-    map(lam, lst);
-    return null;
+/* --------------------------------------------------------------------------*/
+// Printing to Console
+
+let __buffer = ""; //HACK
+
+exports["displayln"] = function (v) {
+    /* TODO: Real thing takes port as well */
+    if (v === true) {
+	console.log(__buffer + "#t");
+    } else if (v === false) {
+	console.log(__buffer + "#f");
+    } else if (v === undefined || v === null) {
+	console.log(__buffer + "#<void>");
+    } else {
+	console.log(__buffer + Core.toString(v));
+    }
+    __buffer = "";
 }
 
-function rvoid() {
-    return null;
+exports["display"] = function (v) {
+    /* TODO: this is still line */
+    if (v === true) {
+	__buffer += "#t";
+    } else if (v === false) {
+	__buffer += "#f";
+    } else if (v === undefined || v === null) {
+	__buffer += "#<void>";
+    } else {
+	__buffer += Core.toString(v);
+    }
 }
 
-var prop_evt = make_struct_type_property("prop:evt").getAt(0)
-var prop_procedure = make_struct_type_property("prop:procedure").getAt(0)
-var prop_checked_procedure = make_struct_type_property("prop:checked-procedure").getAt(0)
-var prop_impersonator_of = make_struct_type_property("prop:impersonator-of").getAt(0)
-var prop_method_arity_error = make_struct_type_property("prop:method-arity-error").getAt(0)
-var prop_incomplete_arity = make_struct_type_property("prop:incomplete-arity").getAt(0)
-var prop_arity_string = make_struct_type_property("prop:arity-string").getAt(0)
+exports["newline"] = function () {
+    return exports["displayln"]("");
+}
 
-function current_output_port() {}
-function output_port_p() { return false; }
-function raise_argument_error() { return false; }
-function current_print() { return displayln; }
-function make_thread_cell() { return null; }
-function make_continuation_prompt_tag() { return null; }
-function gensym() { return null; }
-function system_type() { return null; }
-function format() { return null; }
-function string__gt_bytes_by_utf_8() { return null; }
-function byte_regexp() { return null; }
-function make_weak_hash() { return null; }
-function procedure_arity() { return 0; }
-function make_keyword_checker() { return 0; }
-function integer_p() { return 0; }
-function arity_at_least_p() { return 0; }
-function make_hasheq() { return 0; }
-function hash_set_bang_() { return 0; }
+exports["print-values"] = function (v) {
+    if (v !== undefined && v !== null) {
+	if (typeof v == 'string') {
+	    //TODO: Hack. Special cases
+	    console.log('"' + v + '"');
+	} else {
+	    exports["displayln"](v);
+	}
+    }
+}
 
-export {
-    racket_null,
-    zero_p,
-    positive_p,
-    car,
-    cdr,
-    list,
-    list_p,
-    first,
-    rest,
-    sub1,
-    add1,
-    displayln,
-    equal_p,
-    eqv_p,
-    eq_p,
-    values,
-    call_with_values,
-    not,
-    empty_p,
-    cons,
-    null_p,
-    print_values,
-    length,
-    error,
-    apply,
-    vector,
-    vector_ref,
-    vector_set_bang_,
-    string,
-    newline,
-    rvoid,
+/* --------------------------------------------------------------------------*/
+// Errors
 
-    // operators
-    _times_,
-    _plus_,
-    _,
-    _by_,
-    _eq_,
-    _lt_,
-    _gt_,
-    _lt__eq_,
-    _gt__eq_,
+exports["error"] = function (...args) {
+    // TODO
+    throw new Core.RacketCoreError.apply(this, args);
+}
 
-    // non kernel functions
-    string_append,
-    _a,
-    display,
-    current_inspector,
-    map,
-    for_each,
+/* --------------------------------------------------------------------------*/
+// Not Implemented/Unorganized/Dummies
 
-    //structs
-    struct_type_p,
-    make_struct_type,
-    make_struct_type_property,
-    make_struct_field_accessor,
-    make_struct_field_mutator,
-    check_struct_type,
-    prop_evt,
-
-    // hash
-    hash_ref,
-    hash_set,
-    hash,
-    make_immutable_hash,
-
-    // dummies
-    current_output_port,
-    output_port_p,
-    current_print,
-    raise_argument_error,
-    make_thread_cell,
-    make_continuation_prompt_tag,
-    gensym,
-    system_type,
-    format,
-    string__gt_bytes_by_utf_8,
-    byte_regexp,
-    make_weak_hash,
-    prop_checked_procedure,
-    prop_impersonator_of,
-    prop_method_arity_error,
-    prop_incomplete_arity,
-    prop_arity_string,
-    prop_procedure,
-    procedure_arity,
-    make_keyword_checker,
-    integer_p,
-    arity_at_least_p,
-    make_hasheq,
-    hash_set_bang_
-};
+exports["current-inspector"] = () => false;

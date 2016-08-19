@@ -108,3 +108,16 @@ export function listMap(lst, fn) {
     listForEach(lst, mapper);
     return listFromArray(result);
 }
+
+
+export function listLength(lst) {
+    var len = 0;
+    while (true) {
+	if (isEmpty(lst)) {
+            return len;
+	}
+	len += 1;
+	lst = lst.cdr();
+    }
+    return len;
+}
