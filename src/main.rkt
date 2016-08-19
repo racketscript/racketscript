@@ -81,13 +81,19 @@
   (define name (file-name-from-path fname))
   (copy-file fname (build-path dest-dir name) #t))
 
+;; Path-String -> Path-String
+(define (last-path-element p)
+  (let-values ([(base last dir?) (split-path p)]) last))
+
 ;; Path-String Path-String -> Void
-;; Copies all files in from-dir to to-dir *non-recursively*
-(define (copy-all from-dir to-dir)
- (for ([f (in-directory from-dir)]) 
-   (define fname (file-name-from-path f))
-    (when (file-exists? f)
-      (copy-file f (build-path to-dir fname) #t))))
+;; Copies directory from-dir inside to-dir *recursively*
+(define (copy-directory from-dir to-dir)
+  (define to-dir-dir (build-path to-dir (last-path-element from-dir)))
+  (for ([f (in-directory from-dir)]
+        #:unless (directory-exists? f))
+    (define final-dest (build-path to-dir-dir (find-relative-path from-dir f)))
+    (make-directory* (path-only final-dest))
+    (copy-file f final-dest #t)))
 
 ;; Path-String Path-String (Listof Any) -> Void
 ;; Copies a Racket string patterned styled file `src` to `dest` file
@@ -120,14 +126,8 @@
 
 ;; -> Void
 (define (copy-runtime-files)
-  (define (docopy p)
-    (define src (build-path rapture-dir "src" p))
-    (define dest (build-path (output-directory) p))
-    (make-directory* dest)
-    (copy-all src dest))
-  (docopy "runtime/")
-  (docopy "runtime/core")
-  (docopy "runtime/third-party"))
+  (copy-directory (build-path rapture-dir "src" "runtime")
+                  (output-directory)))
 
 ;; -> Void
 (define (copy-support-files)
