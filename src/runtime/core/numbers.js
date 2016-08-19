@@ -2,37 +2,37 @@ import * as $ from "./lib.js";
 
 /* Arithmatic */
 
-export function add() {
-    return [].reduce.call(arguments, function(a, b) {
+export function add(...operands) {
+    return [].reduce.call(operands, function(a, b) {
 	return a + b
     });
 }
 
-export function sub() {
-    if (arguments.length === 1) {
-	return -arguments[0];
+export function sub(...operands) {
+    if (operands.length === 1) {
+	return -operands[0];
     } else {
-	let result = arguments[0];
-	for (var i = 1; i < arguments.length; ++i) {
-	    result -= arguments[i];
+	let result = operands[0];
+	for (var i = 1; i < operands.length; ++i) {
+	    result -= operands[i];
 	}
 	return result;
     }
 }
 
-export function mul() {
-    return [].reduce .call(arguments, function(a, b) {
+export function mul(operands) {
+    return [].reduce .call(operands, function(a, b) {
 	return a * b
     }, 1);
 }
 
-export function div() {
-    if (arguments.length === 1) {
-	return 1 / arguments[0];
+export function div(operands) {
+    if (operands.length === 1) {
+	return 1 / operands[0];
     } else {
-	var result = arguments[0];
-	for (var i = 1; i < arguments.length; ++i) {
-	    result /= arguments[i];
+	var result = operands[0];
+	for (var i = 1; i < operands.length; ++i) {
+	    result /= operands[i];
 	}
 	return result;
     }
@@ -53,24 +53,24 @@ export function compare(cmp, operands) {
     return true;
 }
 
-export function lt() {
-    return compare(function(a, b) { return a < b }, arguments)
+export function lt(...operands) {
+    return compare(function(a, b) { return a < b }, operands)
 }
 
-export function lte() {
-    return compare(function(a, b) { return a <= b }, arguments)
+export function lte(...operands) {
+    return compare(function(a, b) { return a <= b }, operands)
 }
 
-export function gt() {
-    return compare(function(a, b) { return a > b }, arguments)
+export function gt(...operands) {
+    return compare(function(a, b) { return a > b }, operands)
 }
 
-export function gte() {
-    return compare(function(a, b) { return a >= b }, arguments)
+export function gte(...operands) {
+    return compare(function(a, b) { return a >= b }, operands)
 }
 
-export function equals() {
-    return compare(function(a, b) { return a === b }, arguments)
+export function equals(...operands) {
+    return compare(function(a, b) { return a === b }, operands)
 }
 
 export function check(v) {

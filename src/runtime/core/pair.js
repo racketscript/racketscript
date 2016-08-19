@@ -78,11 +78,11 @@ export function make(hd, tl) {
     return new Pair(hd, tl);
 }
 
-export function makeList() {
-    let len = arguments.length - 1;
+export function makeList(...items) {
+    let len = items.length - 1;
     let result = Empty; /* TODO: wrap this? */
     while (len >= 0) {
-	result = make(arguments[len--], result);
+	result = make(items[len--], result);
     }
     return result;
 }

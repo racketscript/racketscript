@@ -28,8 +28,8 @@ exports["eq?"] = Core.isEq;
 /* --------------------------------------------------------------------------*/
 // Values
 
-exports["values"] = function () {
-    return Core.Values.make(arguments);
+exports["values"] = function (...vals) {
+    return Core.Values.make(vals);
 }
 
 exports["call-with-values"] = function (generator, receiver) {
