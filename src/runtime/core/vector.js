@@ -49,7 +49,9 @@ class Vector extends Primitive {
     }
 
     equals(v) {
-	check(v);
+	if (!check(v)) {
+	    return false;
+	}
 
 	let items1 = this.items;
 	let items2 = v.items;

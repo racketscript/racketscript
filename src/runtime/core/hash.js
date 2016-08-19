@@ -80,7 +80,9 @@ class Hash extends Primitive {
     }
 
     equals(v) {
-	check(v);
+	if (!check(v)) {
+	    return false;
+	}
 
 	if (this._h.size !== v._h.size || this._type !== v._type || 
 	    this._mutable !== v._mutable) {

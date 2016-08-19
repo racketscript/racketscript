@@ -41,7 +41,9 @@ class Pair extends Primitive {
     }
 
     equals(v) {
-	check(v);
+	if (!check(v)) {
+	    return false;
+	}
 
 	let hd1 = this.hd;
 	let tl1 = this.tl;
