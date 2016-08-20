@@ -149,14 +149,9 @@
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
   (emit (format "import * as ~a from '~a';"
-                  (jsruntime-core-module)
-                  (jsruntime-import-path (assert (current-source-file) path?)
-                                         (jsruntime-module-path 'core))))
-  (unless (skip-assemble-kernel-import)
-    (emit (format "import * as ~a from '~a';"
-                  (jsruntime-kernel-module)
-                  (jsruntime-import-path (assert (current-source-file) path?)
-                                         (jsruntime-module-path '#%kernel)))))
+                (jsruntime-core-module)
+                (jsruntime-import-path (assert (current-source-file) path?)
+                                       (jsruntime-module-path 'core))))
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name) req)
     (emit (format "import * as ~a from \"~a\";"

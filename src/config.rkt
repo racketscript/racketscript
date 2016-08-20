@@ -10,9 +10,7 @@
          FFI-CALL-ID
          test-environment?
          jsruntime-module-path
-         jsruntime-core-module
-         jsruntime-kernel-module
-         skip-assemble-kernel-import)
+         jsruntime-core-module)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -26,15 +24,10 @@
 (: main-source-file (Parameter (Option Path)))
 (define main-source-file (make-parameter #f))
 
-(: skip-assemble-kernel-import (Parameter Boolean))
-(define skip-assemble-kernel-import (make-parameter #f)) ;; TODO: Remove
-
 ;;; ---------------------------------------------------------------------------
 
-(: jsruntime-kernel-module (Parameter String))
 (: jsruntime-core-module (Parameter String))
 ;; Name of kernel/core module object used in JavaScript environment
-(define jsruntime-kernel-module (make-parameter "$rjs_kernel"))
 (define jsruntime-core-module (make-parameter "$rjs_core"))
 
 (: jsruntime-module-path (-> Symbol Path))

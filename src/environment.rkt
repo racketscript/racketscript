@@ -11,5 +11,4 @@
 (define (name-in-module mod name)
   (match mod
     ['core (string->symbol (~a (jsruntime-core-module) "." name))]
-    ['kernel (string->symbol (~a (jsruntime-kernel-module) "." name))]
     [_ (error "Invalid module name")]))

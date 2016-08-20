@@ -189,8 +189,7 @@
       (assemble-module ilmod out))))
 
 (define (generate-stub-module mod)
-  (parameterize ([skip-assemble-kernel-import #t])
-    (write-stub-module (make-stub-ilmodule mod))))
+  (write-stub-module (make-stub-ilmodule mod)))
 
 ;; -> Void
 ;; For given global parameters starts build process starting

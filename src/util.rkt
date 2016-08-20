@@ -131,9 +131,7 @@
   ;; naive renaming
   (: should-rename? (-> String Boolean))
   (define (should-rename? s)
-    (not (or
-          (string-prefix? s (jsruntime-core-module))
-          (string-prefix? s (jsruntime-kernel-module)))))
+    (not (string-prefix? s (jsruntime-core-module))))
   (: char-map (HashTable String String))
   (define char-map
     #hash(("$" . "$")
