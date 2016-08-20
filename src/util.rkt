@@ -17,7 +17,8 @@
 (require/typed "util-untyped.rkt"
   [improper->proper (-> (Pairof Any Any) (Listof Any))]
   [links-module? (-> Path-String
-                     (Option (Pairof String (Pairof Path-String '()))))])
+                     (Option (Pairof String
+                                     (Pairof Path-String '()))))])
 
 (provide hash-set-pair*
          improper->proper
@@ -150,6 +151,8 @@
   (match (symbol->string s)
     ["null" "rnull"]
     ["void" "rvoid"]
+    ["false" "rfalse"]
+    ["true" "rtrue"]
     [str #:when (should-rename? str)
          (: char-list (Listof Char))
          (define char-list (string->list str))
@@ -218,6 +221,7 @@
 (define (module-output-file mod)
   (define collects? (collects-module? mod))
   (define links? (links-module? mod))
+
   (cond
     [collects?
      (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])

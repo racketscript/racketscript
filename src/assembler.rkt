@@ -203,7 +203,10 @@
   ;; TODO: this will eventually be replaced by runtime primitives
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
-    [(symbol? v) (emit (~a (name-in-module 'core 'Symbol.make) "('" v "')"))]
+    [(symbol? v)
+     (emit (~a (name-in-module 'core 'Symbol.make) "("))
+     (write (symbol->string v) out)
+     (emit ")")]
     [(keyword? v) (emit (~a (name-in-module 'core 'Keyword.make) "('" v "')"))]
     [(string? v) (write v out)]
     [(number? v)
