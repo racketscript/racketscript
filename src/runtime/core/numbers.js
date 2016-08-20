@@ -20,13 +20,13 @@ export function sub(...operands) {
     }
 }
 
-export function mul(operands) {
-    return [].reduce .call(operands, function(a, b) {
+export function mul(...operands) {
+    return [].reduce.call(operands, function(a, b) {
 	return a * b
     }, 1);
 }
 
-export function div(operands) {
+export function div(...operands) {
     if (operands.length === 1) {
 	return 1 / operands[0];
     } else {
