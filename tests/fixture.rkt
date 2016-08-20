@@ -165,6 +165,7 @@
      [("-n" "--skip-npm") "Skip NPM install on setup"
       (skip-npm-install #t)]
      [("-v" "--verbose") "Show exceptions when running tests."
+      (rapture-stdout? #t)
       (verbose? #t)]
      #:args (pattern)
      pattern))

@@ -287,8 +287,9 @@
     ['js (racket->js)])
 
   ;; Dump debug information
-  (with-output-to-file (build-path (output-directory) "debug.txt") #:exists 'truncate
-    (λ ()
-      (pretty-print (used-idents))))
+  (when (dump-debug-info)
+    (with-output-to-file (build-path (output-directory) "debug.txt") #:exists 'truncate
+      (λ ()
+        (pretty-print (used-idents)))))
 
   (void))
