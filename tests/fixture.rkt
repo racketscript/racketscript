@@ -10,7 +10,8 @@
 (define tests-root-dir (build-path rapture-dir "tests"))
 
 ;; Print Racket and JS output of test programs to stdout
-(define print-output (make-parameter #f))
+;; Also show check failure
+(define verbose? (make-parameter #f))
 
 ;; Do a complete cleanup for previous build directory before starting
 ;; tests.
@@ -27,7 +28,7 @@
   ;; TODO: Log outputs
   (let ([p-out (port->string in-p-out)]
         [p-err (port->string in-p-err)])
-    (when (print-output)
+    (when (verbose?)
       (displayln (~a ">>>>>>>>>>>>>>>>>>>>>> `" kind "` STDOUT"))
       (displayln p-out)
       (displayln (~a "---------------------- `"kind "` STDERR"))
@@ -107,21 +108,46 @@
       (system "npm install")
       (skip-npm-install #t))))
 
-;; Glob-Pattern -> Void
-;; If tc-search-pattern is simply a path to directory, run all test
+;; (Listof Glob-Pattern) -> Void
+;; If tc-search-patterns is simply a path to directory, run all test
 ;; cases in that directory otherwise use glob pattern
-(define (run-tests tc-search-pattern)
+(define (run-tests tc-search-patterns)
   (setup)
 
   (define testcases
-    (if (string-suffix? tc-search-pattern ".rkt")
-        (glob tc-search-pattern)
-        (glob (~a tc-search-pattern "/*.rkt"))))
+    (append-map (λ (pattern)
+                  (if (string-suffix? pattern ".rkt")
+                      (glob pattern)
+                      (glob (~a pattern "/*.rkt"))))
+                tc-search-patterns))
+
+  (define failed-tests '())
+
+  ;; Handler when exception is raised by check failures. Gather
+  ;; all failed tests, and in verbose mode show check failure
+  ;; message.
+  (current-check-handler
+   (let ([original-handler (current-check-handler)])
+     (λ (t)
+       (set! failed-tests (cons (current-test-name) failed-tests))
+       (when (verbose?)
+         ;; Show check failure result
+         (original-handler t)))))
+
 
   (for ([test testcases]
         [i (in-naturals 1)])
     (display (format "TEST (~a/~a) => ~a " i (length testcases) test))
-    (check-rapture test)))
+    (parameterize ([current-test-name test])
+      (check-rapture test)))
+
+  (unless (empty? failed-tests)
+    (displayln (format "\nFailed tests (~a/~a) => "
+                       (length failed-tests)
+                       (length testcases)))
+    (for ([t failed-tests])
+      (displayln (format "  ✘ ~a" t)))))
+
 
 (skip-npm-install #f) ;; For setup we need to install packages
 (module+ main
@@ -138,13 +164,14 @@
       (rapture-stdout? #t)]
      [("-n" "--skip-npm") "Skip NPM install on setup"
       (skip-npm-install #t)]
-     #:once-any
-     [("-p" "--print-output") "Run program in NodeJS and display output"
-      (print-output #t)]
+     [("-v" "--verbose") "Show exceptions when running tests."
+      (verbose? #t)]
      #:args (pattern)
      pattern))
-  
-  (run-tests tc-search-pattern))
+
+  (run-tests (list tc-search-pattern)))
 
 (module+ test
-  (run-tests "basic/*.rkt"))
+  (run-tests (list "basic/*.rkt"
+                   "struct/*.rkt"
+                   "hash/*.rkt")))
