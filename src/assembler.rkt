@@ -37,6 +37,18 @@
          (assemble-expr a out)
          (emit sep)
          (loop tl)])))
+
+  (: wrap-e? (-> ILExpr Boolean))
+  ;; Wrap expression 'e' when being applied, referenced
+  ;; or indexed
+  (define (wrap-e? e)
+    (or (ILNew? e)
+        (ILLambda? e)
+        (ILBinaryOp? e)
+        (ILObject? e)
+        (and (ILValue? e)
+             (number? (ILValue-v e))
+             (byte? (ILValue-v e)))))
   
   (match expr
     [(ILLambda args exprs)
@@ -47,31 +59,29 @@
        (assemble-statement e out))
      (emit "}")]
     [(ILApp lam args)
-     (unless (symbol? lam) (emit "("))
+     (when (wrap-e? lam) (emit "("))
      (assemble-expr lam out)
-     (unless (symbol? lam) (emit ")"))
+     (when (wrap-e? lam) (emit ")"))
      (emit "(")
      (emit-args args ",")
      (emit ")")]
     [(ILBinaryOp oper args)
      (for/last? ([arg last? args])
-       (unless (ILValue? arg)
-         (emit "("))
+       (when (ILBinaryOp? arg) (emit "("))
        (assemble-expr arg out)
-       (unless (ILValue? arg)
-         (emit ")"))
+       (when (ILBinaryOp? arg) (emit ")"))
        (unless last?
          (emit (~a oper))))]
     [(ILValue v) (assemble-value v out)]
     [(ILRef e s)
      (cond
        [(symbol? e) (emit (normalize-symbol e))]
-       [(ILRef? e)
-        (assemble-expr e out)]
-       [else
+       [(wrap-e? e)
         (emit "(")
         (assemble-expr e out)
-        (emit ")")])
+        (emit ")")]
+       [else
+        (assemble-expr e out)])
      (emit (~a "." (normalize-symbol s)))]
     [(ILIndex e e0)
      (if (symbol? e)
@@ -93,7 +103,8 @@
                 (emit (format "'~a':" (car i)))
                 (assemble-expr (cdr i) out)
                 (unless last?
-                  (emit ",")))]
+                  (emit ",")))
+     (emit "}")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
@@ -355,6 +366,13 @@
   (check-expr (ILIndex 'arr (ILBinaryOp '+ (list 'i (ILValue 1))))
               "arr[i+1]"
               "object indexing with expression")
+  (check-expr (ILIndex (ILIndex 'arr (ILBinaryOp '+ (list 'i (ILValue 1))))
+                       (ILBinaryOp '+ (list 'i 'j)))
+              "arr[i+1][i+j]"
+              "successive indexing")
+
+    ;;; ILRef -------------------------------------------------------------------
+
   (check-expr (ILRef 'document 'write)
               "document.write"
               "object field ref")
@@ -368,10 +386,19 @@
   ;; NOTE: These are some cases whose output could be improved in future by reducing
   ;; unnecessary parens
   (check-expr (ILRef (ILApp (ILRef 'Array 'sort) '(a lt)) 'size)
-              "((Array.sort)(a,lt)).size")
+              "Array.sort(a,lt).size")
   (check-expr (ILRef (ILApp 'sort '(a lt)) 'size)
-              "(sort(a,lt)).size")
-
+              "sort(a,lt).size")
+  (check-expr (ILRef (ILLambda '(x) (list (ILReturn 'x))) 'valueOf)
+              "(function(x) {return x;}).valueOf")
+  (check-expr (ILRef (ILValue 42) 'valueOf)
+              "(42).valueOf")
+  (check-expr (ILRef (ILBinaryOp '+ '(a b)) 'valueOf)
+              "(a+b).valueOf")
+  (check-expr (ILRef (ILObject '()) 'valueOf)
+              "({}).valueOf")
+  (check-expr (ILRef (ILNew (ILApp 'String (list (ILValue "Hello!")))) 'valueOf)
+              "(new String(\"Hello!\")).valueOf")
 
   ;;; Statements --------------------------------------------------------------
 

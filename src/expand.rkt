@@ -188,7 +188,7 @@
      (define (rename-module mpath)
        ;; Rename few modules for simpler compilation
        (cond
-         [(symbol? mpath) '#%kernel]
+         [(symbol? mpath) mpath]
          [(collects-module? mpath) '#%kernel]
          [else mpath]))
      (define ident-sym (syntax-e #'i))
@@ -375,6 +375,11 @@
   (check-equal? (to-absyn/expand #'#f)
                 (Quote #f))
 
+  ;; Check imported ident
+  
+  ;;TODO: We rename library modules, so ignore this test for now
+  #;(check-equal? (to-absyn/expand #'displayln)
+                (ident #'displayln))
 
   ;; Check lambdas
 
@@ -392,8 +397,8 @@
                                             (list (ident #'+) (LocalIdent 'c))))))))
   ;; Check application
 
-  (check-equal? (to-absyn/expand #`(displayln "hello"))
-                (PlainApp (ident #'displayln) (list (Quote "hello"))))
+  (check-equal? (to-absyn/expand #`(write "hello"))
+                (PlainApp (ident #'write) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
                 (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
                           (list (Quote 42))))
@@ -490,37 +495,37 @@
 
   (check-equal?
    (to-absyn/expand #'(begin
-                        (displayln "Hello!")
-                        (displayln "Begin")
-                        (displayln "Expression")))
+                        (write "Hello!")
+                        (write "Begin")
+                        (write "Expression")))
    (list
-    (PlainApp (ident #'displayln) (list (Quote "Hello!")))
-    (PlainApp (ident #'displayln) (list (Quote "Begin")))
-    (PlainApp (ident #'displayln) (list (Quote "Expression")))))
+    (PlainApp (ident #'write) (list (Quote "Hello!")))
+    (PlainApp (ident #'write) (list (Quote "Begin")))
+    (PlainApp (ident #'write) (list (Quote "Expression")))))
 
   (check-equal?
-   (to-absyn/expand #'(begin0 (displayln "Hello!")
-                        (displayln "Begin")
-                        (displayln "Expression")))
+   (to-absyn/expand #'(begin0 (write "Hello!")
+                        (write "Begin")
+                        (write "Expression")))
    (Begin0
-     (PlainApp (ident #'displayln) (list (Quote "Hello!")))
-     (list
-      (PlainApp (ident #'displayln) (list (Quote "Begin")))
-      (PlainApp (ident #'displayln) (list (Quote "Expression"))))))
+     (PlainApp (ident #'write) (list (Quote "Hello!")))
+               (list
+                (PlainApp (ident #'write) (list (Quote "Begin")))
+                (PlainApp (ident #'write) (list (Quote "Expression"))))))
 
   (check-equal?
    (to-absyn/expand #'(define (foobar a b c)
-                        (displayln a)
-                        (displayln b)
-                        (displayln c)))
+                        (write a)
+                        (write b)
+                        (write c)))
    (DefineValues
      '(foobar)
      (PlainLambda
       '(a b c)
       (list
-       (PlainApp (ident #'displayln) (list (LocalIdent'a)))
-       (PlainApp (ident #'displayln) (list (LocalIdent'b)))
-       (PlainApp (ident #'displayln) (list (LocalIdent'c)))))))
+       (PlainApp (ident #'write) (list (LocalIdent'a)))
+       (PlainApp (ident #'write) (list (LocalIdent'b)))
+       (PlainApp (ident #'write) (list (LocalIdent'c)))))))
 
 ;;; Case Lambda
 
@@ -546,7 +551,7 @@
                   #'(module foo racket/base
                       (provide foo)
                       (define (foo name)
-                        (displayln "Hello"))))
+                        (write "Hello"))))
                  (build-path "/tmp/" "rapture-test-expand.rkt"))))
     (check-equal? (Module-id module-output) 'foo)
     (check-equal? (Module-path module-output) (string->path "/tmp/rapture-test-expand.rkt"))
@@ -557,5 +562,5 @@
                      '(foo)
                      (PlainLambda '(name)
                                   (list
-                                   (PlainApp (ident #'displayln)
+                                   (PlainApp (ident #'write)
                                              (list (Quote "Hello"))))))))))

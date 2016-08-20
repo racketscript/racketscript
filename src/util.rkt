@@ -95,7 +95,7 @@
 (module+ test
   (check-equal? (hash-set-pair* (hash) '()) (hash))
   (check-equal? (hash-set-pair* (hash) (list '(a . b) '(c . d)))
-                '#hash((a . b) (c . d))))
+                #hash((a . b) (c . d))))
 
 (: assocs->hash-list : (∀ (A B) (-> (Listof (Pairof A B))
                                     (HashTable A (Listof B)))))
