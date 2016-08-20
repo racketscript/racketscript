@@ -166,30 +166,32 @@
 
 ;;;; Generate stub module
 
-(define (make-stub-ilmodule mod)
+
+(define (generate-stub-module mod)
   (define idents (~> (hash-ref (used-idents) mod)
                      (set-map _ first)
                      (remove-duplicates _)))
-  (ILModule (build-path (output-directory)
-                        "runtime"
-                        (substring (~a mod ".rkt.js") 2))
-            (map ILProvide idents)
-            (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
-                             '$$mod))
-            (append
-             (list
-              (ILVarDec '$$ (ILRef '$$mod 'exports)))
-             (for/list ([id idents])
-               (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
 
-(define (write-stub-module ilmod)
-  (call-with-output-file (ILModule-id ilmod)
+  (define ilmod
+    (ILModule #f
+              (map ILProvide idents)
+              (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
+                               '$$mod))
+              (append
+               (list
+                (ILVarDec '$$ (ILRef '$$mod 'exports)))
+               (for/list ([id idents])
+                 (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
+
+  (define output-fpath (build-path (output-directory)
+                                   "runtime"
+                                   (substring (~a mod ".rkt.js") 2)))
+
+  (call-with-output-file output-fpath
     #:exists 'replace
     (λ (out)
+      (current-source-file #f)
       (assemble-module ilmod out))))
-
-(define (generate-stub-module mod)
-  (write-stub-module (make-stub-ilmodule mod)))
 
 ;; -> Void
 ;; For given global parameters starts build process starting

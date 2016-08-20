@@ -150,15 +150,23 @@
               (assemble-provides* provides out))])
     (if maybeout
         (cb maybeout)
-        (call-with-output-file (module-output-file id) #:exists 'replace cb))))
+        ;; For all other cases we need a valid module name, eg. kernel
+        (call-with-output-file (module-output-file (assert id path?))
+          #:exists 'replace
+          cb))))
 
 (: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
+  (define core-import-path
+    (if (current-source-file)
+        (jsruntime-import-path (assert (current-source-file) path?)
+                               (jsruntime-module-path 'core))
+        ;;FIXME: For all other cases, assume they goto top runtime directory
+        (jsruntime-module-path 'core)))
   (emit (format "import * as ~a from '~a';"
                 (jsruntime-core-module)
-                (jsruntime-import-path (assert (current-source-file) path?)
-                                       (jsruntime-module-path 'core))))
+                core-import-path))
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name) req)
     (emit (format "import * as ~a from \"~a\";"
