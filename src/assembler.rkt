@@ -54,7 +54,14 @@
      (emit-args args ",")
      (emit ")")]
     [(ILBinaryOp oper args)
-     (emit-args args (~a oper))]
+     (for/last? ([arg last? args])
+       (unless (ILValue? arg)
+         (emit "("))
+       (assemble-expr arg out)
+       (unless (ILValue? arg)
+         (emit ")"))
+       (unless last?
+         (emit (~a oper))))]
     [(ILValue v) (assemble-value v out)]
     [(ILRef e s)
      (cond
