@@ -4,7 +4,7 @@
 
 (define-type ILProgram ILStatement*)
 (define-predicate ILProgram? ILProgram)
-(define-type-alias ILModuleName (Option Path))
+(define-type-alias ILModuleName (Option Path-String))
 
 (struct ILModule ([id   :  ILModuleName]
                   [provides : (Listof ILProvide)]

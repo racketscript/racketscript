@@ -49,7 +49,8 @@
 (define-type GeneralTopLevelForm (U Expr
                                     DefineValues
                                     ;; DefineSyntaxes
-                                    Require*))
+                                    JSRequire
+                                    #;Require*))
 (define-predicate GeneralTopLevelForm? GeneralTopLevelForm)
 
 ;;;
@@ -107,7 +108,5 @@
 ;; Eg. '#%kernel is a module name that is symbol, we expect rest to
 ;; be resolved concrete Paths.
 
-(define-type Require*  (Listof Require))
-(define-predicate Require*? Require*)
-(struct Require        ([id : ModuleName]
-                        [ins : (Option Symbol)]) #:transparent)
+(struct JSRequire     ([alias : Symbol]
+                       [path  : (U Symbol Path-String)]) #:transparent)

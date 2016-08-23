@@ -59,13 +59,17 @@
   (define requires*
     (for/list ([mod-path imported-mod-path-list]
                [counter (in-naturals)])
-      (define mod-obj-name (string->symbol (~a "M" counter))) ;; FIXME: Make a unique name in module
+      (define mod-obj-name (string->symbol (~a "M" counter)))
       (define import-name
         (match mod-path
           [(? symbol? _) (jsruntime-import-path path
                                                 (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
       (ILRequire import-name mod-obj-name)))
+
+  ;; Append all JavaScript requires we find at GTL over here
+  (: js-requires (Boxof (Listof ILRequire)))
+  (define js-requires (box '()))
 
   (define mod-stms
     (parameterize ([module-object-name-map ;; Names we will use for module objects in JS
@@ -78,11 +82,16 @@
       (append-map
        (λ ([form : ModuleLevelForm])
          (cond
+           [(JSRequire? form)
+            (set-box! js-requires
+                      (cons (ILRequire (~a (JSRequire-path form))
+                                       (JSRequire-alias form))
+                            (unbox js-requires)))
+            '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
            [(Provide*? form) (add-provides! (absyn-provide->il form)) '()]
            [(SubModuleForm? form) '()])) ;; TODO
        forms)))
-
 
   ;; Compute `provides` from this modoule
 
@@ -113,7 +122,7 @@
 
   (ILModule path
             final-provides
-            requires*
+            (append requires* (unbox js-requires))
             mod-stms))
 
 (: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
@@ -125,7 +134,8 @@
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
      (absyn-binding->il (cons ids expr))]
-    [(Require*? form) '()]))
+    [(JSRequire? form) (error 'absyn-gtl-form->il
+                              "Required should be hoisted")]))
 
 (: absyn-provide->il (-> Provide* (Listof ILProvide)))
 (define (absyn-provide->il form)

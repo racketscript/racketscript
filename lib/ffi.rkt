@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new $/obj $/array)
+(provide $ #%js-ffi $/new $/obj $/array $/require)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -72,3 +72,8 @@
   (syntax-parse stx
     [(_ e:expr ...)
      #`(#%js-ffi 'array e ...)]))
+
+(define-syntax ($/require stx)
+  (syntax-parse stx
+    [(_ name:id mod:str)
+     #`(define name (#%js-ffi 'require mod))]))
