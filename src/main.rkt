@@ -42,6 +42,7 @@
 (define js-output-file (make-parameter "compiled.js"))
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 (define dump-debug-info (make-parameter #f))
+(define js-output-beautify? (make-parameter #f))
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "babel"
@@ -168,7 +169,7 @@
     (unless (skip-npm-install)
       (system "npm install"))
     (unless (skip-gulp-build)
-      (system "gulp"))))
+      (system "./node_modules/.bin/gulp"))))
 
 ;;;; Generate stub module
 
@@ -235,6 +236,10 @@
 
        (assemble-module (absyn-module->il ast) #f)
 
+       ;; Run JS beautifier
+       (when (js-output-beautify?)
+         (system (format "js-beautify -r ~a" (module-output-file next))))
+
        (for ([mod (in-set (Module-imports ast))])
          (match mod
            [(? symbol? _) (void)]
@@ -251,6 +256,7 @@
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
+     [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
      ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
