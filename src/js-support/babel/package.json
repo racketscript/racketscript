@@ -1,0 +1,29 @@
+{
+    "name": "rapture",
+    "version": "0.0.1",
+    "description": "Package JavaScript compiled from Rapture (Racket->JS compiler)",
+    "main": "./dist/compiled.js",
+    "repository": {
+	"type": "git",
+	"url": "https://github.com/vishesh/racketscript"
+    },
+    "keywords": [
+	"racket",
+	"compiler"
+    ],
+    "author": "Vishesh Yadav",
+    "bugs": {
+	"url": "https://github.com/vishesh/racketscript/issues"
+    },
+    "dependencies": [
+	"gulp",
+	"gulp-concat",
+	"gulp-insert",
+	"hamt_plus",
+        "babel-core",
+        "babel-cli",
+        "babel-preset-es2015",
+	"babel-deps",
+	"babel-polyfill"
+    ]
+}

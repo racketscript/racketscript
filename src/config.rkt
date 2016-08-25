@@ -18,7 +18,7 @@
 (: output-directory (Parameter String))
 (define output-directory  (make-parameter "js-build"))
 
-(: current-source-file (Parameter (Option Path)))
+(: current-source-file (Parameter (Option (U Path Symbol))))
 (define current-source-file (make-parameter #f))
 
 (: main-source-file (Parameter (Option Path)))

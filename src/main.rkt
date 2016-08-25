@@ -43,6 +43,11 @@
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 (define dump-debug-info (make-parameter #f))
 
+;; Compiler for ES6 to ES5 compilation.
+;; - "babel"
+;; - "traceur"
+(define js-es6-compiler (make-parameter "traceur"))
+
 (define-runtime-path rapture-main-module ".")
 
 ;; Path
@@ -57,7 +62,7 @@
 ;; Path-String -> Path
 ;; Return path of support file named f
 (define (support-file f)
-  (build-path rapture-dir "src" "js-support" f))
+  (build-path rapture-dir "src" "js-support" (js-es6-compiler) f))
 
 ;; PathString -> Path
 ;; Return path of runtime file named f
@@ -131,8 +136,9 @@
 
 ;; -> Void
 (define (copy-support-files)
-  (copy-file+ (support-file (js-bootstrap-file))
-              (output-directory)))
+  (when (equal? (js-es6-compiler) "traceur")
+    (copy-file+ (support-file (js-bootstrap-file))
+                (output-directory))))
 
 ;; String -> Void
 ;; Create output build directory tree with all NPM, Gulp. Runtime and
@@ -249,6 +255,11 @@
      ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
+     #:multi
+     ["--es6" compiler "ES6 to ES5 compiler"
+      (if (or (equal? compiler "traceur") (equal? compiler "babel"))
+          (js-es6-compiler compiler)
+          (error "`~a` is not a supported ES6 compiler"))]
      #:once-any
      ["--expand" "Fully expand Racket source" (build-mode 'expand)]
      ["--ast" "Expand and print AST" (build-mode 'absyn)]

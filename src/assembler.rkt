@@ -170,11 +170,10 @@
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
   (define core-import-path
-    (if (current-source-file)
-        (jsruntime-import-path (assert (current-source-file) path?)
-                               (jsruntime-module-path 'core))
-        ;;FIXME: For all other cases, assume they goto top runtime directory
-        (jsruntime-module-path 'core)))
+    ;; (current-source-file) should not be false, else abort
+    (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
+                           (jsruntime-module-path 'core)))
+
   (emit (format "import * as ~a from '~a';"
                 (jsruntime-core-module)
                 core-import-path))
