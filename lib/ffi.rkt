@@ -17,7 +17,6 @@
 ;; - Operation is one of -
 ;;   + 'ref
 ;;   + 'index
-;;   + 'app
 ;;   + 'var
 ;;   + 'assign
 ;;   + 'new
@@ -42,7 +41,7 @@
     ;; Symbols <: Expr so so just try to parse them first
     ;; Since symbols are static, we can use JS subscript syntax
     [(_ b:expr xs:symbol ...+ (~datum <$>) ys:expr ...)
-     #`(#%js-ffi 'app (#%js-ffi 'ref b xs ...) ys ...)]
+     #`((#%js-ffi 'ref b xs ...) ys ...)]
     [(_ b:expr xs:symbol ...+ (~datum <:=>) ys:expr)
      #`(#%js-ffi 'assign (#%js-ffi 'ref b xs ...) ys)]
     [(_ b:expr xs:symbol ...+)
@@ -53,7 +52,7 @@
     [(_ b:expr xs:expr ...+ (~datum <:=>) ys:expr)
      #`(#%js-ffi 'assign (#%js-ffi 'index b xs ...) ys)]
     [(_ b:expr xs:expr ...+ (~datum <$>) ys:expr ...)
-     #`(#%js-ffi 'app (#%js-ffi 'index b xs ...) ys ...)]
+     #`((#%js-ffi 'index b xs ...) ys ...)]
     [(_ b:expr xs:expr ...+)
      #`(#%js-ffi 'index b xs ...)]
     [_ (error '$ "no match")]))

@@ -178,7 +178,6 @@
     (define idents (~> (hash-ref (used-idents) mod)
                        (set-map _ first)
                        (remove-duplicates _)))
-
     (define ilmod
       (ILModule #f
                 (map ILProvide idents)

@@ -303,7 +303,12 @@ exports["~a"] = function () {
 }
 
 exports["string-append"] = function () {
-    return "".concat.call(arguments);
+    switch (arguments.length) {
+    case 1: return arguments[0];
+    case 2: return arguments[0] + arguments[1];
+    case 3: return arguments[0] + arguments[1] + arguments[3];
+    default: return "".concat.call(arguments);
+    }
 }
 
 exports["string"] = function () {
