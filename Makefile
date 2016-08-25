@@ -24,11 +24,11 @@ build:
 
 setup:
 	npm install -g traceur gulp ## these tools must be in PATH
-	raco pkg install --auto threading glob graph
+	raco pkg install --auto threading graph
 
 setup-extra:
 	npm install -g js-beautify eslint jshint
-	raco pkg install --auto cover
+	raco pkg install --auto cover glob
 
 clean:
 	rm -rf src/compiled
