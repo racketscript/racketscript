@@ -23,11 +23,11 @@ build:
 	raco make -v src/main.rkt
 
 setup:
-	npm install -g traceur gulp ## these tools must be in PATH
+	npm install -g gulp ## these tools must be in PATH
 	raco pkg install --auto threading graph
 
 setup-extra:
-	npm install -g js-beautify eslint jshint
+	npm install -g traceur js-beautify eslint jshint
 	raco pkg install --auto cover glob
 
 clean:

@@ -261,7 +261,7 @@
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
      #:multi
-     ["--es6" compiler "ES6 to ES5 compiler"
+     ["--es6" compiler "ES6 to ES5 compiler [traceur|babel]"
       (if (or (equal? compiler "traceur") (equal? compiler "babel"))
           (js-es6-compiler compiler)
           (error "`~a` is not a supported ES6 compiler"))]
