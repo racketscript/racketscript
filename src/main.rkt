@@ -168,30 +168,30 @@
 
 
 (define (generate-stub-module mod)
-  (define idents (~> (hash-ref (used-idents) mod)
-                     (set-map _ first)
-                     (remove-duplicates _)))
+  (parameterize ([current-source-file mod])
+    (define idents (~> (hash-ref (used-idents) mod)
+                       (set-map _ first)
+                       (remove-duplicates _)))
 
-  (define ilmod
-    (ILModule #f
-              (map ILProvide idents)
-              (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
-                               '$$mod))
-              (append
-               (list
-                (ILVarDec '$$ (ILRef '$$mod 'exports)))
-               (for/list ([id idents])
-                 (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
+    (define ilmod
+      (ILModule #f
+                (map ILProvide idents)
+                (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
+                                 '$$mod))
+                (append
+                 (list
+                  (ILVarDec '$$ (ILRef '$$mod 'exports)))
+                 (for/list ([id idents])
+                   (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
 
-  (define output-fpath (build-path (output-directory)
-                                   "runtime"
-                                   (substring (~a mod ".rkt.js") 2)))
+    (define output-fpath (build-path (output-directory)
+                                     "runtime"
+                                     (substring (~a mod ".rkt.js") 2)))
 
-  (call-with-output-file output-fpath
-    #:exists 'replace
-    (λ (out)
-      (current-source-file #f)
-      (assemble-module ilmod out))))
+    (call-with-output-file output-fpath
+      #:exists 'replace
+      (λ (out)
+        (assemble-module ilmod out)))))
 
 ;; -> Void
 ;; For given global parameters starts build process starting

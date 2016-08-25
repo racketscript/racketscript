@@ -124,7 +124,7 @@
 
 (: normalize-symbol (->* (Symbol) ((Listof String)) String))
 ;;; NOTE: Just normalizing is still not a safe way to translate to JS.
-;;; 
+;;;
 (define (normalize-symbol s [ignores '()])
   ;; TODO: handle every weird character in symbol
   ;; Since every identifier is suffixed with fresh symbol
@@ -208,22 +208,32 @@
 (define (main-source-directory)
   (path-parent (assert (main-source-file) path?)))
 
-(: jsruntime-import-path (-> Path Path Path))
+(: jsruntime-import-path (-> (U Path Symbol) Path Path))
 (define (jsruntime-import-path base runtime-fpath)
   ;; TODO: Make runtime, modules, and everything united!
-  (cast (find-relative-path (path-parent (module-output-file base))
-                            runtime-fpath)
-        Path))
+  (: fix-for-down (-> Path Path))
+  (define (fix-for-down p)
+    (define p-str (~a p))
+    (if (string-prefix? p-str "..")
+        p
+        (build-path (~a "./" p-str))))
+  (fix-for-down
+   (cast (find-relative-path (path-parent (module-output-file base))
+                             runtime-fpath)
+         Path)))
 
 ;;; Module path renaming ------------------------------------------------------
 
-(: module-output-file (-> Path Path))
+(: module-output-file (-> (U Path Symbol) Path))
 (define (module-output-file mod)
-  (define collects? (collects-module? mod))
-  (define links? (links-module? mod))
-
+  (define links? (if (symbol? mod) #t (links-module? mod)))
   (cond
-    [collects?
+    [(symbol? mod)
+     ;; Eg. #%kernel, #%utils ...
+     (path->complete-path (build-path (output-directory)
+                                      "runtime"
+                                      (substring (symbol->string mod) 2)))]
+    [(collects-module? mod)
      (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])
        (path->complete-path
         (build-path (output-directory) "collects" (~a rel-collects ".js"))))]
