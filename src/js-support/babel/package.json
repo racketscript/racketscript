@@ -19,10 +19,11 @@
 	"gulp",
 	"gulp-concat",
 	"gulp-insert",
+	"gulp-babel",
 	"hamt_plus",
-        "babel-core",
-        "babel-cli",
-        "babel-preset-es2015",
+	"babel-core",
+	"babel-cli",
+	"babel-preset-es2015",
 	"babel-deps",
 	"babel-polyfill"
     ]
