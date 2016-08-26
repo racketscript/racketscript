@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new $/obj $/array $/require)
+(provide $ #%js-ffi $/new $/obj $/array $/require $$)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -34,9 +34,10 @@
     #:description "match with symbol datum"
     (pattern ((~literal quote) var:id))))
 
+
 (define-syntax ($ stx)
-  (syntax-parse stx
-    [(_ v:id)
+  [syntax-parse stx
+    [(_ v:symbol)
      #`(#%js-ffi 'var 'v)]
     ;; Symbols <: Expr so so just try to parse them first
     ;; Since symbols are static, we can use JS subscript syntax
@@ -55,7 +56,23 @@
      #`((#%js-ffi 'index b xs ...) ys ...)]
     [(_ b:expr xs:expr ...+)
      #`(#%js-ffi 'index b xs ...)]
-    [_ (error '$ "no match")]))
+    [_ (error '$ "no match")]])
+
+(define-syntax ($$ stx)
+  (define (split-id id)
+    (map string->symbol
+         (string-split
+          (symbol->string (syntax-e id)) ".")))
+
+  (syntax-parse stx
+    [(_ v:symbol e0:expr ...)
+     #:with (vn) (stx-cdr #'v)
+     #:with (id0 id1 ...) (split-id #'vn)
+     #`($ 'id0 'id1 ... <$> e0 ...)]
+    [(_ v:id e0:expr ...)
+     #:with (id0 id1 ...) (split-id #'v)
+     #:with f-id (datum->syntax stx (syntax-e #'id0))
+     #`($ f-id 'id1 ... <$> e0 ...)]))
 
 (define-syntax ($/new stx)
   (syntax-parse stx

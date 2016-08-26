@@ -260,17 +260,6 @@
                       (ILIndex (cast (ILValue-v il) Symbol)
                                s-il)
                       (ILIndex il s-il))))]
-       [(list (Quote 'app) lam args ...)
-        (define-values (stms il) (absyn-expr->il lam))
-        (define-values (stms* args*)
-          (for/fold ([stms : ILStatement* stms]
-                     [args-val : (Listof ILExpr) '()])
-                    ([a args])
-            (define-values (a-stms a-il) (absyn-expr->il a))
-            (values (append stms a-stms)
-                    (append args-val (list a-il)))))
-        (values stms*
-                (ILApp il args*))]
        [(list (Quote 'assign) lv rv)
         (define-values (lv-stms lv-il) (absyn-expr->il lv))
         (define-values (rv-stms rv-il) (absyn-expr->il rv))
