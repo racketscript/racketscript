@@ -270,7 +270,9 @@
      (define s (string-replace (cast (object-name v) String) "/" "\\/"))
      (write (format "/~a/" s) out)]
     [(byte-regexp? v)
-     (define s (string-replace (bytes->string/utf-8 (cast (object-name v) Bytes)) "/" "\\/"))
+     (define s (string-replace (bytes->string/utf-8
+                                (cast (object-name v) Bytes))
+                               "/" "\\/"))
      (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
