@@ -332,6 +332,10 @@
      (absyn-expr->il
       (LetValues (list (cons `(,expr0-id) expr0))
                  (append1 expr* (LocalIdent expr0-id))))]
+    [(Box e)
+     (define-values (stms val) (absyn-expr->il e))
+     (values stms
+             (ILApp (name-in-module 'core 'Box.make) (list val)))]
     [(ImportedIdent id src)
      (when (symbol? src)
        ;; TODO: need to move this ident-use out of expand

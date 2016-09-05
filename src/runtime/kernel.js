@@ -320,6 +320,21 @@ exports["string"] = function () {
 }
 
 /* --------------------------------------------------------------------------*/
+// Box
+
+exports["box"] = function(v) {
+    return Core.Box.make(v);
+}
+
+exports["unbox"] = function(v) {
+    return v.get();
+}
+
+exports["set-box!"] = function(b, v) {
+    b.set(v);
+}
+
+/* --------------------------------------------------------------------------*/
 // Printing to Console
 
 let __buffer = ""; //HACK

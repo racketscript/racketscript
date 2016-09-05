@@ -1,5 +1,6 @@
 // Exports classes for creating basic data types and operation on them
 
+import * as Box from "./core/box.js";
 import * as Hash from "./core/hash.js";
 import * as Keyword from "./core/keyword.js";
 import * as Number from "./core/numbers.js";
@@ -20,6 +21,7 @@ export {
     Values,
     Vector,
     Hash,
+    Box
 }
 
 export {
