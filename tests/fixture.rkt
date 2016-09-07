@@ -3,11 +3,12 @@
 
 (require rackunit
          glob
-         "../src/global.rkt"
-         "../src/main.rkt"
-         "../src/moddeps.rkt")
+         racket/runtime-path
+         rapture/compiler/main
+         rapture/compiler/global
+         rapture/compiler/moddeps)
 
-(define tests-root-dir (build-path rapture-dir "tests"))
+(define-runtime-path tests-root-dir ".")
 
 ;; Print Racket and JS output of test programs to stdout
 ;; Also show check failure
@@ -67,7 +68,7 @@
 (define-simple-check (check-rapture fpath)
   ;; First compile to JS
   (define compile-result
-    (let ([test-path (build-path tests-root-dir fpath)])
+    (let ([test-path (normalize-path (build-path tests-root-dir fpath))])
       (parameterize ([main-source-file test-path]
                      [global-export-graph (get-export-tree test-path)]
                      [current-source-file test-path]

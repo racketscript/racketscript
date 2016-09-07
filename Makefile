@@ -20,54 +20,56 @@ build:
 	@echo "NOTE: Make sure nodejs, npm, traceur and gulp are installed and"
 	@echo "      exists in PATH. See \`make setup\`"
 	@echo
-	raco make -v src/main.rkt
+	raco make -v rapture-compiler/rapture/compiler/main.rkt
+	raco make -v tests/fixture.rkt
 
 setup:
-	npm install -g gulp ## these tools must be in PATH
-	raco pkg install --auto threading graph
+	raco pkg install --auto -t dir rapture-compiler/ || \
+	    raco pkg update --link rapture-compiler/
 
 setup-extra:
-	npm install -g traceur js-beautify eslint jshint
+	npm install -g traceur js-beautify eslint jshint gulp
 	raco pkg install --auto cover glob
 
 clean:
-	rm -rf src/compiled
+	raco pkg remove rapture-compiler
 
 ## Coverage recipes
 
 coverage-unit-test:
 	@echo "    RAPTURE COVERAGE UNIT-TEST    "
 	@echo "++++++++++++++++++++++++++++++++++"
-	raco cover -d ./coverage/unit src/
+	raco cover -d ./coverage/unit rapture-compiler/rapture/
 
 coverage:
 	@echo "    RAPTURE COVERAGE    "
 	@echo "++++++++++++++++++++++++"
-	raco cover -d ./coverage/all src/ tests/fixture.rkt
+	raco cover -d ./coverage/all rapture-compiler/rapture/  \
+	    tests/fixture.rkt
 
 ## JavaScript
 
 eslint:
 	@echo "    RAPTURE RUNTIME LINT    "
 	@echo "++++++++++++++++++++++++++++"
-	eslint ./src/runtime/ || true
+	eslint ./rapture-compiler/rapture/compiler/runtime/ || true
 
 jshint:
 	@echo "    RAPTURE RUNTIME LINT    "
 	@echo "++++++++++++++++++++++++++++"
-	jshint ./src/runtime/ || true
+	jshint ./rapture-compiler/rapture/compiler/runtime/ || true
 
 ## Test recipes
 
 test:
 	@echo "     RAPTURE TEST       "
 	@echo "++++++++++++++++++++++++"
-	raco test -t src/ tests/fixture.rkt
+	raco test -t rapture-compiler/ tests/
 
 unit-test:
 	@echo "    RAPTURE UNIT-TEST   "
 	@echo "++++++++++++++++++++++++"
-	raco test -t src/
+	raco test -t rapture-compiler/
 
 integration-test:
 	@echo "    RAPTURE INTEGRATION TEST    "

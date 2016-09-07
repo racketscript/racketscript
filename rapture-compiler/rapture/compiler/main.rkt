@@ -64,12 +64,12 @@
 ;; Path-String -> Path
 ;; Return path of support file named f
 (define (support-file f)
-  (build-path rapture-dir "src" "js-support" (js-target) f))
+  (build-path rapture-dir "compiler" "js-support" (js-target) f))
 
 ;; PathString -> Path
 ;; Return path of runtime file named f
 (define (runtime-file f)
-  (build-path rapture-dir "src" "runtime" f))
+  (build-path rapture-dir "compiler" "runtime" f))
 
 ;; Path-String -> Path
 ;; Return path of module file named f in output directory
@@ -133,7 +133,7 @@
 
 ;; -> Void
 (define (copy-runtime-files)
-  (copy-directory (build-path rapture-dir "src" "runtime")
+  (copy-directory (build-path rapture-dir "compiler" "runtime")
                   (output-directory)))
 
 ;; -> Void
