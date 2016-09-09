@@ -64,7 +64,7 @@ jshint:
 test:
 	@echo "     RAPTURE TEST       "
 	@echo "++++++++++++++++++++++++"
-	raco test -t rapture-compiler/ tests/
+	raco test -t rapture-compiler/ tests/fixture.rkt
 
 unit-test:
 	@echo "    RAPTURE UNIT-TEST   "

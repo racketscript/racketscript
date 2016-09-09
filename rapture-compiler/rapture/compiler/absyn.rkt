@@ -1,112 +1,87 @@
 #lang typed/racket/base
 
-(require "il.rkt")
+(require "language.rkt")
 
 (provide (all-defined-out))
 
-(define-type-alias Program TopLevelForm)
+(struct Provide ([id      : Symbol]) #:transparent)
 
-(define-type Expr (U Ident
-                     PlainLambda
-                     CaseLambda
-                     PlainApp
-                     If
-                     Begin
-                     Begin0
-                     LetValues
-                     LetRecValues
-                     TopId
-                     Set!
-                     Quote
-                     Box
-                     ;; QuoteSyntax
-                     ;; WithContinuationMark
-                     VarRef))
-(define-predicate Expr? Expr)
+(struct Module  ([id      : Symbol]
+                 [path    : Path]
+                 [lang    : (U Symbol String (Listof Symbol))]
+                 [imports : (Setof (U Path Symbol))]
+                 [forms   : (Listof ModuleLevelForm)])
+  #:transparent)
 
-(define-type TopLevelForm (U GeneralTopLevelForm
-                             Expr
-                             Module
-                             Begin
-                             ;; #%expression
-                             ;; BeginForSyntax
-                             ))
-(define-predicate TopLevelForm? TopLevelForm)
 
-(define-type ModuleLevelForm (U GeneralTopLevelForm
-                                Provide*
-                                ;; BeginForSyntax
-                                SubModuleForm
-                                ;; Declare
-                                ))
-(define-predicate ModuleLevelForm? ModuleLevelForm)
+(define-language Absyn
+  #:alias
+  [Program TopLevelForm]
+  [ModuleName (U Symbol Path)]
 
-(define-type SubModuleForm (U Module
-                              ;;Module*
-                              ))
-(define-predicate SubModuleForm? SubModuleForm)
+  #:forms
+  ;; Top Level Forms
 
-(define-type GeneralTopLevelForm (U Expr
-                                    DefineValues
-                                    ;; DefineSyntaxes
-                                    JSRequire
-                                    #;Require*))
-(define-predicate GeneralTopLevelForm? GeneralTopLevelForm)
+  [TopLevelForm             GeneralTopLevelForm
+                            Expr
+                            Module
+                            Begin]
 
-;;;
+  [GeneralTopLevelForm      Expr
+                            (DefineValues [ids : Args] [expr : Expr])
+                            ;; DefineSyntaxes
+                            (JSRequire [alias : Symbol]
+                                       [path : (U Symbol Path-String)])
+                            #;Require*]
 
-(define-type Args      (Listof Symbol))      ;;; FIXME: this doesn't match with formals in grammar
-(define-type Formals   (U Symbol
-                          (Listof Symbol)
-                          (Pairof (Listof Symbol) Symbol)))
-(define-type Binding   (Pairof Args Expr))
+  ;; Module Level Forms
+  [ModuleLevelForm     GeneralTopLevelForm
+                       Provide*
+                       SubModuleForm]
+  [Provide*            (Listof Provide)]
+  [SubModuleForm       Module]
 
-;;; Expressions 
 
-(define-type Begin      (Listof TopLevelForm))
-(define-type Ident      (U LocalIdent ImportedIdent TopLevelIdent))
-(struct LocalIdent      ([id : Symbol]) #:transparent)
-(struct ImportedIdent   ([id : Symbol] [src-mod : Module-Path]) #:transparent)
-(struct TopLevelIdent   ([id : Symbol]) #:transparent)
-(struct Begin0          ([expr0 : Expr] [expr* : (Listof Expr)]) #:transparent)
-(struct PlainLambda     ([formals : Formals] [exprs : (Listof Expr)]) #:transparent)
-(struct CaseLambda      ([clauses : (Listof PlainLambda)]) #:transparent)
-(struct If              ([pred : Expr] [t-branch : Expr] [f-branch : Expr]) #:transparent)
-(struct LetValues       ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
-(struct LetRecValues    ([bindings : (Listof Binding)] [body : (Listof Expr)]) #:transparent)
-(struct Set!            ([id : Symbol] [expr : Expr]) #:transparent)
-(struct Quote           ([datum : Any]) #:transparent)
-(struct PlainApp        ([lam : Expr] [args : (Listof Expr)]) #:transparent) ;; Special case of (PlainApp '()) produces '()
-(struct TopId           ([id : Symbol]) #:transparent)
-(struct VarRef          ([var : (Option (U Symbol TopId))]) #:transparent)
-(struct Box             ([expr : Expr]) #:transparent)
+  ;; Expressions
 
-(define-predicate Begin? Begin)
-(define-predicate Ident? Ident)
+  [Expr    Ident
+           (TopId             [id       : Symbol])
+           (VarRef            [var      : (Option (U Symbol TopId))])
+           (Quote             [datum    : Any])
 
-;;; Top Level Forms
 
-(define-type-alias ImportMap (HashTable ModuleName (Listof Symbol)))
-(struct Module ([id : Symbol]
-                [path : Path]
-                [lang : (U Symbol String (Listof Symbol))]
-                [imports : (Setof (U Path Symbol))]
-                [forms : (Listof ModuleLevelForm)])
-  #:transparent) ;; FIXME: path
+           Begin
+           (Begin0            [expr0    : Expr]
+                              [expr*    : (Listof Expr)])
 
-;;; Module Level Forms
+           (PlainApp          [lam      : Expr]    [args  : (Listof Expr)])
+           (PlainLambda       [formals  : Formals] [exprs : (Listof Expr)])
+           (CaseLambda        [clauses  : (Listof PlainLambda)])
 
-(define-type Provide* (Listof Provide))
-(define-predicate Provide*? Provide*)
-(struct Provide ([id : Symbol]) #:transparent) ;; This more than just one field
 
-;; GeneralTopLevelForm
+           (If                [pred     : Expr]
+                              [t-branch : Expr]
+                              [f-branch : Expr])
+           (LetValues         [bindings : (Listof Binding)]
+                              [body     : (Listof Expr)])
+           (LetRecValues      [bindings : (Listof Binding)]
+                              [body     : (Listof Expr)])
 
-(struct DefineValues   ([ids : Args] [expr : Expr]) #:transparent)
+           (Set!              [id       : Symbol] [expr : Expr])
+           (Box               [expr     : Expr])]
 
-(define-type-alias ModuleName (U Symbol Path))
-;; Eg. '#%kernel is a module name that is symbol, we expect rest to
-;; be resolved concrete Paths.
+  [Ident  (LocalIdent         [id : Symbol])
+          (ImportedIdent      [id : Symbol] [src-mod : Module-Path])
+          (TopLevelIdent      [id : Symbol])]
 
-(struct JSRequire     ([alias : Symbol]
-                       [path  : (U Symbol Path-String)]) #:transparent)
+  [Begin   (Listof TopLevelForm)]
+
+  ;; Bindings and Formal Arguments
+
+  [Binding      (Pairof Args Expr)]
+
+  [Args         (Listof Symbol)]
+
+  [Formals      Symbol
+                (Listof Symbol)
+                (Pairof (Listof Symbol) Symbol)])

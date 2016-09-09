@@ -2,9 +2,12 @@
 
 (provide (all-defined-out))
 
-(define-type ILProgram ILStatement*)
-(define-predicate ILProgram? ILProgram)
-(define-type-alias ILModuleName (Option Path-String))
+(require "language.rkt")
+
+
+(define-type        ILProgram ILStatement*)
+(define-predicate   ILProgram? ILProgram)
+(define-type-alias  ILModuleName (Option Path-String))
 
 (struct ILModule ([id   :  ILModuleName]
                   [provides : (Listof ILProvide)]
@@ -15,52 +18,40 @@
 (struct ILProvide ([id : Symbol]) #:transparent)
 (struct ILRequire ([mod : ILModuleName] [name : Symbol]) #:transparent)
 
-;;; IL Statements
 
-(define-type ILStatement (U ILVarDec
-                            ILReturn
-                            ILIf
-                            ILValuesMatch
-                            ILAssign
-                            ILExpr))
-(define-predicate ILStatement? ILStatement)
+(define-language IL
+  #:alias
+  [ILStatement*    (Listof ILStatement)]
+  [ILLValue        (U Symbol ILRef ILIndex)]
 
-(define-type-alias ILStatement* (Listof ILStatement))
-(define-type-alias ILLValue (U Symbol ILRef ILIndex))
+  #:forms
+  [ILExpr   (ILLambda    [args      : (Listof Symbol)]
+                         [expr      : ILStatement*])
+            (ILBinaryOp  [operator  : Symbol]
+                         [args      : (Listof ILExpr)])
+            (ILApp       [lam       : ILExpr]
+                         [args      : (Listof ILExpr)])
+            (ILArray     [items     : (Listof ILExpr)])
+            (ILObject    [items     : (Listof (Pairof Symbol ILExpr))])
+            (ILRef       [expr      : ILExpr]
+                         [fieldname : Symbol])
+            (ILIndex     [expr      : ILExpr]
+                         [fieldname : ILExpr])
+            (ILValue     [v         : Any])
+            (ILNew       [v         : (U Symbol ILRef ILIndex ILApp)])
+            Symbol]
 
-(struct ILVarDec   ([id : Symbol] [expr : (Option ILExpr)]) #:transparent)
-(struct ILReturn   ([expr : ILExpr]) #:transparent)
-(struct ILIf       ([pred : ILExpr]
-                    [t-branch : ILStatement*]
-                    [f-branch : ILStatement*])
-  #:transparent)
-;; (struct ILSeq      ([stms : ILStatement*]) #:transparent)
-(struct ILAssign   ([lvalue : ILLValue] [rvalue : ILExpr]) #:transparent)
-
-;;; IL Expressions
-
-(define-type ILExpr (U ILLambda
-                       ILBinaryOp
-                       ILApp
-                       ILIndex
-                       ILRef
-                       ILArray
-                       ILObject
-                       ILNew
-                       Symbol
-                       ILValue))
-(define-predicate ILExpr? ILExpr)
-
-(struct ILLambda   ([args : (Listof Symbol)] [expr : ILStatement*]) #:transparent)
-(struct ILBinaryOp ([operator : Symbol] [args : (Listof ILExpr)]) #:transparent)
-(struct ILApp      ([lam : ILExpr] [args : (Listof ILExpr)]) #:transparent)
-(struct ILArray    ([items : (Listof ILExpr)]) #:transparent)
-(struct ILObject   ([items : (Listof (Pairof Symbol ILExpr))]) #:transparent)
-(struct ILRef      ([expr : ILExpr] [fieldname : Symbol]) #:transparent)
-(struct ILIndex    ([expr : ILExpr] [fieldname : ILExpr]) #:transparent)
-(struct ILValue    ([v : Any]) #:transparent) ;; TODO: be more specific
-(struct ILNew      ([v : (U Symbol ILRef ILIndex ILApp)]))
-
-;; TODO: This is quickfix. Maybe think more about this
-(struct ILValuesMatch ([id : Symbol] [vref : Symbol] [index : Natural]) #:transparent)
-(struct ILMultiValue ([v* : (Listof ILValue)]) #:transparent) ;; TODO: fits where?
+  [ILStatement   ILExpr
+                 (ILVarDec      [id         : Symbol]
+                                [expr       : (Option ILExpr)])
+                 (ILIf          [pred       : ILExpr]
+                                [t-branch   : ILStatement*]
+                                [f-branch   : ILStatement*])
+                 (ILAssign      [lvalue     : ILLValue]
+                                [rvalue     : ILExpr])
+                 (ILWhile       [condition  : ILExpr]
+                                [body       : ILStatement*])
+                 (ILReturn      [expr       : ILExpr])
+                 (ILValuesMatch [id         : Symbol]
+                                [vref       : Symbol]
+                                [index      : Natural])])
