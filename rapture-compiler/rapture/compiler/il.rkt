@@ -51,7 +51,4 @@
                                 [rvalue     : ILExpr])
                  (ILWhile       [condition  : ILExpr]
                                 [body       : ILStatement*])
-                 (ILReturn      [expr       : ILExpr])
-                 (ILValuesMatch [id         : Symbol]
-                                [vref       : Symbol]
-                                [index      : Natural])])
+                 (ILReturn      [expr       : ILExpr])])

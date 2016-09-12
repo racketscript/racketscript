@@ -411,7 +411,8 @@
      (define binding-stms
        (for/list ([i : Natural (range (length args))]
                   [arg : Symbol args])
-         (ILValuesMatch arg result-id i)))
+         (ILVarDec arg (ILApp (ILRef result-id 'getAt)
+                              (list (ILValue i))))))
      (append stms
              (cons (ILVarDec result-id v)
                    binding-stms))]))
@@ -701,8 +702,8 @@
    (list
     (ILVarDec
      'let_result1
-     (ILApp (ILRef 'kernel 'values)
-            (list (ILValue 42)
-                  (ILLambda '(x) (list (ILReturn 'x))))))
-    (ILValuesMatch 'x 'let_result1 0)
-    (ILValuesMatch 'ident 'let_result1 1))))
+     (ILApp
+      (ILRef 'kernel 'values)
+      (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
+    (ILVarDec 'x (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 0))))
+    (ILVarDec 'ident (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 1)))))))

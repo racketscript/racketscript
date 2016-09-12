@@ -141,11 +141,6 @@
      (emit " = ")
      (assemble-expr rv out)
      (emit ";")]
-    [(ILValuesMatch id vref index)
-     (emit (~a "var " (normalize-symbol id)))
-     (emit " = ")
-     (emit (~a (normalize-symbol vref) ".getAt(" index ")"))
-     (emit ";")]
     [_ #:when (ILExpr? stmt)
        (assemble-expr stmt out)
        (emit ";")]))
