@@ -170,10 +170,12 @@
     (unless (skip-npm-install)
       (system "npm install"))
     (unless (skip-gulp-build)
-      (system "./node_modules/.bin/gulp"))))
+      (system (~a "./"
+                  (build-path "node_modules"
+                              ".bin"
+                              "gulp"))))))
 
 ;;;; Generate stub module
-
 
 (define (generate-stub-module mod)
   (parameterize ([current-source-file mod])
