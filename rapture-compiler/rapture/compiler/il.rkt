@@ -2,7 +2,8 @@
 
 (provide (all-defined-out))
 
-(require "language.rkt")
+(require racket/match
+         "language.rkt")
 
 
 (define-type        ILProgram ILStatement*)
@@ -26,7 +27,7 @@
 
   #:forms
   [ILExpr   (ILLambda    [args      : (Listof Symbol)]
-                         [expr      : ILStatement*])
+                         [body      : ILStatement*])
             (ILBinaryOp  [operator  : Symbol]
                          [args      : (Listof ILExpr)])
             (ILApp       [lam       : ILExpr]
@@ -36,7 +37,7 @@
             (ILRef       [expr      : ILExpr]
                          [fieldname : Symbol])
             (ILIndex     [expr      : ILExpr]
-                         [fieldname : ILExpr])
+                         [fieldexpr : ILExpr])
             (ILValue     [v         : Any])
             (ILNew       [v         : (U Symbol ILRef ILIndex ILApp)])
             Symbol]
@@ -51,4 +52,12 @@
                                 [rvalue     : ILExpr])
                  (ILWhile       [condition  : ILExpr]
                                 [body       : ILStatement*])
-                 (ILReturn      [expr       : ILExpr])])
+                 (ILReturn      [expr       : ILExpr])
+                 (ILLabel       [name       : Symbol])
+                 (ILContinue    [label      : Symbol])])
+
+
+(: il-apply-optimization (-> ILModule (-> ILStatement* ILStatement*) ILModule))
+(define (il-apply-optimization mod opt)
+  (match-define (ILModule id p r b) mod)
+  (ILModule id p r (opt b)))

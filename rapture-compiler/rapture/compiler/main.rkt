@@ -18,6 +18,7 @@
 
          "absyn.rkt"
          "il.rkt"
+         "il-analyze.rkt"
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
@@ -34,7 +35,8 @@
          racket->js
          rapture-dir
          skip-gulp-build
-         skip-npm-install)
+         skip-npm-install
+         enabled-optimizations)
 
 (define build-mode (make-parameter 'js))
 (define skip-npm-install (make-parameter #f))
@@ -43,6 +45,7 @@
 (define js-bootstrap-file (make-parameter "bootstrap.js"))
 (define dump-debug-info (make-parameter #f))
 (define js-output-beautify? (make-parameter #f))
+(define enabled-optimizations (make-parameter (set)))
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "babel"
@@ -177,6 +180,13 @@
 
 ;;;; Generate stub module
 
+;; Module -> ILModule
+;; Applies the enabled optimization to translated Absyn
+(define (absyn-module->il* ast)
+  (for/fold ([il (absyn-module->il ast)])
+            ([opt (in-set (enabled-optimizations))])
+    (il-apply-optimization il opt)))
+
 (define (generate-stub-module mod)
   (parameterize ([current-source-file mod])
     (define idents (~> (hash-ref (used-idents) mod)
@@ -237,7 +247,7 @@
          (prepare-build-directory (~a (Module-id ast))))
        (make-directory* (path-only (module-output-file next)))
 
-       (assemble-module (absyn-module->il ast) #f)
+       (assemble-module (absyn-module->il* ast) #f)
 
        ;; Run JS beautifier
        (when (js-output-beautify?)
@@ -263,6 +273,8 @@
      ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
+     ["--enable-self-tail" "Translate self tail calls to loops"
+      (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
      #:multi
      [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel]"
       (if (or (equal? target "traceur") (equal? target "babel"))
@@ -301,7 +313,7 @@
     ['il (~> (quick-expand source)
              (freshen _)
              (convert _ (build-path source))
-             (absyn-module->il _)
+             (absyn-module->il* _)
              (pretty-print _))]
     ['js (racket->js)])
 

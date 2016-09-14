@@ -51,12 +51,12 @@
              (byte? (ILValue-v e)))))
   
   (match expr
-    [(ILLambda args exprs)
+    [(ILLambda args body)
      (emit "function(")
      (emit (string-join (map normalize-symbol args) ", "))
      (emit ") {")
-     (for ([e exprs])
-       (assemble-statement e out))
+     (for ([s body])
+       (assemble-statement s out))
      (emit "}")]
     [(ILApp lam args)
      (when (wrap-e? lam) (emit "("))
@@ -136,11 +136,25 @@
      (emit "} else {")
      (assemble-statement* f-branch out)
      (emit "}")]
+    [(ILWhile condition body)
+     (emit "while (")
+     (assemble-expr condition out)
+     (emit "){")
+     (for ([s body])
+       (assemble-statement s out))
+     (emit "}")]
     [(ILAssign lv rv)
      (assemble-expr lv out)
      (emit " = ")
      (assemble-expr rv out)
      (emit ";")]
+    [(ILContinue lab)
+     (emit "continue")
+     (when lab
+       (emit " ~a" (normalize-symbol lab)))
+     (emit ";")]
+    [(ILLabel name)
+     (emit "~a:" (normalize-symbol name))]
     [_ #:when (ILExpr? stmt)
        (assemble-expr stmt out)
        (emit ";")]))
