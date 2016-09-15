@@ -1,12 +1,15 @@
 #lang typed/racket/base
 
 (require racket/match
+         racket/list
          racket/set
          "language.rkt"
          "util.rkt"
          "il.rkt")
 
-(provide self-tail->loop)
+(provide self-tail->loop
+         free-identifiers
+         free+defined)
 
 ;; TODO: Remove dead return statements.
 ;; TODO: Variable number arguments.
@@ -16,6 +19,7 @@
 
 (define-type ILLink    (Option ILStatement))
 (define-type ILResult  (U ILStatement* ILStatement))
+(define-type IdentSet  (Setof Symbol))
 
 (: self-tail->loop (-> ILStatement* ILStatement*))
 ;; Frontend function to convert self tail calls to
@@ -37,6 +41,9 @@
   ;; the statement we are currently handling.
   (define next-statement (make-parameter #f))
 
+  (: current-free-identifiers (Parameter (Setof Symbol)))
+  (define current-free-identifiers (make-parameter ((inst set Symbol))))
+
   (: add-to-scope! (-> Symbol Void))
   ;; Adds sym to scope of declared variables.
   (define (add-to-scope! sym)
@@ -46,6 +53,12 @@
   ;; Returns true if we have discovered `sym`
   (define (var-in-scope? sym)
     (set-member? (current-scope-declarations) sym))
+
+  ;; Returns true if identifier `id` is free in current
+  ;; lambda scope
+  (: free-identifier? (-> Symbol Boolean))
+  (define (free-identifier? id)
+    (set-member? (current-free-identifiers) id))
 
   (: handle-expr (-> ILExpr ILExpr))
   (define (handle-expr e)
@@ -81,13 +94,11 @@
   (define (handle-stm stm)
     (match stm
       [(ILVarDec id expr)
-       (add-to-scope! id)
        (match (next-statement)
-         [(ILReturn e) #:when (and expr
-                                   (var-in-scope? id)
-                                   (equal? e id))
+         [(ILReturn e) #:when (and expr (equal? e id))
           (ILReturn (handle-expr expr))]
-         [_ (ILVarDec id (and expr
+         [_ (add-to-scope! id)
+            (ILVarDec id (and expr
                               (handle-expr expr)))])]
       [(ILAssign lvalue rvalue)
        (match (next-statement)
@@ -104,7 +115,12 @@
       [(ILWhile condition body)
        (ILWhile (handle-expr condition)
                 (handle-stm* body))]
-      [(ILReturn expr) (ILReturn (handle-expr expr))]
+      [(ILReturn expr)
+       (if (and (symbol? expr)
+                (var-in-scope? expr)
+                (not (free-identifier? expr)))
+           (ILReturn (handle-expr expr))
+           '())]
       [(? ILExpr? expr) (handle-expr expr)]))
 
   (: handle-stm* (-> ILStatement* ILStatement*))
@@ -114,11 +130,11 @@
       (match stm*
         ['() result]
         [(cons hd tl)
-         (define next : ILLink (if (null? tl)
+         (define next : ILLink (if (empty? tl)
                                    (next-statement)
                                    (car tl)))
          (define stm** : ILResult
-           (if (null? tl)
+           (if (empty? tl)
                (handle-stm hd)
                (parameterize ([next-statement (car tl)])
                  (handle-stm hd))))
@@ -244,6 +260,80 @@
 
   (handle-stm* il))
 
+
+(: free+defined (-> ILStatement* IdentSet (List IdentSet IdentSet)))
+(define (free+defined stms* defs)
+  (define find* free+defined)
+
+  (: find (-> ILStatement IdentSet (List IdentSet IdentSet)))
+  ;; Returns (list defined-idents free-idents)
+  (define (find stm defs)
+    (match stm
+      [(ILVarDec id expr)
+       (list (set id)
+             (if expr
+                 (second (find expr (set-add defs id)))
+                 (set)))]
+      [(ILIf pred t-branch f-branch)
+       (match-define (list _ p-free) (find pred defs))
+       (match-define (list t-defs t-free) (find* t-branch defs))
+       (match-define (list f-defs f-free) (find* f-branch defs))
+       (list (set-union t-defs f-defs)
+             (set-union p-free t-free f-free))]
+      [(ILAssign lvalue rvalue)
+       (match-define (list _ lv-free) (find lvalue defs))
+       (match-define (list _ rv-free) (find rvalue defs))
+       (list (set) (set-union lv-free rv-free))]
+      [(ILWhile condition body)
+       (match-define (list _ cond-free) (find condition defs))
+       (match-define (list body-defs body-free) (find* body defs))
+       (list body-defs
+             (set-union cond-free body-free))]
+      [(ILReturn expr) (find expr defs)]
+      [(ILLambda args expr)
+       (match-define (list _ e-free) (find* expr (set-union defs (list->set args))))
+       (list (set) e-free)]
+      [(ILApp lam args)
+       (match-define (list _ l-free) (find lam defs))
+       (match-define (list _ a-free) (find* args defs))
+       (list (set) (set-union l-free a-free))]
+      [(ILBinaryOp oper args)
+       (find* args defs)]
+      [(ILArray items)
+       (find* items defs)]
+      [(ILObject items)
+       (define fields (list->set (ILObject-fields stm)))
+       (define bodies (ILObject-bodies stm))
+       (find* bodies (set-union defs fields))]
+      [(ILRef expr fieldname)
+       (find expr defs)]
+      [(ILIndex expr fieldexpr)
+       (match-define (list _ e-free) (find expr defs))
+       (match-define (list _ f-free) (find fieldexpr defs))
+       (list (set) (set-union e-free f-free))]
+      [(ILValue v) (list (set) (set))]
+      [(ILNew e) (find e defs)]
+      [(? symbol? v)
+       (list (set)
+             (if (set-member? defs v)
+                 (set)
+                 (set v)))]))
+
+  (let loop ([defs : IdentSet defs]
+             [free : IdentSet (set)]
+             [stms stms*])
+    (match stms
+      ['() (list defs free)]
+      [(cons hd tl)
+       (match-define (list h-defs h-free) (find hd defs))
+       (loop (set-union h-defs defs)
+             (set-union h-free free)
+             tl)])))
+
+(: free-identifiers (-> ILStatement* IdentSet))
+(define (free-identifiers stms)
+  (second (free+defined stms (set))))
+
 (module+ test
   (require typed/rackunit)
 
@@ -319,8 +409,6 @@
        (ILReturn 'if_res2)))))
    "Lift return statements up.")
 
-  (require racket/pretty)
-
   (check-equal?
    (lift-returns
     (list
@@ -357,4 +445,32 @@
       (ILVarDec 'a (ILValue 0))
       (ILReturn (ILValue 1))
       (ILReturn 'a))))
-   "Lift last return statement."))
+   "Lift last return statement.")
+
+  ;; Test free-identifer
+
+  (check-equal? (free-identifiers (list
+                                   (ILVarDec 'a (ILValue 0))
+                                   (ILReturn 'a)))
+                (set))
+
+  (check-equal? (free-identifiers (list
+                                   (ILAssign 'a (ILValue 0))
+                                   (ILReturn 'a)))
+                (set 'a))
+
+  (check-equal? (free-identifiers (list
+                                   (ILAssign 'a (ILValue 0))
+                                   (ILVarDec 'b (ILValue 0))
+                                   (ILReturn 'c)))
+                (set 'a 'c))
+
+  (check-equal? (free-identifiers (list
+                                   (ILLambda '(a b)
+                                             (list (ILApp '+ '(a b))))))
+                (set '+))
+
+  (check-equal? (free-identifiers (list
+                                   (ILLambda '(a b)
+                                             (list (ILApp '+ '(a b c))))))
+                (set 'c '+)))

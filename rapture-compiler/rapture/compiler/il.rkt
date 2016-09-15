@@ -61,3 +61,14 @@
 (define (il-apply-optimization mod opt)
   (match-define (ILModule id p r b) mod)
   (ILModule id p r (opt b)))
+
+
+(: ILObject-fields (-> ILObject (Listof Symbol)))
+(define (ILObject-fields o)
+  (for/list ([item (ILObject-items o)])
+    (car item)))
+
+(: ILObject-bodies (-> ILObject (Listof ILExpr)))
+(define (ILObject-bodies o)
+  (for/list ([item (ILObject-items o)])
+    (cdr item)))
