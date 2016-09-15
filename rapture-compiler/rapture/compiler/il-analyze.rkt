@@ -293,7 +293,8 @@
              (set-union cond-free body-free))]
       [(ILReturn expr) (find expr defs)]
       [(ILLambda args expr)
-       (match-define (list _ e-free) (find* expr (set-union defs (list->set args))))
+       (match-define (list _ e-free)
+         (find* expr (set-union defs (list->set args))))
        (list (set) e-free)]
       [(ILApp lam args)
        (match-define (list _ l-free) (find lam defs))
@@ -343,21 +344,24 @@
     (parameterize ([fresh-id-counter 0])
       (check-equal? args ...)))
 
+  ;; Self tail to loops -------------------------------------------------------
 
   (check-equal?*
    (x-self-tail->loop
     (list
-     (ILVarDec 'fact
-               (ILLambda '(n a)
-                         (list
-                          (ILIf (ILApp 'zero? '(n))
-                                (list(ILReturn 'a))
-                                (list
-                                 (ILReturn
-                                  (ILApp 'fact
-                                         (list
-                                          (ILApp 'sub1 '(n))
-                                          (ILBinaryOp '* '(n a))))))))))))
+     (ILVarDec
+      'fact
+      (ILLambda
+       '(n a)
+       (list
+        (ILIf (ILApp 'zero? '(n))
+              (list(ILReturn 'a))
+              (list
+               (ILReturn
+                (ILApp 'fact
+                       (list
+                        (ILApp 'sub1 '(n))
+                        (ILBinaryOp '* '(n a))))))))))))
    (list
     (ILVarDec
      'fact
@@ -368,16 +372,17 @@
        (ILWhile
         (ILValue #t)
         (list
-         (ILIf
-          (ILApp 'zero? '(n))
-          (list (ILReturn 'a))
-          (list
-           (ILVarDec 'n2 (ILApp 'sub1 '(n)))
-           (ILVarDec 'a3 (ILBinaryOp '* '(n a)))
-           (ILAssign 'n 'n2)
-           (ILAssign 'a 'a3)
-           (ILContinue 'lambda-start1)))))))))
+         (ILIf (ILApp 'zero? '(n))
+               (list (ILReturn 'a))
+               (list
+                (ILVarDec 'n2 (ILApp 'sub1 '(n)))
+                (ILVarDec 'a3 (ILBinaryOp '* '(n a)))
+                (ILAssign 'n 'n2)
+                (ILAssign 'a 'a3)
+                (ILContinue 'lambda-start1)))))))))
    "Translate self tail recursive factorial to loops")
+
+  ;; Check return lifting -----------------------------------------------------
 
   (check-equal?
    (lift-returns
@@ -408,7 +413,8 @@
         (list (ILReturn 'a3))
         (list
          (ILReturn
-          (ILApp 'fact (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3)))))))))))
+          (ILApp 'fact (list (ILApp 'sub1 '(n2))
+                             (ILBinaryOp '* '(n2 a3)))))))))))
    "Lift return statements up and remove the unreachable return.")
 
   (check-equal?
@@ -536,7 +542,7 @@
       (ILReturn 'a))))
    "Lift last return statement.")
 
-  ;; Test free-identifer
+  ;; Test free-identifer ------------------------------------------------------
 
   (check-equal? (free-identifiers (list
                                    (ILVarDec 'a (ILValue 0))

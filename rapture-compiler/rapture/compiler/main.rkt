@@ -189,7 +189,7 @@
 
 (define (generate-stub-module mod)
   (parameterize ([current-source-file mod])
-    (define idents (~> (hash-ref (used-idents) mod)
+    (define idents (~> (hash-ref (used-idents) mod (set))
                        (set-map _ first)
                        (remove-duplicates _)))
     (define ilmod
