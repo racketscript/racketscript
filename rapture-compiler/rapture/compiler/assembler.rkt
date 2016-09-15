@@ -11,6 +11,7 @@
          racket/function
          "config.rkt"
          "environment.rkt"
+         "logging.rkt"
          "util.rkt"
          "absyn.rkt"
          "il.rkt")
@@ -162,7 +163,7 @@
 (: assemble-module (-> ILModule (Option Output-Port) Void))
 (define (assemble-module mod maybeout)
   (match-define (ILModule id provides requires body) mod)
-  (printf "[assemble] ~a\n" id)
+  (log-rjs-info "[assemble] ~a" id)
   (let ([cb (λ ([out : Output-Port])
               (assemble-requires* requires out)
               (for ([b body])

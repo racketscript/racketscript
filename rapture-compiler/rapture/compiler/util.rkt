@@ -39,6 +39,7 @@
          jsruntime-import-path
          path-parent
          length=?
+         log
          ++)
 
 (: fresh-id-counter (Parameter Nonnegative-Integer))

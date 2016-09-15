@@ -33,6 +33,7 @@
          "case-lambda.rkt"
          "config.rkt"
          "global.rkt"
+         "logging.rkt"
          "moddeps.rkt"
          "util.rkt")
 
@@ -298,7 +299,7 @@
                     [current-module-imports (set)]
                     [current-directory (path-only path)])
        (define mod-id (syntax-e #'name))
-       (printf "[absyn] ~a\n" mod-id)
+       (log-rjs-info "[absyn] ~a" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
               [imports (current-module-imports)])
          (Module mod-id
@@ -337,7 +338,7 @@
   (read-module (open-input-file in-path)))
 
 (define (quick-expand in-path)
-  (printf "[expand] ~a\n" in-path)
+  (log-rjs-info "[expand] ~a" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
   (define full-path (path->complete-path in-path))

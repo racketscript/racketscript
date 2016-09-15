@@ -11,6 +11,7 @@
          racket/set
          "config.rkt"
          "global.rkt"
+         "logging.rkt"
          "util.rkt"
          "environment.rkt"
          "absyn.rkt"
@@ -56,7 +57,7 @@
     (set-box! provides (append (unbox provides) p*)))
 
   (match-define (Module id path lang imports forms) mod)
-  (printf "[il] ~a\n" id)
+  (log-rjs-info "[il] ~a" id)
 
   (define imported-mod-path-list (set->list imports))
 

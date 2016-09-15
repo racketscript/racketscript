@@ -24,6 +24,7 @@
          "expand.rkt"
          "freshen.rkt"
          "global.rkt"
+         "logging.rkt"
          "moddeps.rkt"
          "transform.rkt"
          "util.rkt")
@@ -38,7 +39,7 @@
          skip-npm-install
          enabled-optimizations)
 
-(define build-mode (make-parameter 'js))
+(define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
@@ -62,7 +63,6 @@
       (path-only _)
       (build-path _ "..")
       (simplify-path _)))
-(displayln (~a "Rapture root directory: " rapture-dir))
 
 ;; Path-String -> Path
 ;; Return path of support file named f
@@ -229,10 +229,10 @@
   (let loop ()
     (cond
       [(queue-empty? pending)
-       (printf "Writing stub modules.\n")
+       (log-rjs-info "Writing stub modules.")
        (generate-stub-module '#%kernel)
        (es6->es5)
-       (printf "Finished.\n")]
+       (log-rjs-info "Finished.")]
       [else
        (define next (dequeue! pending))
        (current-source-file next)
@@ -260,6 +260,15 @@
            [_ (put-to-pending! mod)]))
        (loop)])))
 
+;; String -> String
+(define (js-string-beautify js-str)
+  (match-define (list in-p-out out-p-in pid in-p-err control)
+    (process* (~a (find-executable-path "js-beautify"))))
+  (fprintf out-p-in js-str)
+  (close-output-port out-p-in)
+  (control 'wait)
+  (port->string in-p-out))
+
 (module+ main
   (define source
     (command-line
@@ -270,7 +279,6 @@
      [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
      [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
      [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
-     ["--stdout" "Print compiled JS to standard output" (print-to-stdout #t)]
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
      ["--enable-self-tail" "Translate self tail calls to loops"
@@ -285,18 +293,22 @@
      ["--ast" "Expand and print AST" (build-mode 'absyn)]
      ["--rename" "Expand and print AST after α-renaming" (build-mode 'rename)]
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
-     ["--js" "Compile to JS" (build-mode 'js)]
+     ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
+     ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
      #:args (filename)
      (let ([complete-filename (path->complete-path filename)])
        (current-source-file complete-filename)
        (main-source-file complete-filename)
        complete-filename)))
 
+  (unless (equal? (build-mode) 'js)
+    (log-rjs-info "Rapture root directory: ~a" rapture-dir))
+
   ;; Initialize global-export-graph so that we can import each
   ;; module as an object and follow identifier's from there.
-  (display "Resolving module dependencies and identifiers... ")
+  (unless (equal? (build-mode) 'js)
+    (log-rjs-info "Resolving module dependencies and identifiers... "))
   (global-export-graph (get-export-tree source))
-  (displayln "Done!")
 
   (match (build-mode)
     ['expand (~> (quick-expand source)
@@ -315,7 +327,19 @@
              (convert _ (build-path source))
              (absyn-module->il* _)
              (pretty-print _))]
-    ['js (racket->js)])
+    ['js
+     (logging? #f)
+     (define output-string (open-output-string))
+     (~> (quick-expand source)
+             (freshen _)
+             (convert _ (build-path source))
+             (absyn-module->il* _)
+             (assemble-module _ output-string))
+     (displayln
+      (if (js-output-beautify?)
+          (js-string-beautify (get-output-string output-string))
+          (get-output-string output-string)))]
+    ['complete (racket->js)])
 
   ;; Dump debug information
   (when (dump-debug-info)

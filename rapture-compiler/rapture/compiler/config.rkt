@@ -3,7 +3,7 @@
 (require racket/match)
 
 (provide output-directory
-         print-to-stdout
+         logging?
          racket-collects-dir
          current-source-file
          main-source-file
@@ -50,8 +50,8 @@
 (define racket-collects-dir (make-parameter
                              (build-path "/usr/share/racket/collects")))
 
-(: print-to-stdout (Parameter Boolean))
-(define print-to-stdout (make-parameter #f))
-
 (: test-environment? (Parameter Boolean))
 (define test-environment? (make-parameter #f))
+
+(: logging? (Parameter Boolean))
+(define logging? (make-parameter #t))
