@@ -36,13 +36,13 @@
   ;; Track all variables delcared in current function scope.
   (define current-scope-declarations (make-parameter ((inst set Symbol))))
 
+  (: removed-declarations (Parameter (Setof Symbol)))
+  (define removed-declarations (make-parameter ((inst set Symbol))))
+
   (: next-statement (Parameter ILLink))
   ;; Next statement that will be executed after
   ;; the statement we are currently handling.
   (define next-statement (make-parameter #f))
-
-  (: current-free-identifiers (Parameter (Setof Symbol)))
-  (define current-free-identifiers (make-parameter ((inst set Symbol))))
 
   (: add-to-scope! (-> Symbol Void))
   ;; Adds sym to scope of declared variables.
@@ -53,12 +53,6 @@
   ;; Returns true if we have discovered `sym`
   (define (var-in-scope? sym)
     (set-member? (current-scope-declarations) sym))
-
-  ;; Returns true if identifier `id` is free in current
-  ;; lambda scope
-  (: free-identifier? (-> Symbol Boolean))
-  (define (free-identifier? id)
-    (set-member? (current-free-identifiers) id))
 
   (: handle-expr (-> ILExpr ILExpr))
   (define (handle-expr e)
@@ -96,6 +90,7 @@
       [(ILVarDec id expr)
        (match (next-statement)
          [(ILReturn e) #:when (and expr (equal? e id))
+          (removed-declarations (set-add (removed-declarations) id))
           (ILReturn (handle-expr expr))]
          [_ (add-to-scope! id)
             (ILVarDec id (and expr
@@ -109,18 +104,24 @@
          [_ (ILAssign (cast (handle-expr lvalue) ILLValue)
                       (handle-expr rvalue))])]
       [(ILIf pred t-branch f-branch)
-       (ILIf (handle-expr pred)
-             (handle-stm* t-branch)
-             (handle-stm* f-branch))]
+       (match-define (list t-branch* t-removed)
+         (parameterize ([removed-declarations (removed-declarations)])
+           (define s* (handle-stm* t-branch))
+           (list s* (removed-declarations))))
+       (match-define (list f-branch* f-removed)
+         (parameterize ([removed-declarations (removed-declarations)])
+           (define s* (handle-stm* f-branch))
+           (list s* (removed-declarations))))
+       (removed-declarations (set-intersect t-removed f-removed))
+       (ILIf (handle-expr pred) t-branch* f-branch*)]
       [(ILWhile condition body)
        (ILWhile (handle-expr condition)
                 (handle-stm* body))]
       [(ILReturn expr)
        (if (and (symbol? expr)
-                (var-in-scope? expr)
-                (not (free-identifier? expr)))
-           (ILReturn (handle-expr expr))
-           '())]
+                (set-member? (removed-declarations) expr))
+           '()
+           (ILReturn (handle-expr expr)))]
       [(? ILExpr? expr) (handle-expr expr)]))
 
   (: handle-stm* (-> ILStatement* ILStatement*))
@@ -148,6 +149,7 @@
   (let loop ([result : ILStatement* '()])
     ;; Try lifting until convergence
     (let ([result* (parameterize ([current-scope-declarations (set)]
+                                  [removed-declarations (set)]
                                   [next-statement #f])
                      (handle-stm* il*))])
       (if (equal? result result*)
@@ -228,7 +230,7 @@
                   reset-args
                   (list (ILContinue
                          (cast (lambda-start-label) Symbol))))]
-         [else (ILApp lam (map handle-expr/general args))])]
+         [else (ILReturn (ILApp lam (map handle-expr/general args)))])]
       [(ILVarDec id expr)
        (ILVarDec id (and expr
                          (handle-expr expr #f id)))]
@@ -341,6 +343,7 @@
     (parameterize ([fresh-id-counter 0])
       (check-equal? args ...)))
 
+
   (check-equal?*
    (x-self-tail->loop
     (list
@@ -374,7 +377,7 @@
            (ILAssign 'n 'n2)
            (ILAssign 'a 'a3)
            (ILContinue 'lambda-start1)))))))))
-   "Translate self tail recursive calls to loops")
+   "Translate self tail recursive factorial to loops")
 
   (check-equal?
    (lift-returns
@@ -405,9 +408,95 @@
         (list (ILReturn 'a3))
         (list
          (ILReturn
+          (ILApp 'fact (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3)))))))))))
+   "Lift return statements up and remove the unreachable return.")
+
+  (check-equal?
+   (lift-returns
+    (list
+     (ILVarDec
+      'fact
+      (ILLambda
+       '(n2 a3)
+       (list
+        (ILIf
+         (ILApp 'zero? '(n2))
+         (list
+          (ILVarDec
+           'if_res2
+           (ILBinaryOp '+ (list (ILValue 1)
+                                (ILApp 'fact '(a3)))))
+          (ILVarDec 'foo 'a3))
+         (list
+          (ILVarDec
+           'if_res2
+           (ILApp
+            'fact
+            (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3)))))))
+        (ILReturn 'if_res2))))))
+   (list
+    (ILVarDec
+     'fact
+     (ILLambda
+      '(n2 a3)
+      (list
+       (ILIf
+        (ILApp 'zero? '(n2))
+        (list
+         (ILVarDec
+          'if_res2
+          (ILBinaryOp '+ (list (ILValue 1) (ILApp 'fact '(a3)))))
+         (ILVarDec 'foo 'a3))
+        (list
+         (ILReturn
           (ILApp 'fact (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3)))))))
        (ILReturn 'if_res2)))))
-   "Lift return statements up.")
+   "Lift return statements up but don't remove trailing return.")
+
+  (check-equal?
+   (lift-returns
+    (list
+     (ILVarDec
+      'fact
+      (ILLambda
+       '(n2 a3)
+       (list
+        (ILIf
+         (ILApp 'zero? '(n2))
+         (list
+          (ILVarDec
+           'if_res2
+           (ILApp
+            'fact
+            (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3))))))
+         (list
+          (ILVarDec
+           'if_res2
+           (ILBinaryOp '+ (list (ILValue 1)
+                                (ILApp 'fact '(a3)))))
+          (ILVarDec 'foo 'a3)))
+        (ILReturn 'if_res2))))))
+   (list
+    (ILVarDec
+     'fact
+     (ILLambda
+      '(n2 a3)
+      (list
+       (ILIf
+        (ILApp 'zero? '(n2))
+        (list
+         (ILReturn
+          (ILApp
+           'fact
+           (list (ILApp 'sub1 '(n2)) (ILBinaryOp '* '(n2 a3))))))
+        (list
+         (ILVarDec
+          'if_res2
+          (ILBinaryOp '+ (list (ILValue 1)
+                               (ILApp 'fact '(a3)))))
+         (ILVarDec 'foo 'a3)))
+       (ILReturn 'if_res2)))))
+   "Lift return statements up but don't remove trailing return.")
 
   (check-equal?
    (lift-returns
