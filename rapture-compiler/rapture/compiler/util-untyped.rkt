@@ -32,10 +32,16 @@
   ;; Returns (list link-name pkg-root-dir)
   ;; WHERE: LinkEntry is  an entry in links.rktd file
   (define (link->result link-fpath link)
+    ;; HACK: If the link path is relative path, then we pick
+    ;; the last component
+    (define (fix-relative-path p)
+      (if (relative-path? p)
+          (~a (let-values ([(base last dir?) (split-path p)]) last))
+          p))
     (match link
       [(list name path)
        (list (if (symbol? name)
-                 path
+                 (fix-relative-path path)
                  name)
              (simplify-path (build-path (path-only link-fpath)
                                         path)))]
