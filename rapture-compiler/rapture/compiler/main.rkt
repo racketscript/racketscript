@@ -196,7 +196,8 @@
       (ILModule #f
                 (map ILProvide idents)
                 (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
-                                 '$$mod))
+                                 '$$mod
+                                 '*))
                 (append
                  (list
                   (ILVarDec '$$ (ILRef '$$mod 'exports)))

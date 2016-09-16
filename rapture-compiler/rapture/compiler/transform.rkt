@@ -72,7 +72,7 @@
            (jsruntime-import-path path
                                   (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
-      (ILRequire import-name mod-obj-name)))
+      (ILRequire import-name mod-obj-name '*)))
 
   ;; Append all JavaScript requires we find at GTL over here
   (: js-requires (Boxof (Listof ILRequire)))
@@ -93,7 +93,8 @@
            [(JSRequire? form)
             (set-box! js-requires
                       (cons (ILRequire (~a (JSRequire-path form))
-                                       (JSRequire-alias form))
+                                       (JSRequire-alias form)
+                                       'default)
                             (unbox js-requires)))
             '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]

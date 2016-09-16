@@ -17,7 +17,9 @@
   #:transparent)
 
 (struct ILProvide ([id : Symbol]) #:transparent)
-(struct ILRequire ([mod : ILModuleName] [name : Symbol]) #:transparent)
+(struct ILRequire ([mod : ILModuleName]
+                   [name : Symbol]
+                   [import-mode : (U 'default '*)]) #:transparent)
 
 
 (define-language IL

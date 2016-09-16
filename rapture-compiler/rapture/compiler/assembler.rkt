@@ -188,10 +188,18 @@
                 (jsruntime-core-module)
                 core-import-path))
   (for ([req reqs*])
-    (match-define (ILRequire mod obj-name) req)
-    (emit (format "import * as ~a from \"~a\";"
-                  obj-name
-                  mod))))
+    (match-define (ILRequire mod obj-name import-sym) req)
+    (define import-string
+      (case import-sym
+        [(default) (format "import ~a from \"~a\";"
+                           obj-name
+                           mod)]
+        [(*) (format "import * as ~a from \"~a\";"
+                      obj-name
+                      mod)]
+        [else (error 'assemble-requires* "invalid require mode")]))
+
+    (emit import-string)))
 
 (: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
 (define (assemble-provides* p* out)
