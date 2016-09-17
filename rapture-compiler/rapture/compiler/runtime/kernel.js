@@ -117,6 +117,12 @@ exports["cons"] = function (hd, tl) {
     return Core.Pair.make(hd, tl);
 }
 
+exports["cons?"] = function (v) {
+    return Core.Pair.check(v);
+}
+
+exports["pair?"] = exports["cons?"]
+
 // Lists
 
 exports["null"] = Core.Pair.Empty;
