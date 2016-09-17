@@ -82,7 +82,7 @@
 (define-syntax ($/obj stx)
   (syntax-parse stx
     [(_ [k:symbol v:expr] ...)
-     #`(#%js-ffi 'object (cons k v) ...)]))
+     #`(#%js-ffi 'object k ... v ...)]))
 
 (define-syntax ($/array stx)
   (syntax-parse stx

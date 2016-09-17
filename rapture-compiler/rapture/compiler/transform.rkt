@@ -307,7 +307,30 @@
         (define-values (stms il) (absyn-expr->il lv))
         (values stms
                 (ILNew (cast il ILLValue)))]
-       [_ (error 'absyn-expr->il "unknown ffi form")])]
+       [(list (Quote 'array) items ...)
+        (define-values (stms* items*)
+          (for/fold ([stms : ILStatement* '()]
+                     [vals : (Listof ILExpr) '()])
+                    ([item items])
+            (define-values (s* v*) (absyn-expr->il item))
+            (values (append stms s*)
+                    (append vals (list v*)))))
+        (values stms*
+                (ILArray items*))]
+       [(list (Quote 'object) items ...)
+        (define-values (keys vals) (split-at items (cast (/ (length items) 2)
+                                                           Nonnegative-Integer)))
+        (define-values (stms* items*)
+          (for/fold ([stms : ILStatement* '()]
+                     [kvs : (Listof (Pairof Symbol ILExpr)) '()])
+                    ([k (cast keys (Listof Quote))]
+                     [v (cast vals (Listof Expr))])
+            (define-values (s* v*) (absyn-expr->il v))
+            (values (append stms s*)
+                    (append kvs (list (cons (cast (Quote-datum k) Symbol)
+                                            v*))))))
+        (values stms* (ILObject items*))]
+       [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)
      ;;NOTE: Comparision operators work only on two operands TODO
