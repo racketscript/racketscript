@@ -192,10 +192,10 @@
     (define import-string
       (case import-sym
         [(default) (format "import ~a from \"~a\";"
-                           obj-name
+                           (normalize-symbol obj-name)
                            mod)]
         [(*) (format "import * as ~a from \"~a\";"
-                      obj-name
+                      (normalize-symbol obj-name)
                       mod)]
         [else (error 'assemble-requires* "invalid require mode")]))
 
