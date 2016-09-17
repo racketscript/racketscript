@@ -90,6 +90,13 @@ class Struct extends Primitive {
 	    return false;
 	}
 
+	// TODO: Support equal+hash property
+
+	if (this._desc._options.inspector) {
+	    // Not a transparent inspector
+	    return this === v;
+	}
+
 	for (let i = 0; i < this._fields.length; i++) {
 	    if (!$.isEqual(this._fields[i], v._fields[i])) {
 		return false;

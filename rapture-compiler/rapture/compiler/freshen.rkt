@@ -187,7 +187,8 @@
     (check-equal? (syntax->datum e1) (syntax->datum e1)))
 
   (define-syntax-rule (run+print e)
-    (printf "~a =>\n           ~a\n" 'e (syntax->datum e)))
+    (void (syntax->datum e))
+    #;(printf "~a =>\n           ~a\n" 'e (syntax->datum e)))
 
   (run+print (freshen* #'(#%plain-lambda (a b . c) (foo a b c))))
   (run+print (freshen* #'(#%plain-lambda x (apply + x))))

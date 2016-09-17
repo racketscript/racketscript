@@ -392,4 +392,4 @@ exports["error"] = function (...args) {
 /* --------------------------------------------------------------------------*/
 // Not Implemented/Unorganized/Dummies
 
-exports["current-inspector"] = () => false;
+exports["current-inspector"] = () => true;

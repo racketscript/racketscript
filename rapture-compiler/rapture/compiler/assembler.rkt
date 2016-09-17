@@ -333,7 +333,7 @@
   
   ;; Strings
   (check-value "Hello World!" "\"Hello World!\"")
-  (check-value 'hello (format "~a('hello')" (name-in-module 'core 'Symbol.make)))
+  (check-value 'hello (format "~a(\"hello\")" (name-in-module 'core 'Symbol.make)))
 
   ;; Booleans
   (check-value #t "true")
