@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new $/obj $/array $/require $$)
+(provide $ #%js-ffi $/new $/obj $/array $/require $$ $>)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -22,6 +22,7 @@
 ;;   + 'new
 ;;   + 'object
 ;;   + 'array
+;;   + 'require
 (define #%js-ffi
   (λ _
     (error 'rapture "can't make JS ffi calls in Racket")))
@@ -80,9 +81,12 @@
      #`(#%js-ffi 'new v)]))
 
 (define-syntax ($/obj stx)
+  ;; TODO: What to do about ambiguity with the cases where fieldname
+  ;; could be both string or symbol? Maybe generate string is it can't
+  ;; be a symbol in JS?
   (syntax-parse stx
-    [(_ [k:symbol v:expr] ...)
-     #`(#%js-ffi 'object k ... v ...)]))
+    [(_ [f:id v:expr] ...)
+     #`(#%js-ffi 'object 'f ... v ...)]))
 
 (define-syntax ($/array stx)
   (syntax-parse stx
@@ -93,3 +97,12 @@
   (syntax-parse stx
     [(_ mod:str)
      #`(#%js-ffi 'require mod)]))
+
+(define-syntax ($> stx)
+  (define-syntax-class chaincall
+    (pattern [fieldname:id ρ:expr ...]))
+
+  (syntax-parse stx
+    [($> e:expr) #'e]
+    [($> e:expr cc0:chaincall cc:chaincall ...)
+     #'($> ($ e 'cc0.fieldname <$> cc0.ρ ...) cc ...)]))
