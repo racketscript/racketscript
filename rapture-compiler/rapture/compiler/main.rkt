@@ -47,6 +47,7 @@
 (define dump-debug-info (make-parameter #f))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
+(define input-from-stdin? (make-parameter #f))
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "babel"
@@ -282,6 +283,8 @@
      [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
      ["--dump-debug-info" "Dumps some debug information in output directory"
       (dump-debug-info #t)]
+     ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
+      (input-from-stdin? #t)]
      ["--enable-self-tail" "Translate self tail calls to loops"
       (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
      #:multi
@@ -296,46 +299,81 @@
      ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
      ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
      ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
-     #:args (filename)
-     (let ([complete-filename (path->complete-path filename)])
-       (current-source-file complete-filename)
-       (main-source-file complete-filename)
-       complete-filename)))
+     #:args ([filename 'stdin])
+     (match `(,filename ,(input-from-stdin?))
+       [`(,'stdin ,#t)
+        (let ([complete-filename (build-path "/tmp/not-exist.rkt")])
+          (current-source-file complete-filename)
+          (main-source-file complete-filename)
+          complete-filename)]
+       [`(,'stdin ,#f) (error 'rapture "Expect `--stdin` parameter when no filename is provided")]
+       [`(,_ ,#t) (error 'rapture "Don't expect filename with `--stdin` mode")]
+       [`(,filename ,#f)
+        (let ([complete-filename (path->complete-path filename)])
+          (current-source-file complete-filename)
+          (main-source-file complete-filename)
+          complete-filename)])))
+
+  ;; We can read module from stdin only when we wish to see different
+  ;; IL or JS output on stdout. For complete compilation (or more
+  ;; specifically non-debugging purposes), we would refuse to take
+  ;; input from stdin.
+  (when (and (input-from-stdin?)
+             (equal? (build-mode) 'complete))
+    (error 'rapture "Can't compile with complete mode input from stdin"))
 
   (unless (equal? (build-mode) 'js)
     (log-rjs-info "Rapture root directory: ~a" rapture-dir))
 
-  ;; Initialize global-export-graph so that we can import each
-  ;; module as an object and follow identifier's from there.
-  (unless (equal? (build-mode) 'js)
-    (log-rjs-info "Resolving module dependencies and identifiers... "))
-  (global-export-graph (get-export-tree source))
+  (unless (input-from-stdin?)
+    ;; Initialize global-export-graph so that we can import each
+    ;; module as an object and follow identifier's from there.
+    ;; For stdin builds, we have to defer this operation.
+    (unless (equal? (build-mode) 'js)
+      ;; As 'js mode prints output to stdout, we don't want to mix
+      (log-rjs-info "Resolving module dependencies and identifiers... "))
+    (global-export-graph (get-export-tree source)))
+
+  (define (expanded-module)
+    (cond
+      [(input-from-stdin?)
+       ;; HACK: Just make an stupid guess that all that we will
+       ;; ever use will come from standard library. Since we
+       ;; need stdin from playground, its fine for now.
+       ;; TODO: Figure out a way to compile this syntax to
+       ;; module code bytecode
+       (global-export-graph (get-export-tree (build-path
+                                              (path-only rapture-main-module)
+                                              "nothing.rkt")))
+       (read-and-expand-module (current-input-port))]
+      [else
+       (quick-expand source)]))
 
   (match (build-mode)
-    ['expand (~> (quick-expand source)
+    ['expand (~> (expanded-module)
                  (syntax->datum _)
                  (pretty-print _))]
-    ['absyn (~> (quick-expand source)
+    ['absyn (~> (expanded-module)
                 (freshen _)
-                (convert _ (build-path source))
+                (convert _ source)
                 (pretty-print _))]
-    ['rename  (~> (quick-expand source)
+    ['rename  (~> (expanded-module)
                   (freshen _)
                   (syntax->datum _)
                   (pretty-print _))]
-    ['il (~> (quick-expand source)
+    ['il (~> (expanded-module)
              (freshen _)
-             (convert _ (build-path source))
+             (convert _ source)
              (absyn-module->il* _)
              (pretty-print _))]
     ['js
      (logging? #f)
      (define output-string (open-output-string))
-     (~> (quick-expand source)
-             (freshen _)
-             (convert _ (build-path source))
-             (absyn-module->il* _)
-             (assemble-module _ output-string))
+     (~> (expanded-module)
+         (freshen _)
+         (convert _ source)
+         (absyn-module->il* _)
+         (assemble-module _ output-string))
      (displayln
       (if (js-output-beautify?)
           (js-string-beautify (get-output-string output-string))

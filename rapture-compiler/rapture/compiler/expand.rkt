@@ -44,6 +44,7 @@
          to-absyn/top
          used-idents
          register-ident-use!
+         read-and-expand-module
          quick-expand)
 
 (define current-module (make-parameter #f))
@@ -344,6 +345,20 @@
   (define full-path (path->complete-path in-path))
   (parameterize ([current-directory (path-only full-path)])
     (do-expand (open-read-module in-path) in-path)))
+
+(define (read-and-expand-module input)
+  (read-accept-reader #t)
+  (read-accept-lang #t)
+  ;; Just give it any name for now
+  (define full-path
+    (match (object-name input)
+      ['stdin (main-source-file)]
+      [v (path->complete-path v)]))
+  (define new-cwd (if full-path
+                      (path-only full-path)
+                      (current-directory)))
+  (parameterize ([current-directory new-cwd])
+    (do-expand (read-syntax (object-name input) input) full-path)))
 
 ;;;----------------------------------------------------------------------------
 
