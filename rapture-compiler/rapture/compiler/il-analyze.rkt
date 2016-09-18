@@ -146,15 +146,11 @@
            [(? ILStatement*? stms)
             (loop (append result stms) tl)])])))
 
-  (let loop ([result : ILStatement* '()])
-    ;; Try lifting until convergence
-    (let ([result* (parameterize ([current-scope-declarations (set)]
-                                  [removed-declarations (set)]
-                                  [next-statement #f])
-                     (handle-stm* il*))])
-      (if (equal? result result*)
-          result
-          (loop result*)))))
+  ;; Try lifting until convergence
+  (let ([result (handle-stm* il*)])
+    (if (equal? result il*)
+        result
+        (lift-returns result))))
 
 
 (: x-self-tail->loop (-> ILStatement* ILStatement*))
@@ -541,6 +537,57 @@
       (ILReturn (ILValue 1))
       (ILReturn 'a))))
    "Lift last return statement.")
+
+  ;; function foo() {
+  ;;   if (...) {
+  ;;      if (...) {
+  ;;         var result = foo();
+  ;;      } else {
+  ;;         var result = 0;
+  ;;      }
+  ;;      return result;
+  ;;   } else {
+  ;;      return 0;
+  ;;   }
+  (check-equal?
+   (lift-returns
+    (list
+     (ILLambda
+      '()
+      (list
+       (ILIf 'predicate
+             (list
+              (ILIf 'predicate2
+                    (list (ILVarDec 'result (ILApp 'foo '())))
+                    (list (ILVarDec 'result (ILValue 0))))
+              (ILReturn 'result))
+              (list
+               (ILReturn (ILValue 0))))))))
+   (list
+    (ILLambda
+     '()
+     (list
+      (ILIf 'predicate
+            (list (ILIf 'predicate2
+                        (list (ILReturn (ILApp 'foo '())))
+                        (list (ILReturn (ILValue 0)))))
+            (list (ILReturn (ILValue 0)))))))
+   "Lift returns at deeper nesting")
+
+  (check-equal?
+   (lift-returns
+    (list
+     (ILLambda '()
+               (list
+                (ILVarDec 'a (ILValue 0))
+                (ILVarDec 'b 'a)
+                (ILVarDec 'c 'b)
+                (ILVarDec 'd 'c)
+                (ILReturn 'd)))))
+   (list
+    (ILLambda '()
+              (list (ILReturn (ILValue 0)))))
+   "Lift return multiple times")
 
   ;; Test free-identifer ------------------------------------------------------
 
