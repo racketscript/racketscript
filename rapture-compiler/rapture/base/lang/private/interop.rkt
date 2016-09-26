@@ -59,24 +59,25 @@
        (parse-literal s (+ v-len δ) stx #f)]
       [`(,v)
        (define v-len (string-length v))
-       (define id-sym (let ([s (string->symbol v)])
-                        (if first-id?
-                            (quasiquote (unquote s))
-                            (quasiquote (quote (unquote s))))))
-       (define stx `(#%plain-app #%js-ffi 'var ,id-sym))
+       (define stx
+         (datum->syntax #f
+                        (let ([s (string->symbol v)])
+                          (if first-id?
+                              s
+                              `(#%plain-app #%js-ffi 'var ',s)))))
        (parse-literal s (+ v-len δ) stx #f)]
       [#f result]))
 
   (cond
-    [(and (peek-char=? 0 #\j)
-          (peek-char=? 1 #\s)
+    [(and #;(peek-char=? 0 #\j)
+          (peek-char=? 0 #\s)
+          (peek-char=? 1 #\.))
+     (define expr-match (match-pattern 2))
+     (parse-literal (bytes->string/utf-8 (car expr-match)) 0 #f #t)]
+    [(and #;(peek-char=? 0 #\j)
+          (peek-char=? 0 #\s)
+          (peek-char=? 1 #\*)
           (peek-char=? 2 #\.))
      (define expr-match (match-pattern 3))
-     (parse-literal (bytes->string/utf-8 (car expr-match)) 0 #f #t)]
-    [(and (peek-char=? 0 #\j)
-          (peek-char=? 1 #\s)
-          (peek-char=? 2 #\*)
-          (peek-char=? 3 #\.))
-     (define expr-match (match-pattern 4))
      (parse-literal (bytes->string/utf-8 (car expr-match)) 0 #f #f)]
     [else #f]))

@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new $/obj $/array $/require $$ $>)
+(provide $ #%js-ffi $/new $/obj $/array $/require $$ $> $/:=)
 
 (require (for-syntax syntax/parse
                      racket/string
@@ -33,8 +33,12 @@
 
   (define-syntax-class symbol
     #:description "match with symbol datum"
-    (pattern ((~literal quote) var:id))))
+    (pattern ((~literal quote) var:id)))
 
+  (define (split-id id)
+    (map string->symbol
+         (string-split
+          (symbol->string (syntax-e id)) "."))))
 
 (define-syntax ($ stx)
   [syntax-parse stx
@@ -60,11 +64,6 @@
     [_ (error '$ "no match")]])
 
 (define-syntax ($$ stx)
-  (define (split-id id)
-    (map string->symbol
-         (string-split
-          (symbol->string (syntax-e id)) ".")))
-
   (syntax-parse stx
     [(_ v:symbol e0:expr ...)
      #:with (vn) (stx-cdr #'v)
@@ -87,6 +86,11 @@
   (syntax-parse stx
     [(_ [f:id v:expr] ...)
      #`(#%js-ffi 'object 'f ... v ...)]))
+
+(define-syntax ($/:= stx)
+  (syntax-parse stx
+    ;;TODO: Check if e is a ref, index or symbol
+    [(_ e v) #`(#%js-ffi 'assign e v)]))
 
 (define-syntax ($/array stx)
   (syntax-parse stx

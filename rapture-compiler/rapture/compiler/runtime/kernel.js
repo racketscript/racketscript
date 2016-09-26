@@ -149,6 +149,16 @@ var length = exports["length"] = function (lst) {
     return Core.Pair.listLength(lst);
 }
 
+exports["reverse"] = function(lst) {
+    checkContractExn(Core.Pair, lst);
+    let result = Core.Pair.Empty;
+    while (Core.Pair.isEmpty(lst) === false) {
+	result = Core.Pair.make(lst.hd, result);
+	lst = lst.tl;
+    }
+    return result;
+}
+
 exports["for-each"] = function (lam, lst) {
     map(lam, lst);
     return null;
@@ -226,6 +236,14 @@ exports["check-struct-type"] = function (name, what) {
 exports["vector"] = function () {
     var items = Core.argumentsToArray(arguments);
     return Core.Vector.make(items, true);
+}
+
+exports["vector?"] = function(v) {
+    return Core.Vector.check(v);
+}
+
+exports["vector-length"] = function(v) {
+    return v.length(v);
 }
 
 exports["vector-ref"] = function (vec, i) {
@@ -325,6 +343,14 @@ exports["string"] = function () {
     return result;
 }
 
+exports["string=?"] = function (sa, sb) {
+    return sa === sb;
+}
+
+exports["format"] = function() {
+    //TODO
+}
+
 /* --------------------------------------------------------------------------*/
 // Box
 
@@ -399,3 +425,9 @@ exports["error"] = function (...args) {
 // Not Implemented/Unorganized/Dummies
 
 exports["current-inspector"] = () => true;
+
+exports["raise-argument-error"] = function() {
+}
+
+exports["check-method"] = function() {
+}

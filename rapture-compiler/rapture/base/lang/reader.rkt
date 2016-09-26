@@ -12,7 +12,7 @@ rapture/base
 
 (define (make-x-readtable)
   (make-readtable (current-readtable)
-                  #\# 'terminating-macro
+                  #\j 'dispatch-macro
                   read-x))
 
 (define (x-read in)

@@ -306,7 +306,7 @@
        [(list (Quote 'new) lv)
         (define-values (stms il) (absyn-expr->il lv))
         (values stms
-                (ILNew (cast il ILLValue)))]
+                (ILNew (cast il (U ILLValue ILApp))))]
        [(list (Quote 'array) items ...)
         (define-values (stms* items*)
           (for/fold ([stms : ILStatement* '()]
