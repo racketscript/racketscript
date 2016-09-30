@@ -9,6 +9,25 @@
 (define-syntax  :=        (make-rename-transformer #'$/:=))
 (define-syntax  new       (make-rename-transformer #'$/new))
 
+(begin-for-syntax
+  (define-syntax-class field
+    #:description "a key-value pair for object"
+    (pattern [name:id val:expr])))
+
+(define-syntax (define-proto stx)
+  (syntax-parse stx
+    [(define-proto name:id (~datum #:init) init:expr
+       (~datum #:prototype-fields) field:field ...)
+     (syntax
+      (begin
+        (define name init)
+        ($/:= ($ name 'prototype 'field.name) field.val) ...))]))
+
+(define-syntax (set-object! stx)
+  (syntax-parse stx
+    [(set-object! obj:expr f:field ...)
+     #`(begin ($ obj 'f.name <:=> f.val) ...)]))
+
 ;;-----------------------------------------------------------------------------
 ;; Helper functions
 
@@ -88,135 +107,174 @@
 ;;-----------------------------------------------------------------------------
 ;; Some common shapes
 
-(define (make-line x y pen-or-color)
-  ($/obj
-   [type    "line"]
-   [width   (abs+ceil x)]
-   [height  (abs+ceil y)]
-   [mode    #f]
-   [color   pen-or-color]
-   [render (λ (ctx x y)
-             (with-origin ctx [x y]
-               (with-path ctx {"outline" pen-or-color}
-                 (define sx (- (abs (half x))))
-                 (define sy (- (abs (half y))))
-                 (cond
-                   [(and (>= x 0) (>= y 0))
-                    (#js.ctx.moveTo sx sy)
-                    (#js.ctx.lineTo (+ sx x) (+ sy y))]
-                   [(and (>= x 0) (< y 0))
-                    (#js.ctx.moveTo (+ sx x) sy)
-                    (#js.ctx.lineTo sx (- sy y))]
-                   [(and (< x 0) (>= y 0))
-                    (#js.ctx.moveTo sx (+ sy y))
-                    (#js.ctx.lineTo (- sx x) sy)]
-                   [(and (< x 0) (< y 0))
-                    (#js.ctx.moveTo (- sx x) (- sy y))
-                    (#js.ctx.lineTo sx sy)]))))]))
+(define-proto Line
+  #:init
+  (λ (x y pen-or-color)
+    (set-object! #js*.this
+                 [type    "line"]
+                 [width   (abs+ceil x)]
+                 [height  (abs+ceil y)]
+                 [mode    #f]
+                 [pen     pen-or-color]))
+  #:prototype-fields
+  [render (λ (ctx x y)
+            (with-origin ctx [x y]
+              (with-path ctx {"outline" #js*.this.pen}
+                (define sx (- (abs (half #js*.this.x))))
+                (define sy (- (abs (half #js*.this.y))))
+                (cond
+                  [(and (>= x 0) (>= y 0))
+                   (#js.ctx.moveTo sx sy)
+                   (#js.ctx.lineTo (+ sx x) (+ sy y))]
+                  [(and (>= x 0) (< y 0))
+                   (#js.ctx.moveTo (+ sx x) sy)
+                   (#js.ctx.lineTo sx (- sy y))]
+                  [(and (< x 0) (>= y 0))
+                   (#js.ctx.moveTo sx (+ sy y))
+                   (#js.ctx.lineTo (- sx x) sy)]
+                  [(and (< x 0) (< y 0))
+                   (#js.ctx.moveTo (- sx x) (- sy y))
+                   (#js.ctx.lineTo sx sy)]))))])
 
-(define (make-rectangle width height mode pen-or-color)
-  ($/obj
-   [type     "rectangle"]
-   [width    width]
-   [height   height]
-   [mode     mode]
-   [pen      pen-or-color]
-   [render
-    (λ (ctx x y)
-      (with-origin ctx [x y]
-        (with-path ctx {mode pen-or-color}
-          (let ([start-x   (- (half width))]
+(define (line x y pen-or-color)
+  (new (Line x y pen-or-color)))
+
+(define-proto Rectangle
+  #:init
+  (λ (width height mode pen-or-color)
+    (set-object! #js*.this
+      [type     "rectangle"]
+      [width    width]
+      [height   height]
+      [mode     mode]
+      [pen      pen-or-color]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (with-origin ctx [x y]
+       (with-path ctx {#js*.this.mode #js*.this.pen}
+         (let* ([width     #js*.this.width]
+                [height    #js*.this.height]
+                [start-x   (- (half width))]
                 [start-y   (- (half height))])
-            (#js.ctx.rect start-x start-y width height)))))]))
+           (#js.ctx.rect start-x start-y width height)))))])
 
-(define (make-circle radius mode pen-or-color)
-  (define diameter (twice radius))
-  ($/obj
-   [type     "circle"]
-   [radius   radius]
-   [width    diameter]
-   [height   diameter]
-   [mode     mode]
-   [pen      pen-or-color]
-   [render
-    (λ (ctx x y)
-      (with-origin ctx [x y]
-        (with-path ctx {mode pen-or-color}
-          (#js.ctx.ellipse 0 0            ;; center
-                           radius radius  ;; radius-x, radius-y
-                           0 0 (twice #js*.Math.PI)))))]))
+(define (rectangle w h m p)
+  (new (Rectangle w h m p)))
+
+(define-proto Circle
+  #:init
+  (λ (radius mode pen-or-color)
+    (define diameter (twice radius))
+    (set-object! #js*.this
+      [type     "circle"]
+      [radius   radius]
+      [width    diameter]
+      [height   diameter]
+      [mode     mode]
+      [pen      pen-or-color]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (define radius #js*.this.radius)
+     (with-origin ctx [x y]
+       (with-path ctx {#js*.this.mode #js*.this.pen}
+         (#js.ctx.ellipse 0 0            ;; center
+                          radius radius  ;; radius-x, radius-y
+                          0 0 (twice #js*.Math.PI)))))])
+
+(define (circle r m p)
+  (new (Circle r m p)))
 
 ;;-----------------------------------------------------------------------------
 ;; Combine images
 
-(define (make-overlay x-place y-place ima imb)
-  (define ima-cx (half #js.ima.width))
-  (define ima-cy (half #js.ima.height))
-  (define imb-cx (half #js.imb.width))
-  (define imb-cy (half #js.imb.height))
+(define-proto Overlay
+  #:init
+  (λ (x-place y-place ima imb)
+    (define ima-cx (half #js.ima.width))
+    (define ima-cy (half #js.ima.height))
+    (define imb-cx (half #js.imb.width))
+    (define imb-cy (half #js.imb.height))
 
-  (define width   (max #js.ima.width #js.imb.width))
-  (define height  (max #js.ima.height #js.imb.height))
+    (define width   (max #js.ima.width #js.imb.width))
+    (define height  (max #js.ima.height #js.imb.height))
 
-  (define δ-edge-x (half width))
-  (define δ-edge-y (half height))
+    (define δ-edge-x (half width))
+    (define δ-edge-y (half height))
 
-  ;; Center of image is (0, 0), which is also center of bigger
-  ;; image. Calculate the distance of centers of images from this
-  ;; final center.
-  (define-values (δ-a-x δ-b-x)
-    (case x-place
-      [("left")             (values (- ima-cx δ-edge-x)
-                                    (- imb-cx δ-edge-x))]
-      [("right")            (values (- δ-edge-x ima-cx)
-                                    (- δ-edge-x imb-cx))]
-      [("middle" "center")  (values 0 0)]))
+    ;; Center of image is (0, 0), which is also center of bigger
+    ;; image. Calculate the distance of centers of images from this
+    ;; final center.
+    (define-values (δ-a-x δ-b-x)
+      (case x-place
+        [("left")             (values (- ima-cx δ-edge-x)
+                                      (- imb-cx δ-edge-x))]
+        [("right")            (values (- δ-edge-x ima-cx)
+                                      (- δ-edge-x imb-cx))]
+        [("middle" "center")  (values 0 0)]))
 
-  (define-values (δ-a-y δ-b-y)
-    (case y-place
-      [("top")               (values (- ima-cy δ-edge-y)
-                                     (- imb-cy δ-edge-y))]
-      [("bottom")            (values (- δ-edge-y ima-cy)
-                                     (- δ-edge-y imb-cy))]
-      [("middle" "center")   (values 0 0)]))
+    (define-values (δ-a-y δ-b-y)
+      (case y-place
+        [("top")               (values (- ima-cy δ-edge-y)
+                                       (- imb-cy δ-edge-y))]
+        [("bottom")            (values (- δ-edge-y ima-cy)
+                                       (- δ-edge-y imb-cy))]
+        [("middle" "center")   (values 0 0)]))
 
-  ($/obj
-   [type       "overlay"]
-   [first      ima]
-   [second     imb]
-   [width      width]
-   [height     height]
-   [render
-    (λ (ctx x y)
-      (#js.imb.render ctx δ-b-x δ-b-y)
-      (#js.ima.render ctx δ-a-x δ-a-y))]))
+    (set-object! #js*.this
+      [type       "overlay"]
+      [ima        ima]
+      [imb        imb]
+      [width      width]
+      [height     height]
+      [aDx        δ-a-x]
+      [aDy        δ-a-y]
+      [bDx        δ-b-x]
+      [bDy        δ-b-y]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (define ima #js*.this.ima)
+     (define imb #js*.this.imb)
+     (#js.imb.render ctx #js*.this.bDx #js*.this.bDy)
+     (#js.ima.render ctx #js*.this.aDx #js*.this.aDy))])
 
-(define (make-container-image childs posns width height)
-  ($/obj
-   [type     "container"]
-   [childs   childs]
-   [posns    posns]
-   [width    width]
-   [height   height]
-   [render
-    (λ (ctx x y)
-      (with-origin ctx [(- x (half width)) (- y (half height))]
-        (#js.ctx.beginPath)
-        (#js.ctx.rect 0 0 (sub1 width) (sub1 height))
-        (#js.ctx.clip)
-        (let loop ([childs childs]
-                   [posns  posns])
-          (unless (null? childs)
-            (define child (car childs))
-            (define posn (car posns))
-            (#js.child.render ctx #js.posn.x #js.posn.y)
-            (loop (cdr childs) (cdr posns))))))]))
+(define-proto Container
+  #:init
+  (λ (childs posns width height)
+    (set-object! #js*.this
+      [type     "container"]
+      [childs   childs]
+      [posns    posns]
+      [width    width]
+      [height   height]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (define width   #js*.this.width)
+     (define height  #js*.this.height)
 
-(define (make-place-image child cx cy base)
-  (let ([width #js.base.width]
+     (with-origin ctx [(- x (half width)) (- y (half height))]
+       (#js.ctx.beginPath)
+       (#js.ctx.rect 0 0 (sub1 width) (sub1 height))
+       (#js.ctx.clip)
+       (let loop ([childs #js*.this.childs]
+                  [posns  #js*.this.posns])
+         (unless (null? childs)
+           (define child (car childs))
+           (define posn (car posns))
+           (#js.child.render ctx #js.posn.x #js.posn.y)
+           (loop (cdr childs) (cdr posns))))))])
+
+(define (container childs posns width height)
+  (new (Container childs posns width height)))
+
+(define (place-image child cx cy base)
+  (let ([width  #js.base.width]
         [height #js.base.height])
-    (make-container-image (list base child)
-                          (list (posn (half width) (half height))
-                                (posn cx cy))
-                          #js.base.width
-                          #js.base.height)))
+    (container (list base child)
+               (list (posn (half width) (half height))
+                     (posn cx cy))
+               #js.base.width
+               #js.base.height)))
