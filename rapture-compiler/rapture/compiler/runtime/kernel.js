@@ -317,6 +317,63 @@ exports["map"] = function map(fn, ...lists) {
     return Core.Pair.listFromArray(result);
 }
 
+exports["foldl"] = function foldl(fn, init, ...lists) {
+    if (lists.length <= 0) {
+	error("foldl: foldl needs at-least one list");
+    }
+
+    var lst_len = length(lists[0]);
+    for (let i = 0; i < lists.length; i++) {
+	if (length(lists[i]) != lst_len) {
+	    error("foldl: all input lists must have equal length");
+	}
+    }
+
+    var result = init;
+    for (let i = 0; i < lst_len; i++) {
+	let args = [];
+	for (var j = 0; j < lists.length; j++) {
+	    args.push(lists[j].car());
+	    lists[j] = lists[j].cdr();
+	}
+	args.push(result);
+	result = fn.apply(null, args);
+    }
+
+    return result;
+}
+
+function _foldr(fn, init, lists) {
+    if (Core.Pair.isEmpty(lists[0])) {
+	return init;
+    } else {
+	let args = [];
+	for (var ii = 0; ii < lists.length; ii++) {
+	    args.push(lists[ii].car());
+	    lists[ii] = lists[ii].cdr();
+	}
+
+	args.push(_foldr(fn, init, lists));
+	return fn.apply(null, args)
+    }
+}
+
+exports["foldr"] = function (fn, init, ...lists) {
+    if (lists.length <= 0) {
+	error("foldl: foldl needs at-least one list");
+    }
+
+    var lst_len = length(lists[0]);
+    for (let i = 0; i < lists.length; i++) {
+	if (length(lists[i]) != lst_len) {
+	    error("foldl: all input lists must have equal length");
+	}
+    }
+
+    return _foldr(fn, init, lists);
+}
+
+
 /* --------------------------------------------------------------------------*/
 // Strings
 
