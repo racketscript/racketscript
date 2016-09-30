@@ -1,5 +1,8 @@
 #lang rapture/base
 
+;; Emulates 2htdp/image library as much as possible. Also see
+;; Whalesong's implementation, which we have referrred
+
 (require (for-syntax rapture/base
                      syntax/parse))
 
@@ -48,10 +51,16 @@
 
 (define ++        string-append)
 (define document  #js*.window.document)
+(define console   #js*.console)
+(define Math      #js*.window.Math)
 (define Path2D    #js*.window.Path2D)
 (define abs       #js*.Math.abs)
-(define abs+ceil  (λ (n) (#js*.Math.abs (#js*.Math.ceil n))))
-(define (max a b) (if (> a b) a b))
+(define sin       #js*.Math.sin)
+(define cos       #js*.Math.cos)
+(define floor     #js*.Math.floor)
+(define abs+ceil  (λ (n) (#js.Math.abs (#js.Math.ceil n))))
+(define max       #js.Math.max)
+(define min       #js.Math.min)
 
 ;;-----------------------------------------------------------------------------
 ;; Macros for drawing
@@ -207,7 +216,7 @@
        (with-path ctx {#js*.this.mode #js*.this.pen}
          (#js.ctx.ellipse 0 0            ;; center
                           radius radius  ;; radius-x, radius-y
-                          0 0 (twice #js*.Math.PI)))))])
+                          0 0 (twice #js.Math.PI)))))])
 
 (define (empty-scene width height)
   (new (EmptyScene width height #f)))
@@ -311,6 +320,51 @@
            (#js.child.render ctx #js.posn.x #js.posn.y)
            (loop (cdr childs) (cdr posns))))))])
 
+;; Rotate clockwise
+;; TODO: Rotated bouding box is not actually right.
+(define-proto Rotate
+  #:init
+  (λ (image angle)
+    (define width #js.image.width)
+    (define height #js.image.height)
+    (define θ (/ (* #js.Math.PI angle) 180.0))
+
+    (define sin-θ (sin θ))
+    (define cos-θ (cos θ))
+
+    ;; (w, 0) rotation
+    (define x1 (* cos-θ width))
+    (define y1 (* sin-θ width))
+
+    ;; (0, h) rotation
+    (define x2 (* (- sin-θ) height))
+    (define y2 (* cos-θ height))
+
+    ;; (w, h) rotation
+    (define x3 (+ x1 x2))
+    (define y3 (+ y1 y2))
+
+    (define min-x (min 0 x1 x2 x3))
+    (define max-x (max 0 x1 x2 x3))
+    (define min-y (min 0 y1 y2 y3))
+    (define max-y (max 0 y1 y2 y3))
+
+    (define rotated-width   (floor (- max-x min-x)))
+    (define rotated-height  (floor (- max-y min-y)))
+
+    (set-object! #js*.this
+                 [image        image]
+                 [width        rotated-width]
+                 [height       rotated-height]
+                 [degrees      angle]
+                 [radians      θ]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)1
+     (with-origin ctx [x y]
+       (#js.ctx.rotate #js*.this.radians)
+       (#js*.this.image.render ctx 0 0)))])
+
 (define (container childs posns width height)
   (new (Container childs posns width height)))
 
@@ -335,7 +389,7 @@
   (-overlay/align x-place y-place ima imb imn))
 
 (define (overlay ima imb . imn)
-  (-overlay/align "middle" "middle" imn imb imn))
+  (-overlay/align "middle" "middle" ima imb imn))
 
 (define (above/align x-place i1 i2 . is)
   (-overlay/align x-place "above" i1 i2 is))
@@ -348,3 +402,7 @@
 
 (define (beside i1 i2 . is)
   (-overlay/align "beside" "middle" i1 i2 is))
+
+(define (rotate angle image)
+  ;; Rotate counter-clockwise
+  (new (Rotate image (- angle))))
