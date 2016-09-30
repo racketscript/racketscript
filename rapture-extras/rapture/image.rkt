@@ -3,6 +3,21 @@
 (require (for-syntax rapture/base
                      syntax/parse))
 
+(provide empty-image
+         empty-scene
+
+         line
+         rectangle
+         circle
+
+         place-image
+         overlay/align
+         overlay
+         above/align
+         above
+         beside/align
+         beside)
+
 ;;-----------------------------------------------------------------------------
 ;; Interop helpers
 
@@ -69,10 +84,10 @@
               #,(when (syntax-e #'pen)
                   #`(cond
                       [(string=? mode "outline")
-                       (:= #js.ctx.strokeStyle pen)
+                       (:= #js.ctx.strokeStyle (find-color pen))
                        (#js.ctx.stroke)]
                       [(string=? mode "solid")
-                       (:= #js.ctx.fillStyle pen)
+                       (:= #js.ctx.fillStyle (find-color pen))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))
 
@@ -84,9 +99,6 @@
     [("red")    "#ff0000"]
     [("green")  "#00ff00"]
     [("blue")   "#0000ff"]))
-
-(define (string->color/opaque color-str)
-  (find-color color-str))
 
 ;;-----------------------------------------------------------------------------
 ;; Display images on browser
@@ -106,6 +118,26 @@
 
 ;;-----------------------------------------------------------------------------
 ;; Some common shapes
+
+(define empty-image
+  ($/obj [type    "empty-image"]
+         [width   0]
+         [height  0]
+         [render
+          (λ (ctx x y) (void))]))
+
+(define-proto EmptyScene
+  #:init
+  (λ (width height borders?)
+    (set-object! #js*.this
+                 [type      "empty-scene"]
+                 [width     width]
+                 [height    height]
+                 [borders?  borders?]))
+  #:prototype-fields
+  [render (λ (ctx x y)
+            ;; TODO: borders?
+            (void))])
 
 (define-proto Line
   #:init
@@ -136,9 +168,6 @@
                    (#js.ctx.moveTo (- sx x) (- sy y))
                    (#js.ctx.lineTo sx sy)]))))])
 
-(define (line x y pen-or-color)
-  (new (Line x y pen-or-color)))
-
 (define-proto Rectangle
   #:init
   (λ (width height mode pen-or-color)
@@ -158,9 +187,6 @@
                 [start-x   (- (half width))]
                 [start-y   (- (half height))])
            (#js.ctx.rect start-x start-y width height)))))])
-
-(define (rectangle w h m p)
-  (new (Rectangle w h m p)))
 
 (define-proto Circle
   #:init
@@ -183,6 +209,15 @@
                           radius radius  ;; radius-x, radius-y
                           0 0 (twice #js*.Math.PI)))))])
 
+(define (empty-scene width height)
+  (new (EmptyScene width height #f)))
+
+(define (line x y pen-or-color)
+  (new (Line x y pen-or-color)))
+
+(define (rectangle w h m p)
+  (new (Rectangle w h m p)))
+
 (define (circle r m p)
   (new (Circle r m p)))
 
@@ -197,8 +232,12 @@
     (define imb-cx (half #js.imb.width))
     (define imb-cy (half #js.imb.height))
 
-    (define width   (max #js.ima.width #js.imb.width))
-    (define height  (max #js.ima.height #js.imb.height))
+    (define width   (case x-place
+                      [("beside") (+ #js.ima.width #js.imb.width)]
+                      [else       (max #js.ima.width #js.imb.width)]))
+    (define height  (case y-place
+                      [("above")  (+ #js.ima.height #js.imb.width)]
+                      [else       (max #js.ima.height #js.imb.height)]))
 
     (define δ-edge-x (half width))
     (define δ-edge-y (half height))
@@ -212,6 +251,8 @@
                                       (- imb-cx δ-edge-x))]
         [("right")            (values (- δ-edge-x ima-cx)
                                       (- δ-edge-x imb-cx))]
+        [("beside")           (values (- ima-cx δ-edge-x)
+                                      (- δ-edge-x imb-cx))]
         [("middle" "center")  (values 0 0)]))
 
     (define-values (δ-a-y δ-b-y)
@@ -219,6 +260,8 @@
         [("top")               (values (- ima-cy δ-edge-y)
                                        (- imb-cy δ-edge-y))]
         [("bottom")            (values (- δ-edge-y ima-cy)
+                                       (- δ-edge-y imb-cy))]
+        [("above")             (values (- ima-cy δ-edge-y)
                                        (- δ-edge-y imb-cy))]
         [("middle" "center")   (values 0 0)]))
 
@@ -237,8 +280,9 @@
    (λ (ctx x y)
      (define ima #js*.this.ima)
      (define imb #js*.this.imb)
-     (#js.imb.render ctx #js*.this.bDx #js*.this.bDy)
-     (#js.ima.render ctx #js*.this.aDx #js*.this.aDy))])
+     (with-origin ctx [x y]
+       (#js.imb.render ctx #js*.this.bDx #js*.this.bDy)
+       (#js.ima.render ctx #js*.this.aDx #js*.this.aDy)))])
 
 (define-proto Container
   #:init
@@ -278,3 +322,29 @@
                      (posn cx cy))
                #js.base.width
                #js.base.height)))
+
+(define-syntax-rule (-overlay/align x-place y-place ima imb imn)
+  ;; Exists because using apply everytime is slower, so we just
+  ;; inline it
+  (foldl (λ (img acc)
+           (new (Overlay x-place y-place acc img)))
+         empty-image
+         (cons ima (cons imb imn))))
+
+(define (overlay/align x-place y-place ima imb . imn)
+  (-overlay/align x-place y-place ima imb imn))
+
+(define (overlay ima imb . imn)
+  (-overlay/align "middle" "middle" imn imb imn))
+
+(define (above/align x-place i1 i2 . is)
+  (-overlay/align x-place "above" i1 i2 is))
+
+(define (above i1 i2 . is)
+  (-overlay/align "middle" "above" i1 i2 is))
+
+(define (beside/align y-place i1 i2 . is)
+  (-overlay/align "beside" y-place i1 i2 is))
+
+(define (beside i1 i2 . is)
+  (-overlay/align "beside" "middle" i1 i2 is))
