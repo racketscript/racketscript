@@ -5,6 +5,7 @@
 
 (require (for-syntax rapture/base
                      syntax/parse)
+         "color.rkt"
          "jscommon.rkt")
 
 (provide empty-image
@@ -56,28 +57,12 @@
               #,(when (syntax-e #'pen)
                   #`(cond
                       [(string=? mode "outline")
-                       (:= #js.ctx.strokeStyle (find-color pen))
+                       (:= #js.ctx.strokeStyle (string->web-color pen))
                        (#js.ctx.stroke)]
                       [(string=? mode "solid")
-                       (:= #js.ctx.fillStyle (find-color pen))
+                       (:= #js.ctx.fillStyle (string->web-color pen))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))
-
-;;-----------------------------------------------------------------------------
-;; Colors and pen
-
-(define *color-table*
-  ($/obj
-    [red    "#ff0000"]
-    [green  "#00ff00"]
-    [blue   "#0000ff"]
-    [yellow "#ffff00"]
-    [brown  "#835c3b"]
-    [black  "#000000"]
-    [white  "#ffffff"]))
-
-(define (find-color color-string)
-  ($ *color-table* color-string))
 
 ;;-----------------------------------------------------------------------------
 ;; Display images on browser
@@ -132,7 +117,7 @@
                  [type       "text"]
                  [text       text]
                  [size       size]
-                 [color      (find-color color)]
+                 [color      (string->web-color color)]
                  [face       face]
                  [family     family]
                  [style      style]
