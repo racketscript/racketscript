@@ -106,6 +106,10 @@
   [addWorldChangeListener
    (λ (cb)
      (#js*.this._worldChangeListeners.push cb))]
+  [removeWorldChangeListener
+   (λ (cb)
+     (define index (#js*.this._worldChangeListeners.indexOf cb))
+     (#js*.this._worldChangeListeners.splice index 1))]
   [processEvents
    (λ ()
      (define events #js*.this._events)
@@ -246,16 +250,19 @@
      [lastpicture  last-picture]
      [register
       (λ ()
-        (#js.bb.addWorldChangeListener
-         (λ (w)
-           (when (last-world? w)
-             (#js.bb.stop)
-             (when last-picture
-               (define handler ((to-draw last-picture) bb))
-               (#js.bb.queueEvent
-                ($/obj [type       "raw"]
-                       [callback   #js.handler.callback])))))))]
-     [deregister (λ () (void))])))
+        (#js.bb.addWorldChangeListener #js*.this.callback))]
+     [deregister
+      (λ ()
+        (#js.bb.removeWorldChangeListener #js*.this.callback))]
+     [callback
+      (λ (w)
+        (when (last-world? w)
+          (#js.bb.stop)
+          (when last-picture
+            (define handler ((to-draw last-picture) bb))
+            (#js.bb.queueEvent
+             ($/obj [type       "raw"]
+                    [callback   #js.handler.callback])))))])))
 
 
 ;; TODO: A JS object would be faster.
