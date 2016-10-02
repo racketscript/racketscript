@@ -4,7 +4,8 @@
 ;; Whalesong's implementation, which we have referrred
 
 (require (for-syntax rapture/base
-                     syntax/parse))
+                     syntax/parse)
+         "jscommon.rkt")
 
 (provide empty-image
          empty-scene
@@ -19,60 +20,15 @@
          above/align
          above
          beside/align
-         beside)
+         beside
 
-;;-----------------------------------------------------------------------------
-;; Interop helpers
-
-(define-syntax  :=        (make-rename-transformer #'$/:=))
-(define-syntax  new       (make-rename-transformer #'$/new))
-
-(begin-for-syntax
-  (define-syntax-class field
-    #:description "a key-value pair for object"
-    (pattern [name:id val:expr])))
-
-(define-syntax (define-proto stx)
-  (syntax-parse stx
-    [(define-proto name:id (~datum #:init) init:expr
-       (~datum #:prototype-fields) field:field ...)
-     (syntax
-      (begin
-        (define name init)
-        ($/:= ($ name 'prototype 'field.name) field.val) ...))]))
-
-(define-syntax (set-object! stx)
-  (syntax-parse stx
-    [(set-object! obj:expr f:field ...)
-     #`(begin ($ obj 'f.name <:=> f.val) ...)]))
-
-;;-----------------------------------------------------------------------------
-;; Helper functions
-
-(define ++        string-append)
-(define document  #js*.window.document)
-(define console   #js*.console)
-(define Math      #js*.window.Math)
-(define Path2D    #js*.window.Path2D)
-(define abs       #js*.Math.abs)
-(define sin       #js*.Math.sin)
-(define cos       #js*.Math.cos)
-(define floor     #js*.Math.floor)
-(define abs+ceil  (λ (n) (#js.Math.abs (#js.Math.ceil n))))
-(define max       #js.Math.max)
-(define min       #js.Math.min)
+         rotate)
 
 ;;-----------------------------------------------------------------------------
 ;; Macros for drawing
 
 (define-syntax-rule (posn xpos ypos)
   ($/obj [x xpos] [y ypos]))
-
-(define-syntax-rule (twice e)
-  (* e 2))
-
-(define-syntax-rule (half e)
-  (/ e 2))
 
 (define-syntax-rule (δ-move ctx x y δx δy)
   (#js.ctx.moveTo (+ x δx) (+ y δy)))
