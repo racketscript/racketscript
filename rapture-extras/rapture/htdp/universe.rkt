@@ -2,7 +2,7 @@
 
 (require (for-syntax rapture/base
                      syntax/parse)
-         "jscommon.rkt")
+         "../private/jscommon.rkt")
 
 (provide on-mouse
          on-tick

@@ -5,8 +5,8 @@
 
 (require (for-syntax rapture/base
                      syntax/parse)
-         "color.rkt"
-         "jscommon.rkt")
+         "private/color.rkt"
+         "../private/jscommon.rkt")
 
 (provide empty-image
          empty-scene
