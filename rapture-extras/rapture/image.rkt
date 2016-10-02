@@ -14,6 +14,8 @@
          rectangle
          circle
 
+         text
+
          place-image
          overlay/align
          overlay
@@ -22,12 +24,16 @@
          beside/align
          beside
 
-         rotate)
+         rotate
+
+         (struct-out posn))
 
 ;;-----------------------------------------------------------------------------
 ;; Macros for drawing
 
-(define-syntax-rule (posn xpos ypos)
+(define-struct posn (x y) #:transparent)
+
+(define-syntax-rule (-posn xpos ypos)
   ($/obj [x xpos] [y ypos]))
 
 (define-syntax-rule (δ-move ctx x y δx δy)
@@ -59,11 +65,15 @@
 ;;-----------------------------------------------------------------------------
 ;; Colors and pen
 
+(define *color-table*
+  ($/obj
+    [red    "#ff0000"]
+    [green  "#00ff00"]
+    [blue   "#0000ff"]
+    [black  "#000000"]))
+
 (define (find-color color-string)
-  (case color-string
-    [("red")    "#ff0000"]
-    [("green")  "#00ff00"]
-    [("blue")   "#0000ff"]))
+  ($ *color-table* color-string))
 
 ;;-----------------------------------------------------------------------------
 ;; Display images on browser
@@ -80,6 +90,10 @@
 
   (with-origin ctx [(half #js.d.width) (half #js.d.height)]
     (#js.d.render ctx 0 0)))
+
+(define *invisible-canvas-context*
+  (let ([canvas (#js.document.createElement "canvas")])
+    (#js.canvas.getContext "2d")))
 
 ;;-----------------------------------------------------------------------------
 ;; Some common shapes
@@ -103,6 +117,47 @@
   [render (λ (ctx x y)
             ;; TODO: borders?
             (void))])
+
+(define-proto Text
+  #:init
+  (λ (text size color face family style weight underline?)
+    (set-object! #js*.this
+                 [type       "text"]
+                 [text       text]
+                 [size       size]
+                 [color      (find-color color)]
+                 [face       face]
+                 [family     family]
+                 [style      style]
+                 [weight     weight]
+                 [underline  underline?])
+    (#js*.this._updateMetrics))
+  #:prototype-fields
+  [_updateMetrics
+   (λ ()
+     (define font (++ #js*.this.weight " "
+                      #js*.this.style " "
+                      #js*.this.size "px "
+                      #js*.this.face " "
+                      #js*.this.family))
+
+     (:= ($ *invisible-canvas-context* 'font) font)
+     (define metrics ($> *invisible-canvas-context*
+                         (measureText #js*.this.text)))
+
+     (set-object! #js*.this
+                  [font    font]
+                  [width   #js.metrics.width]
+                  [height  #js*.this.size]))]
+  [render
+   (λ (ctx x y)
+     (with-origin ctx [x y]
+       (set-object! ctx
+                    [font          #js*.this.font]
+                    [textAlign     "center"]
+                    [textBaseline  "middle"]
+                    [fillStyle     #js*.this.color])
+       (#js.ctx.fillText #js*.this.text 0 0)))])
 
 (define-proto Line
   #:init
@@ -177,6 +232,17 @@
 (define (empty-scene width height)
   (new (EmptyScene width height #f)))
 
+(define (text txt size color)
+  (new (Text txt
+             size
+             color
+             ""         ;; face
+             "serif"    ;; family
+             "normal"   ;; style
+             "normal"   ;; weight
+             #f)))      ;; underline
+
+
 (define (line x y pen-or-color)
   (new (Line x y pen-or-color)))
 
@@ -218,7 +284,8 @@
                                       (- δ-edge-x imb-cx))]
         [("beside")           (values (- ima-cx δ-edge-x)
                                       (- δ-edge-x imb-cx))]
-        [("middle" "center")  (values 0 0)]))
+        [("middle" "center")  (values 0 0)]
+        [else                 (error "invalid x-place align")]))
 
     (define-values (δ-a-y δ-b-y)
       (case y-place
@@ -228,7 +295,8 @@
                                        (- δ-edge-y imb-cy))]
         [("above")             (values (- ima-cy δ-edge-y)
                                        (- δ-edge-y imb-cy))]
-        [("middle" "center")   (values 0 0)]))
+        [("middle" "center")   (values 0 0)]
+        [else                  (error "invalid y-place align")]))
 
     (set-object! #js*.this
       [type       "overlay"]
@@ -328,8 +396,8 @@
   (let ([width  #js.base.width]
         [height #js.base.height])
     (container (list base child)
-               (list (posn (half width) (half height))
-                     (posn cx cy))
+               (list (-posn (half width) (half height))
+                     (-posn cx cy))
                #js.base.width
                #js.base.height)))
 
