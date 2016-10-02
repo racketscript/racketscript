@@ -101,7 +101,10 @@
     [(ILObject items)
      (emit "{")
      (for/last? ([i last? items])
-                (emit (format "'~a':" (car i)))
+                (if (string? (car i))
+                    (begin (assemble-value (car i) out)
+                           (emit ":"))
+                    (emit (format "'~a':" (car i))))
                 (assemble-expr (cdr i) out)
                 (unless last?
                   (emit ",")))

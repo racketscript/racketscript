@@ -71,7 +71,7 @@
       [(ILArray items)
        (ILArray (map handle-expr items))]
       [(ILObject items)
-       (ILObject (map (λ ([i : (Pairof Symbol ILExpr)])
+       (ILObject (map (λ ([i : (Pairof ObjectKey ILExpr)])
                         (cons (car i)
                               (handle-expr (cdr i))))
                       items))]
@@ -193,7 +193,7 @@
        (ILBinaryOp oper (map handle-expr/general args))]
       [(ILArray items) (ILArray (map handle-expr/general items))]
       [(ILObject items) (ILObject
-                         (map (λ ([item : (Pairof Symbol ILExpr)])
+                         (map (λ ([item : (Pairof ObjectKey ILExpr)])
                                 (cons (car item)
                                       (handle-expr/general (cdr item))))
                               items))]
@@ -301,7 +301,8 @@
       [(ILArray items)
        (find* items defs)]
       [(ILObject items)
-       (define fields (list->set (ILObject-fields stm)))
+       ;;TODO: Check if we need to do this
+       (define fields (list->set (filter symbol? (ILObject-fields stm))))
        (define bodies (ILObject-bodies stm))
        (find* bodies (set-union defs fields))]
       [(ILRef expr fieldname)

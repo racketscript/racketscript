@@ -84,8 +84,14 @@
   ;; could be both string or symbol? Maybe generate string is it can't
   ;; be a symbol in JS?
   (syntax-parse stx
-    [(_ [f:id v:expr] ...)
-     #`(#%js-ffi 'object 'f ... v ...)]))
+    [(_ [f v:expr] ...)
+     #:with (new-f ...) (stx-map (λ (e)
+                                   (cond
+                                     [(identifier? e) (quasisyntax (quote #,(syntax-e e)))]
+                                     [(string? (syntax-e e)) e]
+                                     [else (error '$/obj "invalid key value")]))
+                                 #'(f ...))
+     #`(#%js-ffi 'object new-f ... v ...)]))
 
 (define-syntax ($/:= stx)
   (syntax-parse stx

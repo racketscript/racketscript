@@ -322,12 +322,12 @@
                                                            Nonnegative-Integer)))
         (define-values (stms* items*)
           (for/fold ([stms : ILStatement* '()]
-                     [kvs : (Listof (Pairof Symbol ILExpr)) '()])
+                     [kvs : (Listof (Pairof ObjectKey ILExpr)) '()])
                     ([k (cast keys (Listof Quote))]
                      [v (cast vals (Listof Expr))])
             (define-values (s* v*) (absyn-expr->il v))
             (values (append stms s*)
-                    (append kvs (list (cons (cast (Quote-datum k) Symbol)
+                    (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
                                             v*))))))
         (values stms* (ILObject items*))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
