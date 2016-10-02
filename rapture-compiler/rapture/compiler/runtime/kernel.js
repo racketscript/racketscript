@@ -276,6 +276,19 @@ exports["hash"] = function (...vals) {
     return Core.Hash.makeEqual(items, false);
 }
 
+exports["hasheq"] = function (...vals) {
+    if (vals.length % 2 !== 0) {
+	throw new Error("invalid number of arguments");
+    }
+
+    let items = [];
+    for (let i = 0; i < vals.length; i += 2) {
+	items.push([vals[i], vals[i + 1]]);
+    }
+
+    return Core.Hash.makeEq(items, false);
+}
+
 exports["hash-ref"] = function (h, k, fail) {
     return h.ref(k, fail);
 }
