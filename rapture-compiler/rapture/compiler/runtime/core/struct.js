@@ -64,8 +64,8 @@ class Struct extends Primitive {
 	}
 
 	// Auto fields
-	let autoV = this._desc.autoV; /* Initial value for auto fields */
-	for (let i = 0; i < this._desc.autoFieldCount; i++) {
+	let autoV = this._desc._options.autoV; /* Initial value for auto fields */
+	for (let i = 0; i < this._desc._options.autoFieldCount; i++) {
 	    this._fields.push(autoV);
 	}
     }
