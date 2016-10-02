@@ -156,6 +156,7 @@
      (emit ";")]
     [(ILLabel name)
      (emit "~a:" (normalize-symbol name))]
+    [(ILValue v) #:when (void? v) (void)] ;; ignore this NOP case
     [_ #:when (ILExpr? stmt)
        (assemble-expr stmt out)
        (emit ";")]))
