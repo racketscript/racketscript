@@ -83,6 +83,10 @@ exports["sub1"] = function (v) {
     return v - 1;
 }
 
+exports["quotient"] = function (dividend, divisor) {
+    return Math.floor(dividend / divisor);
+}
+
 exports["*"] = Core.Number.mul;
 exports["/"] = Core.Number.div;
 exports["+"] = Core.Number.add;
@@ -500,4 +504,44 @@ exports["raise-argument-error"] = function() {
 }
 
 exports["check-method"] = function() {
+}
+
+exports["random"] = function (...args) {
+    switch (args.length) {
+    case 0: return Math.random();
+    case 1:
+	if (args[0] > 0) {
+	    return Math.floor(Math.random() * args[0]);
+        } else {
+	    error("random: argument should be positive");
+        }
+    case 2:
+	if (args[0] > 0 && args[1] > args[0]) {
+	    return Math.floor(args[0] + Math.random() * (args[1] - args[0]));
+	} else {
+	    error("random: invalid arguments");
+	}
+    default:
+	error("random: invalid number of arguments")
+    }
+}
+
+exports["member"] = function (v, lst) {
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (Core.isEqual(v, lst.hd)) {
+	    return true;
+	}
+	lst = lst.tl;
+	continue;
+    }
+    return false;
+}
+
+exports["false"] = false;
+exports["true"] = true;
+exports["empty"] = Core.Pair.Empty;
+
+exports["number->string"] = function (n) {
+    checkContractExn(Core.Number, n);
+    return n.toString();
 }
