@@ -2,5 +2,6 @@
 
 (require "../interop.rkt")
 
-(provide (all-from-out racket/base))
+(provide (except-out (all-from-out racket/base) #%module-begin)
+         (rename-out [#%plain-module-begin #%module-begin]))
 (provide (all-from-out "../interop.rkt"))
