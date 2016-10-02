@@ -131,7 +131,7 @@ exports["pair?"] = exports["cons?"]
 
 exports["null"] = Core.Pair.Empty;
 
-exports["list"] = Core.Pair.makeList;
+var list = exports["list"] = Core.Pair.makeList;
 exports["first"] = exports["car"]; //TODO: Should be list
 exports["rest"] = exports["cdr"];
 
@@ -308,6 +308,15 @@ exports["apply"] = function (lam, args) {
     return lam.apply(null, Core.Pair.listToArray(args));
 }
 
+var reverse = exports["reverse"] = function (lst) {
+    let result = Core.Pair.Empty;
+    while (Core.Pair.isEmpty(lst) === false) {
+	result = Core.Pair.make(lst.hd, result);
+	lst = lst.tl;
+    }
+    return result;
+}
+
 
 exports["map"] = function map(fn, ...lists) {
     if (lists.length <= 0) {
@@ -334,7 +343,7 @@ exports["map"] = function map(fn, ...lists) {
     return Core.Pair.listFromArray(result);
 }
 
-exports["foldl"] = function foldl(fn, init, ...lists) {
+var foldl = exports["foldl"] = function (fn, init, ...lists) {
     if (lists.length <= 0) {
 	error("foldl: foldl needs at-least one list");
     }
@@ -375,7 +384,7 @@ function _foldr(fn, init, lists) {
     }
 }
 
-exports["foldr"] = function (fn, init, ...lists) {
+var foldr = exports["foldr"] = function (fn, init, ...lists) {
     if (lists.length <= 0) {
 	error("foldl: foldl needs at-least one list");
     }
@@ -445,7 +454,7 @@ exports["set-box!"] = function(b, v) {
 
 let __buffer = ""; //HACK
 
-exports["displayln"] = function (v) {
+var displayln = exports["displayln"] = function (v) {
     /* TODO: Real thing takes port as well */
     if (v === true) {
 	console.log(__buffer + "#t");
@@ -490,7 +499,7 @@ exports["print-values"] = function (v) {
 /* --------------------------------------------------------------------------*/
 // Errors
 
-exports["error"] = function (...args) {
+var error = exports["error"] = function (...args) {
     // TODO
     throw new Core.RacketCoreError.apply(this, args);
 }
@@ -529,7 +538,7 @@ exports["random"] = function (...args) {
 exports["member"] = function (v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (Core.isEqual(v, lst.hd)) {
-	    return true;
+	    return lst;
 	}
 	lst = lst.tl;
 	continue;
@@ -544,4 +553,60 @@ exports["empty"] = Core.Pair.Empty;
 exports["number->string"] = function (n) {
     checkContractExn(Core.Number, n);
     return n.toString();
+}
+
+exports["ormap"] = function (fn, ...lists) {
+    return foldl.apply(this, [(v, a) => a || fn(v), false].concat(lists));
+}
+
+exports["andmap"] = function (fn, ...lists) {
+    return foldl.apply(this, [(v, a) => a && fn(v), true].concat(lists));
+}
+
+exports["filter"] = function (fn, lst) {
+    let result = Core.Pair.Empty;
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (fn(lst.hd)) {
+	    result = Core.Pair.make(lst.hd, result);
+	}
+	lst = lst.tl;
+    }
+    return reverse(result);
+}
+
+exports["abs"] = Math.abs;
+exports["floor"] = Math.floor;
+exports["ceil"] = Math.ceil;
+exports["round"] = Math.round;
+exports["min"] = Math.min;
+exports["max"] = Math.max;
+exports["false?"] = (v) => v === false;
+
+exports["list-ref"] = function (lst, pos) {
+    let i = 0;
+    while (Core.Pair.isEmpty(lst) === false) {
+	if (i === pos) {
+	    return lst.hd;
+	}
+	lst = lst.tl;
+	i += 1;
+    }
+    error("list-ref?: insufficient elements");
+}
+
+
+var append = exports["append"] = function (...lists) {
+    let result = Core.Pair.Empty;
+    for (let list of lists) {
+	result = foldr(Core.Pair.make, list, result);
+    }
+    return result;
+}
+
+exports["build-list"] = function (n, proc) {
+    let result = Core.Pair.Empty;
+    for (let i = 0; i < n; ++i) {
+	result = Core.Pair.make(proc(i), result);
+    }
+    return reverse(result);
 }

@@ -10,6 +10,9 @@
 (provide empty-image
          empty-scene
 
+         image-height
+         image-width
+
          line
          rectangle
          circle
@@ -17,6 +20,7 @@
          text
 
          place-image
+         place-images
          overlay/align
          overlay
          above/align
@@ -32,9 +36,6 @@
 ;; Macros for drawing
 
 (define-struct posn (x y) #:transparent)
-
-(define-syntax-rule (-posn xpos ypos)
-  ($/obj [x xpos] [y ypos]))
 
 (define-syntax-rule (δ-move ctx x y δx δy)
   (#js.ctx.moveTo (+ x δx) (+ y δy)))
@@ -70,7 +71,10 @@
     [red    "#ff0000"]
     [green  "#00ff00"]
     [blue   "#0000ff"]
-    [black  "#000000"]))
+    [yellow "#ffff00"]
+    [brown  "#835c3b"]
+    [black  "#000000"]
+    [white  "#ffffff"]))
 
 (define (find-color color-string)
   ($ *color-table* color-string))
@@ -104,6 +108,9 @@
          [height  0]
          [render
           (λ (ctx x y) (void))]))
+
+(define (image-height i)  #js.i.height)
+(define (image-width i)   #js.i.width)
 
 (define-proto EmptyScene
   #:init
@@ -341,7 +348,7 @@
          (unless (null? childs)
            (define child (car childs))
            (define posn (car posns))
-           (#js.child.render ctx #js.posn.x #js.posn.y)
+           (#js.child.render ctx (posn-x posn) (posn-y posn))
            (loop (cdr childs) (cdr posns))))))])
 
 ;; Rotate clockwise
@@ -396,10 +403,18 @@
   (let ([width  #js.base.width]
         [height #js.base.height])
     (container (list base child)
-               (list (-posn (half width) (half height))
-                     (-posn cx cy))
-               #js.base.width
-               #js.base.height)))
+               (list (posn (half width) (half height))
+                     (posn cx cy))
+               width
+               height)))
+
+(define (place-images images posns scene)
+  (let ([width  #js.scene.width]
+        [height #js.scene.height])
+    (container (cons scene images)
+               (cons (posn (half width) (half height)) posns)
+               width
+               height)))
 
 (define-syntax-rule (-overlay/align x-place y-place ima imb imn)
   ;; Exists because using apply everytime is slower, so we just

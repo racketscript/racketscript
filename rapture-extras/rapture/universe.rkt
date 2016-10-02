@@ -140,8 +140,8 @@
      [callback    (λ (world evt)
                     (define ctx      #js.bb._context)
                     (define img      (cb #js.bb.world))
-                    (define height   #js.img.width)
-                    (define width    #js.img.height)
+                    (define height   #js.img.height)
+                    (define width    #js.img.width)
 
                     (:= #js.bb._canvas.width   width)
                     (:= #js.bb._canvas.height  height)
@@ -223,7 +223,6 @@
         (define canvas #js.bb._canvas)
         (:= #js*.this.listener
             (λ (evt)
-              (define posn (canvas-posn-δ canvas evt))
               (#js.evt.preventDefault)
               (#js.evt.stopPropagation)
               (#js.bb.queueEvent ($/obj [type "on-key"]
