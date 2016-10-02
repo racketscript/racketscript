@@ -400,12 +400,12 @@ exports["~a"] = function () {
     }, "");
 }
 
-exports["string-append"] = function () {
-    switch (arguments.length) {
-    case 1: return arguments[0];
-    case 2: return arguments[0] + arguments[1];
-    case 3: return arguments[0] + arguments[1] + arguments[3];
-    default: return "".concat.call(arguments);
+exports["string-append"] = function (...args) {
+    switch (args.length) {
+    case 1: return args[0];
+    case 2: return args[0] + args[1];
+    case 3: return args[0] + args[1] + args[2];
+    default: return args.join("");
     }
 }
 
