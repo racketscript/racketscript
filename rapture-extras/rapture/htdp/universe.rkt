@@ -13,6 +13,8 @@
 
          key=?)
 
+(define *default-frames-per-second* 70)
+
 (define (make-big-bang init-world handlers)
   (new (BigBang init-world handlers)))
 
@@ -25,14 +27,14 @@
   #:init
   (λ (init-world handlers)
     (:= #js*.this.world      init-world)
-    (:= #js*.this.interval   (/ 1000 120))
+    (:= #js*.this.interval   (/ 1000 *default-frames-per-second*))
     (:= #js*.this.handlers   handlers)
 
     (:= #js*.this._activeHandlers        ($/obj))
     (:= #js*.this._worldChangeListeners  ($/array))
 
-    (:= #js*.this._idle      #t)
-    (:= #js*.this.stopped    #t)
+    (:= #js*.this._idle       #t)
+    (:= #js*.this._stopped    #t)
     (:= #js*.this._events    ($/array)))
 
   #:prototype-fields
@@ -79,16 +81,18 @@
             (:= ($ #js.activeHandlers #js.h.name) #js*.undefined)))))]
   [start
    (λ ()
-     (:= #js*.this.stopped #f)
+     (:= #js*.this._stopped #f)
      (#js*.this.processEvents))]
   [stop
    (λ ()
+     (#js*.this.clearEventQueue)
+     (set-object! #js*.this
+                  [_stopped #t]
+                  [_idle    #t])
      (#js*.this.deregisterHandlers)
      (set-object! #js*.this
                   [_activeHandlers ($/obj)]
-                  [handlers '()]
-                  [stopped #t])
-     (#js*.this.clearEventQueue))]
+                  [handlers '()]))]
   [clearEventQueue
    (λ ()
      (#js*.this._events.splice 0 #js*.this._events.length))]
@@ -124,16 +128,17 @@
        (cond
          [(> #js.events.length 0)
           (define evt         (#js.events.shift))
-
           (define handler     ($ #js.self._activeHandlers #js.evt.type))
+
           (define changed?
             (cond
               [handler (#js.handler.callback #js.self.world evt)]
               [(equal? #js.evt.type "raw")
                (#js.evt.callback #js.self.world evt)]
-              [else (error 'big-bang "invalid event" evt)]))
+              [else
+               (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
           (loop (or world-changed? changed?))]
-         [(and world-changed? (not #js.self.stopped))
+         [(and world-changed? (not #js.self._stopped))
           (#js.self.queueEvent ($/obj [type "to-draw"]))
           (loop #f)]))
 
@@ -169,12 +174,19 @@
                      (if rate
                          (set! rate (* 1000 rate))
                          (set! rate #js.bb.interval)))]
-     [deregister   (λ () (void))]
+     [deregister   (λ ()
+                     (define lastcb #js*.this.lastcb)
+                     (when lastcb
+                       ;; TODO: This sometimes doesn't work,
+                       ;; particularly with high fps, so we need to do
+                       ;; something at event loop itself.
+                       (#js*.window.clearTimeout lastcb)))]
      [callback     (λ (world _)
                      (#js.bb.changeWorld (cb world))
-                     (#js*.setTimeout (λ ()
-                                        (#js.bb.queueEvent on-tick-evt))
-                                      rate)
+                     (:= #js*.this.lastcb (#js*.setTimeout
+                                           (λ ()
+                                             (#js.bb.queueEvent on-tick-evt))
+                                           rate))
                      #t)])))
 
 (define (on-mouse cb)
