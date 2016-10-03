@@ -96,7 +96,7 @@
    (λ (e)
      (#js*.this._events.push e)
      (when #js*.this._idle
-       (schedule-method #js*.this 'processEvents (/ 1000 120))))]
+       (schedule-animation-frame #js*.this 'processEvents)))]
   [changeWorld
    (λ (new-world)
      (define listeners #js*.this._worldChangeListeners)

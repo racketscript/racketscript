@@ -8,6 +8,7 @@
          define-proto
          set-object!
          schedule-method
+         schedule-animation-frame
          ++
          document
          console
@@ -53,8 +54,13 @@
 (define-syntax-rule (schedule-method this method interval)
   (let ([self this])
     (#js*.window.setTimeout (λ ()
-                             ($ self method <$> self))
+                             ($ self method <$>))
                             interval)))
+
+(define-syntax-rule (schedule-animation-frame this step)
+  (let ([self this])
+    (#js*.window.requestAnimationFrame (λ ()
+                                         ($ self step <$>)))))
 
 ;;-----------------------------------------------------------------------------
 ;; Helper functions
