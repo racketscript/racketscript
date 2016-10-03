@@ -31,6 +31,7 @@
     (:= #js*.this._activeHandlers        ($/obj))
     (:= #js*.this._worldChangeListeners  ($/array))
 
+    (:= #js*.this._idle      #t)
     (:= #js*.this.stopped    #t)
     (:= #js*.this._events    ($/array)))
 
@@ -93,7 +94,9 @@
      (#js*.this._events.splice 0 #js*.this._events.length))]
   [queueEvent
    (λ (e)
-     (#js*.this._events.push e))]
+     (#js*.this._events.push e)
+     (when #js*.this._idle
+       (schedule-method #js*.this 'processEvents (/ 1000 120))))]
   [changeWorld
    (λ (new-world)
      (define listeners #js*.this._worldChangeListeners)
@@ -115,6 +118,8 @@
      (define events #js*.this._events)
      (define self #js*.this)
 
+     (:= #js*.this._idle #f)
+
      (let loop ([world-changed? #f])
        (cond
          [(> #js.events.length 0)
@@ -126,13 +131,13 @@
               [handler (#js.handler.callback #js.self.world evt)]
               [(equal? #js.evt.type "raw")
                (#js.evt.callback #js.self.world evt)]
-              [else (error 'big-bang "invalid event")]))
+              [else (error 'big-bang "invalid event" evt)]))
           (loop (or world-changed? changed?))]
          [(and world-changed? (not #js.self.stopped))
           (#js.self.queueEvent ($/obj [type "to-draw"]))
-          (loop #f)]
-         [(not #js.self.stopped)
-          (schedule-method self 'processEvents #js.self.interval)])))])
+          (loop #f)]))
+
+     (:= #js*.this._idle #t))])
 
 (define (to-draw cb)
   (λ (bb)
