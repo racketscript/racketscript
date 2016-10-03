@@ -17,7 +17,6 @@
          line
          rectangle
          circle
-
          text
 
          place-image
@@ -31,6 +30,7 @@
 
          rotate
 
+         print-image
          (struct-out posn))
 
 ;;-----------------------------------------------------------------------------
@@ -76,6 +76,8 @@
 
   (:= #js.canvas.width #js.d.width)
   (:= #js.canvas.height #js.d.height)
+
+  (#js.console.log d)
 
   (with-origin ctx [(half #js.d.width) (half #js.d.height)]
     (#js.d.render ctx 0 0)))
@@ -259,7 +261,7 @@
                       [("beside") (+ #js.ima.width #js.imb.width)]
                       [else       (max #js.ima.width #js.imb.width)]))
     (define height  (case y-place
-                      [("above")  (+ #js.ima.height #js.imb.width)]
+                      [("above")  (+ #js.ima.height #js.imb.height)]
                       [else       (max #js.ima.height #js.imb.height)]))
 
     (define δ-edge-x (half width))
