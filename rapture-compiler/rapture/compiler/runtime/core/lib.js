@@ -82,11 +82,13 @@ function makeError(name) {
     }
     e.prototype = Object.create(Error.prototype);
     e.prototype.constructor = e;
-    return e;
+
+    return (...args) =>
+	new (Function.prototype.bind.apply(e, [this].concat(args)))
 }
 
-export let RacketCoreError      = makeError("RacketCoreError");
-export let RacketContractError  = makeError("RacketContractError");
+export let racketCoreError      = makeError("RacketCoreError");
+export let racketContractError  = makeError("RacketContractError");
 
 /* --------------------------------------------------------------------------*/
 /* Other Helpers */

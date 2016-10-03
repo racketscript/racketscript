@@ -29,7 +29,7 @@ class Vector extends Primitive {
 
     ref(n) {
 	if (n < 0 || n > this.items.length) {
-	    throw new $.RacketCoreError("vector-ref", "index out of range");
+	    throw $.racketCoreError("vector-ref", "index out of range");
 	}
 
 	return this.items[n];
@@ -37,9 +37,9 @@ class Vector extends Primitive {
 
     set(n, v) {
 	if (n < 0 || n > this.items.length) {
-	    throw new ("vector-set", "index out of range");
+	    throw  $.racketCoreError("vector-set", "index out of range");
 	} else if (!this.mutable) {
-	    throw new $.RacketCoreError("vector-set", "immutable vector");
+	    throw $.racketCoreError("vector-set", "immutable vector");
 	}
 	this.items[n] = v;
     }

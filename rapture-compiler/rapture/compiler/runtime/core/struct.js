@@ -36,7 +36,7 @@ class Struct extends Primitive {
 
 	C.eq(fields.length,
 	     this._desc._totalInitFields,
-	     $.RacketCoreError,
+	     $.racketCoreError,
 	     "arity mismatch");
 
 	// Guard's are applied starting from subtype to supertype
@@ -114,9 +114,9 @@ class Struct extends Primitive {
     }
 
     setField(n, v) {
-	C.truthy(n < this._fields.length, $.RacketCoreError,
+	C.truthy(n < this._fields.length, $.racketCoreError,
 		 "invalid field at position");
-	C.falsy(this._desc.isFieldImmutable(n), $.RacketCoreError,
+	C.falsy(this._desc.isFieldImmutable(n), $.racketCoreError,
 		 "field is immutable");
 	this._fields[n] = v;
     }
@@ -219,7 +219,7 @@ class StructTypeDescriptor extends Primitive {
 
 	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise($.RacketCoreError, "accessor applied to invalid type")
+		C.raise($.racketCoreError, "accessor applied to invalid type")
 	    }
 
 	    return sobj.getField(pos);
@@ -232,7 +232,7 @@ class StructTypeDescriptor extends Primitive {
 
 	    let sobj = s._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise($.RacketCoreError, "mutator applied to invalid type")
+		C.raise($.racketCoreError, "mutator applied to invalid type")
 	    }
 
 	    return sobj.setField(pos, v);
@@ -311,11 +311,11 @@ class StructTypeProperty extends Primitive {
 	    } else if (v instanceof Struct) {
 		var desc = v._desc;
 	    } else {
-		C.raise($.RacketCoreError, "invalid argument to accessor");
+		C.raise($.racketCoreError, "invalid argument to accessor");
 	    }
 
 	    return desc._findProperty(this) ||
-		C.raise($.RacketCoreError, "property not in struct");
+		C.raise($.racketCoreError, "property not in struct");
 	}
     }
 

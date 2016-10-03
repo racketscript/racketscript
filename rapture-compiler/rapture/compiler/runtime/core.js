@@ -39,6 +39,6 @@ export {
     argumentsToArray,
     argumentsSlice,
 
-    RacketCoreError,
-    RacketContractError
+    racketCoreError,
+    racketContractError
 } from "./core/lib.js";

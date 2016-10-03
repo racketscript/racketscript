@@ -13,7 +13,7 @@ export class Primitive {
     }
 
     toString() {
-	throw new $.RacketCoreError("Not Implemented");
+	throw $.racketCoreError("Not Implemented");
     }
 
     toRawString() {
@@ -21,11 +21,11 @@ export class Primitive {
     }
 
     mutable() {
-	throw new $.RacketCoreError("Not Implemented");
+	throw $.racketCoreError("Not Implemented");
     }
 
     equals(v) {
-	throw new $.RacketCoreError("Not Implemented {0}", v);
+	throw $.racketCoreError("Not Implemented {0}", v);
     }
 
     eqv(v) {

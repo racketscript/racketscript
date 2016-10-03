@@ -42,7 +42,7 @@ export function div(...operands) {
 
 export function compare(cmp, operands) {
     if (operands.length < 2) {
-	throw new $.RacketCoreError("compare {0}",
+	throw $.racketCoreError("compare {0}",
 				    "atleast 2 arguments required");
     }
     for (var i = 1; i < operands.length; i++) {

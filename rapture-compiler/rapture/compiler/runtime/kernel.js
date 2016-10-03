@@ -3,9 +3,9 @@ import * as Core from "./core.js";
 /* --------------------------------------------------------------------------*/
 // Helpers
 
-function checkContractExn(type, what) {
+function typeCheckOrRaise(type, what) {
     if (!type.check(what)) {
-	throw new Core.RacketContractError("expected a {0}, but given {1}", type, what);
+	throw Core.racketContractError("expected a {0}, but given {1}", type, what);
     }
 }
 
@@ -64,22 +64,22 @@ exports["zero?"] = function (v) {
 }
 
 exports["positive?"] = function (v) {
-    checkContractExn(Core.Number, v);
+    typeCheckOrRaise(Core.Number, v);
     return v > 0;
 }
 
 exports["negative?"] = function (v) {
-    checkContractExn(Core.Number, v);
+    typeCheckOrRaise(Core.Number, v);
     return v < 0;
 }
 
 exports["add1"] = function (v) {
-    checkContractExn(Core.Number, v);
+    typeCheckOrRaise(Core.Number, v);
     return v + 1;
 }
 
 exports["sub1"] = function (v) {
-    checkContractExn(Core.Number, v);
+    typeCheckOrRaise(Core.Number, v);
     return v - 1;
 }
 
@@ -108,12 +108,12 @@ exports["not"] = function (v) {
 // Pairs
 
 exports["car"] = function (pair) {
-    checkContractExn(Core.Pair, pair);
+    typeCheckOrRaise(Core.Pair, pair);
     return pair.car();
 }
 
 exports["cdr"] = function (pair) {
-    checkContractExn(Core.Pair, pair);
+    typeCheckOrRaise(Core.Pair, pair);
     return pair.cdr();
 }
 
@@ -154,7 +154,7 @@ var length = exports["length"] = function (lst) {
 }
 
 exports["reverse"] = function(lst) {
-    checkContractExn(Core.Pair, lst);
+    typeCheckOrRaise(Core.Pair, lst);
     let result = Core.Pair.Empty;
     while (Core.Pair.isEmpty(lst) === false) {
 	result = Core.Pair.make(lst.hd, result);
@@ -227,7 +227,7 @@ exports["check-struct-type"] = function (name, what) {
     // TODO: in define-struct.rkt. See struct/super.rkt
     if (what) {
 	if (!Core.Struct.isStructType(v)) {
-	    throw new RacketCoreError("not a struct-type");
+	    throw racketCoreError("not a struct-type");
 	}
 	return what;
     }
@@ -500,8 +500,18 @@ exports["print-values"] = function (v) {
 // Errors
 
 var error = exports["error"] = function (...args) {
-    // TODO
-    throw new Core.RacketCoreError.apply(this, args);
+    if (args.length === 1 && Core.Symbol.check(args[0])) {
+	throw Core.racketCoreError(args[0].toString());
+    } else if (args.length > 0 && typeof args[0] === 'string') {
+	throw Core.racketCoreError(args.map((v) => v.toString()).join(" "));
+    } else if (args.length > 0 && Core.Symbol.check(args[0])) {
+	let pattern = args.shift().toString()
+	    .concat(" ")
+	    .concat(args.shift());
+	throw Core.racketCoreError(pattern, args);
+    } else {
+	throw Core.racketContractError("error: invalid arguments");
+    }
 }
 
 /* --------------------------------------------------------------------------*/
@@ -551,7 +561,7 @@ exports["true"] = true;
 exports["empty"] = Core.Pair.Empty;
 
 exports["number->string"] = function (n) {
-    checkContractExn(Core.Number, n);
+    typeCheckOrRaise(Core.Number, n);
     return n.toString();
 }
 
