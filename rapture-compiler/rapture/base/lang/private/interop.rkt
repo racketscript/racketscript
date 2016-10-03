@@ -23,7 +23,13 @@
 
 (define (read-rapture src in)
   (define-values (line col pos) (port-next-location in))
-  (define *pattern* #px"([[:alnum:]$_]+)(\\.[[:alnum:]$_]+)*(\\[\"[[:alnum:]$_]+\"\\])*")
+  (define *id-pattern* "([[:alnum:]$_]|\\p{Ll}|\\p{Lu})+")
+  (define *string-pattern* "(\\p{L}|\\p{N}|\\p{Pd})+")
+  (define *pattern* (pregexp
+                     (format "(~a)(\\.~a)*(\\[\"~a\"\\])*"
+                             *id-pattern*
+                             *id-pattern*
+                             *string-pattern*)))
 
   (define (match-pattern offset)
     (match (regexp-match *pattern* in offset)
@@ -36,10 +42,10 @@
     (char=? (peek-char in offset) chr))
 
   (define (parse-literal s δ result first-id?)
-    (match (or (regexp-match #px"^[[:alnum:]$_]+" s δ)
-               (regexp-match #px"^\\.[[:alnum:]$_]+" s δ)
-               (regexp-match #px"^\\[\"[[:alnum:]$_]+\"\\]" s δ))
-      [`(,v) #:when (string-prefix? v ".")
+    (match (or (regexp-match (pregexp (format "^~a" *id-pattern*)) s δ)
+               (regexp-match (pregexp (format "^\\.~a" *id-pattern*)) s δ)
+               (regexp-match (pregexp (format "^\\[\"~a\"\\]" *string-pattern*)) s δ))
+      [`(,v ,_) #:when (string-prefix? v ".")
        (define v-len (string-length v))
        (define id-sym (quasiquote
                        (quote
@@ -48,16 +54,14 @@
          (datum->syntax #f
                         `(#%plain-app #%js-ffi 'ref ,result ,id-sym)))
        (parse-literal s (+ v-len δ) stx #f)]
-      [`(,v) #:when (string-prefix? v "[")
+      [`(,v ,_) #:when (string-prefix? v "[")
        (define v-len (string-length v))
-       (define id-sym (quasiquote
-                       (quote
-                        (unquote (string->symbol (substring v 2 (- v-len 2)))))))
+       (define field (substring v 2 (- v-len 2)))
        (define stx
          (datum->syntax #f
-                        `(#%plain-app #%js-ffi 'index ,result ,id-sym)))
+                        `(#%plain-app #%js-ffi 'index ,result ,field)))
        (parse-literal s (+ v-len δ) stx #f)]
-      [`(,v)
+      [`(,v ,_)
        (define v-len (string-length v))
        (define stx
          (datum->syntax #f

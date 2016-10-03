@@ -286,6 +286,8 @@
        (Quote (syntax-e v))]
     [_ #:when (byte-pregexp? (syntax-e v))
        (Quote (syntax-e v))]
+    [_ #:when (void? (syntax-e v))
+       (Quote (void))]
     [((~literal with-continuation-mark) e0 e1 e2)
      (error "with-continuation-mark is not supported")]
     [_ (displayln "unsupported form =>")

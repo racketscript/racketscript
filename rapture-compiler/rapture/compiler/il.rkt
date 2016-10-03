@@ -25,6 +25,7 @@
 (define-language IL
   #:alias
   [ILStatement*    (Listof ILStatement)]
+  [ObjectKey       (U String Symbol)]
   [ILLValue        (U Symbol ILRef ILIndex)]
 
   #:forms
@@ -35,7 +36,7 @@
             (ILApp       [lam       : ILExpr]
                          [args      : (Listof ILExpr)])
             (ILArray     [items     : (Listof ILExpr)])
-            (ILObject    [items     : (Listof (Pairof Symbol ILExpr))])
+            (ILObject    [items     : (Listof (Pairof ObjectKey ILExpr))])
             (ILRef       [expr      : ILExpr]
                          [fieldname : Symbol])
             (ILIndex     [expr      : ILExpr]
@@ -65,7 +66,7 @@
   (ILModule id p r (opt b)))
 
 
-(: ILObject-fields (-> ILObject (Listof Symbol)))
+(: ILObject-fields (-> ILObject (Listof ObjectKey)))
 (define (ILObject-fields o)
   (for/list ([item (ILObject-items o)])
     (car item)))

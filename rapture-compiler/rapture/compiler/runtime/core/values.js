@@ -1,5 +1,5 @@
 import {Primitive} from "./primitive.js";
-import {RacketCoreError} from "./lib.js";
+import {racketCoreError} from "./lib.js";
 
 class Values extends Primitive {
     constructor(vals) {
@@ -8,7 +8,7 @@ class Values extends Primitive {
     }
 
     toString() {
-	throw new RacketCoreError("Not Implemented");
+	throw racketCoreError("Not Implemented");
     }
 
     toRawString() {
