@@ -54,6 +54,14 @@
 
      (#js*.this.registerHandlers)
 
+     ;; Set canvas size as the size of first world
+     (define draw-handler ($ #js*.this._activeHandlers "to-draw"))
+     (unless draw-handler
+       (error 'big-bang "to-draw handle not provided"))
+     (define img ($$ draw-handler.callback #js*.this.world))
+     (:= #js.canvas.width   #js.img.width)
+     (:= #js.canvas.height  #js.img.height)
+
      ;; We are reassiging using changeWorld so that change world
      ;; callbacks gets invoked at start of big-bang
      (#js*.this.changeWorld #js*.this.world)
@@ -132,9 +140,9 @@
 
           (define changed?
             (cond
-              [handler (#js.handler.callback #js.self.world evt)]
+              [handler (#js.handler.invoke #js.self.world evt)]
               [(equal? #js.evt.type "raw")
-               (#js.evt.callback #js.self.world evt)]
+               (#js.evt.invoke #js.self.world evt)]
               [else
                (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
           (loop (or world-changed? changed?))]
@@ -151,17 +159,16 @@
      [name        "to-draw"]
      [register    (λ () (void))]
      [deregister  (λ () (void))]
-     [callback    (λ (world evt)
+     [callback    cb]
+     [invoke      (λ (world evt)
                     (define ctx      #js.bb._context)
                     (define img      (cb #js.bb.world))
                     (define height   #js.img.height)
                     (define width    #js.img.width)
 
-                    (:= #js.bb._canvas.width   width)
-                    (:= #js.bb._canvas.height  height)
-
                     (#js.ctx.clearRect 0 0 width height)
                     (#js.img.render ctx (half width) (half height))
+
                     #f)])))
 
 (define (on-tick cb rate)
@@ -181,7 +188,7 @@
                        ;; particularly with high fps, so we need to do
                        ;; something at event loop itself.
                        (#js*.window.clearTimeout lastcb)))]
-     [callback     (λ (world _)
+     [invoke       (λ (world _)
                      (#js.bb.changeWorld (cb world))
                      (:= #js*.this.lastcb (#js*.setTimeout
                                            (λ ()
@@ -229,7 +236,7 @@
         (remove-listener "mouseout")
         (remove-listener "mouseover")
         (remove-listener "drag"))]
-     [callback
+     [invoke
       (λ (world evt)
         (define new-world (cb world #js.evt.x #js.evt.y #js.evt.evt))
         (#js.bb.changeWorld new-world)
@@ -253,7 +260,7 @@
       (λ ()
         (#js.bb._canvas.removeEventListener "keydown" #js*.this.listener)
         (:= #js*.this.listener #js*.undefined))]
-     [callback
+     [invoke
       (λ (world evt)
         (define new-world (cb world #js.evt.key))
         (#js.bb.changeWorld new-world)
@@ -267,11 +274,11 @@
      [lastpicture  last-picture]
      [register
       (λ ()
-        (#js.bb.addWorldChangeListener #js*.this.callback))]
+        (#js.bb.addWorldChangeListener #js*.this.invoke))]
      [deregister
       (λ ()
-        (#js.bb.removeWorldChangeListener #js*.this.callback))]
-     [callback
+        (#js.bb.removeWorldChangeListener #js*.this.invoke))]
+     [invoke
       (λ (w)
         (when (last-world? w)
           (#js.bb.stop)
@@ -279,7 +286,7 @@
             (define handler ((to-draw last-picture) bb))
             (#js.bb.queueEvent
              ($/obj [type       "raw"]
-                    [callback   #js.handler.callback])))))])))
+                    [invoke     #js.handler.invoke])))))])))
 
 
 ;; TODO: A JS object would be faster.
