@@ -573,9 +573,9 @@
                       (provide foo)
                       (define (foo name)
                         (write "Hello"))))
-                 (build-path "/tmp/" "rapture-test-expand.rkt"))))
+                 (build-path "/tmp/" "racketscript-test-expand.rkt"))))
     (check-equal? (Module-id module-output) 'foo)
-    (check-equal? (Module-path module-output) (string->path "/tmp/rapture-test-expand.rkt"))
+    (check-equal? (Module-path module-output) (string->path "/tmp/racketscript-test-expand.rkt"))
     (check-equal? (Module-forms module-output)
                   (list
                    (list (Provide 'foo))

@@ -1,5 +1,5 @@
 #lang s-exp syntax/module-reader
-rapture/base
+racketscript/base
 
 #:read x-read
 #:read-syntax x-read-syntax

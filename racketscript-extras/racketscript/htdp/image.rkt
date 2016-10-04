@@ -1,9 +1,9 @@
-#lang rapture/base
+#lang racketscript/base
 
 ;; Emulates 2htdp/image library as much as possible. Also see
 ;; Whalesong's implementation, which we have referrred
 
-(require (for-syntax rapture/base
+(require (for-syntax racketscript/base
                      syntax/parse)
          "private/color.rkt"
          "../private/jscommon.rkt")

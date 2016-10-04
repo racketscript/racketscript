@@ -1,6 +1,6 @@
-#lang rapture/base
+#lang racketscript/base
 
-(require (for-syntax rapture/base
+(require (for-syntax racketscript/base
                      syntax/parse))
 
 (provide :=

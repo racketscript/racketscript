@@ -4,9 +4,9 @@
 (require rackunit
          glob
          racket/runtime-path
-         rapture/compiler/main
-         rapture/compiler/global
-         rapture/compiler/moddeps)
+         racketscript/compiler/main
+         racketscript/compiler/global
+         racketscript/compiler/moddeps)
 
 (define-runtime-path tests-root-dir ".")
 
@@ -20,7 +20,7 @@
 
 ;; Turning if false would ignore all standard output
 ;; produced by compiler
-(define rapture-stdout? (make-parameter #f))
+(define racketscript-stdout? (make-parameter #f))
 
 ;; DEFAULT PARAMETER VALUES ---------------------------------------------------
 
@@ -63,16 +63,16 @@
   (equal? racket js))
 
 ;; Path-String -> Void
-;; Rackunit check for Rapture. Executes module at file fpath
+;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
-(define-simple-check (check-rapture fpath)
+(define-simple-check (check-racketscript fpath)
   ;; First compile to JS
   (define compile-result
     (let ([test-path (normalize-path (build-path tests-root-dir fpath))])
       (parameterize ([main-source-file test-path]
                      [global-export-graph (get-export-tree test-path)]
                      [current-source-file test-path]
-                     [current-output-port (if (rapture-stdout?)
+                     [current-output-port (if (racketscript-stdout?)
                                               (current-output-port)
                                               (open-output-nowhere))])
         (skip-gulp-build #f) ;;TODO: Remove this to speed up
@@ -140,7 +140,7 @@
         [i (in-naturals 1)])
     (display (format "TEST (~a/~a) => ~a " i (length testcases) test))
     (parameterize ([current-test-name test])
-      (check-rapture test)))
+      (check-racketscript test)))
 
   (unless (empty? failed-tests)
     (displayln (format "\nFailed tests (~a/~a) => "
@@ -156,17 +156,17 @@
 
   (define tc-search-pattern
     (command-line
-     #:program "rapture-fixture"
-     #:usage-help "Run Rapture test programs and compare against Racket"
+     #:program "racketscript-fixture"
+     #:usage-help "Run RacketScript test programs and compare against Racket"
      #:once-each
      [("-c" "--clean") "Clean previous build directory and reinstall packages"
       (clean-output-before-test #t)]
-     [("-o" "--rapture-out") "Show rapture output"
-      (rapture-stdout? #t)]
+     [("-o" "--compiler-out") "Show RacketScript output"
+      (racketscript-stdout? #t)]
      [("-n" "--skip-npm") "Skip NPM install on setup"
       (skip-npm-install #t)]
      [("-v" "--verbose") "Show exceptions when running tests."
-      (rapture-stdout? #t)
+      (racketscript-stdout? #t)
       (verbose? #t)]
      #:args (pattern)
      pattern))

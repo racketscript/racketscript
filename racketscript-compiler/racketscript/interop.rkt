@@ -25,7 +25,7 @@
 ;;   + 'require
 (define #%js-ffi
   (λ _
-    (error 'rapture "can't make JS ffi calls in Racket")))
+    (error 'racketscript "can't make JS ffi calls in Racket")))
 
 (begin-for-syntax
   (define (ids->sym stx)

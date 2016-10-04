@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require rapture/ffi)
+(require racketscript/ffi)
 
 
 (define console ($ 'global 'console))

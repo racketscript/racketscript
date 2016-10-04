@@ -1,6 +1,6 @@
 #lang racket
 
-(require rapture/ffi)
+(require racketscript/ffi)
 
 (define document ($$ 'window.document))
 

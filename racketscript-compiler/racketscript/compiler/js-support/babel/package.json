@@ -1,7 +1,7 @@
 {
-    "name": "rapture",
+    "name": "racketscript",
     "version": "0.0.1",
-    "description": "Package JavaScript compiled from Rapture (Racket->JS compiler)",
+    "description": "Package JavaScript compiled from RacketScript (Racket->JS compiler)",
     "main": "./dist/compiled.js",
     "repository": {
 	"type": "git",

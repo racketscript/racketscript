@@ -5,9 +5,9 @@
 
 (define deps
   (list "racket"
-        "rapture-compiler"))
+        "racketscript-compiler"))
 
 (define build-deps '())
 
 (define pkg-authors '(vishesh))
-(define pkg-desc "Extras to play with Rapture.")
+(define pkg-desc "Extras to play with RacketScript.")

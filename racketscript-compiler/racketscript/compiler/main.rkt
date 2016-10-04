@@ -34,7 +34,7 @@
          output-directory
          prepare-build-directory
          racket->js
-         rapture-dir
+         racketscript-dir
          skip-gulp-build
          skip-npm-install
          enabled-optimizations)
@@ -55,12 +55,12 @@
 ;; - "webpack" ;;TODO
 (define js-target (make-parameter "traceur"))
 
-(define-runtime-path rapture-main-module ".")
+(define-runtime-path racketscript-main-module ".")
 
 ;; Path
-;; Root directory of Rapture project
-(define rapture-dir
-  (~> rapture-main-module
+;; Root directory of Racketscript project
+(define racketscript-dir
+  (~> racketscript-main-module
       (path-only _)
       (build-path _ "..")
       (simplify-path _)))
@@ -68,12 +68,12 @@
 ;; Path-String -> Path
 ;; Return path of support file named f
 (define (support-file f)
-  (build-path rapture-dir "compiler" "js-support" (js-target) f))
+  (build-path racketscript-dir "compiler" "js-support" (js-target) f))
 
 ;; PathString -> Path
 ;; Return path of runtime file named f
 (define (runtime-file f)
-  (build-path rapture-dir "compiler" "runtime" f))
+  (build-path racketscript-dir "compiler" "runtime" f))
 
 ;; Path-String -> Path
 ;; Return path of module file named f in output directory
@@ -137,7 +137,7 @@
 
 ;; -> Void
 (define (copy-runtime-files)
-  (copy-directory (build-path rapture-dir "compiler" "runtime")
+  (copy-directory (build-path racketscript-dir "compiler" "runtime")
                   (output-directory)))
 
 ;; -> Void
@@ -275,7 +275,7 @@
 (module+ main
   (define source
     (command-line
-     #:program "rapture"
+     #:program "racketscript"
      #:usage-help "Compile Racket to JavaScript"
      #:once-each
      [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
@@ -307,8 +307,8 @@
           (current-source-file complete-filename)
           (main-source-file complete-filename)
           complete-filename)]
-       [`(,'stdin ,#f) (error 'rapture "Expect `--stdin` parameter when no filename is provided")]
-       [`(,_ ,#t) (error 'rapture "Don't expect filename with `--stdin` mode")]
+       [`(,'stdin ,#f) (error 'racketscript "Expect `--stdin` parameter when no filename is provided")]
+       [`(,_ ,#t) (error 'racketscript "Don't expect filename with `--stdin` mode")]
        [`(,filename ,#f)
         (let ([complete-filename (path->complete-path filename)])
           (current-source-file complete-filename)
@@ -321,10 +321,10 @@
   ;; input from stdin.
   (when (and (input-from-stdin?)
              (equal? (build-mode) 'complete))
-    (error 'rapture "Can't compile with complete mode input from stdin"))
+    (error 'racketscript "Can't compile with complete mode input from stdin"))
 
   (unless (equal? (build-mode) 'js)
-    (log-rjs-info "Rapture root directory: ~a" rapture-dir))
+    (log-rjs-info "RacketScript root directory: ~a" racketscript-dir))
 
   (unless (input-from-stdin?)
     ;; Initialize global-export-graph so that we can import each
@@ -344,7 +344,7 @@
        ;; TODO: Figure out a way to compile this syntax to
        ;; module code bytecode
        (global-export-graph (get-export-tree (build-path
-                                              (path-only rapture-main-module)
+                                              (path-only racketscript-main-module)
                                               "nothing.rkt")))
        (read-and-expand-module (current-input-port))]
       [else

@@ -1,4 +1,4 @@
-#lang rapture/base
+#lang racketscript/base
 
 (provide string->color
          color->web-color

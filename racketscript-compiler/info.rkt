@@ -11,8 +11,8 @@
 
 (define build-deps '())
 
-(define racket-launcher-name (list "rapture"))
-(define racket-launcher-libraries (list "./rapture/compiler/main.rkt"))
+(define racket-launcher-name (list "racketscript"))
+(define racket-launcher-libraries (list "./racketscript/compiler/main.rkt"))
 
 (define pkg-authors '(vishesh))
 (define pkg-desc "Racket to JavaScript compiler")

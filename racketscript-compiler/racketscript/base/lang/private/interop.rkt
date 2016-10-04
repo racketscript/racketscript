@@ -14,14 +14,14 @@
 
 (define (x-read-syntax src in)
   (skip-whitespace in)
-  (read-rapture src in))
+  (read-racketscript src in))
 
 
 (define (skip-whitespace in)
   (regexp-match #px"^\\s*" in))
 
 
-(define (read-rapture src in)
+(define (read-racketscript src in)
   (define-values (line col pos) (port-next-location in))
   (define *id-pattern* "([[:alnum:]$_]|\\p{Ll}|\\p{Lu})+")
   (define *string-pattern* "(\\p{L}|\\p{N}|\\p{Pd})+")
