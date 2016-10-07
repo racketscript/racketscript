@@ -9,8 +9,9 @@
                      syntax/stx
                      threading))
 
-;; Invented out of thin air, #%js-ffi is treated specially by compiler
-;; to do some JS things otherwise not possible
+;; #%js-ffi is treated specially by compiler to interact with JS or do
+;; operations which are not otherwise possible within Racket.
+
 ;;
 ;; #%js-ffi : Operation Any ... -> Any
 ;; WHERE:
@@ -28,6 +29,7 @@
     (error 'racketscript "can't make JS ffi calls in Racket")))
 
 (begin-for-syntax
+  (provide jsident js-identifier?)
   (define (ids->sym stx)
     (stx-map (λ (c) #`'#,c) stx))
 
@@ -35,44 +37,55 @@
     #:description "match with symbol datum"
     (pattern ((~literal quote) var:id)))
 
+  (define-syntax-class jsident
+    #:description "JavaScript identifier"
+    (pattern ((~literal quote) var:id)
+             #:when (js-identifier? (syntax-e #'var))))
+
+  (define (js-identifier? sym)
+    (define *separators* (list "." "["))
+    (define *start-letter* "\\p{L}|\\p{Nl}|\\$|_")
+    (define *rest-letters* (string-append
+                           "\\p{L}|\\p{Nl}|\\$|_|\\p{Mn}|\\p{Mc}|\\p{Nd}|\\p{Pc}"
+                           "|\u200D|\u200C"))
+
+    (define str (symbol->string sym))
+    (regexp-match-exact? (pregexp
+                          (format "(~a)(~a)*" *start-letter* *rest-letters*))
+                         str))
+
   (define (split-id id)
     (map string->symbol
          (string-split
           (symbol->string (syntax-e id)) "."))))
 
-(define-syntax ($ stx)
-  [syntax-parse stx
-    [(_ v:symbol)
+(define-syntax (-$ stx)
+  (syntax-parse stx
+    [(_ v:jsident)
      #`(#%js-ffi 'var v)]
-    ;; Symbols <: Expr so so just try to parse them first
-    ;; Since symbols are static, we can use JS subscript syntax
-    [(_ b:expr xs:symbol ...+ (~datum <$>) ys:expr ...)
-     #`((#%js-ffi 'ref b xs ...) ys ...)]
-    [(_ b:expr xs:symbol ...+ (~datum <:=>) ys:expr)
-     #`(#%js-ffi 'assign (#%js-ffi 'ref b xs ...) ys)]
-    [(_ b:expr xs:symbol ...+)
-     #`(#%js-ffi 'ref b xs ...)]
-    ;; For everything else use JS indexing. They must
-    ;; evaluate to String or something that JS can translate
-    ;; to meaningful string
-    [(_ b:expr xs:expr ...+ (~datum <:=>) ys:expr)
-     #`(#%js-ffi 'assign (#%js-ffi 'index b xs ...) ys)]
-    [(_ b:expr xs:expr ...+ (~datum <$>) ys:expr ...)
-     #`((#%js-ffi 'index b xs ...) ys ...)]
-    [(_ b:expr xs:expr ...+)
-     #`(#%js-ffi 'index b xs ...)]
-    [_ (error '$ "no match")]])
+    [(_ b:expr xs:symbol)
+     #`(#%js-ffi 'ref b xs)]
+    [(_ b:expr xs:expr)
+     #`(#%js-ffi 'index b xs)]
+    [_ (error '$ "no match")]))
+
+(define-syntax ($ stx)
+  (syntax-parse stx
+    [(_ v:jsident) #'(-$ v)]
+    [(_ b:expr xs:symbol) #'(-$ b xs)]
+    [(_ b:expr xs:expr) #'(-$ b xs)]
+    [(_ b:expr xs:expr xsr:expr ...+) #'($ (-$ b xs) xsr ...)]))
 
 (define-syntax ($$ stx)
   (syntax-parse stx
     [(_ v:symbol e0:expr ...)
      #:with (vn) (stx-cdr #'v)
      #:with (id0 id1 ...) (split-id #'vn)
-     #`($ 'id0 'id1 ... <$> e0 ...)]
+     #`(($ 'id0 'id1 ...) e0 ...)]
     [(_ v:id e0:expr ...)
      #:with (id0 id1 ...) (split-id #'v)
      #:with f-id (datum->syntax stx (syntax-e #'id0))
-     #`($ f-id 'id1 ... <$> e0 ...)]))
+     #`(($ f-id 'id1 ...) e0 ...)]))
 
 (define-syntax ($/new stx)
   (syntax-parse stx
@@ -87,9 +100,10 @@
     [(_ [f v:expr] ...)
      #:with (new-f ...) (stx-map (λ (e)
                                    (cond
-                                     [(identifier? e) (quasisyntax (quote #,(syntax-e e)))]
+                                     [(identifier? e)
+                                      (quasisyntax (quote #,(syntax-e e)))]
                                      [(string? (syntax-e e)) e]
-                                     [else (error '$/obj "invalid key value")]))
+                                     [else (error '$/obj "invalid key identifier")]))
                                  #'(f ...))
      #`(#%js-ffi 'object new-f ... v ...)]))
 
@@ -115,4 +129,66 @@
   (syntax-parse stx
     [($> e:expr) #'e]
     [($> e:expr cc0:chaincall cc:chaincall ...)
-     #'($> ($ e 'cc0.fieldname <$> cc0.ρ ...) cc ...)]))
+     #'($> (($ e 'cc0.fieldname) cc0.ρ ...) cc ...)]))
+
+(module+ test
+  (require rackunit)
+
+  (define-simple-check (check-interop expr expected)
+    (equal? (syntax->datum (expand expr))
+            (syntax->datum (expand expected))))
+
+  (define-simple-check (check-interop-exn expr)
+    (with-handlers ([exn:fail? (λ (e) #t)])
+      (and (expand expr) #f)))
+
+
+  ;; Checks for `-$`
+  (check-interop #'($ 'window) #'(#%js-ffi 'var 'window))
+  (check-interop #'($ 'win91) #'(#%js-ffi 'var 'win91))
+  (check-interop #'($ 'win91) #'(#%js-ffi 'var 'win91))
+  (check-interop #'($ 'win$91) #'(#%js-ffi 'var 'win$91))
+  (check-interop #'($ 'win_91) #'(#%js-ffi 'var 'win_91))
+
+  (check-interop-exn #'(-$ 'window-manager) "invalid `-` character in between")
+  (check-interop-exn #'(-$ 'window.manager) "invalid `.` character in between")
+
+  (check-interop #'(-$ window 'document)
+                 #'(#%js-ffi 'ref window 'document))
+  (check-interop #'(-$ window 'document-wrong)
+                 #'(#%js-ffi 'ref window 'document-wrong))
+  (check-interop #'(-$ window "document-wrong")
+                 #'(#%js-ffi 'index window "document-wrong"))
+
+  ;; Check `$`
+  (check-interop #'($ 'window) #'(#%js-ffi 'var 'window))
+  (check-interop #'($ 'win91) #'(#%js-ffi 'var 'win91))
+  (check-interop #'($ 'win91) #'(#%js-ffi 'var 'win91))
+  (check-interop #'($ 'win$91) #'(#%js-ffi 'var 'win$91))
+  (check-interop #'($ 'win_91) #'(#%js-ffi 'var 'win_91))
+
+  (check-interop-exn #'($ 'window-manager) "invalid `-` character in between")
+  (check-interop-exn #'($ 'window.manager) "invalid `.` character in between")
+
+  (check-interop #'($ window 'document) #'(#%js-ffi 'ref window 'document))
+  (check-interop #'($ window 'document 'write)
+                 #'(#%js-ffi 'ref (#%js-ffi 'ref window 'document) 'write))
+  (check-interop #'($ window "document")
+                 #'(#%js-ffi 'index window "document"))
+  (check-interop #'($ window 'window.manager)
+                 #'(#%js-ffi 'ref window 'window.manager))
+
+  (check-interop #'($ window 'document "write")
+                 #'(#%js-ffi 'index (#%js-ffi 'ref window 'document) "write"))
+
+  ;; Object
+  (check-interop #'($/obj
+                    [x 12]
+                    [y 13])
+                 #'(#%js-ffi 'object 'x 'y 12 13))
+  (check-interop #'($/obj
+                    [x 12]
+                    [y 13]
+                    [active? #f]
+                    ["feed?" #t])
+                 #'(#%js-ffi 'object 'x 'y 'active? "feed?" 12 13 #f #t)))

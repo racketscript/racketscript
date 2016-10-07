@@ -48,19 +48,19 @@
 (define-syntax (set-object! stx)
   (syntax-parse stx
     [(set-object! obj:expr f:field ...)
-     #`(begin ($ obj 'f.name <:=> f.val) ...)]))
+     #`(begin (:= ($ obj 'f.name) f.val) ...)]))
 
 
 (define-syntax-rule (schedule-method this method interval)
   (let ([self this])
     (#js*.window.setTimeout (λ ()
-                             ($ self method <$>))
+                             (($ self method)))
                             interval)))
 
 (define-syntax-rule (schedule-animation-frame this step)
   (let ([self this])
     (#js*.window.requestAnimationFrame (λ ()
-                                         ($ self step <$>)))))
+                                         (($ self step))))))
 
 ;;-----------------------------------------------------------------------------
 ;; Helper functions
