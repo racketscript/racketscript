@@ -1,7 +1,9 @@
 #lang racket
 
 (provide links-module?
-         improper->proper)
+         improper->proper
+         *jsident-pattern*
+         js-identifier?)
 
 
 ;; Path-String Path-String -> Boolean
@@ -80,6 +82,20 @@
   (check-equal? (improper->proper '(1 2 3 . 4)) '(1 2 3 4))
   (check-equal? (improper->proper '(1 2 3)) '(1 2 3))
   (check-equal? (improper->proper '(1 2 (3 . 4) . 5)) '(1 2 (3 . 4) 5)))
+
+(define *jsident-start-letter* "\\p{L}|\\p{Nl}|\\$|_")
+(define *jsident-rest-letters* (string-append
+                                "\\p{L}|\\p{Nl}|\\$|_|\\p{Mn}|\\p{Mc}|\\p{Nd}|\\p{Pc}"
+                                "|\u200D|\u200C"))
+(define *jsident-pattern* (format "(~a)(~a)*"
+                                  *jsident-start-letter*
+                                  *jsident-rest-letters*))
+
+;; Symbol -> Boolean
+;; Returns true if `sym` is a valid JavaScript identifier
+(define (js-identifier? sym)
+  (define str (symbol->string sym))
+  (regexp-match-exact? (pregexp *jsident-pattern*) str))
 
 (module+ test
   (require rackunit))

@@ -29,6 +29,7 @@
     (error 'racketscript "can't make JS ffi calls in Racket")))
 
 (begin-for-syntax
+  (require (only-in "compiler/util-untyped.rkt" js-identifier?))
   (provide jsident js-identifier?)
   (define (ids->sym stx)
     (stx-map (λ (c) #`'#,c) stx))
@@ -41,18 +42,6 @@
     #:description "JavaScript identifier"
     (pattern ((~literal quote) var:id)
              #:when (js-identifier? (syntax-e #'var))))
-
-  (define (js-identifier? sym)
-    (define *separators* (list "." "["))
-    (define *start-letter* "\\p{L}|\\p{Nl}|\\$|_")
-    (define *rest-letters* (string-append
-                           "\\p{L}|\\p{Nl}|\\$|_|\\p{Mn}|\\p{Mc}|\\p{Nd}|\\p{Pc}"
-                           "|\u200D|\u200C"))
-
-    (define str (symbol->string sym))
-    (regexp-match-exact? (pregexp
-                          (format "(~a)(~a)*" *start-letter* *rest-letters*))
-                         str))
 
   (define (split-id id)
     (map string->symbol
