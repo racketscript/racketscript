@@ -53,6 +53,9 @@
 ;; - "babel"
 ;; - "traceur"
 ;; - "webpack" ;;TODO
+(define *targets* (list "traceur"
+                        "traceur-browser"
+                        "babel"))
 (define js-target (make-parameter "traceur"))
 
 (define-runtime-path racketscript-main-module ".")
@@ -289,8 +292,8 @@
      ["--enable-self-tail" "Translate self tail calls to loops"
       (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
      #:multi
-     [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel]"
-      (if (or (equal? target "traceur") (equal? target "babel"))
+     [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser]"
+      (if (member target *targets*)
           (js-target target)
           (error "`~a` is not a supported target."))]
      #:once-any
