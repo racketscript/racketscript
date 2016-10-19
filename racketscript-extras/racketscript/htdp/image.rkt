@@ -31,6 +31,7 @@
          rotate
 
          print-image
+         color
          (struct-out posn))
 
 ;;-----------------------------------------------------------------------------
@@ -49,6 +50,13 @@
 (define-syntax-rule (with-origin ctx [x y] body ...)
   (with-context ctx (#js.ctx.translate x y) body ...))
 
+(define (->web-color p)
+  (cond
+    [(string? p) (string->web-color p)]
+    [(color? p) (displayln (color->web-color p)) (color->web-color p)]
+    [(symbol? p) (string->web-color (symbol->string p))]
+    [else (error 'color "invalid color")]))
+
 (define-syntax (with-path stx)
   (syntax-parse stx
     [(with-path ctx:id {mode pen} body ...)
@@ -57,10 +65,10 @@
               #,(when (syntax-e #'pen)
                   #`(cond
                       [(string=? mode "outline")
-                       (:= #js.ctx.strokeStyle (string->web-color pen))
+                       (:= #js.ctx.strokeStyle (->web-color pen))
                        (#js.ctx.stroke)]
                       [(string=? mode "solid")
-                       (:= #js.ctx.fillStyle (string->web-color pen))
+                       (:= #js.ctx.fillStyle (->web-color pen))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))
 
@@ -119,7 +127,7 @@
                  [type       "text"]
                  [text       text]
                  [size       size]
-                 [color      (string->web-color color)]
+                 [color      (->web-color color)]
                  [face       face]
                  [family     family]
                  [style      style]

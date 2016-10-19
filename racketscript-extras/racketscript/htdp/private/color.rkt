@@ -2,9 +2,12 @@
 
 (provide string->color
          color->web-color
-         string->web-color)
+         string->web-color
+         (rename-out [-color color])
+         color?)
 
 (struct color (red green blue [alpha #:auto]) #:auto-value 255 #:transparent)
+(define (-color a b c) (color a b c))
 
 (define (string->color color-string)
   ($ *color-table* color-string))
