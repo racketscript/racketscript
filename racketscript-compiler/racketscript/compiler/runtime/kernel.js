@@ -133,6 +133,9 @@ exports["null"] = Core.Pair.Empty;
 
 var list = exports["list"] = Core.Pair.makeList;
 exports["first"] = exports["car"]; //TODO: Should be list
+exports["second"] = function (lst) {
+    return lst.cdr().car();
+}
 exports["rest"] = exports["cdr"];
 
 exports["list?"] = function isList(v) {
@@ -430,8 +433,21 @@ exports["string=?"] = function (sa, sb) {
     return sa === sb;
 }
 
+exports["string?"] = function (v) {
+    return typeof(v) === 'string';
+}
+
 exports["format"] = function() {
     //TODO
+}
+
+exports["symbol->string"] = function (v) {
+    typeCheckOrRaise(Core.Symbol, v);
+    return v.toString();
+}
+
+exports["symbol?"] = function (v) {
+    return Core.Symbol.check(v);
 }
 
 /* --------------------------------------------------------------------------*/
@@ -615,8 +631,48 @@ var append = exports["append"] = function (...lists) {
 
 exports["build-list"] = function (n, proc) {
     let result = Core.Pair.Empty;
-    for (let i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) { 
 	result = Core.Pair.make(proc(i), result);
     }
     return reverse(result);
+}
+
+exports["make-list"] = function (n, v) {
+    let result = Core.Pair.Empty;
+    for (let i = 0; i < n; ++i) {
+	result = Core.Pair.make(v, result);
+    }
+    return result;
+}
+
+exports["assoc"] = function (k, lst) {
+    while (Core.Pair.isEmpty(lst) === false) {
+	if (Core.isEqual(k, lst.hd.hd)) {
+	    return lst.hd;
+	}
+	lst = lst.tl;
+    }
+    return false;
+}
+
+var flatten = exports["flatten"] = function (lst) {
+    if (Core.Pair.isEmpty(lst)) {
+        return Core.Pair.Empty;
+    } else if (Core.Pair.check(lst)) {
+        return append(flatten(lst.hd), flatten(lst.tl));
+    } else {
+        return list(lst);
+    }
+};
+
+exports["current-seconds"] = function() {
+    return Date.now();
+}
+
+exports["sqr"] = function (v) {
+    return v * v;
+}
+
+exports["remainder"] = function (a, b) {
+    return a % b;
 }
