@@ -615,7 +615,7 @@ exports["filter"] = function (fn, lst) {
 
 exports["abs"] = Math.abs;
 exports["floor"] = Math.floor;
-exports["ceil"] = Math.ceil;
+exports["ceiling"] = Math.ceil;
 exports["round"] = Math.round;
 exports["min"] = Math.min;
 exports["max"] = Math.max;
