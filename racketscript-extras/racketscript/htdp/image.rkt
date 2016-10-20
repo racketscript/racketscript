@@ -5,6 +5,7 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
+         racket/bool
          "private/color.rkt"
          "../private/jscommon.rkt")
 
@@ -64,10 +65,10 @@
               body ...
               #,(when (syntax-e #'pen)
                   #`(cond
-                      [(string=? mode "outline")
+                      [(or (symbol=? mode 'outline) (string=? mode "outline"))
                        (:= #js.ctx.strokeStyle (->web-color pen))
                        (#js.ctx.stroke)]
-                      [(string=? mode "solid")
+                      [(or (symbol=? mode 'solid) (string=? mode "solid"))
                        (:= #js.ctx.fillStyle (->web-color pen))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))

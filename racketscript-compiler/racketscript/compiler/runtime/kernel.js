@@ -458,6 +458,11 @@ exports["symbol?"] = function (v) {
     return Core.Symbol.check(v);
 }
 
+exports["symbol=?"] = function (s, v) {
+    typeCheckOrRaise(Core.Symbol, s);
+    return s.equals(v);
+}
+
 /* --------------------------------------------------------------------------*/
 // Box
 
