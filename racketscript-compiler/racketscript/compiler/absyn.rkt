@@ -4,7 +4,11 @@
 
 (provide (all-defined-out))
 
-(struct Provide ([id      : Symbol]) #:transparent)
+(define-type Provide (U SimpleProvide RenamedProvide))
+(define-predicate Provide? Provide)
+(struct SimpleProvide  ([id           : Symbol]) #:transparent)
+(struct RenamedProvide ([local-id     : Symbol]
+                        [exported-id  : Symbol]) #:transparent)
 
 (struct Module  ([id      : Symbol]
                  [path    : Path]

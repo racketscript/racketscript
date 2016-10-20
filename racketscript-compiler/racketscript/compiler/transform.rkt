@@ -115,7 +115,7 @@
                       path
                       set)])
       (for/list ([ident (in-set ident-set)])
-        (ILProvide ident))))
+        (ILSimpleProvide ident))))
 
   ;; Since we get identifiers directly from defining module, we keep
   ;; track of defines, and excludes re-exports here
@@ -128,7 +128,11 @@
   (: final-provides (Listof ILProvide))
   (define final-provides
     (filter (λ ([p : ILProvide])
-              (set-member? top-level-defines (ILProvide-id p) ))
+              (match p
+                [(ILSimpleProvide id)
+                 (set-member? top-level-defines id )]
+                [(ILRenamedProvide local-id exported-id)
+                 (set-member? top-level-defines local-id)]))
             (append (unbox provides) unreachable-ident-provides)))
 
   (ILModule path
@@ -151,9 +155,7 @@
 
 
 (: absyn-provide->il (-> Provide* (Listof ILProvide)))
-(define (absyn-provide->il form)
-  (map (λ ([f : Provide]) (ILProvide (Provide-id f))) form))
-
+(define (absyn-provide->il forms) forms)
 
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several

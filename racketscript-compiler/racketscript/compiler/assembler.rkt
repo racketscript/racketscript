@@ -212,7 +212,13 @@
   (unless (empty? p*)
     (emit "export { ")
     (for/last? ([p last? p*])
-               (emit (~a (normalize-symbol (ILProvide-id p))))
+               (match p
+                 [(ILSimpleProvide id)
+                  (emit (~a (normalize-symbol id)))]
+                 [(ILRenamedProvide local-id exported-id)
+                  (emit (format "~a as ~a"
+                                (normalize-symbol local-id)
+                                (normalize-symbol exported-id)))])
                (unless last?
                  (emit ",")))
 

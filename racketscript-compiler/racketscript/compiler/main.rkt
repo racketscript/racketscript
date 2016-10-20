@@ -198,7 +198,7 @@
                        (remove-duplicates _)))
     (define ilmod
       (ILModule #f
-                (map ILProvide idents)
+                (map ILSimpleProvide idents)
                 (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
                                  '$$mod
                                  '*))

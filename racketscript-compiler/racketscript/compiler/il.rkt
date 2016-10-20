@@ -1,22 +1,27 @@
 #lang typed/racket/base
 
-(provide (all-defined-out))
-
 (require racket/match
+         "absyn.rkt"
          "language.rkt")
 
+(provide (all-defined-out)
+         (prefix-out IL
+                     (combine-out
+                      (struct-out SimpleProvide)
+                      (struct-out RenamedProvide)
+                      Provide
+                      Provide?)))
 
 (define-type        ILProgram ILStatement*)
 (define-predicate   ILProgram? ILProgram)
 (define-type-alias  ILModuleName (Option Path-String))
 
 (struct ILModule ([id   :  ILModuleName]
-                  [provides : (Listof ILProvide)]
+                  [provides : (Listof Provide)]
                   [requires : (Listof ILRequire)]
                   [body : ILStatement*])
   #:transparent)
 
-(struct ILProvide ([id : Symbol]) #:transparent)
 (struct ILRequire ([mod : ILModuleName]
                    [name : Symbol]
                    [import-mode : (U 'default '*)]) #:transparent)

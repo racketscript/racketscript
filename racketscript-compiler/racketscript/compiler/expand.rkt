@@ -103,13 +103,15 @@
 
 (define (provide-parse r)
   (syntax-parse r
-    [v:str (list (Provide (syntax-e #'v)))]
-    [v:identifier (list (Provide (syntax-e #'v)))]
+    [v:str (list (SimpleProvide (syntax-e #'v)))]
+    [v:identifier (list (SimpleProvide (syntax-e #'v)))]
     [((~datum for-meta) 0 p ...)
-     (stx-map (λ (pv) (Provide (syntax-e pv))) #'(p ...))]
+     (stx-map (λ (pv) (SimpleProvide (syntax-e pv))) #'(p ...))]
     [((~datum for-meta) 1 p ...) '()]
     [((~datum for-syntax) p ...) '()]
-    [((~datum rename) p ...) '()]
+    [((~datum rename) local-id exported-id)
+     (list (RenamedProvide (syntax-e #'local-id)
+                           (syntax-e #'exported-id)))]
     [((~datum protect) p ...) '()]
     [((~datum all-from-except) p ...) '()]
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
@@ -193,9 +195,9 @@
      (define (rename-module mpath)
        ;; Rename few modules for simpler compilation
        (cond
-         [(symbol? mpath) mpath]
-         [(collects-module? mpath) '#%kernel]
-         [else mpath]))
+         [(symbol? mpath) (list #f mpath)]
+         [(collects-module? mpath) (list #t '#%kernel)]
+         [else (list #f mpath)]))
      (define ident-sym (syntax-e #'i))
 
      (match (identifier-binding #'i)
@@ -204,7 +206,8 @@
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
         ;; from where we import
         (match-define (list src-mod-path-orig self?) (index->path src-mod))
-        (define src-mod-path (rename-module src-mod-path-orig))
+        (match-define (list nom-src-mod-path-orig _) (index->path nom-src-mod))
+        (match-define (list module-renamed? src-mod-path) (rename-module src-mod-path-orig))
 
         (cond
           [self? (LocalIdent ident-sym)]
@@ -224,9 +227,10 @@
            ;; modules in topological order, we can save this
            ;; identifier, so that when we export this identifier from
            ;; its source module processed later.
-           (unless (follow-symbol (global-export-graph)
-                                  src-mod-path-orig
-                                  src-id)
+           (define path-to-symbol (follow-symbol (global-export-graph)
+                                                 src-mod-path-orig
+                                                 mod-src-id))
+           (unless path-to-symbol
              (hash-update! global-unreachable-idents
                            src-mod-path
                            (λ (s*)
@@ -237,12 +241,17 @@
            ;; module rather than defining module. Since renamed, module currently
            ;; are #%kernel which we write ourselves in JS we prefer original name.
            ;; TODO: We potentially might have clashes, but its unlikely.
-           (define effective-id (if (not (equal? src-mod-path src-mod-path-orig))
-                                    mod-src-id
-                                    src-id))
+           (define-values (effective-id effective-mod)
+             (cond
+               [module-renamed? (values mod-src-id src-mod-path)]
+               [(false? path-to-symbol)
+                (values mod-src-id src-mod-path)]
+               [else
+                (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
+                  (values id mod))]))
 
-           (register-ident-use! src-mod-path effective-id)
-           (ImportedIdent effective-id src-mod-path)])])]
+           (register-ident-use! effective-mod effective-id)
+           (ImportedIdent effective-id effective-mod)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
@@ -397,7 +406,7 @@
                 (Quote #f))
 
   ;; Check imported ident
-  
+
   ;;TODO: We rename library modules, so ignore this test for now
   #;(check-equal? (to-absyn/expand #'displayln)
                 (ident #'displayln))
@@ -578,7 +587,7 @@
     (check-equal? (Module-path module-output) (string->path "/tmp/racketscript-test-expand.rkt"))
     (check-equal? (Module-forms module-output)
                   (list
-                   (list (Provide 'foo))
+                   (list (SimpleProvide 'foo))
                    (DefineValues
                      '(foo)
                      (PlainLambda '(name)
