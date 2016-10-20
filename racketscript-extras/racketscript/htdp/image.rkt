@@ -30,6 +30,7 @@
          beside
 
          rotate
+         scale
 
          print-image
          color
@@ -255,6 +256,7 @@
 (define (circle r m p)
   (new (Circle r m p)))
 
+
 ;;-----------------------------------------------------------------------------
 ;; Combine images
 
@@ -347,6 +349,9 @@
            (#js.child.render ctx (posn-x posn) (posn-y posn))
            (loop (cdr childs) (cdr posns))))))])
 
+;;-----------------------------------------------------------------------------
+;; Transform images
+
 ;; Rotate clockwise
 ;; TODO: Rotated bouding box is not actually right.
 (define-proto Rotate
@@ -390,6 +395,22 @@
    (λ (ctx x y)1
      (with-origin ctx [x y]
        (#js.ctx.rotate #js*.this.radians)
+       (#js*.this.image.render ctx 0 0)))])
+
+(define-proto Scale
+  #:init
+  (λ (image x-factor y-factor)
+    (set-object! #js*.this
+                 [image        image]
+                 [x-factor     x-factor]
+                 [y-factor     y-factor]
+                 [width        (floor (* #js.image.width x-factor))]
+                 [height       (floor (* #js.image.height y-factor))]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (with-origin ctx [x y]
+       (#js.ctx.scale #js*.this.x-factor #js*.this.y-factor)
        (#js*.this.image.render ctx 0 0)))])
 
 (define (container childs posns width height)
@@ -441,3 +462,6 @@
 (define (rotate angle image)
   ;; Rotate counter-clockwise
   (new (Rotate image (- angle))))
+
+(define (scale factor image)
+  (new (Scale image factor factor)))
