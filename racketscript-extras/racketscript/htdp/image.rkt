@@ -23,7 +23,10 @@
          place-image
          place-images
          overlay/align
+         overlay/xy
          overlay
+         underlay
+         underlay/xy
          above/align
          above
          beside/align
@@ -55,7 +58,7 @@
 (define (->web-color p)
   (cond
     [(string? p) (string->web-color p)]
-    [(color? p) (displayln (color->web-color p)) (color->web-color p)]
+    [(color? p) (color->web-color p)]
     [(symbol? p) (string->web-color (symbol->string p))]
     [else (error 'color "invalid color")]))
 
@@ -66,10 +69,10 @@
               body ...
               #,(when (syntax-e #'pen)
                   #`(cond
-                      [(or (symbol=? mode 'outline) (string=? mode "outline"))
+                      [(or (equal? mode 'outline) (equal? mode "outline"))
                        (:= #js.ctx.strokeStyle (->web-color pen))
                        (#js.ctx.stroke)]
-                      [(or (symbol=? mode 'solid) (string=? mode "solid"))
+                      [(or (equal? mode 'solid) (equal? mode "solid"))
                        (:= #js.ctx.fillStyle (->web-color pen))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))
@@ -268,12 +271,23 @@
     (define imb-cx (half #js.imb.width))
     (define imb-cy (half #js.imb.height))
 
+    ;; When aligning to an edge, new height are width are maximum of
+    ;; two images, while when we give an xy offset, depnding on size
+    ;; of both images, the dimensions of increase or remain same.
     (define width   (case x-place
                       [("beside") (+ #js.ima.width #js.imb.width)]
-                      [else       (max #js.ima.width #js.imb.width)]))
+                      [else       (if (number? x-place)
+                                      (if (positive? x-place)
+                                          (max #js.ima.width (+ #js.imb.width x-place))
+                                          (max #js.imb.width (- #js.ima.width x-place)))
+                                      (max #js.ima.width #js.imb.width))]))
     (define height  (case y-place
                       [("above")  (+ #js.ima.height #js.imb.height)]
-                      [else       (max #js.ima.height #js.imb.height)]))
+                      [else       (if (number? y-place)
+                                      (if (positive? y-place)
+                                          (max #js.ima.height (+ #js.imb.height y-place))
+                                          (max #js.imb.height (- #js.ima.height y-place)))
+                                      (max #js.ima.height #js.imb.height))]))
 
     (define δ-edge-x (half width))
     (define δ-edge-y (half height))
@@ -281,6 +295,14 @@
     ;; Center of image is (0, 0), which is also center of bigger
     ;; image. Calculate the distance of centers of images from this
     ;; final center.
+    ;; 
+    ;; When given an xy offset, we start by placing each image on top
+    ;; of each other. We line up the images at upper-right corner of
+    ;; new canvas to start with and then translate the appropriate
+    ;; image depending on whether we are given positive or negative
+    ;; offset. To line up at upper right corner of new image, we
+    ;; calculate distance between the centers of final and local
+    ;; setting and move both images by that amount.
     (define-values (δ-a-x δ-b-x)
       (case x-place
         [("left")             (values (- ima-cx δ-edge-x)
@@ -290,7 +312,17 @@
         [("beside")           (values (- ima-cx δ-edge-x)
                                       (- δ-edge-x imb-cx))]
         [("middle" "center")  (values 0 0)]
-        [else                 (error "invalid x-place align")]))
+        [else
+         (cond
+           [(number? x-place)
+            (define local-width (max #js.ima.width #js.imb.width))
+            (define local-acx (- ima-cx (half local-width)))
+            (define local-bcx (- imb-cx (half local-width)))
+            (define acx-bcx (- δ-edge-x (half local-width)))
+            (if (positive? x-place)
+                (values (- local-acx acx-bcx) (+ x-place (- local-bcx acx-bcx)))
+                (values (- local-acx x-place acx-bcx) (- local-bcx acx-bcx)))]
+           [else (error "invalid x-place align")])]))
 
     (define-values (δ-a-y δ-b-y)
       (case y-place
@@ -301,7 +333,18 @@
         [("above")             (values (- ima-cy δ-edge-y)
                                        (- δ-edge-y imb-cy))]
         [("middle" "center")   (values 0 0)]
-        [else                  (error "invalid y-place align")]))
+        [else
+         (cond
+           [(number? y-place)
+            (define local-height (max #js.ima.height #js.imb.height))
+            (define local-acy (- ima-cy (half local-height)))
+            (define local-bcy (- imb-cy (half local-height)))
+            (define acy-bcy (- δ-edge-y (half local-height)))
+            (if (positive? y-place)
+                (values (- local-acy acy-bcy) (+ y-place (- local-bcy acy-bcy)))
+                (values (- local-acy y-place acy-bcy) (- local-bcy acy-bcy)))]
+           [else
+             (error "invalid y-place align")])]))
 
     (set-object! #js*.this
       [type       "overlay"]
@@ -433,31 +476,49 @@
                width
                height)))
 
-(define-syntax-rule (-overlay/align x-place y-place ima imb imn)
+(define-syntax-rule (-overlay/align combiner x-place y-place ima imb imn)
   ;; Exists because using apply everytime is slower, so we just
   ;; inline it
   (foldl (λ (img acc)
-           (new (Overlay x-place y-place acc img)))
+           (combiner x-place y-place acc img))
          empty-image
          (cons ima (cons imb imn))))
 
+(define (-single-overlay x-place y-place ima imb)
+  (new (Overlay x-place y-place ima imb)))
+
+(define (-single-underlay x-place y-place ima imb)
+  (new (Overlay x-place y-place imb ima)))
+
 (define (overlay/align x-place y-place ima imb . imn)
-  (-overlay/align x-place y-place ima imb imn))
+  (-overlay/align -single-overlay x-place y-place ima imb imn))
 
 (define (overlay ima imb . imn)
-  (-overlay/align "middle" "middle" ima imb imn))
+  (-overlay/align -single-overlay "middle" "middle" ima imb imn))
+
+(define (overlay/xy ima x y imb)
+  (new (Overlay x y ima imb)))
+
+(define (underlay ima imb . imn)
+  (-overlay/align -single-underlay "middle" "middle" ima imb imn))
+
+(define (underlay/align x-place y-place ima imb . imn)
+  (-overlay/align -single-underlay x-place y-place ima imb imn))
+
+(define (underlay/xy ima x y imb)
+  (new (Overlay (- x) (- y) imb ima)))
 
 (define (above/align x-place i1 i2 . is)
-  (-overlay/align x-place "above" i1 i2 is))
+  (-overlay/align -single-overlay x-place "above" i1 i2 is))
 
 (define (above i1 i2 . is)
-  (-overlay/align "middle" "above" i1 i2 is))
+  (-overlay/align -single-overlay "middle" "above" i1 i2 is))
 
 (define (beside/align y-place i1 i2 . is)
-  (-overlay/align "beside" y-place i1 i2 is))
+  (-overlay/align -single-overlay "beside" y-place i1 i2 is))
 
 (define (beside i1 i2 . is)
-  (-overlay/align "beside" "middle" i1 i2 is))
+  (-overlay/align -single-overlay "beside" "middle" i1 i2 is))
 
 (define (rotate angle image)
   ;; Rotate counter-clockwise

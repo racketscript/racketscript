@@ -555,7 +555,6 @@ exports["check-method"] = function() {
 }
 
 exports["random"] = function (...args) {
-    console.log(args);
     switch (args.length) {
     case 0: return Math.random();
     case 1:
@@ -680,7 +679,7 @@ var flatten = exports["flatten"] = function (lst) {
 };
 
 exports["current-seconds"] = function() {
-    return Date.now();
+    return Math.floor(Date.now() / 1000);
 }
 
 exports["sqr"] = function (v) {
