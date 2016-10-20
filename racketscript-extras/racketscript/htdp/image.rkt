@@ -22,6 +22,8 @@
 
          place-image
          place-images
+         place-image/align
+         place-images/align
          overlay/align
          overlay/xy
          overlay
@@ -34,6 +36,10 @@
 
          rotate
          scale
+         flip-vertical
+         flip-horizontal
+
+         bitmap/data
 
          print-image
          color
@@ -393,6 +399,28 @@
            (loop (cdr childs) (cdr posns))))))])
 
 ;;-----------------------------------------------------------------------------
+;; Bitmap images
+
+(define-proto Bitmap
+  #:init
+  (λ (data)
+    (define self #js*.this)
+    (define image (new #js*.Image))
+    (:= #js.image.src data)
+    (set-object! self
+                 [image  image]
+                 [width  #js.image.width]
+                 [height #js.image.height]))
+    #:prototype-fields
+    [render
+     (λ (ctx x y)
+       (define image #js*.this.image)
+       (with-origin ctx [x y]
+         (#js.ctx.drawImage image
+                            (- (half #js.image.width))
+                            (- (half #js.image.height)))))])
+
+;;-----------------------------------------------------------------------------
 ;; Transform images
 
 ;; Rotate clockwise
@@ -447,8 +475,8 @@
                  [image        image]
                  [x-factor     x-factor]
                  [y-factor     y-factor]
-                 [width        (floor (* #js.image.width x-factor))]
-                 [height       (floor (* #js.image.height y-factor))]))
+                 [width        (abs (floor (* #js.image.width x-factor)))]
+                 [height       (abs (floor (* #js.image.height y-factor)))]))
   #:prototype-fields
   [render
    (λ (ctx x y)
@@ -475,6 +503,32 @@
                (cons (posn (half width) (half height)) posns)
                width
                height)))
+
+(define (-align-image-pos image pos x-place y-place)
+  (define x (posn-x pos))
+  (define y (posn-y pos))
+  (define new-x
+    (case x-place
+      [("left") (+ (half #js.image.width) x)]
+      [("right") (- (half #js.image.width) x)]
+      [("center" "middle") x]))
+  (define new-y
+    (case y-place
+      [("top") (+ (half #js.image.height) y)]
+      [("bottom") (- (half #js.image.height) y)]
+      [("center" "middle") y]))
+  (posn new-x new-y))
+
+(define (place-image/align image x y x-place y-place scene)
+  (define new-pos (-align-image-pos image (posn x y) x-place y-place))
+  (place-image image (posn-x new-pos) (posn-y new-pos) scene))
+
+(define (place-images/align images posns x-place y-place scene)
+  (define new-posns (map (λ (i p)
+                           (-align-image-pos i p x-place y-place))
+                         images
+                         posns))
+  (place-images images new-posns scene))
 
 (define-syntax-rule (-overlay/align combiner x-place y-place ima imb imn)
   ;; Exists because using apply everytime is slower, so we just
@@ -526,3 +580,12 @@
 
 (define (scale factor image)
   (new (Scale image factor factor)))
+
+(define (flip-horizontal image)
+  (new (Scale image -1 1)))
+
+(define (flip-vertical image)
+  (new (Scale image 1 -1)))
+
+(define (bitmap/data data)
+  (new (Bitmap data)))
