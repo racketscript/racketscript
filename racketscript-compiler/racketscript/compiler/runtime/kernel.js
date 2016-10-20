@@ -32,8 +32,8 @@ exports["values"] = function (...vals) {
     return Core.Values.make(vals);
 }
 
-exports["call-with-values"] = function (generator, receiver) {
-    var values = generator();
+var callWithValues = exports["call-with-values"] = function (generator, receiver) {
+    let values = generator();
     if (Core.Values.check(values)) {
 	return receiver.apply(this, generator().getAll());
     } else if (values !== undefined && values !== null) {
@@ -147,6 +147,13 @@ exports["list?"] = function isList(v) {
     } else {
 	return false;
     }
+}
+
+exports["list*"] = function () {
+    return Core.Pair
+	.argumentsToArray(arguments)
+	.reverse()
+	.reduce((acc, v) => Core.Pair.make(v, acc));
 }
 
 exports["empty?"] = Core.Pair.isEmpty;
@@ -307,8 +314,9 @@ exports["hash-set"] = function (h, k, v) {
 /* --------------------------------------------------------------------------*/
 // Higher Order Functions
 
-exports["apply"] = function (lam, args) {
-    return lam.apply(null, Core.Pair.listToArray(args));
+exports["apply"] = function (lam, ...args) {
+    let lst = Core.Pair.listToArray(args.pop()); /* TODO: Check. Must be a list */
+    return lam.apply(null, args.concat(lst));
 }
 
 var reverse = exports["reverse"] = function (lst) {
@@ -542,6 +550,7 @@ exports["check-method"] = function() {
 }
 
 exports["random"] = function (...args) {
+    console.log(args);
     switch (args.length) {
     case 0: return Math.random();
     case 1:
@@ -657,7 +666,7 @@ exports["assoc"] = function (k, lst) {
 
 var flatten = exports["flatten"] = function (lst) {
     if (Core.Pair.isEmpty(lst)) {
-        return Core.Pair.Empty;
+        return lst;
     } else if (Core.Pair.check(lst)) {
         return append(flatten(lst.hd), flatten(lst.tl));
     } else {
@@ -675,4 +684,33 @@ exports["sqr"] = function (v) {
 
 exports["remainder"] = function (a, b) {
     return a % b;
+}
+
+exports["compose"] = function (...procs) {
+    return function () {
+	let result = Core.argumentsToArray(arguments);
+	for (let p of procs.reverse()) {
+	    result = p.apply(null, result);
+	    if (Core.Values.check(result)) {
+		result = result.getAll();
+	    } else {
+		result = [result]
+	    }
+	}
+	if (result.length === 1) {
+	    return result[0];
+	} else {
+	    return Core.Values.make(result);
+	}
+    }
+}
+
+exports["compose1"] = function(...procs) {
+    return function(v) {
+	let result = v;
+	for (let p of procs.reverse()) {
+	    result = p(result);
+	}
+	return result;
+    }
 }
