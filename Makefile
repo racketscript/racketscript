@@ -26,12 +26,15 @@ build:
 setup:
 	raco pkg install --auto -t dir racketscript-compiler/ || \
 	    raco pkg update --link racketscript-compiler/
+	raco pkg install --auto -t dir racketscript-extras/ || \
+		    raco pkg update --link racketscript-extras/
 
 setup-extra:
 	npm install -g traceur js-beautify eslint jshint gulp
 	raco pkg install --auto cover glob
 
 clean:
+	raco pkg remove racketscript-extras
 	raco pkg remove racketscript-compiler
 
 ## Coverage recipes
