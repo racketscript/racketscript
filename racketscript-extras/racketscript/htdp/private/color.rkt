@@ -10,7 +10,7 @@
 (define (-color a b c) (color a b c))
 
 (define (string->color color-string)
-  ($ *color-table* color-string))
+  ($ *color-table* (string-downcase color-string)))
 
 (define (color->web-color color)
   (string-append "rgba("
