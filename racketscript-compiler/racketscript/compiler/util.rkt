@@ -39,6 +39,7 @@
          jsruntime-import-path
          path-parent
          length=?
+         string-slice
          log
          ++)
 
@@ -47,6 +48,17 @@
 (define fresh-id-counter (make-parameter 0))
 
 (define ++ string-append)
+
+(: string-slice (->* (String Integer) ((Option Integer)) String))
+(define (string-slice str start [end #f])
+  (let* ([len (string-length str)]
+         [fix-index (λ ([i : Integer])
+                      (if (negative? i)
+                          (+ len i)
+                          i))]
+         [start (fix-index start)]
+         [end (fix-index (or end len))])
+    (substring str start end)))
 
 (: path-parent (-> Path Path))
 ;; Because `path-only` return type is `path-for-some-system` and that

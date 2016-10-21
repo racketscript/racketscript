@@ -191,11 +191,25 @@
             ([opt (in-set (enabled-optimizations))])
     (il-apply-optimization il opt)))
 
+;; Path-String -> (Listof Symbol)
+;; Read the runtime JavaScript file which, and find all the primitives
+;; implemented there. Primitives are keys inside "exports" object.
+(define (read-js-exports js-file)
+  (call-with-input-file js-file
+    (λ (in)
+      (remove-duplicates
+       (map (λ (s)
+              (~> (bytes->string/utf-8 s)
+                  (string-slice _ 9 -2)
+                  (string->symbol _)))
+            (regexp-match* #rx"exports\\[\"([^\"\\]|\\.)*\"\\]" in))))))
+
 (define (generate-stub-module mod)
   (parameterize ([current-source-file mod])
-    (define idents (~> (hash-ref (used-idents) mod (set))
-                       (set-map _ first)
-                       (remove-duplicates _)))
+    (define js-mod-file (build-path (output-directory)
+                                "runtime"
+                                (substring (~a mod ".js") 2)))
+    (define idents (read-js-exports js-mod-file))
     (define ilmod
       (ILModule #f
                 (map ILSimpleProvide idents)
@@ -230,7 +244,7 @@
       (enqueue! pending mod)))
 
   (put-to-pending! (path->complete-path (main-source-file)))
-  
+
   (let loop ()
     (cond
       [(queue-empty? pending)
