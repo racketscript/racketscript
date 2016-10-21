@@ -17,8 +17,10 @@
 
          line
          rectangle
+         square
          circle
          text
+         triangle
 
          place-image
          place-images
@@ -242,6 +244,37 @@
                           radius radius  ;; radius-x, radius-y
                           0 0 (twice #js.Math.PI)))))])
 
+(define-proto Polygon
+  #:init
+  (λ (vertices mode pen-or-color)
+    (define xs (map posn-x vertices))
+    (define ys (map posn-y vertices))
+
+    (define width (- (apply max xs) (apply min xs)))
+    (define height (- (apply max ys) (apply min xs)))
+
+    (set-object! #js*.this
+                 [type       "polygon"]
+                 [vertices   vertices]
+                 [width      width]
+                 [height     height]
+                 [mode       mode]
+                 [pen        pen-or-color]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (define first-point (car #js*.this.vertices))
+     (define rest-points (cdr #js*.this.vertices))
+     (define radius #js*.this.radius)
+     (with-origin ctx [x y]
+       (with-path ctx {#js*.this.mode #js*.this.pen}
+         (#js.ctx.moveTo (posn-x first-point) (posn-y first-point))
+         (let loop ([points rest-points])
+           (unless (null? points)
+             (define pt (car points))
+             (#js.ctx.lineTo (posn-x pt) (posn-y pt))
+             (loop (cdr points)))))))])
+
 (define (empty-scene width height)
   (new (EmptyScene width height #f)))
 
@@ -262,9 +295,20 @@
 (define (rectangle w h m p)
   (new (Rectangle w h m p)))
 
+(define (square s m p)
+  (new (Rectangle s s m p)))
+
 (define (circle r m p)
   (new (Circle r m p)))
 
+(define (triangle side mode color)
+  ;; height = side * sin(45)
+  (define height (* side (/ (sqrt 3) 2)))
+  (new (Polygon (list (posn (- (/ side 2)) (/ height 2))
+                      (posn 0 (- (/ height 2)))
+                      (posn (/ side 2) (/ height 2)))
+                mode
+                color)))
 
 ;;-----------------------------------------------------------------------------
 ;; Combine images
@@ -301,7 +345,7 @@
     ;; Center of image is (0, 0), which is also center of bigger
     ;; image. Calculate the distance of centers of images from this
     ;; final center.
-    ;; 
+    ;;
     ;; When given an xy offset, we start by placing each image on top
     ;; of each other. We line up the images at upper-right corner of
     ;; new canvas to start with and then translate the appropriate
@@ -510,12 +554,12 @@
   (define new-x
     (case x-place
       [("left") (+ (half #js.image.width) x)]
-      [("right") (- (half #js.image.width) x)]
+      [("right") (- x (half #js.image.width))]
       [("center" "middle") x]))
   (define new-y
     (case y-place
       [("top") (+ (half #js.image.height) y)]
-      [("bottom") (- (half #js.image.height) y)]
+      [("bottom") (- y (half #js.image.height))]
       [("center" "middle") y]))
   (posn new-x new-y))
 

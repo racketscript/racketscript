@@ -19,6 +19,7 @@
          cos
          floor
          abs+ceil
+         sqrt
          max
          min
          twice
@@ -77,6 +78,7 @@
 (define abs+ceil  (λ (n) (#js.Math.abs (#js.Math.ceil n))))
 (define max       #js.Math.max)
 (define min       #js.Math.min)
+(define sqrt      #js.Math.sqrt)
 
 (define-syntax-rule (twice e)
   (* e 2))
