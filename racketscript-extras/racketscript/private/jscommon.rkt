@@ -19,7 +19,6 @@
          cos
          floor
          abs+ceil
-         sqrt
          max
          min
          twice
@@ -71,14 +70,7 @@
 (define console   #js*.window.console)
 (define Math      #js*.window.Math)
 (define Path2D    #js*.window.Path2D)
-(define abs       #js*.Math.abs)
-(define sin       #js*.Math.sin)
-(define cos       #js*.Math.cos)
-(define floor     #js*.Math.floor)
-(define abs+ceil  (λ (n) (#js.Math.abs (#js.Math.ceil n))))
-(define max       #js.Math.max)
-(define min       #js.Math.min)
-(define sqrt      #js.Math.sqrt)
+(define abs+ceil  (λ (n) (abs (ceiling n))))
 
 (define-syntax-rule (twice e)
   (* e 2))

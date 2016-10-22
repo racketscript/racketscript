@@ -630,6 +630,9 @@ exports["filter"] = function (fn, lst) {
 
 exports["abs"] = Math.abs;
 exports["floor"] = Math.floor;
+exports["sin"] = Math.sin;
+exports["cos"] = Math.cos;
+exports["tan"] = Math.tan;
 exports["ceiling"] = Math.ceil;
 exports["round"] = Math.round;
 exports["min"] = Math.min;
