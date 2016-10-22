@@ -1,32 +1,24 @@
 #lang racket/base
 
-(provide $ #%js-ffi $/new $/obj $/array $/require $$ $> $/:=)
+(provide #%js-ffi
+         $
+         $/new
+         $/obj
+         $/array
+         $/require
+         $$
+         $>
+         $/:=
+         assoc->object)
 
 (require (for-syntax syntax/parse
                      racket/string
                      racket/base
                      racket/sequence
                      syntax/stx
-                     threading))
-
-;; #%js-ffi is treated specially by compiler to interact with JS or do
-;; operations which are not otherwise possible within Racket.
-
-;;
-;; #%js-ffi : Operation Any ... -> Any
-;; WHERE:
-;; - Operation is one of -
-;;   + 'ref
-;;   + 'index
-;;   + 'var
-;;   + 'assign
-;;   + 'new
-;;   + 'object
-;;   + 'array
-;;   + 'require
-(define #%js-ffi
-  (λ _
-    (error 'racketscript "can't make JS ffi calls in Racket")))
+                     threading
+                     (for-template "private/interop.rkt")
+                     "private/interop.rkt"))
 
 (begin-for-syntax
   (require (only-in "compiler/util-untyped.rkt" js-identifier?))
@@ -119,6 +111,14 @@
     [($> e:expr) #'e]
     [($> e:expr cc0:chaincall cc:chaincall ...)
      #'($> (($ e 'cc0.fieldname) cc0.ρ ...) cc ...)]))
+
+(define (assoc->object pairs)
+  (define result ($/obj))
+  (let loop ([pairs pairs])
+    (unless (null? pairs)
+      (define p (car pairs))
+      ($/:= ($ result (car p)) (car (cdr p)))
+      (loop (cdr pairs)))))
 
 (module+ test
   (require rackunit)
