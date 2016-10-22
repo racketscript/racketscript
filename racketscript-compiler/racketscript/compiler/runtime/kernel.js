@@ -178,8 +178,8 @@ exports["reverse"] = function(lst) {
     return result;
 }
 
-exports["for-each"] = function (lam, lst) {
-    map(lam, lst);
+exports["for-each"] = function (lam, ...lsts) {
+    map.apply(null, [lam].concat(lsts));
     return null;
 }
 
@@ -334,7 +334,7 @@ var reverse = exports["reverse"] = function (lst) {
 }
 
 
-exports["map"] = function map(fn, ...lists) {
+var map = exports["map"] = function map(fn, ...lists) {
     if (lists.length <= 0) {
 	error("map: needs at-least two arguments");
     }

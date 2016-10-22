@@ -15,7 +15,7 @@
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
 
-(: output-directory (Parameter String))
+(: output-directory (Parameter Path-String))
 (define output-directory  (make-parameter "js-build"))
 
 (: current-source-file (Parameter (Option (U Path Symbol))))

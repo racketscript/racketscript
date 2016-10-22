@@ -20,6 +20,7 @@
 	"gulp-concat",
 	"gulp-traceur-cmdline",
 	"gulp-insert",
+        "gulp-replace",
 	"hamt_plus"
     ]
 }
