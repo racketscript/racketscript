@@ -155,8 +155,7 @@ exports["list?"] = function isList(v) {
 }
 
 exports["list*"] = function () {
-    return Core.Pair
-	.argumentsToArray(arguments)
+    return Core.argumentsToArray(arguments)
 	.reverse()
 	.reduce((acc, v) => Core.Pair.make(v, acc));
 }
@@ -450,8 +449,16 @@ exports["string?"] = function (v) {
     return typeof(v) === 'string';
 }
 
-exports["format"] = function() {
-    //TODO
+var format = exports["format"] = function (pattern, ...args) {
+    //TODO: Only ~a is supported
+    var matched = 0;
+    return pattern.replace(/~a/g, function(match) {
+	if (args[matched] == 'undefined') {
+	    throw Core.racketContractError("insufficient pattern arguments");
+        } else {
+            return args[matched++];
+        }
+    });
 }
 
 exports["symbol->string"] = function (v) {
@@ -489,6 +496,13 @@ exports["substring"] = function (str, start, end = false) {
 	end = str.length;
     }
     return str.substring(start, end);
+}
+
+exports["string-split"] = function (str, sep) {
+    if (typeof str !== 'string') {
+	throw Core.racketContractError("expected a string");
+    }
+    return Core.Pair.listFromArray(str.split(sep));
 }
 
 /* --------------------------------------------------------------------------*/
