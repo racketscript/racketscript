@@ -115,10 +115,18 @@
 (define (assoc->object pairs)
   (define result ($/obj))
   (let loop ([pairs pairs])
-    (unless (null? pairs)
-      (define p (car pairs))
-      ($/:= ($ result (car p)) (car (cdr p)))
-      (loop (cdr pairs)))))
+    (cond
+      [(null? pairs) result]
+      [else
+       (define p (car pairs))
+       (define key
+         (let ([k (car p)])
+           (cond
+             [(string? k) k]
+             [(symbol? k) (symbol->string k)]
+             [else (error 'assoc->object "invalid key value")])))
+       ($/:= ($ result key) (car (cdr p)))
+       (loop (cdr pairs))])))
 
 (module+ test
   (require rackunit)
