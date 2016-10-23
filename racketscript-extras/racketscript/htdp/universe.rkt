@@ -45,6 +45,7 @@
      (define ctx     (#js.canvas.getContext "2d"))
 
      (#js.canvas.setAttribute "tabindex" 1)
+     (#js.canvas.setAttribute "style" "outline: none")
 
      (:= #js*.this.-canvas    canvas)
      (:= #js*.this.-context   ctx)
