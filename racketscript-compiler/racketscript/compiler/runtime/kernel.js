@@ -414,6 +414,30 @@ var foldr = exports["foldr"] = function (fn, init, ...lists) {
     return _foldr(fn, init, lists);
 }
 
+var range = exports["range"] = function (start, end, step) {
+    typeCheckOrRaise(Core.Number, start);
+    if (end === undefined) {
+	end = start;
+	start = 0;
+    }
+    if (step === undefined) {
+	step = 1;
+    }
+    typeCheckOrRaise(Core.Number, end);
+    typeCheckOrRaise(Core.Number, step);
+    var result = [];
+    if (step >= 0 && start < end) {
+	for (let last = start; last < end; last += step) {
+	    result.push(last);
+	}
+    } else if (step <= 0 && end < start) {
+	for (let last = start; last > end; last += step) {
+	    result.push(last);
+	}
+    }
+    return Core.Pair.listFromArray(result);
+}
+
 
 /* --------------------------------------------------------------------------*/
 // Strings
