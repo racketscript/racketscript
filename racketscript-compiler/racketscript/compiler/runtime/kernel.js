@@ -478,6 +478,19 @@ exports["string-length"] = function (v) {
 exports["string-downcase"] = (v) => v.toLowerCase(v);
 exports["string-upcase"] = (v) => v.toUpperCase(v);
 
+exports["substring"] = function (str, start, end = false) {
+    if (typeof str !== 'string') {
+	throw Core.racketContractError("expected a string");
+    } else if (start < 0) {
+	throw Core.racketContractError("invalid start index");
+    } else if (end !== false && (end < 0 || end > str.length)) {
+	throw Core.racketContractError("invalid end index");
+    } else if (end === false) {
+	end = str.length;
+    }
+    return str.substring(start, end);
+}
+
 /* --------------------------------------------------------------------------*/
 // Box
 
