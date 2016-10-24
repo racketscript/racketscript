@@ -438,6 +438,21 @@ var range = exports["range"] = function (start, end, step) {
     return Core.Pair.listFromArray(result);
 }
 
+exports["remove"] = function (v, lst, proc = Core.isEqual) {
+    typeCheckOrRaise(Core.Pair, lst);
+
+    let result = Core.Pair.Empty;
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (proc(v, lst.hd)) {
+	    return append(reverse(result), lst.tl);
+	}
+	result = Core.Pair.make(lst.hd, result);
+	lst = lst.tl;
+    }
+
+    return reverse(result);
+}
+
 
 /* --------------------------------------------------------------------------*/
 // Strings
@@ -713,7 +728,7 @@ var append = exports["append"] = function (...lists) {
 
 exports["build-list"] = function (n, proc) {
     let result = Core.Pair.Empty;
-    for (let i = 0; i < n; ++i) { 
+    for (let i = 0; i < n; ++i) {
 	result = Core.Pair.make(proc(i), result);
     }
     return reverse(result);
