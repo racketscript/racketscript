@@ -37,8 +37,7 @@
 
 (define-syntax (define-proto stx)
   (syntax-parse stx
-    [(define-proto name:id (~datum #:init) init:expr
-       (~optional (~seq (~datum #:prototype-fields) field:field ...)))
+    [(define-proto name:id init:expr field:field ...)
      #`(begin
          (define name init)
          #,(when (attribute field)

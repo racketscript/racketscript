@@ -24,7 +24,6 @@
       (start)))
 
 (define-proto BigBang
-  #:init
   (λ (init-world handlers)
     (:= #js*.this.world      init-world)
     (:= #js*.this.interval   (/ 1000 *default-frames-per-second*))
@@ -36,8 +35,6 @@
     (:= #js*.this.-idle       #t)
     (:= #js*.this.-stopped    #t)
     (:= #js*.this.-events     ($/array)))
-
-  #:prototype-fields
   [setup
    (λ ()
      ;; Create canvas DOM element and add to screen

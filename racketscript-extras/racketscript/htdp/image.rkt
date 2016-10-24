@@ -101,8 +101,6 @@
   (:= #js.canvas.width #js.d.width)
   (:= #js.canvas.height #js.d.height)
 
-  (#js.console.log d)
-
   (with-origin ctx [(half #js.d.width) (half #js.d.height)]
     (#js.d.render ctx 0 0)))
 
@@ -124,20 +122,17 @@
 (define (image-width i)   #js.i.width)
 
 (define-proto EmptyScene
-  #:init
   (λ (width height borders?)
     (set-object! #js*.this
                  [type      "empty-scene"]
                  [width     width]
                  [height    height]
                  [borders?  borders?]))
-  #:prototype-fields
   [render (λ (ctx x y)
             ;; TODO: borders?
             (void))])
 
 (define-proto Text
-  #:init
   (λ (text size color face family style weight underline?)
     (set-object! #js*.this
                  [type       "text"]
@@ -150,7 +145,6 @@
                  [weight     weight]
                  [underline  underline?])
     (#js*.this._updateMetrics))
-  #:prototype-fields
   [_updateMetrics
    (λ ()
      (define font (++ #js*.this.weight " "
@@ -178,7 +172,6 @@
        (#js.ctx.fillText #js*.this.text 0 0)))])
 
 (define-proto Line
-  #:init
   (λ (x y pen-or-color)
     (set-object! #js*.this
                  [type    "line"]
@@ -186,7 +179,6 @@
                  [height  (abs+ceil y)]
                  [mode    #f]
                  [pen     pen-or-color]))
-  #:prototype-fields
   [render (λ (ctx x y)
             (with-origin ctx [x y]
               (with-path ctx {"outline" #js*.this.pen}
@@ -207,7 +199,6 @@
                    (#js.ctx.lineTo sx sy)]))))])
 
 (define-proto Rectangle
-  #:init
   (λ (width height mode pen-or-color)
     (set-object! #js*.this
       [type     "rectangle"]
@@ -215,7 +206,6 @@
       [height   height]
       [mode     mode]
       [pen      pen-or-color]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (with-origin ctx [x y]
@@ -227,7 +217,6 @@
            (#js.ctx.rect start-x start-y width height)))))])
 
 (define-proto Circle
-  #:init
   (λ (radius mode pen-or-color)
     (define diameter (twice radius))
     (set-object! #js*.this
@@ -237,7 +226,6 @@
       [height   diameter]
       [mode     mode]
       [pen      pen-or-color]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (define radius #js*.this.radius)
@@ -248,7 +236,6 @@
                           0 0 (twice #js.Math.PI)))))])
 
 (define-proto Polygon
-  #:init
   (λ (vertices mode pen-or-color)
     (define xs (map posn-x vertices))
     (define ys (map posn-y vertices))
@@ -263,7 +250,6 @@
                  [height     height]
                  [mode       mode]
                  [pen        pen-or-color]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (define first-point (car #js*.this.vertices))
@@ -317,7 +303,6 @@
 ;; Combine images
 
 (define-proto Overlay
-  #:init
   (λ (x-place y-place ima imb)
     (define ima-cx (half #js.ima.width))
     (define ima-cy (half #js.ima.height))
@@ -409,7 +394,6 @@
       [aDy        δ-a-y]
       [bDx        δ-b-x]
       [bDy        δ-b-y]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (define ima #js*.this.ima)
@@ -419,7 +403,6 @@
        (#js.ima.render ctx #js*.this.aDx #js*.this.aDy)))])
 
 (define-proto Container
-  #:init
   (λ (childs posns width height)
     (set-object! #js*.this
       [type     "container"]
@@ -427,7 +410,6 @@
       [posns    posns]
       [width    width]
       [height   height]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (define width   #js*.this.width)
@@ -449,7 +431,6 @@
 ;; Bitmap images
 
 (define-proto Bitmap
-  #:init
   (λ (data)
     (define self #js*.this)
     (define image (new #js*.Image))
@@ -458,7 +439,6 @@
                  [image  image]
                  [width  #js.image.width]
                  [height #js.image.height]))
-    #:prototype-fields
     [render
      (λ (ctx x y)
        (define image #js*.this.image)
@@ -469,7 +449,6 @@
 
 
 (define-proto Freeze
-  #:init
   (λ (img)
     (define canvas (#js.document.createElement "canvas"))
     (define ctx (#js.canvas.getContext "2d"))
@@ -486,7 +465,6 @@
                  [width    width]
                  [height   height]
                  [canvas   canvas]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (define width #js*.this.width)
@@ -502,7 +480,6 @@
 ;; Rotate clockwise
 ;; TODO: Rotated bouding box is not actually right.
 (define-proto Rotate
-  #:init
   (λ (image angle)
     (define width #js.image.width)
     (define height #js.image.height)
@@ -537,7 +514,6 @@
                  [height       rotated-height]
                  [degrees      angle]
                  [radians      θ]))
-  #:prototype-fields
   [render
    (λ (ctx x y)1
      (with-origin ctx [x y]
@@ -545,7 +521,6 @@
        (#js*.this.image.render ctx 0 0)))])
 
 (define-proto Scale
-  #:init
   (λ (image x-factor y-factor)
     (set-object! #js*.this
                  [image        image]
@@ -553,7 +528,6 @@
                  [y-factor     y-factor]
                  [width        (abs (floor (* #js.image.width x-factor)))]
                  [height       (abs (floor (* #js.image.height y-factor)))]))
-  #:prototype-fields
   [render
    (λ (ctx x y)
      (with-origin ctx [x y]
