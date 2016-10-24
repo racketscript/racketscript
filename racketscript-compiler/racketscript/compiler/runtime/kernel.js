@@ -319,8 +319,18 @@ exports["hash-set"] = function (h, k, v) {
 // Higher Order Functions
 
 exports["apply"] = function (lam, ...args) {
-    let lst = Core.Pair.listToArray(args.pop()); /* TODO: Check. Must be a list */
-    return lam.apply(null, args.concat(lst));
+    if (args.length === 0) {
+	throw Core.racketContractError("arity mismatch");
+    } else if (args.length === 1) {
+	if (args[0] !== Core.Pair.Empty) {
+	    typeCheckOrRaise(Core.Pair, args[0]);
+	}
+	var finalArgs = Core.Pair.listToArray(args[0]);
+    } else {
+	let lastArgs = Core.Pair.listToArray(args.pop());
+	var finalArgs = args.concat(lastArgs); ; /* TODO: Check. Must be a list */
+    }
+    return lam.apply(null, finalArgs);
 }
 
 var reverse = exports["reverse"] = function (lst) {

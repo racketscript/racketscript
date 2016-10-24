@@ -12,6 +12,9 @@ class Pair extends Primitive {
 	super();
 	this.hd = hd;
 	this.tl = tl;
+	this._listLength = (tl === Empty)
+	    ? 1
+	    : isList(tl) && tl._listLength + 1;
     }
 
     toString() {
@@ -42,6 +45,8 @@ class Pair extends Primitive {
 
     equals(v) {
 	if (!check(v)) {
+	    return false;
+	} else if (this._listLength !== v._listLength) {
 	    return false;
 	}
 
@@ -111,8 +116,7 @@ export function listMap(lst, fn) {
     return listFromArray(result);
 }
 
-
-export function listLength(lst) {
+export function _listLength(lst) {
     var len = 0;
     while (true) {
 	if (isEmpty(lst)) {
@@ -122,4 +126,14 @@ export function listLength(lst) {
 	lst = lst.cdr();
     }
     return len;
+}
+
+export function listLength(lst) {
+    return (lst === Empty)
+	? 0
+	: lst._listLength;
+}
+
+export function isList(v) {
+    return v === Empty || (check(v) && v._listLength !== false);
 }
