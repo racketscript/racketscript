@@ -296,12 +296,12 @@
      (emit (format "new Uint8Array([~a])" byte-vals))]
     [(regexp? v)
      (define s (string-replace (cast (object-name v) String) "/" "\\/"))
-     (write (format "/~a/" s) out)]
+     (emit (format "/~a/" s))]
     [(byte-regexp? v)
      (define s (string-replace (bytes->string/utf-8
                                 (cast (object-name v) Bytes))
                                "/" "\\/"))
-     (write (format "/~a/" s) out)]
+     (emit (format "/~a/" s))]
     [(void? v)
      (emit "null")]
     [else (displayln v) (error "TODO: Check how this thing actually works!")]))
