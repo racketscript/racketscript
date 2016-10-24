@@ -21,6 +21,8 @@
          circle
          text
          triangle
+         frame
+         color-frame
 
          place-image
          place-images
@@ -42,6 +44,7 @@
          flip-horizontal
 
          bitmap/data
+         freeze
 
          print-image
          color
@@ -464,6 +467,35 @@
                             (- (half #js.image.width))
                             (- (half #js.image.height)))))])
 
+
+(define-proto Freeze
+  #:init
+  (λ (img)
+    (define canvas (#js.document.createElement "canvas"))
+    (define ctx (#js.canvas.getContext "2d"))
+
+    (define width #js.img.width)
+    (define height #js.img.height)
+
+    (:= #js.canvas.width   width)
+    (:= #js.canvas.height  height)
+    (with-origin ctx [(half width) (half height)]
+      (#js.img.render ctx 0 0))
+
+    (set-object! #js*.this
+                 [width    width]
+                 [height   height]
+                 [canvas   canvas]))
+  #:prototype-fields
+  [render
+   (λ (ctx x y)
+     (define width #js*.this.width)
+     (define height #js*.this.height)
+     (with-origin ctx [x y]
+       (#js.ctx.drawImage #js*.this.canvas
+                          (- (half width))
+                          (- (half height)))))])
+
 ;;-----------------------------------------------------------------------------
 ;; Transform images
 
@@ -633,3 +665,13 @@
 
 (define (bitmap/data data)
   (new (Bitmap data)))
+
+(define (frame img)
+  (color-frame "black" img))
+
+(define (color-frame color img)
+  (overlay (rectangle (image-width img) (image-height img) 'outline color)
+           img))
+
+(define (freeze img)
+  (new (Freeze img)))
