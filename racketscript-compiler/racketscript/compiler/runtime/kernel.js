@@ -828,3 +828,13 @@ exports["compose1"] = function(...procs) {
 	return result;
     }
 }
+
+// Continuation Marks
+
+exports["current-continuation-marks"] = function () {
+    return Core.Marks.getFrames();
+}
+
+exports["continuation-mark-set->list"] = function (markSet, key) {
+    return Core.Marks.getMarks(markSet, key);
+}

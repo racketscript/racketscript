@@ -38,6 +38,9 @@
   (define current-scope-declarations (make-parameter ((inst set Symbol))))
 
   (: removed-declarations (Parameter (Setof Symbol)))
+  ;; Keep a list of variable declarations whose next runtime statement
+  ;; is returning value held by same variable. We check this set for each
+  ;; ILReturn statement and decide if it should be removed.
   (define removed-declarations (make-parameter ((inst set Symbol))))
 
   (: next-statement (Parameter ILLink))
@@ -80,6 +83,8 @@
        (ILRef (handle-expr expr) fieldname)]
       [(ILIndex expr fieldexpr)
        (ILIndex (handle-expr expr) (handle-expr fieldexpr))]
+      [(ILInstanceOf expr)
+       (ILInstanceOf (handle-expr expr))]
       [(ILNew v)
        (ILNew (cast (handle-expr v) (U Symbol ILRef ILIndex ILApp)))]
       [(ILValue v) e]
@@ -107,17 +112,40 @@
       [(ILIf pred t-branch f-branch)
        (match-define (list t-branch* t-removed)
          (parameterize ([removed-declarations (removed-declarations)])
-           (define s* (handle-stm* t-branch))
-           (list s* (removed-declarations))))
+           (list (handle-stm* t-branch)
+                 (removed-declarations))))
        (match-define (list f-branch* f-removed)
          (parameterize ([removed-declarations (removed-declarations)])
-           (define s* (handle-stm* f-branch))
-           (list s* (removed-declarations))))
+           (list (handle-stm* f-branch)
+                 (removed-declarations))))
        (removed-declarations (set-intersect t-removed f-removed))
        (ILIf (handle-expr pred) t-branch* f-branch*)]
       [(ILWhile condition body)
        (ILWhile (handle-expr condition)
                 (handle-stm* body))]
+      [(ILExnHandler try-block error catch-block finally-block)
+       ;; We ignore TCO for this to make with-continuation-mark behave
+       ;; better. The context gets out of context as we just loop and
+       ;; get out of try/catch/finally block
+       #;(match-define (list try-block* try-removed)
+         (parameterize ([removed-declarations (removed-declarations)])
+           (list (handle-stm* try-block)
+                 (removed-declarations))))
+       #;(match-define (list catch-block* catch-removed)
+         (parameterize ([removed-declarations (removed-declarations)])
+           (list (handle-stm* catch-block)
+                 (removed-declarations))))
+       #;(match-define (list finally-block* finally-removed)
+         (parameterize ([removed-declarations (removed-declarations)])
+           (list (handle-stm* finally-block)
+                 (removed-declarations))))
+       #;(removed-declarations (set-intersect try-removed
+                                            catch-removed
+                                            finally-removed))
+       #;(ILExnHandler try-block* error catch-block* finally-block*)
+       (ILExnHandler try-block error catch-block finally-block)]
+      [(ILThrow expr)
+       (ILThrow (handle-expr expr))]
       [(ILReturn expr)
        (if (and (symbol? expr)
                 (set-member? (removed-declarations) expr))
@@ -216,6 +244,8 @@
       [(ILRef expr fieldname) (ILRef (handle-expr/general expr) fieldname)]
       [(ILIndex expr fieldname) (ILIndex (handle-expr/general expr)
                                          (handle-expr/general fieldname))]
+      [(ILInstanceOf expr)
+       (ILInstanceOf (handle-expr/general expr))]
       [(ILValue v) e]
       [(ILNew v) e]
       [(? symbol? v) e]))
@@ -257,6 +287,13 @@
       [(ILWhile condition body)
        (ILWhile (handle-expr/general condition)
                 (handle-stm* body))]
+      [(ILExnHandler try error catch finally)
+       (ILExnHandler (handle-stm* try)
+                     error
+                     (handle-stm* catch)
+                     (handle-stm* finally))]
+      [(ILThrow expr)
+       (ILThrow (handle-expr/general expr))]
       [(ILReturn expr) (ILReturn (handle-expr expr #t #f))]
       [(ILContinue n) s]
       [(ILLabel n) s]

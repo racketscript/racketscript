@@ -448,7 +448,42 @@
        (register-ident-use! src id))
      (define mod-obj-name (hash-ref (module-object-name-map) src))
      (values '() (ILRef (assert mod-obj-name symbol?) id))]
+    [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
+     ;; Overwrites previous key
+     (absyn-expr->il wcm)]
+    [(WithContinuationMark key value result)
+     (define-values (key-stms key-expr) (absyn-expr->il key))
+     (define-values (value-stms value-expr) (absyn-expr->il value))
+     (define-values (result-stms result-expr) (absyn-expr->il result))
 
+     (define old-context-id (fresh-id '__context))
+     (define new-context-id (fresh-id '__context))
+     (define result-id (fresh-id '__wcm_result))
+     (define exn-id (fresh-id 'exn))
+
+     (define stms
+        (list
+         (ILVarDec old-context-id
+                   (ILApp (name-in-module 'core 'Marks.getFrames) '()))
+         (ILVarDec new-context-id #f)
+         (ILExnHandler
+          #;Try
+          (flatten-statements
+           (list key-stms
+                 value-stms
+                 (ILAssign new-context-id
+                           (ILApp (name-in-module 'core 'Marks.enterFrame) '()))
+                 (ILApp (name-in-module 'core 'Marks.setMark)
+                        (list key-expr value-expr))
+                 result-stms
+                 (ILVarDec result-id result-expr)))
+          #;Catch
+          'exn
+          '()
+          #;Finally
+          (list (ILApp (name-in-module 'core 'Marks.updateFrame)
+                       (list old-context-id new-context-id))))))
+     (values stms result-id)]
     [_ (error (~a "unsupported expr " expr))]))
 
 

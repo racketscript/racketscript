@@ -71,7 +71,11 @@
                               [body     : (Listof Expr)])
 
            (Set!              [id       : Symbol] [expr : Expr])
-           (Box               [expr     : Expr])]
+           (Box               [expr     : Expr])
+
+           (WithContinuationMark   [key    : Expr]
+                                   [value  : Expr]
+                                   [result : Expr])]
 
   [Ident  (LocalIdent         [id : Symbol])
           (ImportedIdent      [id : Symbol] [src-mod : Module-Path])

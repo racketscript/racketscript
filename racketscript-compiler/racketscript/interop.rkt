@@ -9,6 +9,7 @@
          $$
          $>
          $/:=
+         =>$
          assoc->object)
 
 (require (for-syntax syntax/parse
@@ -111,6 +112,10 @@
     [($> e:expr) #'e]
     [($> e:expr cc0:chaincall cc:chaincall ...)
      #'($> (($ e 'cc0.fieldname) cc0.ρ ...) cc ...)]))
+
+(define (=>$ lam-expr)
+  ;; FIXME: We are referring to the core module name directly!
+  (($ ($ '$rjs_core) 'Marks 'wrapWithContext) lam-expr))
 
 (define (assoc->object pairs)
   (define result ($/obj))

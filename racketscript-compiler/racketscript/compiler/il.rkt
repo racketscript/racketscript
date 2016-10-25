@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
 (require racket/match
+         racket/list
          "absyn.rkt"
          "language.rkt")
 
@@ -33,20 +34,21 @@
   [ILLValue        (U Symbol ILRef ILIndex)]
 
   #:forms
-  [ILExpr   (ILLambda    [args      : (Listof Symbol)]
-                         [body      : ILStatement*])
-            (ILBinaryOp  [operator  : Symbol]
-                         [args      : (Listof ILExpr)])
-            (ILApp       [lam       : ILExpr]
-                         [args      : (Listof ILExpr)])
-            (ILArray     [items     : (Listof ILExpr)])
-            (ILObject    [items     : (Listof (Pairof ObjectKey ILExpr))])
-            (ILRef       [expr      : ILExpr]
-                         [fieldname : Symbol])
-            (ILIndex     [expr      : ILExpr]
-                         [fieldexpr : ILExpr])
-            (ILValue     [v         : Any])
-            (ILNew       [v         : (U Symbol ILRef ILIndex ILApp)])
+  [ILExpr   (ILLambda      [args      : (Listof Symbol)]
+                           [body      : ILStatement*])
+            (ILBinaryOp    [operator  : Symbol]
+                           [args      : (Listof ILExpr)])
+            (ILApp         [lam       : ILExpr]
+                           [args      : (Listof ILExpr)])
+            (ILArray       [items     : (Listof ILExpr)])
+            (ILObject      [items     : (Listof (Pairof ObjectKey ILExpr))])
+            (ILRef         [expr      : ILExpr]
+                           [fieldname : Symbol])
+            (ILIndex       [expr      : ILExpr]
+                           [fieldexpr : ILExpr])
+            (ILValue       [v         : Any])
+            (ILNew         [v         : (U Symbol ILRef ILIndex ILApp)])
+            (ILInstanceOf  [expr      : ILExpr])
             Symbol]
 
   [ILStatement   ILExpr
@@ -63,12 +65,16 @@
                                 [body       : ILStatement*])
                  (ILReturn      [expr       : ILExpr])
                  (ILLabel       [name       : Symbol])
-                 (ILContinue    [label      : Symbol])]
+                 (ILContinue    [label      : Symbol])
+                 (ILExnHandler  [try        : ILStatement*]
+                                [error      : Symbol]
+                                [catch      : ILStatement*]
+                                [finally    : ILStatement*])
+                 (ILThrow       [expr       : ILExpr])]
 
   [ILProvide*    (Listof ILProvide)]
   [ILProvide     SimpleProvide
                  RenamedProvide])
-
 
 (: il-apply-optimization (-> ILModule (-> ILStatement* ILStatement*) ILModule))
 (define (il-apply-optimization mod opt)
@@ -85,3 +91,7 @@
 (define (ILObject-bodies o)
   (for/list ([item (ILObject-items o)])
     (cdr item)))
+
+(: flatten-statements (-> (Listof Any) ILStatement*))
+(define (flatten-statements stms)
+  (cast (flatten (cast stms (Listof Any))) ILStatement*))

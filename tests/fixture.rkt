@@ -201,4 +201,5 @@
 
   (run (fixture-path-patterns "basic"
                               "struct"
-                              "hash")))
+                              "hash"
+                              "wcm")))

@@ -177,6 +177,9 @@
      #:with (fresh-form ...) (stx-map (λ (f) (freshen f sym-map)) #'(form ...))
      #'(#%plain-module-begin fresh-form ...)]
     [(#%provide p ...) e]
+    [(with-continuation-mark key value result)
+     #`(with-continuation-mark #,(freshen #'key sym-map) #,(freshen #'value sym-map)
+         #,(freshen #'result sym-map))]
     [(e ...)
      #:with fresh-es (stx-map (λ (e) (freshen e sym-map)) #'(e ...))
      #'fresh-es]

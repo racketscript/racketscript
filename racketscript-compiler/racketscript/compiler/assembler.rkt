@@ -50,7 +50,7 @@
         (and (ILValue? e)
              (number? (ILValue-v e))
              (byte? (ILValue-v e)))))
-  
+
   (match expr
     [(ILLambda args body)
      (emit "function(")
@@ -109,6 +109,10 @@
                 (unless last?
                   (emit ",")))
      (emit "}")]
+    [(ILInstanceOf expr)
+     (emit "instanceof(")
+     (assemble-expr expr out)
+     (emit ")")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
@@ -163,6 +167,22 @@
      (when lab
        (emit " ~a" (normalize-symbol lab)))
      (emit ";")]
+    [(ILThrow expr)
+     (emit "throw ")
+     (assemble-expr expr out)
+     (emit ";")]
+    [(ILExnHandler try error catch finally)
+     (emit "try {")
+     (assemble-statement* try out)
+     (emit "}")
+     (when (cons? catch)
+       (emit (~a "catch (" (normalize-symbol error) ") {"))
+       (assemble-statement* catch out)
+       (emit "}"))
+     (when (cons? finally)
+       (emit (~a "finally {"))
+       (assemble-statement* finally out)
+       (emit "}"))]
     [(ILLabel name)
      (emit "~a:" (normalize-symbol name))]
     [(ILValue v) #:when (void? v) (void)] ;; ignore this NOP case

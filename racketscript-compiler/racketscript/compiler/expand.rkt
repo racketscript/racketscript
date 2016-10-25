@@ -266,7 +266,10 @@
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
-    [(with-continuation-mark p ...) (Quote #f)]
+    [(with-continuation-mark key value result)
+     (WithContinuationMark (to-absyn #'key)
+                           (to-absyn #'value)
+                           (to-absyn #'result))]
     [(begin-for-syntax b ...) #f]
     [(_ ...)
      (map to-absyn (syntax->list v))]
