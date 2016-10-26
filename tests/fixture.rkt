@@ -114,8 +114,6 @@
 ;; If tc-search-patterns is simply a path to directory, run all test
 ;; cases in that directory otherwise use glob pattern
 (define (run-tests tc-search-patterns)
-  (setup)
-
   (define testcases
     (append-map (λ (pattern)
                   (if (string-suffix? pattern ".rkt")
@@ -152,8 +150,9 @@
 
 ;; Runs tests with each kind of option
 (define (run tc-search-patterns)
-  (displayln "-> RacketScript Fixtures <-\n")
+  (setup)
 
+  (displayln "-> RacketScript Fixtures Runner <-\n")
   (parameterize ([enabled-optimizations (set)])
     (displayln "---------------------------------")
     (displayln "::: Optimizations on ::: none :::")

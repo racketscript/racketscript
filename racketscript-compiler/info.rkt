@@ -16,3 +16,5 @@
 
 (define pkg-authors '(vishesh))
 (define pkg-desc "Racket to JavaScript compiler")
+
+(define test-omit-paths '("racketscript/browser.rkt"))

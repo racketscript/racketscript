@@ -21,6 +21,7 @@
 	"gulp-traceur-cmdline",
 	"gulp-insert",
         "gulp-replace",
-	"hamt_plus"
+	"hamt_plus",
+	"traceur"
     ]
 }
