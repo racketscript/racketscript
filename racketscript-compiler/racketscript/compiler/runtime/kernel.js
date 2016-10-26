@@ -483,7 +483,7 @@ exports["string-append"] = function (...args) {
 }
 
 exports["string"] = function () {
-    var resultn = "";
+    var result = "";
     for (var v in arguments) {
 	result += arguments[v];
     }
@@ -557,17 +557,33 @@ exports["string-split"] = function (str, sep) {
 /* --------------------------------------------------------------------------*/
 // Box
 
-exports["box"] = function(v) {
+exports["box"] = function (v) {
     return Core.Box.make(v);
 }
 
-exports["unbox"] = function(v) {
+exports["unbox"] = function (v) {
     return v.get();
 }
 
-exports["set-box!"] = function(b, v) {
+exports["set-box!"] = function (b, v) {
     b.set(v);
 }
+
+/* --------------------------------------------------------------------------*/
+// Properties
+
+const propertyEvt = Core.Struct.makeStructTypeProperty({
+    name: "prop:evt"
+});
+
+exports["prop:evt"] = propertyEvt.getAt(0);
+exports["evt?"] = propertyEvt.getAt(1);
+
+/* --------------------------------------------------------------------------*/
+// Ports
+
+exports["current-output-port"] = () => false;
+exports["output-port?"] = () => false;
 
 /* --------------------------------------------------------------------------*/
 // Printing to Console

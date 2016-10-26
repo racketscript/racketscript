@@ -154,5 +154,5 @@ Look in the [Makefile](Makefile) for more targets.
 	
 ## Related Work
 
-- [Whalesong](https://github.com/dyoo/whalesong/)
+- [Whalesong](https://github.com/soegaard/whalesong)
 - [Urlang](https://github.com/soegaard/urlang)
