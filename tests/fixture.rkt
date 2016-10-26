@@ -6,7 +6,8 @@
          racket/runtime-path
          racketscript/compiler/main
          racketscript/compiler/global
-         racketscript/compiler/moddeps)
+         racketscript/compiler/moddeps
+         racketscript/compiler/il-analyze)
 
 (define-runtime-path tests-root-dir ".")
 
@@ -149,6 +150,22 @@
     (for ([t failed-tests])
       (displayln (format "  ✘ ~a" t)))))
 
+;; Runs tests with each kind of option
+(define (run tc-search-patterns)
+  (displayln "-> RacketScript Fixtures <-\n")
+
+  (parameterize ([enabled-optimizations (set)])
+    (displayln "---------------------------------")
+    (displayln "::: Optimizations on ::: none :::")
+    (displayln "---------------------------------")
+    (run-tests tc-search-patterns))
+
+  (displayln "")
+  (parameterize ([enabled-optimizations (set self-tail->loop)])
+    (displayln "--------------------------------")
+    (displayln "::: Optimizations on ::: TCO :::")
+    (displayln "--------------------------------")
+    (run-tests tc-search-patterns)))
 
 (skip-npm-install #f) ;; For setup we need to install packages
 (module+ main
@@ -171,9 +188,9 @@
      #:args (pattern)
      pattern))
 
-  (run-tests (list tc-search-pattern)))
+  (run (list tc-search-pattern)))
 
 (module+ test
-  (run-tests (list "basic/*.rkt"
-                   "struct/*.rkt"
-                   "hash/*.rkt")))
+  (run (list "basic/*.rkt"
+             "struct/*.rkt"
+             "hash/*.rkt")))
