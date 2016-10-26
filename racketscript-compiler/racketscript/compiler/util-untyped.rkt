@@ -54,12 +54,14 @@
   ;; by link-fpath and find the entry with module mod-path
   (define (find-link link-fpath)
     (define links-dir (path-only link-fpath))
-    (let loop ([links  (read (open-input-file link-fpath))])
-      (match links
-        ['() #f]
-        [(cons hd tl) (if (match-link? links-dir hd)
-                          (link->result link-fpath hd)
-                          (loop tl))])))
+    (call-with-input-file link-fpath
+      (λ (p-links-in)
+        (let loop ([links (read p-links-in)])
+          (match links
+            ['() #f]
+            [(cons hd tl) (if (match-link? links-dir hd)
+                              (link->result link-fpath hd)
+                              (loop tl))])))))
 
   ;; Iterate through each links.rktd file, to find
   ;; the out
