@@ -53,6 +53,8 @@
   [ILStatement   ILExpr
                  (ILVarDec      [id         : Symbol]
                                 [expr       : (Option ILExpr)])
+                 (ILLetDec      [id         : Symbol]
+                                [expr       : (Option ILExpr)])
                  (ILIf          [pred       : ILExpr]
                                 [t-branch   : ILStatement*]
                                 [f-branch   : ILStatement*])

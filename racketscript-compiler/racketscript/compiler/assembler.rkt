@@ -128,6 +128,12 @@
        (emit " = ")
        (assemble-expr expr out))
      (emit ";")]
+    [(ILLetDec id expr)
+     (emit (~a "let " (normalize-symbol id)))
+     (when expr
+       (emit " = ")
+       (assemble-expr expr out))
+     (emit ";")]
     [(ILReturn expr)
      (emit "return ")
      (assemble-expr expr out)
