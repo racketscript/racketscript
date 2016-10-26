@@ -27,11 +27,11 @@ at [RacketScript Playground](http://rapture.twistedplane.com:8080/).
 Following system packages are required -
 
 - Racket 6.4 or higher
-- NodeJS and NPM
+- NodeJS (4.0 or higher) and NPM
 - Make
 
 NPM and Racket package installation steps could be done by directly by
-executing `make setup` or `raco setup` at RacketScript root
+executing `make setup` or `raco pkg install` at RacketScript root
 directory.
 
 RacketScript will generate Gulpfiles to compile ES6 to ES5 using
@@ -59,67 +59,60 @@ required if are not making any changes to compiler.
 
 ## Basic Usage
 
-    $ racks -h
+RacketScript compiler is named `racks`. 
 
-    racketscript [ <option> ... ] [<filename>]
-      Compile Racket to JavaScript
-     where <option> is one of
-      -d <dir>, --build-dir <dir> : Output directory
-      -n, --skip-npm-install : Skip NPM install phase
-      -g, --skip-gulp-build : Skip Gulp build phase
-      -b, --js-beautify : Beautify JS output
-      --dump-debug-info : Dumps some debug information in output directory
-      --stdin : Reads module from standard input, with file name argument being pseudo name
-      --enable-self-tail : Translate self tail calls to loops
-    * -t <target>, --target <target> : ES6 to ES5 compiler [traceur|babel]
-    / --expand : Fully expand Racket source
-    | --ast : Expand and print AST
-    | --rename : Expand and print AST after α-renaming
-    | --il : Compile to intermediate langauge (IL)
-    | --js : Compile and print JS module to stdout
-    \ --complete : Compile module and its dependencies to JS
-      --help, -h : Show this help
-      -- : Do not treat any remaining argument as a switch (at this level)
-     * Asterisks indicate options allowed multiple times.
-     /|\ Brackets indicate mutually exclusive options.
-     Multiple single-letter switches can be combined after one `-'; for
-      example: `-h-' is the same as `-h --'
+    $ racks -h # show help
+	
+To compile a Racket source file:
 
-Default output directory is named `js-build`. To compile a Racket file
-named `foobar.rkt`, run -
+    # Installs all NPM dependencies and compile file.rkt
+	$ racks /path/to/file.rkt
+	
+The above command will create a output build directory named
+`js-build`, copy RacketScript runtime, copy other support files,
+install NPM dependencies, compile `file.rkt` and its dependencies.
 
-        # Installs all NPM dependencies and compile foobar.rkt
-        $ racks foobar.rkt
-
-		# To avoid re-installing NPM packages use `-n`
-		$ racks -n foobar.rkt
-
-        # Override default output directory
-        $ racks -d /path/to/output/dir foobar.rkt
-
-		# To beautify assembled modules use `-b`
-		$ racks -b foobar.rkt
-
-The compiled ES6 modules typically goto one of following three folders:
+The compiled ES6 modules typically goto one of following three
+folders:
 
 - "modules": The normal Racket files.
 - "collects": Racket collects source files.
 - "links": Other third party packages.
+- "dist": Contains sources compiled to ES6 or bundled JavaScript ready
+  for distribution.
 
-If you use _skip-gulp-build_ option, run `gulp` in output directory to
-produce final output. To speed up later builds, you may want to skip
-NPM install phase by using _skip-npm-install_ flag.
+Here are few other examples that would come in handy:
+
+	# To skip `npm install` step. Useful when building
+	# for second time.
+	$ racks -n /path/to/source.rkt
+	
+	# To beautify assembled modules use `-b`. Make sure
+    # `js-beautify` is installed from NPM or your
+	# package manager.
+	$ racks -b /path/to/source.rkt
+
+    # Override default output directory
+    $ racks -d /path/to/output/dir /path/to/source.rkt
+	
+	# Print JavaScript output to stdout
+	$ racks --js --js-beautify /path/to/source.rkt
+		
+By default tail call optimization is turned off. To enable translation
+of self recursive tail calls to loop, pass `--enable-self-tail` flag.
+
+	$ racks --enable-self-tail /path/to/source.rkt
 
 ### Traceur
 
-By default RacketScript will use Traceur and produce `dist/compiled.js`. To
-execute inside NodeJS, execute `bootstrap.js` in output directory. For
-running in browser, include the Traceur runtime along with
-`dist/compiled.js`.
+By default RacketScript will use Traceur and produce
+`dist/compiled.js`. To execute inside NodeJS, execute `bootstrap.js`
+in output directory. For running in browser, include the Traceur
+runtime along with `dist/compiled.js`.
 
 A more robust (and less portable) way, is to run the ES6 modules
 generated in `modules` directly from Traceur. Goto `modules` output
-directory and execute `$ traceur foobar.js`.
+directory and execute `$ traceur /path/to/source.js`.
 
 ### Babel
 
@@ -127,12 +120,39 @@ RacketScript could also use `Babel`. It will compile each assembled ES6
 module to ES5, and put it in `dist` directory, persevering original
 directory structure. Replace above command with following -
 
-        $ racks --es6 babel foobar.rkt
+    # Use `--target` or `-t` flag.
+    $ racks --target babel /path/to/source.rkt
 
-This will compile each ES6 module generated by RacketScript, and put in
-dist with same directory structure.
+This will compile each ES6 module generated by RacketScript, and put
+in dist with same directory structure.
 
+## Running Tests and Coverage
+
+	# Install build and test dependencies:
+	$ make setup-extra
+	
+	# Run unit tests
+	$ make unit-tests
+	
+	# Run integration tests
+	$ make integration-test
+	
+	# Run all tests
+	$ make test
+	
+To test Racket output against JavaScript output of specific Racket
+source file(s), use [fixtures.rkt](test/fixtures.rkt). Run
+`./fixtures.rkt -h` inside `$RACKETSCRIPT/tests` directory to see
+basic usage.
+
+For running coverage:
+
+	$ make coverage # Consider coverage of all tests
+	$ make coverage-unit-test # Just consider unit-test coverage
+	
+Look in the [Makefile](Makefile) for more targets.
+	
 ## Related Work
 
-- [Whalesong](https://github.com/dyoo/whalesong/tree/master/whalesong)
+- [Whalesong](https://github.com/dyoo/whalesong/)
 - [Urlang](https://github.com/soegaard/urlang)

@@ -17,7 +17,7 @@ build:
 	@echo "     RACKETSCRIPT BUILD      "
 	@echo "++++++++++++++++++++++++++++++"
 	@echo
-	@echo "NOTE: Make sure nodejs, npm, traceur and gulp are installed and"
+	@echo "NOTE: Make sure NodeJS and NPM are installed and"
 	@echo "      exists in PATH. See \`make setup\`"
 	@echo
 	raco make -v racketscript-compiler/racketscript/compiler/main.rkt
