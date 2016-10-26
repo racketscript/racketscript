@@ -347,7 +347,9 @@
   (read-syntax (object-name input) input))
 
 (define (open-read-module in-path)
-  (read-module (open-input-file in-path)))
+  (call-with-input-file in-path
+    (λ (in)
+      (read-module in))))
 
 (define (quick-expand in-path)
   (log-rjs-info "[expand] ~a" in-path)
