@@ -3,6 +3,7 @@
 (require racket/match
          racket/list
          racket/set
+         racket/bool
          "language.rkt"
          "util.rkt"
          "il.rkt")
@@ -157,14 +158,17 @@
 ;; Translate self tail calls to loop. The given `il`
 ;; is assumed to have gone through return lifting.
 (define (x-self-tail->loop il)
-  (: wrap-with-while? (Parameter Boolean))
-  (define wrap-with-while? (make-parameter #f))
-
   (: lambda-name (Parameter (Option Symbol)))
   (define lambda-name (make-parameter #f))
 
   (: lambda-formals (Parameter (Listof Symbol)))
   (define lambda-formals (make-parameter '()))
+
+  ;; If we apply TCO, we will change the original lambda formal names,
+  ;; and inside the loop, use `let` statment to bind the original
+  ;; formal names with values, making closures act sanely
+  (: lambda-updated-formals (Parameter (Option (Listof Symbol))))
+  (define lambda-updated-formals (make-parameter #f))
 
   (: lambda-start-label (Parameter (Option Symbol)))
   (define lambda-start-label (make-parameter #f))
@@ -179,14 +183,26 @@
        (parameterize ([lambda-name vardec]
                       [lambda-formals args]
                       [lambda-start-label (fresh-id 'lambda-start)]
-                      [wrap-with-while? #f])
+                      [lambda-updated-formals #f])
          (define body* : ILStatement*
-           (let ([s* (handle-stm* body)])
-             (if (wrap-with-while?)
-                 (list (ILLabel (cast (lambda-start-label) Symbol))
-                       (ILWhile (ILValue #t) s*))
-                 s*)))
-         (ILLambda args body*))]
+           (let ([s* (handle-stm* body)]
+                 [new-frmls (lambda-updated-formals)])
+             (cond
+               [(false? new-frmls) s*]
+               [else
+                (define reset-formals : (Listof ILLetDec)
+                  (for/list ([orig-f (lambda-formals)]
+                             [new-f new-frmls])
+                    ;; Let is used as, it has block level scope, as
+                    ;; opposed to var which has function level scope,
+                    ;; which breaks the closure in case any of the
+                    ;; closure variable is mutated.
+                    (ILLetDec orig-f new-f)))
+                (list (ILLabel (cast (lambda-start-label) Symbol))
+                      (ILWhile (ILValue #t)
+                               (append reset-formals s*)))])))
+         (ILLambda (or (lambda-updated-formals) args)
+                   body*))]
       [(ILApp lam args)
        (ILApp lam (map handle-expr/general args))]
       [(ILBinaryOp oper args)
@@ -213,17 +229,16 @@
                (equal? (length (lambda-formals))
                        (length args)))
           ;; Its self recursive call
-          (wrap-with-while? #t)
-          (define compute-args : (Listof ILVarDec)
-            (for/list  ([f (lambda-formals)]
+          (define new-frmls : (Listof Symbol)
+            (map (λ (f)
+                   (fresh-id (string->symbol (format "_~a" f))))
+                 (lambda-formals)))
+          (lambda-updated-formals new-frmls)
+          (define compute-args : (Listof ILAssign)
+            (for/list  ([frml new-frmls]
                         [a args])
-              (ILVarDec (fresh-id f) (handle-expr/general a))))
-          (define reset-args : (Listof ILAssign)
-            (for/list ([f : Symbol (lambda-formals)]
-                       [ca compute-args])
-              (ILAssign f (ILVarDec-id ca) )))
+              (ILAssign frml (handle-expr/general a))))
           (append compute-args
-                  reset-args
                   (list (ILContinue
                          (cast (lambda-start-label) Symbol))))]
          [else (ILReturn (ILApp lam (map handle-expr/general args)))])]
@@ -363,19 +378,19 @@
     (ILVarDec
      'fact
      (ILLambda
-      '(n a)
+      '(_n2 _a3)
       (list
        (ILLabel 'lambda-start1)
        (ILWhile
         (ILValue #t)
         (list
+         (ILLetDec 'n '_n2)
+         (ILLetDec 'a '_a3)
          (ILIf (ILApp 'zero? '(n))
                (list (ILReturn 'a))
                (list
-                (ILVarDec 'n2 (ILApp 'sub1 '(n)))
-                (ILVarDec 'a3 (ILBinaryOp '* '(n a)))
-                (ILAssign 'n 'n2)
-                (ILAssign 'a 'a3)
+                (ILAssign '_n2 (ILApp 'sub1 '(n)))
+                (ILAssign '_a3 (ILBinaryOp '* '(n a)))
                 (ILContinue 'lambda-start1)))))))))
    "Translate self tail recursive factorial to loops")
 
