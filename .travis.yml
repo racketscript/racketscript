@@ -1,6 +1,7 @@
 language: node_js
 node_js:
   - "5"
+  #- "4"
   #- "6"
   #- "node"
 
@@ -26,7 +27,7 @@ env:
     # versions.
     #
     # The RELEASE snapshot is only available during the release process.
-    - RACKET_VERSION=6.6
+    - RACKET_VERSION=6.7
     - RACKET_VERSION=6.4
     #- RACKET_VERSION=HEAD
     #- RACKET_VERSION=RELEASE
