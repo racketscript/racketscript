@@ -313,6 +313,8 @@
       (input-from-stdin? #t)]
      ["--enable-self-tail" "Translate self tail calls to loops"
       (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
+     ["--enable-flatten-if" "Flatten nested if-else statements"
+      (enabled-optimizations (set-add (enabled-optimizations) flatten-if-else))]
      #:multi
      [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser]"
       (if (member target *targets*)

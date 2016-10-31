@@ -9,7 +9,8 @@
          (prefix-out IL
                      (combine-out
                       (struct-out SimpleProvide)
-                      (struct-out RenamedProvide))))
+                      (struct-out RenamedProvide)
+                      (struct-out IfClause))))
 
 (define-type        ILProgram ILStatement*)
 (define-predicate   ILProgram? ILProgram)
@@ -25,6 +26,9 @@
                    [name        : Symbol]
                    [import-mode : (U 'default '*)]) #:transparent)
 (define-type ILRequire* (Listof ILRequire))
+
+(struct IfClause ([pred : (Option ILExpr)]
+                  [body : ILStatement*]) #:transparent)
 
 
 (define-language IL
@@ -48,7 +52,7 @@
             (ILIndex       [expr      : ILExpr]
                            [fieldexpr : ILExpr])
             (ILValue       [v         : Any])
-            (ILNew         [v         : (U Symbol ILRef ILIndex ILApp)])
+            (ILNew         [v         : (U ILLValue ILApp)])
             (ILInstanceOf  [expr      : ILExpr])
             Symbol]
 
@@ -60,6 +64,7 @@
                  (ILIf          [pred       : ILExpr]
                                 [t-branch   : ILStatement*]
                                 [f-branch   : ILStatement*])
+                 (ILIf*         [clauses    : (Listof IfClause)])
                  (ILAssign      [lvalue     : ILLValue]
                                 [rvalue     : ILExpr])
                  (ILWhile       [condition  : ILExpr]

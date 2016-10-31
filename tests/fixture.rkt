@@ -184,6 +184,13 @@
     (displayln "--------------------------------")
     (displayln "::: Optimizations on ::: TCO :::")
     (displayln "--------------------------------")
+    (run-tests tc-search-patterns))
+
+  (displayln "")
+  (parameterize ([enabled-optimizations (set flatten-if-else)])
+    (displayln "--------------------------------------------")
+    (displayln "::: Optimizations on ::: Flatten If-Else :::")
+    (displayln "-------------------------------------------")
     (run-tests tc-search-patterns)))
 
 (skip-npm-install #f) ;; For setup we need to install packages

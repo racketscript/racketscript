@@ -41,6 +41,7 @@
          length=?
          string-slice
          log
+         converge
          ++)
 
 (: fresh-id-counter (Parameter Nonnegative-Integer))
@@ -296,6 +297,14 @@
        (if (string-prefix? (~a mod-path) (~a ch))
            ch
            (loop ct))])))
+
+(: converge (∀ [X] (-> (-> X X) X X)))
+(define (converge fn init-val)
+  (let loop ([val init-val])
+    (let ([new-val (fn val)])
+      (if (equal? new-val val)
+          new-val
+          (loop new-val)))))
 
 ;;; ---------------------------------------------------------------------------
 

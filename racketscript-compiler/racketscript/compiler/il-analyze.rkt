@@ -9,6 +9,7 @@
          "il.rkt")
 
 (provide self-tail->loop
+         flatten-if-else
          free-identifiers
          free+defined
          has-application?)
@@ -423,6 +424,95 @@
   (check-true (has-application? (ILBinaryOp '+ (list (ILApp 'add1 (list (ILValue 10)))
                                                      (ILValue 10))))))
 
+(: flatten-if-else/expr (-> ILExpr ILExpr))
+(define flatten-if-else/expr
+  (match-lambda
+    [(ILLambda args body) (ILLambda args (flatten-if-else/stm* body))]
+    [(ILBinaryOp oper args) (ILBinaryOp oper (map flatten-if-else/expr args))]
+    [(ILApp lam args) (ILApp (flatten-if-else/expr lam)
+                             (map flatten-if-else/expr args))]
+    [(ILArray items) (ILArray (map flatten-if-else/expr items))]
+    [(ILObject items) (ILObject (map (λ ([item : ObjectPair])
+                                       (cons (car item)
+                                             (flatten-if-else/expr (cdr item))))
+                                     items))]
+    [(ILRef expr* fieldname) (ILRef (flatten-if-else/expr expr*) fieldname)]
+    [(ILIndex expr* fieldexpr) (ILIndex (flatten-if-else/expr expr*)
+                                        (flatten-if-else/expr fieldexpr))]
+    [(ILNew expr*) (ILNew (cast (flatten-if-else/expr expr*)
+                                (U ILLValue ILApp)))]
+    [(ILInstanceOf expr*) (ILInstanceOf (flatten-if-else/expr expr*))]
+    [(? ILValue? v) v]
+    [(? symbol? s) s]))
+
+(: flatten-if-else/stm (-> ILStatement ILStatement))
+(define flatten-if-else/stm
+  (match-lambda
+    [(ILIf pred t-branch (list (ILIf pred* t-branch* f-branch*)))
+     (flatten-if-else/stm
+      (ILIf* (list (ILIfClause pred t-branch)
+                   (ILIfClause pred* t-branch*)
+                   (ILIfClause #f f-branch*))))]
+    [(ILIf pred t-branch (list (ILIf* clauses)))
+     (flatten-if-else/stm
+      (ILIf* (cons (ILIfClause pred t-branch) clauses)))]
+    [(ILIf pred t-branch f-branch) (ILIf (flatten-if-else/expr pred)
+                                         (flatten-if-else/stm* t-branch)
+                                         (flatten-if-else/stm* f-branch))]
+    [(ILIf* (list clauses ... (ILIfClause #f (list (ILIf pred* t-branch* f-branch*)))))
+     (flatten-if-else/stm
+      (ILIf* (append (cast clauses (Listof IfClause))
+                     (list
+                      (ILIfClause pred* t-branch*)
+                      (ILIfClause #f f-branch*)))))]
+    [(ILIf* (list clauses ...))
+     (ILIf* (map (λ ([c : IfClause])
+                   (let* ([pred (ILIfClause-pred c)]
+                          [body (ILIfClause-body c)]
+                          [pred* (and pred (flatten-if-else/expr pred))]
+                          [body* (flatten-if-else/stm* body)])
+                     (ILIfClause pred* body*)))
+                 clauses))]
+
+    ;; Traverse through statements
+
+    [(ILVarDec id expr) (ILVarDec id (and expr (flatten-if-else/expr expr)))]
+    [(ILLetDec id expr) (ILLetDec id (and expr (flatten-if-else/expr expr)))]
+    [(ILAssign id expr) (ILAssign id (flatten-if-else/expr expr))]
+    [(ILWhile pred body) (ILWhile (flatten-if-else/expr pred) (flatten-if-else/stm* body))]
+    [(ILReturn expr) (ILReturn (flatten-if-else/expr expr))]
+    [(ILExnHandler try error catch finally) (ILExnHandler (flatten-if-else/stm* try)
+                                                          error
+                                                          (flatten-if-else/stm* catch)
+                                                          (flatten-if-else/stm* finally))]
+    [(ILThrow expr) (ILThrow (flatten-if-else/expr expr))]
+    [(? ILLabel? stm) stm]
+    [(? ILContinue? stm) stm]
+    [(? ILExpr? stm) (flatten-if-else/expr stm)]))
+
+(: flatten-if-else/stm* (-> ILStatement* ILStatement*))
+(define (flatten-if-else/stm* stms)
+  (map flatten-if-else/stm stms))
+
+(: flatten-if-else (-> ILStatement* ILStatement*))
+(define (flatten-if-else stms)
+  (converge flatten-if-else/stm* stms))
+
+(module+ test
+  (check-equal? (flatten-if-else
+                 (list (ILIf (ILValue 'pred1)
+                             (list 't-branch-1)
+                             (list
+                              (ILIf (ILValue 'pred2)
+                                    (list 't-branch-2)
+                                    (list (ILIf (ILValue 'pred3)
+                                                (list 't-branch-3)
+                                                (list 'done))))))))
+                (list (ILIf* (list
+                              (ILIfClause (ILValue 'pred1) (list 't-branch-1))
+                              (ILIfClause (ILValue 'pred2) (list 't-branch-2))
+                              (ILIfClause (ILValue 'pred3) (list 't-branch-3))
+                              (ILIfClause #f (list 'done)))))))
 
 (module+ test
   (require typed/rackunit)

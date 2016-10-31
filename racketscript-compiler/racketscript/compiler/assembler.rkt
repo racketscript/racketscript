@@ -150,6 +150,22 @@
      (emit "} else {")
      (assemble-statement* f-branch out)
      (emit "}")]
+    [(ILIf* clauses)
+     (let loop ([clauses clauses])
+       (match clauses
+         [(cons (ILIfClause #f body) ctl)
+          (emit "{")
+          (assemble-statement* body out)
+          (emit "}")]
+         [(cons (ILIfClause (? ILExpr? pred) body) ctl)
+          (emit "if (")
+          (assemble-expr pred out)
+          (emit ") {")
+          (assemble-statement* body out)
+          (emit "}")
+          (when (cons? ctl)
+            (emit " else ")
+            (loop ctl))]))]
     [(ILWhile condition body)
      (emit "while (")
      (assemble-expr condition out)
@@ -366,7 +382,7 @@
 
   ;; Numbers
   (check-value 12 "12")
-  
+
   ;; Strings
   (check-value "Hello World!" "\"Hello World!\"")
   (check-value 'hello (format "~a(\"hello\")" (name-in-module 'core 'Symbol.make)))
@@ -469,10 +485,20 @@
   (check-stm (ILIf (ILBinaryOp '< '(a b)) (list (ILValue #t)) (list (ILValue #f)))
              "if (a<b) {true;} else {false;}")
 
+  (check-stm (ILIf* (list
+                     (ILIfClause (ILValue 1) (list 't-branch-1))
+                     (ILIfClause (ILValue 2) (list 't-branch-2))
+                     (ILIfClause (ILValue 3) (list 't-branch-3))
+                     (ILIfClause #f (list 'done))))
+             "if (1) {t_branch_1;} else if (2) {t_branch_2;} else if (3) {t_branch_3;} else {done;}")
+  (check-stm (ILIf* (list
+                     (ILIfClause (ILValue 1) (list 't-branch-1))))
+             "if (1) {t_branch_1;}")
+
   ;;; Requires ----------------------------------------------------------------
   ;; TODO
 
   ;;; Provides ----------------------------------------------------------------
   ;; TODO
-  
+
   ]
