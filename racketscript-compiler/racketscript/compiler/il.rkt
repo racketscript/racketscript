@@ -8,23 +8,22 @@
          (prefix-out IL
                      (combine-out
                       (struct-out SimpleProvide)
-                      (struct-out RenamedProvide)
-                      Provide
-                      Provide?)))
+                      (struct-out RenamedProvide))))
 
 (define-type        ILProgram ILStatement*)
 (define-predicate   ILProgram? ILProgram)
 (define-type-alias  ILModuleName (Option Path-String))
 
-(struct ILModule ([id   :  ILModuleName]
-                  [provides : (Listof Provide)]
-                  [requires : (Listof ILRequire)]
-                  [body : ILStatement*])
+(struct ILModule ([id       : ILModuleName]
+                  [provides : ILProvide*]
+                  [requires : ILRequire*]
+                  [body     : ILStatement*])
   #:transparent)
 
-(struct ILRequire ([mod : ILModuleName]
-                   [name : Symbol]
+(struct ILRequire ([mod         : ILModuleName]
+                   [name        : Symbol]
                    [import-mode : (U 'default '*)]) #:transparent)
+(define-type ILRequire* (Listof ILRequire))
 
 
 (define-language IL
@@ -64,7 +63,11 @@
                                 [body       : ILStatement*])
                  (ILReturn      [expr       : ILExpr])
                  (ILLabel       [name       : Symbol])
-                 (ILContinue    [label      : Symbol])])
+                 (ILContinue    [label      : Symbol])]
+
+  [ILProvide*    (Listof ILProvide)]
+  [ILProvide     SimpleProvide
+                 RenamedProvide])
 
 
 (: il-apply-optimization (-> ILModule (-> ILStatement* ILStatement*) ILModule))

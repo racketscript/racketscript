@@ -186,7 +186,7 @@
           #:exists 'replace
           cb))))
 
-(: assemble-requires* (-> (Listof ILRequire) Output-Port Void))
+(: assemble-requires* (-> ILRequire* Output-Port Void))
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
   (define core-import-path
@@ -211,7 +211,7 @@
 
     (emit import-string)))
 
-(: assemble-provides* (-> (Listof ILProvide) Output-Port Void))
+(: assemble-provides* (-> ILProvide* Output-Port Void))
 (define (assemble-provides* p* out)
   (define emit (curry fprintf out))
 

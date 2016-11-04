@@ -4,12 +4,6 @@
 
 (provide (all-defined-out))
 
-(define-type Provide (U SimpleProvide RenamedProvide))
-(define-predicate Provide? Provide)
-(struct SimpleProvide  ([id           : Symbol]) #:transparent)
-(struct RenamedProvide ([local-id     : Symbol]
-                        [exported-id  : Symbol]) #:transparent)
-
 (struct Module  ([id      : Symbol]
                  [path    : Path]
                  [lang    : (U Symbol String (Listof Symbol))]
@@ -17,11 +11,10 @@
                  [forms   : (Listof ModuleLevelForm)])
   #:transparent)
 
-
 (define-language Absyn
   #:alias
-  [Program TopLevelForm]
-  [ModuleName (U Symbol Path)]
+  [Program      TopLevelForm]
+  [ModuleName   (U Symbol Path)]
 
   #:forms
   ;; Top Level Forms
@@ -39,12 +32,18 @@
                             #;Require*]
 
   ;; Module Level Forms
+  [Provide*            (Listof Provide)]
+  [Provide             (SimpleProvide     [id       : Symbol])
+                       (RenamedProvide    [local-id : Symbol]
+                                          [exported-id : Symbol])
+                       (AllDefined        [exclude : (Setof Symbol)])
+                       (PrefixAllDefined  [prefix-id : Symbol]
+                                          [exclude : (Setof Symbol)])]
   [ModuleLevelForm     GeneralTopLevelForm
                        Provide*
                        SubModuleForm]
-  [Provide*            (Listof Provide)]
-  [SubModuleForm       Module]
 
+  [SubModuleForm       Module]
 
   ;; Expressions
 

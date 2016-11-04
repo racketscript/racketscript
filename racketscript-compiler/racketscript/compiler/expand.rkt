@@ -107,13 +107,24 @@
     [v:identifier (list (SimpleProvide (syntax-e #'v)))]
     [((~datum for-meta) 0 p ...)
      (stx-map (λ (pv) (SimpleProvide (syntax-e pv))) #'(p ...))]
-    [((~datum for-meta) 1 p ...) '()]
-    [((~datum for-syntax) p ...) '()]
+    [((~datum all-defined)) (list (AllDefined (set)))]
+    [((~datum all-defined-except) id ...)
+     (list (AllDefined (list->set
+                        (stx-map syntax-e #'(id ...)))))]
     [((~datum rename) local-id exported-id)
      (list (RenamedProvide (syntax-e #'local-id)
                            (syntax-e #'exported-id)))]
-    [((~datum protect) p ...) '()]
+    [((~datum prefix-all-defined) prefix-id)
+     (list (PrefixAllDefined (syntax-e #'prefix-id) (set)))]
+    [((~datum prefix-all-defined-except) prefix-id id ...)
+     (list (PrefixAllDefined (syntax-e #'prefix-id)
+                             (list->set
+                              (stx-map syntax-e #'(id ...)))))]
+    [((~datum all-from) p ...) '()]
     [((~datum all-from-except) p ...) '()]
+    [((~datum for-meta) 1 p ...) '()]
+    [((~datum for-syntax) p ...) '()]
+    [((~datum protect) p ...) '()]
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
 (define (to-absyn v)

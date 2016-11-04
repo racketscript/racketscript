@@ -9,6 +9,8 @@
          racket/format
          racket/path
          racket/set
+         racket/syntax
+         threading
          "config.rkt"
          "global.rkt"
          "logging.rkt"
@@ -21,6 +23,8 @@
   [global-unreachable-idents (HashTable Path (Setof Symbol))])
 (require/typed "expand.rkt"
   [register-ident-use! (-> (U Path Symbol) Symbol Void)])
+(require/typed racket/syntax
+  [format-symbol (-> String Any * Symbol)])
 
 (provide absyn-top-level->il
          absyn-gtl-form->il
@@ -49,15 +53,24 @@
 
 (: absyn-module->il (-> Module ILModule))
 (define (absyn-module->il mod)
-  (: provides (Boxof (Listof ILProvide)))
-  (define provides (box '()))
-
-  (: add-provides! (-> (Listof ILProvide) Void))
-  (define (add-provides! p*)
-    (set-box! provides (append (unbox provides) p*)))
-
   (match-define (Module id path lang imports forms) mod)
   (log-rjs-info "[il] ~a" id)
+
+  (: provides (Boxof ILProvide*))
+  (define provides (box '()))
+
+  ;; Since we get identifiers directly from defining module, we keep
+  ;; track of defines, use this for exporting all defines or exclude
+  ;; re-exports here
+  (: top-level-defines (Setof Symbol))
+  (define top-level-defines
+    (list->set
+     (append-map DefineValues-ids
+                 (filter DefineValues? forms))))
+
+  (: add-provides! (-> ILProvide* Void))
+  (define (add-provides! p*)
+    (set-box! provides (append (unbox provides) p*)))
 
   (define imported-mod-path-list (set->list imports))
 
@@ -99,7 +112,7 @@
             '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
            [(Provide*? form)
-            (add-provides! (absyn-provide->il form)) '()]
+            (add-provides! (absyn-provide->il form top-level-defines)) '()]
            [(SubModuleForm? form) '()])) ;; TODO
        forms)))
 
@@ -108,7 +121,7 @@
   ;; Due to macro expansion we may have identifiers which are not
   ;; actually exported by that particular module. We find such
   ;; identifiers here and put them in provide list
-  (: unreachable-ident-provides (Listof ILProvide))
+  (: unreachable-ident-provides ILProvide*)
   (define unreachable-ident-provides
     (let ([ident-set ((inst hash-ref! Path (Setof Symbol))
                       global-unreachable-idents
@@ -117,23 +130,18 @@
       (for/list ([ident (in-set ident-set)])
         (ILSimpleProvide ident))))
 
-  ;; Since we get identifiers directly from defining module, we keep
-  ;; track of defines, and excludes re-exports here
-  (: top-level-defines (Setof Symbol))
-  (define top-level-defines
-    (list->set
-     (append-map DefineValues-ids
-                 (filter DefineValues? forms))))
-
-  (: final-provides (Listof ILProvide))
+  (: final-provides ILProvide*)
   (define final-provides
-    (filter (λ ([p : ILProvide])
-              (match p
-                [(ILSimpleProvide id)
-                 (set-member? top-level-defines id )]
-                [(ILRenamedProvide local-id exported-id)
-                 (set-member? top-level-defines local-id)]))
-            (append (unbox provides) unreachable-ident-provides)))
+    (let ([current-module-define?
+           (λ (p)
+             (match p
+               [(ILSimpleProvide id)
+                (set-member? top-level-defines id )]
+               [(ILRenamedProvide local-id exported-id)
+                (set-member? top-level-defines local-id)]))])
+      (~> (append (unbox provides) unreachable-ident-provides)
+          (filter current-module-define? _)
+          (remove-duplicates _))))
 
   (ILModule path
             final-provides
@@ -153,9 +161,29 @@
     [(JSRequire? form) (error 'absyn-gtl-form->il
                               "Required should be hoisted")]))
 
+(: absyn-provide->il (-> Provide* (Setof Symbol) ILProvide*))
+(define (absyn-provide->il forms top-level-defs)
+  (: defs-without-exclude (-> (Setof Symbol) (Setof Symbol) (Listof Symbol)))
+  (define (defs-without-exclude def-set exclude-lst)
+    (~> (set->list def-set)
+        (filter (λ (id) (not (set-member? exclude-lst id))) _)))
 
-(: absyn-provide->il (-> Provide* (Listof ILProvide)))
-(define (absyn-provide->il forms) forms)
+  (for/fold ([result : ILProvide* '()])
+            ([form forms])
+    (match form
+      [(SimpleProvide _) (cons form result)]
+      [(RenamedProvide _ _) (cons form result)]
+      [(AllDefined exclude)
+       (~> (defs-without-exclude top-level-defs exclude)
+           (map SimpleProvide _)
+           (append result _))]
+      [(PrefixAllDefined prefix-id exclude)
+       (let* ([to-export (defs-without-exclude top-level-defs exclude)]
+              [new-ids (map (λ (id)
+                              (format-symbol "~a~a" prefix-id id))
+                            to-export)])
+         (append result
+                 (map RenamedProvide to-export new-ids)))])))
 
 (: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
