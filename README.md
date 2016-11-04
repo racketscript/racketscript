@@ -1,6 +1,7 @@
 # RacketScript
 
 [![Build Status](https://travis-ci.org/vishesh/racketscript.png?branch=master)](https://travis-ci.org/vishesh/racketscript)
+[![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
 
 RacketScript is an *experimental* lightweight Racket to JavaScript
 compiler. The generated code is ES6, which can be translated to ES5

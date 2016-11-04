@@ -20,3 +20,4 @@
 ;; Test configuration
 
 (define test-omit-paths '("racketscript/browser.rkt"))
+(define cover-omit-paths '("racketscript/browser.rkt"))

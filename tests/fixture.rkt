@@ -9,8 +9,6 @@
          racketscript/compiler/moddeps
          racketscript/compiler/il-analyze)
 
-(define-runtime-path tests-root-dir ".")
-
 ;; Print Racket and JS output of test programs to stdout
 ;; Also show check failure
 (define verbose? (make-parameter #f))
@@ -69,7 +67,9 @@
 (define-simple-check (check-racketscript fpath)
   ;; First compile to JS
   (define compile-result
-    (let ([test-path (normalize-path (build-path tests-root-dir fpath))])
+    (let ([test-path (if (absolute-path? fpath)
+                         (string->path fpath)
+                         (normalize-path (build-path (current-directory) fpath)))])
       (parameterize ([main-source-file test-path]
                      [global-export-graph (get-export-tree test-path)]
                      [current-source-file test-path]
@@ -137,7 +137,8 @@
 
   (for ([test testcases]
         [i (in-naturals 1)])
-    (display (format "TEST (~a/~a) => ~a " i (length testcases) test))
+    (define test-rel-path (find-relative-path (current-directory) test))
+    (display (format "TEST (~a/~a) => ~a " i (length testcases) test-rel-path))
     (parameterize ([current-test-name test])
       (check-racketscript test)))
 
@@ -184,12 +185,20 @@
      [("-v" "--verbose") "Show exceptions when running tests."
       (racketscript-stdout? #t)
       (verbose? #t)]
-     #:args (pattern)
-     pattern))
+     #:args (p . ps*)
+     (cons p ps*)))
 
-  (run (list tc-search-pattern)))
+  (run tc-search-pattern))
 
 (module+ test
-  (run (list "basic/*.rkt"
-             "struct/*.rkt"
-             "hash/*.rkt")))
+  (define-runtime-path fixture-module "fixture.rkt")
+  (define fixture-module-dir (path-only fixture-module))
+
+  (define (fixture-path-patterns . paths)
+    (map (λ (p)
+           (~a (build-path fixture-module-dir p) "/*.rkt"))
+         paths))
+
+  (run (fixture-path-patterns "basic"
+                              "struct"
+                              "hash")))

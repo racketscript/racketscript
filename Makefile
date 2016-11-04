@@ -47,7 +47,7 @@ coverage-unit-test:
 coverage:
 	@echo "    RACKETSCRIPT COVERAGE    "
 	@echo "++++++++++++++++++++++++"
-	raco cover -d ./coverage/all racketscript-compiler/racketscript/  \
+	raco cover -d ./coverage/all -b racketscript-compiler \
 	    tests/fixture.rkt
 
 ## JavaScript
