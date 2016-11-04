@@ -1,9 +1,11 @@
 # RacketScript
 
-[![Build Status](https://travis-ci.org/vishesh/racketscript.png?branch=master)](https://travis-ci.org/vishesh/racketscript)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING.md)
+[![Build Status](https://travis-ci.org/vishesh/racketscript.svg?branch=master)](https://travis-ci.org/vishesh/racketscript)
 [![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
+[![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://rapture.twistedplane.com:8080)
 
-RacketScript is an *experimental* lightweight Racket to JavaScript
+RacketScript is an **experimental** lightweight Racket to JavaScript
 compiler. The generated code is ES6, which can be translated to ES5
 using [Babel](https://babeljs.io/)
 or [Traceur](https://github.com/google/traceur-compiler). RacketScript
@@ -40,7 +42,7 @@ Traceur or Babel.  If you wish to run ES6 modules directly, install
 Traceur using NPM. Babel is recommended for writing NodeJS programs.
 
 If you wish to hack on RacketScript code or run tests, lints and
-coverage tool, run `make setup-extra` form RacketScript root
+coverage tool, run `make setup-extra` from RacketScript root
 directory.  See `Makefile` for more information. This will also
 install `js-beautify` which produces beautified JavaScript output.
 
