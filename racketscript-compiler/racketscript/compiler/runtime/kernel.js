@@ -1,4 +1,5 @@
 import * as Core from "./core.js";
+import {makeParameter} from "./paramz.js";
 
 /* --------------------------------------------------------------------------*/
 // Helpers
@@ -820,7 +821,7 @@ exports["compose"] = function (...procs) {
 }
 
 exports["compose1"] = function(...procs) {
-    return function(v) {
+    return function (v) {
 	let result = v;
 	for (let p of procs.reverse()) {
 	    result = p(result);
@@ -838,3 +839,16 @@ exports["current-continuation-marks"] = function () {
 exports["continuation-mark-set->list"] = function (markSet, key) {
     return Core.Marks.getMarks(markSet, key);
 }
+
+exports["continuation-mark-set-first"] = function (markSet, keyV, noneV, promptTag) {
+    //TODO: implement promptTag
+    var markSet = markSet || Core.Marks.getFrames();
+    var marks = Core.Marks.getMarks(markSet, keyV);
+    if (Core.Pair.isEmpty(marks)) {
+	return noneV;
+    } else {
+	return marks.hd;
+    }
+}
+
+exports["make-parameter"] = makeParameter;

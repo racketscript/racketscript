@@ -251,6 +251,7 @@
        (log-rjs-info "Writing stub modules.")
        (generate-stub-module '#%kernel)
        (generate-stub-module '#%unsafe)
+       (generate-stub-module '#%paramz)
        (es6->es5)
        (log-rjs-info "Finished.")]
       [else

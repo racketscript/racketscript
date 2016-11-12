@@ -36,6 +36,7 @@
                     ['#%kernel "kernel.rkt.js"]
                     ['#%utils "utils.rkt.js"]
                     ['#%unsafe "unsafe.rkt.js"]
+                    ['#%paramz "paramz.rkt.js"]
                     ['#%flfxnum "flfxnum.rkt.js"]
                     ['core "core.js"]
                     [_ "rest.rkt.js"])])

@@ -109,6 +109,17 @@ export function listForEach(lst, fn) {
     }
 }
 
+export function listFind(lst, fn) {
+    while (!isEmpty(lst)) {
+	let result = fn(lst.hd);
+	if (result) {
+	    return result;
+	}
+	lst = lst.tl;
+    }
+    return false;
+}
+
 export function listMap(lst, fn) {
     let result = [];
     let mapper = (x) => result.push(result, fn(x));

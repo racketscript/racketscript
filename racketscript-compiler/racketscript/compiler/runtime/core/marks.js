@@ -2,8 +2,19 @@
 import * as Pair from "./pair.js"
 import * as $ from "./lib.js";
 
-let __frames = Pair.Empty;
+let __frames = false;
 let HASH = $.hashEq;
+
+/* --------------------------------------------------------------------------*/
+
+export function init() {
+    __frames = Pair.Empty;
+    enterFrame();
+}
+
+init();
+
+/* --------------------------------------------------------------------------*/
 
 export function getFrames() {
     return __frames;
@@ -41,6 +52,15 @@ export function getMarks(frames, key) {
     return Pair.listFromArray(result);
 }
 
+export function getFirstMark(frames, key, noneV) {
+    let keyHash = HASH(key);
+    return Pair.listFind(frames, (fr) => {
+	if (keyHash in fr) {
+	    return fr[keyHash];
+	}
+    }) || noneV;
+}
+
 export function wrapWithContext(fn) {
     return (function (currentFrames) {
 	return function (...args) {
@@ -48,7 +68,8 @@ export function wrapWithContext(fn) {
 	    try {
 		return fn.apply(null, args);
 	    } finally {
-		__frames = Pair.Empty; /* This callback/coroutine is finished */
+		/* This callback/coroutine is finished */
+		__frames = undefined;
 	    }
 	}
     })(__frames);
