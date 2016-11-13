@@ -3,6 +3,7 @@ import * as Pair from "./pair.js"
 import * as $ from "./lib.js";
 
 let __frames = false;
+let __async_callback_wrappers = [];
 let HASH = $.hashEq;
 
 /* --------------------------------------------------------------------------*/
@@ -10,6 +11,10 @@ let HASH = $.hashEq;
 export function init() {
     __frames = Pair.Empty;
     enterFrame();
+}
+
+export function registerAsynCallbackWrapper(cb) {
+    __async_callback_wrappers.push(cb);
 }
 
 init();
@@ -64,7 +69,8 @@ export function getFirstMark(frames, key, noneV) {
 export function wrapWithContext(fn) {
     return (function (currentFrames) {
 	return function (...args) {
-	    __frames = currentFrames;
+	    init();
+	    __async_callback_wrappers.forEach((cb) => cb(currentFrames));
 	    try {
 		return fn.apply(null, args);
 	    } finally {

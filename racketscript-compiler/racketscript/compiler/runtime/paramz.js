@@ -18,26 +18,31 @@ const Box = Core.Box;
 // is retained throughout its context, regardless whatever other
 // parameter context we have created.
 //
-// When a parameter is created, it keeps an internal box with default
-// value. An entry is not added to parameterization map. An entry is
+// When a parameter is created, it keeps an stores the initial value
+// inside. An entry is not added to parameterization map. An entry is
 // created in this map only when a context is created using
-// `with-continuation-mark` or `parameterize`. This intenal box is
-// used otherwise for both setting and getting value otherwise. This
-// helps us to pass parameter around more conveniently, including the
-// callbacks where we get completely different context.
+// `with-continuation-mark` or `parameterize`. `__locals` keeps the
+// parameter value local to current async callback. When a callback is
+// created current parameterization should be copied using ffi's "=>$"
+// form.
 
 const ParameterizationKey = {}; /* a unique reference that can act as key */
+let __locals = undefined;
 
 export function getCurrentParameterization() {
     return Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false);
 }
 
 export function makeParameter(initValue) {
-    let valBox = Box.make(initValue);
     let param = function (maybeSetVal) {
 	// Get current value box from parameterization. The function
 	// `param` that we result is the key.
-	let pv = getCurrentParameterization().get(param, false) || valBox;
+	let pv = getCurrentParameterization().get(param, false) ||
+	    __locals.get(param, false);
+	if (!pv) {
+	    pv = Box.make(initValue);
+	    __locals.set(param, pv);
+	}
 	if (maybeSetVal === undefined) {
 	    return pv.get();
 	} else {
@@ -51,6 +56,14 @@ export function extendParameterization(parameterization, param, val) {
     return parameterization.set(param, Box.make(val));
 }
 
+export function copyParameterization(parameterization) {
+    let result = hamt.make();
+    for (let [key, val] of parameterization) {
+	result = result.set(key, Box.make(val.get()));
+    }
+    return result;
+}
+
 /* --------------------------------------------------------------------------*/
 // Init parameterization
 
@@ -61,6 +74,17 @@ export function extendParameterization(parameterization, param, val) {
     } else {
 	Marks.setMark(ParameterizationKey, hamt.make());
     }
+    __locals = new Map();
+
+    Marks.registerAsynCallbackWrapper(function (oldFrames) {
+	let oldP = Marks.getFirstMark(oldFrames, ParameterizationKey, false);
+	let oldL = __locals;
+	__locals = new Map();
+	for (let [key, val] in oldL) {
+	    __locals.set(key, Box.make(val.get()));
+	}
+	Marks.setMark(ParameterizationKey, copyParameterization(oldP));
+    });
 })();
 
 /* --------------------------------------------------------------------------*/
