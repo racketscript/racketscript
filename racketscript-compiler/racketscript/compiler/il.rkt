@@ -32,6 +32,7 @@
   [ILStatement*    (Listof ILStatement)]
   [ObjectKey       (U String Symbol)]
   [ILLValue        (U Symbol ILRef ILIndex)]
+  [ObjectPair      (Pairof ObjectKey ILExpr)]
 
   #:forms
   [ILExpr   (ILLambda      [args      : (Listof Symbol)]
@@ -41,7 +42,7 @@
             (ILApp         [lam       : ILExpr]
                            [args      : (Listof ILExpr)])
             (ILArray       [items     : (Listof ILExpr)])
-            (ILObject      [items     : (Listof (Pairof ObjectKey ILExpr))])
+            (ILObject      [items     : (Listof ObjectPair)])
             (ILRef         [expr      : ILExpr]
                            [fieldname : Symbol])
             (ILIndex       [expr      : ILExpr]
