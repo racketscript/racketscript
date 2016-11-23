@@ -1,14 +1,13 @@
 const gulp = require('gulp');
 const babel = require('gulp-babel');
-const concat = require('gulp-concat');
-const insert = require('gulp-insert');
+const replace = require('gulp-replace');
 const babelDeps = require("babel-deps");
 
 const target = "~a" + ".rkt.js";
 
 gulp.task('copy-hamt', function() {
     return gulp.src('node_modules/hamt_plus/hamt.js')
-	.pipe(insert.append("\nexport {hamt}"))
+        .pipe(replace(/\/\* Export(.*\n)*/m, "\nexport {hamt}"))
 	.pipe(gulp.dest("runtime/third-party/"));
 });
 
