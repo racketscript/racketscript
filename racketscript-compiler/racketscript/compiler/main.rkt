@@ -43,11 +43,13 @@
 (define skip-npm-install (make-parameter #f))
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
-(define js-bootstrap-file (make-parameter "bootstrap.js"))
 (define dump-debug-info (make-parameter #f))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
+
+(define *js-bootstrap-file* "bootstrap.js")
+(define *browser-index-file* "index.html")
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "babel"
@@ -145,9 +147,14 @@
 
 ;; -> Void
 (define (copy-support-files)
-  (when (equal? (js-target) "traceur")
-    (copy-file+ (support-file (js-bootstrap-file))
-                (output-directory))))
+  (match (js-target)
+    ["traceur"
+     (copy-file+ (support-file *js-bootstrap-file*)
+                 (output-directory))]
+    ["traceur-browser"
+     (copy-file+ (support-file *browser-index-file*)
+                 (output-directory))]
+    [_ (void)]))
 
 ;; String -> Void
 ;; Create output build directory tree with all NPM, Gulp. Runtime and
