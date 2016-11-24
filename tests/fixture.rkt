@@ -21,30 +21,42 @@
 ;; produced by compiler
 (define racketscript-stdout? (make-parameter #f))
 
+(define (memoize lam)
+  (let ([cache (make-hash)])
+    (λ new-formals
+      (or (hash-ref! cache new-formals #f)
+          (let ([result (apply lam new-formals)])
+            (hash-set! cache new-formals result)
+            result)))))
+
+(define-syntax-rule (memoized-λ formals body ...)
+  (let ([lam (λ formals body ...)])
+    (memoize lam)))
+
 ;; DEFAULT PARAMETER VALUES ---------------------------------------------------
 
-;; Path-String Input-Port Input-Port -> (list String String)
-(define (log-and-return fpath kind in-p-out in-p-err)
-  ;; TODO: Log outputs
-  (let ([p-out (port->string in-p-out)]
-        [p-err (port->string in-p-err)])
-    (when (verbose?)
-      (displayln (~a ">>>>>>>>>>>>>>>>>>>>>> `" kind "` STDOUT"))
-      (displayln p-out)
-      (displayln (~a "---------------------- `"kind "` STDERR"))
-      (displayln p-err)
-      (displayln "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"))
-    (list p-out p-err)))
+;; Path-String (List String String) -> (list String String)
+(define (log-and-return kind outputs)
+  (match-define (list stdout stderr) outputs)
+  (when (verbose?)
+    (displayln (~a ">>>>>>>>>>>>>>>>>>>>>> `" kind "` STDOUT"))
+    (displayln stdout)
+    (displayln (~a "---------------------- `"kind "` STDERR"))
+    (displayln stderr)
+    (displayln "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"))
+  (list stdout stderr))
 
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
 ;; stdout and stderr produced
-(define (run-in-racket fpath)
-  (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* (find-executable-path "racket")
-              (~a fpath)))
-  (control 'wait)
-  (log-and-return fpath 'racket in-p-out in-p-err))
+(define run-in-racket
+  (memoized-λ (fpath)
+    (match-define (list in-p-out out-p-in pid in-p-err control)
+      (process* (find-executable-path "racket")
+                (~a fpath)))
+    (control 'wait)
+    (list (port->string in-p-out)
+          (port->string in-p-err))))
 
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
@@ -54,40 +66,47 @@
     (process* (find-executable-path "node")
               (build-path (output-directory) "bootstrap.js")))
   (control 'wait)
-  (log-and-return fpath 'nodejs in-p-out in-p-err))
+  (list (port->string in-p-out)
+        (port->string in-p-err)))
 
 ;; String String -> Boolean
 ;; Compare the outputs produced
 (define (results-equal? racket js)
   (equal? racket js))
 
+;; Path-String -> ExportTree
+(define get-cached-export-tree
+  (memoized-λ (test-fpath)
+    (get-export-tree test-fpath)))
+
+;; Path-String -> Void
+;; Compile test-case in `fpath` to JavaScript
+(define (compile-test-case fpath)
+  (define test-path
+    (if (absolute-path? fpath)
+        (string->path fpath)
+        (normalize-path (build-path (current-directory) fpath))))
+  (parameterize ([main-source-file test-path]
+                 [global-export-graph (get-cached-export-tree test-path)]
+                 [current-source-file test-path]
+                 [current-output-port (if (racketscript-stdout?)
+                                          (current-output-port)
+                                          (open-output-nowhere))])
+    (skip-gulp-build #f) ;;TODO: Remove this to speed up
+    (racket->js)))
+
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
 (define-simple-check (check-racketscript fpath)
-  ;; First compile to JS
-  (define compile-result
-    (let ([test-path (if (absolute-path? fpath)
-                         (string->path fpath)
-                         (normalize-path (build-path (current-directory) fpath)))])
-      (parameterize ([main-source-file test-path]
-                     [global-export-graph (get-export-tree test-path)]
-                     [current-source-file test-path]
-                     [current-output-port (if (racketscript-stdout?)
-                                              (current-output-port)
-                                              (open-output-nowhere))])
-        (skip-gulp-build #f) ;;TODO: Remove this to speed up
-        (racket->js)
-        #t)))
-
-  (cond
-    [(false? compile-result) #f]
-    [else
-     (match-define (list r-p-out r-p-err) (run-in-racket fpath))
-     (match-define (list j-p-out j-p-err) (run-in-nodejs fpath))
-     (if (results-equal? r-p-out j-p-out)
-         (begin (displayln "✔") #t)
-         (begin (displayln "✘") #f))]))
+  (compile-test-case fpath)
+  (match-define (list r-p-out r-p-err) (log-and-return 'racket
+                                                       (run-in-racket fpath)))
+  (match-define (list j-p-out j-p-err) (log-and-return 'nodejs
+                                                       (run-in-nodejs fpath)))
+  (if (results-equal? r-p-out j-p-out)
+      (begin (displayln "✔") #t)
+      (begin (displayln "✘") #f)))
 
 ;; -> Void
 ;; Initialize test environment.
