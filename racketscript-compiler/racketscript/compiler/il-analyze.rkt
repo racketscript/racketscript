@@ -9,6 +9,7 @@
          "il.rkt")
 
 (provide self-tail->loop
+         lift-returns
          flatten-if-else
          free-identifiers
          free+defined
@@ -23,6 +24,8 @@
 (define-type ILLink    (Option ILStatement))
 (define-type ILResult  (U ILStatement* ILStatement))
 (define-type IdentSet  (Setof Symbol))
+
+(define ident-set      (inst set Symbol))
 
 (: self-tail->loop (-> ILStatement* ILStatement*))
 ;; Frontend function to convert self tail calls to
@@ -103,7 +106,10 @@
          [_ (add-to-scope! id)
             (ILVarDec id (and expr
                               (handle-expr expr)))])]
-      ;;TODO: LetDec
+      [(ILLetDec id expr)
+       ;; TODO: `id` is block scope, while we are only tracking
+       ;; function scope.
+       (ILLetDec id (and expr (handle-expr expr)))]
       [(ILAssign lvalue rvalue)
        (match (next-statement)
          [(ILReturn e) #:when (and (symbol? lvalue)
@@ -123,6 +129,24 @@
                  (removed-declarations))))
        (removed-declarations (set-intersect t-removed f-removed))
        (ILIf (handle-expr pred) t-branch* f-branch*)]
+      [(ILIf* clauses)
+       (define-values (clauses* removed)
+         (for/fold ([c*      : (Listof ILIfClause) '()]
+                    [removed : (Listof IdentSet) '()])
+                   ([clause (reverse clauses)])
+           (let* ([pred (ILIfClause-pred clause)]
+                  [body (ILIfClause-body clause)]
+                  [pred* (and pred (handle-expr pred))])
+             (parameterize ([removed-declarations (removed-declarations)])
+               (values (cons (ILIfClause pred* (handle-stm* body)) c*)
+                       (cons (removed-declarations) removed))))))
+       (removed-declarations (match removed
+                               [(cons hd '()) hd]
+                               [(cons hd0 tl)
+                                (foldl (inst set-intersect Symbol Symbol)
+                                       hd0
+                                       tl)]))
+       (ILIf* clauses*)]
       [(ILWhile condition body)
        (ILWhile (handle-expr condition)
                 (handle-stm* body))]
@@ -154,6 +178,8 @@
                 (set-member? (removed-declarations) expr))
            '()
            (ILReturn (handle-expr expr)))]
+      [(ILLabel _) stm]
+      [(ILContinue _) stm]
       [(? ILExpr? expr) (handle-expr expr)]))
 
   (: handle-stm* (-> ILStatement* ILStatement*))
@@ -285,6 +311,12 @@
        (ILIf (handle-expr/general pred)
              (handle-stm* t-branch)
              (handle-stm* f-branch))]
+      [(ILIf* clauses)
+       (ILIf* (map (λ ([c : ILIfClause])
+                     (match-define (ILIfClause pred body) c)
+                     (ILIfClause (and pred (handle-expr/general pred))
+                                 (handle-stm* (ILIfClause-body c))))
+                   clauses))]
       [(ILAssign lvalue rvalue)
        ;; TODO: Handle ILLValue
        (if (symbol? lvalue)
@@ -342,6 +374,19 @@
        (match-define (list f-defs f-free) (find* f-branch defs))
        (list (set-union t-defs f-defs)
              (set-union p-free t-free f-free))]
+      [(ILIf* clauses)
+       (define-values (defs* free*)
+         (for/fold ([r-defs : IdentSet (set)]
+                    [r-free : IdentSet (set)])
+                   ([clause clauses])
+           (match-define (ILIfClause pred body) clause)
+           (match-define (list _ p-free) (if pred
+                                             (find pred defs)
+                                             (list (ident-set) (ident-set))))
+           (match-define (list b-defs b-free) (find* body defs))
+           (values (set-union r-defs b-defs)
+                   (set-union r-free p-free b-free))))
+       (list defs* free*)]
       [(ILAssign lvalue rvalue)
        (match-define (list _ lv-free) (find lvalue defs))
        (match-define (list _ rv-free) (find rvalue defs))
@@ -770,7 +815,22 @@
               (list (ILReturn (ILValue 0)))))
    "Lift return multiple times")
 
+  (check-equal?
+   (lift-returns
+    (list
+     (ILIf* (list
+             (ILIfClause (ILValue 1) (list (ILVarDec 'return-val (ILValue 1))))
+             (ILIfClause (ILValue 2) (list (ILVarDec 'return-val (ILValue 2))))
+             (ILIfClause #f (list (ILVarDec 'return-val (ILValue #f))))))
+     (ILReturn 'return-val)))
+   (list
+    (ILIf* (list (ILIfClause (ILValue 1) (list (ILReturn (ILValue 1))))
+                 (ILIfClause (ILValue 2) (list (ILReturn (ILValue 2))))
+                 (ILIfClause #f (list (ILReturn (ILValue #f)))))))
+   "Lift return in if-else-if-else statements")
+
   ;; Test free-identifer ------------------------------------------------------
+  ;; TODO: test used+defined
 
   (check-equal? (free-identifiers (list
                                    (ILVarDec 'a (ILValue 0))
@@ -796,4 +856,18 @@
   (check-equal? (free-identifiers (list
                                    (ILLambda '(a b)
                                              (list (ILApp '+ '(a b c))))))
-                (set 'c '+)))
+                (set 'c '+))
+
+  (check-equal? (free-identifiers
+                 (list
+                  (ILLambda '(fn a)
+                            (list
+                             (ILIf*
+                              (list
+                               (ILIfClause (ILApp 'fn '())
+                                           '(a))
+                               (ILIfClause (ILApp 'foo '(a b))
+                                           (list
+                                            (ILAssign 'bar 'foo)
+                                            'c))))))))
+                (set 'foo 'b 'c 'bar)))

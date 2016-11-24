@@ -194,9 +194,12 @@
 ;; Module -> ILModule
 ;; Applies the enabled optimization to translated Absyn
 (define (absyn-module->il* ast)
-  (for/fold ([il (absyn-module->il ast)])
-            ([opt (in-set (enabled-optimizations))])
-    (il-apply-optimization il opt)))
+  (define il (absyn-module->il ast))
+  (define (apply-optimizations il)
+    (for/fold ([il il])
+              ([opt (in-set (enabled-optimizations))])
+      (il-apply-optimization il opt)))
+  (converge apply-optimizations il))
 
 ;; Path-String -> (Listof Symbol)
 ;; Read the runtime JavaScript file which, and find all the primitives
@@ -315,6 +318,8 @@
       (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
      ["--enable-flatten-if" "Flatten nested if-else statements"
       (enabled-optimizations (set-add (enabled-optimizations) flatten-if-else))]
+     ["--lift-returns" "Translate self tail calls to loops"
+      (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
      #:multi
      [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser]"
       (if (member target *targets*)
