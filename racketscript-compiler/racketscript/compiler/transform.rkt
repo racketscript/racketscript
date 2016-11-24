@@ -17,7 +17,8 @@
          "util.rkt"
          "environment.rkt"
          "absyn.rkt"
-         "il.rkt")
+         "il.rkt"
+         "il-analyze.rkt")
 
 (require/typed "global.rkt"
   [global-unreachable-idents (HashTable Path (Setof Symbol))])
@@ -385,29 +386,38 @@
           (ILBinaryOp (ImportedIdent-id v) arg*)]
          [else (ILApp v-il arg*)]))
 
-     (let loop ([arg-stms : ILStatement* '()]
-                [arg* : (Listof ILExpr) '()]
-                [arg args])
-       (match arg
-         ['()
-          (cond
-            [(Ident? lam) (values arg-stms
-                                  (il-app/binop lam arg*))]
-            [else (define-values (stms v) (absyn-expr->il lam))
-                  (values (append arg-stms stms)
-                          (ILApp v arg*))])]
-         [(cons hd tl)
-          (define-values (s v) (absyn-expr->il hd))
-          (cond
-            [(ILValue? v)
-             (loop (append arg-stms s)
-                   (append1 arg* v)
-                   tl)]
-            [else
-             (define temp-id (fresh-id 'temp))
-             (loop (append arg-stms s (list (ILVarDec temp-id v)))
-                   (append1 arg* temp-id)
-                   tl)])]))]
+     ;; If some arguements produce statement, it may have side effects
+     ;; and hence lambda expression should be computed first.
+     (match-define-values (lam+arg-stms (cons lam-val arg-vals) _)
+       (for/fold/last ([stms : ILStatement* '()]
+                       [vals : (Listof ILExpr) '()]
+                       [next-has-stms? : Boolean #f])
+                      ([arg last? (reverse (cons lam args))])
+         (define-values (s v) (absyn-expr->il arg))
+         (cond
+           [(and next-has-stms? (has-application? v))
+            ;; If this argument expression has function application,
+            ;; it may have side-effect hence we have to compute it
+            ;; first.
+            (define temp-id (fresh-id (if last? 'lam 'temp)))
+            (define arg-stms (append1 s (ILVarDec temp-id v))) ;:TODO: use LetDecq
+            (values (append arg-stms stms)
+                    (cons temp-id vals)
+                    next-has-stms?)]
+           [next-has-stms?
+            (values (append s stms)
+                    (cons v vals)
+                    next-has-stms?)]
+           [else
+            (values (append s stms)
+                    (cons v vals)
+                    (or next-has-stms? (cons? s)))])))
+
+     (if (Ident? lam)
+         (values lam+arg-stms
+                 (il-app/binop lam arg-vals))
+         (values lam+arg-stms
+                 (ILApp lam-val arg-vals)))]
 
     [(TopId id) (values '() id)] ;; FIXME: rename top-levels?
 
@@ -664,9 +674,7 @@
                 (ILLambda
                  '(a b)
                  (list
-                  (ILVarDec 'temp1 'a)
-                  (ILVarDec 'temp2 'b)
-                  (ILReturn (ILApp 'list '(temp1 temp2))))))
+                  (ILReturn (ILApp 'list '(a b))))))
 
   ;; Let expressions
   (check-ilexpr (LetValues (list (cons '(a) (Quote 1))
@@ -693,10 +701,8 @@
                   (list (ILVarDec 'if_res1 (ILValue 'yes)))
                   (list (ILVarDec 'if_res1 (ILValue 'false))))
                  (ILVarDec 'a 'if_res1)
-                 (ILVarDec 'b (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
-                 (ILVarDec 'temp2 'a)
-                 (ILVarDec 'temp3 'b))
-                (ILApp 'list '(temp2 temp3)))
+                 (ILVarDec 'b (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
+                (ILApp 'list '(a b)))
 
   ;; Binary operations
 
@@ -729,46 +735,41 @@
       (ILApp
        '$rjs_core.Pair.listFromArray
        (list (ILApp '$rjs_core.argumentsToArray '(arguments)))))
-     (ILVarDec 'temp2 'args1)
-     (ILVarDec 'temp3 (ILApp (ILRef 'kernel 'length) '(temp2)))
      (ILIf
-      (ILApp (ILRef 'kernel 'equal?) (list 'temp3 (ILValue 2)))
+      (ILApp
+       (ILRef 'kernel 'equal?)
+       (list (ILApp (ILRef 'kernel 'length) '(args1)) (ILValue 2)))
       (list
        (ILVarDec
-        'temp6
-        (ILLambda
-         '(a b)
+        'if_res3
+        (ILApp
+         (ILRef 'kernel 'apply)
          (list
-          (ILVarDec 'temp4 'a)
-          (ILVarDec 'temp5 'b)
-          (ILReturn (ILApp (ILRef 'kernel 'add) '(temp4 temp5))))))
-       (ILVarDec 'temp7 'args1)
-       (ILVarDec 'if_res16 (ILApp (ILRef 'kernel 'apply) '(temp6 temp7))))
+          (ILLambda '(a b) (list (ILReturn (ILApp (ILRef 'kernel 'add) '(a b)))))
+          'args1))))
       (list
-       (ILVarDec 'temp8 'args1)
-       (ILVarDec 'temp9 (ILApp (ILRef 'kernel 'length) '(temp8)))
        (ILIf
-        (ILApp (ILRef 'kernel 'equal?) (list 'temp9 (ILValue 3)))
+        (ILApp
+         (ILRef 'kernel 'equal?)
+         (list (ILApp (ILRef 'kernel 'length) '(args1)) (ILValue 3)))
         (list
          (ILVarDec
-          'temp13
-          (ILLambda
-           '(a b c)
+          'if_res2
+          (ILApp
+           (ILRef 'kernel 'apply)
            (list
-            (ILVarDec 'temp10 'a)
-            (ILVarDec 'temp11 'b)
-            (ILVarDec 'temp12 'c)
-            (ILReturn (ILApp (ILRef 'kernel 'mul) '(temp10 temp11 temp12))))))
-         (ILVarDec 'temp14 'args1)
-         (ILVarDec 'if_res15 (ILApp (ILRef 'kernel 'apply) '(temp13 temp14))))
+            (ILLambda
+             '(a b c)
+             (list (ILReturn (ILApp (ILRef 'kernel 'mul) '(a b c)))))
+            'args1))))
         (list
          (ILVarDec
-          'if_res15
+          'if_res2
           (ILApp
            (ILRef 'kernel 'error)
            (list (ILValue "case-lambda: invalid case"))))))
-       (ILVarDec 'if_res16 'if_res15)))
-     (ILReturn 'if_res16))))
+       (ILVarDec 'if_res3 'if_res2)))
+     (ILReturn 'if_res3))))
 
   ;; FFI ------------------------------------------------------------
 
@@ -780,8 +781,7 @@
                                          (LocalIdent 'out))))
    (list
     (ILApp (ILRef 'kernel 'displayln) (list (ILValue "hello")))
-    (ILVarDec 'temp1 'out)
-    (ILApp (ILRef 'kernel 'write) (list (ILValue "what") 'temp1))))
+    (ILApp (ILRef 'kernel 'write) (list (ILValue "what") 'out))))
 
   ;; General Top Level ----------------------------------------------
 
@@ -795,9 +795,9 @@
                (list (Quote 42)
                      (PlainLambda '(x) (LI* 'x)))))
    (list
-    (ILVarDec 'temp1 (ILLambda '(x) (list (ILReturn 'x))))
     (ILVarDec
-     'let_result2
-     (ILApp (ILRef 'kernel 'values) (list (ILValue 42) 'temp1)))
-    (ILVarDec 'x (ILApp (ILRef 'let_result2 'getAt) (list (ILValue 0))))
-    (ILVarDec 'ident (ILApp (ILRef 'let_result2 'getAt) (list (ILValue 1)))))))
+     'let_result1
+     (ILApp (ILRef 'kernel 'values)
+            (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
+    (ILVarDec 'x (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 0))))
+    (ILVarDec 'ident (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 1)))))))

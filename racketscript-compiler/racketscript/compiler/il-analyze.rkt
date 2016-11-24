@@ -10,7 +10,8 @@
 
 (provide self-tail->loop
          free-identifiers
-         free+defined)
+         free+defined
+         has-application?)
 
 ;; TODO: Remove dead return statements.
 ;; TODO: Variable number arguments.
@@ -101,6 +102,7 @@
          [_ (add-to-scope! id)
             (ILVarDec id (and expr
                               (handle-expr expr)))])]
+      ;;TODO: LetDec
       [(ILAssign lvalue rvalue)
        (match (next-statement)
          [(ILReturn e) #:when (and (symbol? lvalue)
@@ -275,6 +277,9 @@
       [(ILVarDec id expr)
        (ILVarDec id (and expr
                          (handle-expr expr #f id)))]
+      [(ILLetDec id expr)
+       (ILLetDec id (and expr
+                         (handle-expr expr #f id)))]
       [(ILIf pred t-branch f-branch)
        (ILIf (handle-expr/general pred)
              (handle-stm* t-branch)
@@ -320,6 +325,12 @@
   (define (find stm defs)
     (match stm
       [(ILVarDec id expr)
+       (list (set id)
+             (if expr
+                 (second (find expr (set-add defs id)))
+                 (set)))]
+      [(ILLetDec id expr)
+       ;;TODO: Add test
        (list (set id)
              (if expr
                  (second (find expr (set-add defs id)))
@@ -385,6 +396,33 @@
 (: free-identifiers (-> ILStatement* IdentSet))
 (define (free-identifiers stms)
   (second (free+defined stms (set))))
+
+(: has-application? (-> ILExpr Boolean))
+;; Returns true if any subexpression of given input contains an
+;; application.
+(define has-application?
+  (match-lambda
+    [(ILLambda _ _) #f]
+    [(ILBinaryOp _ args) (ormap has-application? args)]
+    [(ILApp _ _) #t]
+    [(ILArray items) (ormap has-application? items)]
+    [(ILObject items) (ormap (λ ([pair : ObjectPair])
+                               (has-application? (cdr pair)))
+                             items)]
+    [(ILRef expr _) (has-application? expr)]
+    [(ILIndex expr fieldexpr) (or (has-application? expr)
+                                  (has-application? fieldexpr))]
+    [(ILValue _) #f]
+    [(ILNew _) #t]
+    [(ILInstanceOf expr) (has-application? expr)]
+    [(? symbol? e) #f]))
+(module+ test
+  (check-false (has-application? (ILValue 10)))
+  (check-false (has-application? (ILBinaryOp '+ (list (ILValue 10) (ILValue 12)))))
+  (check-false (has-application? (ILLambda '() (list (ILApp 'foo '())))))
+  (check-true (has-application? (ILBinaryOp '+ (list (ILApp 'add1 (list (ILValue 10)))
+                                                     (ILValue 10))))))
+
 
 (module+ test
   (require typed/rackunit)
