@@ -21,10 +21,14 @@
 ;;       Eg. ILRef
 ;; TODO: Identify mutually recursive calls.
 
+;; ----------------------------------------------------------------------------
+;; Tail Call Optimization
+
 (define-type ILLink    (Option ILStatement))
 (define-type ILResult  (U ILStatement* ILStatement))
 (define-type IdentSet  (Setof Symbol))
 
+;; Constructor for building identifier sets.
 (define ident-set      (inst set Symbol))
 
 (: self-tail->loop (-> ILStatement* ILStatement*))
@@ -348,6 +352,8 @@
 
   (handle-stm* il))
 
+;; ----------------------------------------------------------------------------
+;; Compute defs, use, and free sets
 
 (: free+defined (-> ILStatement* IdentSet (List IdentSet IdentSet)))
 (define (free+defined stms* defs)
@@ -468,6 +474,191 @@
   (check-false (has-application? (ILLambda '() (list (ILApp 'foo '())))))
   (check-true (has-application? (ILBinaryOp '+ (list (ILApp 'add1 (list (ILValue 10)))
                                                      (ILValue 10))))))
+(: used+defined/block (-> ILStatement* Boolean (List IdentSet IdentSet)))
+(define (used+defined/block stms lam-block?)
+  (let loop ([let-decs (ident-set)]
+             [var-decs (ident-set)]
+             [defines  (ident-set)]
+             [used     (ident-set)]
+             [stms     stms])
+    (match stms
+      ['()
+       ;; If lam-block? is true, the current block is top level block
+       ;; of a lambda, and hence we remove all defines and uses of variables
+       ;; declared in function scope.
+       (define scope-defs (if lam-block?
+                              (set-union let-decs var-decs)
+                              let-decs))
+       (list (set-subtract used scope-defs)
+             (set-subtract defines scope-defs))]
+      [(cons hd tl)
+       (match-define (list hd-used hd-defs) (used+defined/statement hd))
+       (define final-defines (set-union defines hd-defs))
+       (define final-used    (set-union used hd-used))
+       (match hd
+         [(ILVarDec id _) (loop let-decs
+                                (set-add var-decs id)
+                                final-defines
+                                final-used
+                                tl)]
+         [(ILLetDec id _) (loop (set-add let-decs id)
+                                var-decs
+                                final-defines
+                                final-used
+                                tl)]
+         [_ (loop let-decs
+                  var-decs
+                  final-defines
+                  final-used
+                  tl)])])))
+
+(: used+defined/statement (-> ILStatement (List IdentSet IdentSet)))
+(define used+defined/statement
+  (match-lambda
+    [(ILVarDec id expr)
+     (match-define (list used _) (if expr
+                                     (used+defined/statement expr)
+                                     (list (ident-set) (ident-set))))
+     (list used (set id))]
+    [(ILLetDec id expr)
+     (match-define (list used _) (if expr
+                                     (used+defined/statement expr)
+                                     (list (ident-set) (ident-set))))
+     (list used (set id))]
+    [(ILIf pred t-branch f-branch)
+     (match-define (list p-used _) (used+defined/statement pred))
+     (match-define (list t-used t-defs) (used+defined/block t-branch #f))
+     (match-define (list f-used f-defs) (used+defined/block f-branch #f))
+     (list (set-union p-used t-used f-used)
+           (set-union t-defs f-defs))]
+    [(ILAssign lvalue rvalue)
+     (match-define (list lv-used _) (used+defined/statement lvalue))
+     (match-define (list rv-used _) (used+defined/statement rvalue))
+     (list rv-used lv-used)]
+    [(ILWhile condition body)
+     (match-define (list cond-used _) (used+defined/statement condition))
+     (match-define (list body-used body-defs) (used+defined/block body #f))
+     (list (set-union cond-used body-used) body-defs)]
+    [(ILReturn expr) (used+defined/statement expr)]
+    [(ILLambda args exprs)
+     (match-define (list e-used e-defs) (used+defined/block exprs #t))
+     (list (set-subtract e-used (list->set args)) e-defs)]
+    [(ILApp lam args)
+     (match-define (list l-used _) (used+defined/statement lam))
+     (match-define (list a-used _) (used+defined/block args #f))
+     (list (set-union l-used a-used) (set))]
+    [(ILBinaryOp oper args) (used+defined/block args #f)]
+    [(ILArray items) (used+defined/block items #f)]
+    [(and (ILObject items) stm)
+     ;; Typically the fields of object are in context (this) of any
+     ;; lambda, and hence should be overall be removed from used set.
+     ;; However, since members of objects could be called with
+     ;; different context (this) we can't determine this for sure, so
+     ;; we consider fields as used overall if they are used in bodies.
+     (define bodies (ILObject-bodies stm))
+     (match-define (list used defined) (used+defined/block bodies #f))
+     (list used defined)]
+    [(ILExnHandler try error catch finally)
+     (match-define (list t-used t-defs) (used+defined/block try #f))
+     (match-define (list c-used c-defs)
+       (match-let ([(list u d) (used+defined/block catch #f)])
+         (list (set-remove u error)
+               (set-remove d error))))
+     (match-define (list f-used f-defs) (used+defined/block finally #f))
+     (list (set-union t-used c-used f-used) (set-union t-defs c-defs f-defs))]
+    [(ILRef expr fieldname)
+     (used+defined/statement expr)]
+    [(ILIndex expr fieldexpr)
+     (match-define (list e-used _) (used+defined/statement expr))
+     (match-define (list f-used _) (used+defined/statement fieldexpr))
+     (list (set-union e-used f-used) (set))]
+    [(ILValue v) (list (set) (set))]
+    [(ILNew e) (used+defined/statement e)]
+    [(? symbol? v)
+     (list (set v) (set))]))
+(module+ test
+  ;;  Trivial
+  (check-equal? (used+defined/statement 'a) (list (set 'a) (set)))
+  (check-equal? (used+defined/statement (ILAssign 'a 'b))
+                (list (set 'b) (set 'a)))
+
+  ;; Nested statements with blocks
+  (check-equal? (used+defined/statement (ILIf (ILApp 'func '(a b))
+                                              (list (ILReturn 'c))
+                                              (list (ILReturn 'd))))
+                (list (set 'func 'a 'b 'c 'd) (set)))
+  (check-equal? (used+defined/statement (ILIf (ILApp 'func '(a b))
+                                              (list (ILAssign 'c 'a))
+                                              (list (ILAssign 'd 'b))))
+                (list (set 'func 'a 'b) (set 'c 'd)))
+  (check-equal? (used+defined/statement (ILIf (ILApp 'func '(a b))
+                                              (list (ILVarDec 'c 'a))
+                                              (list (ILVarDec 'd 'b))))
+                (list (set 'func 'a 'b) (set 'c 'd))
+                "VarDec's in `if` statement define binding at function scope.")
+  (check-equal? (used+defined/statement (ILIf (ILApp 'func '(a b))
+                                              (list (ILLetDec 'c 'a))
+                                              (list (ILLetDec 'd 'b))))
+                (list (set 'func 'a 'b) (set))
+                "LetDec's in `if` statement define binding at local scope.")
+
+  ;; Lambdas
+  (check-equal? (used+defined/statement (ILLambda '(a)
+                                                  (list
+                                                   (ILApp 'func '(a c d)))))
+                (list (set 'func 'c 'd) (set))
+                "Identifiers c and d are free in lambda")
+  (check-equal? (used+defined/statement (ILLambda '(a)
+                                                  (list
+                                                   (ILVarDec 'a 'b))))
+                (list (set 'b) (set))
+                "`a` is defined in lambda hence doesn't affect outer scope")
+  (check-equal? (used+defined/statement (ILLambda '()
+                                                  (list
+                                                   (ILVarDec 'a 'b)
+                                                   (ILApp '+ '(a a)))))
+                (list (set '+ 'b) (set))
+                "`a` is defined within scope but `b` is free")
+  (check-equal? (used+defined/statement (ILLambda '()
+                                                  (list
+                                                   (ILAssign 'a 'b))))
+                (list (set 'b) (set 'a))
+                "`a` is free and defined hence in result")
+
+  ;; Exception handler
+  (check-equal? (used+defined/statement
+                 (ILExnHandler (list (ILAssign 'a 'b))
+                               'e
+                               (list (ILApp 'log '(e a)))
+                               '()))
+                (list (set 'b 'log 'a) (set 'a)))
+
+  ;; Objects
+  (check-equal? (used+defined/statement
+                 (ILObject
+                  `{[foo . ,(ILLambda '(n)
+                                    (list (ILReturn (ILApp 'bar '(n)))))]
+                    [bar . ,(ILLambda '(n)
+                                    (list (ILReturn (ILApp 'foo '(n)))))]}))
+                (list (set 'foo 'bar) (set))
+                "fields of object are typically in this, but context can be changed")
+  (check-equal? (used+defined/statement
+                 (ILObject
+                  `{[foo . ,(ILLambda '(n)
+                                      (list (ILAssign 'foo (ILApp 'bar '(n)))))]
+                    [bar . ,(ILLambda '(n)
+                                      (list (ILReturn (ILApp 'foo '(n)))))]}))
+                (list (set 'foo 'bar) (set 'foo))
+                "fields of objects part of this, but this can be changed"))
+
+
+(define-type StatementKey      Natural)
+(define-type Statement2UseDef (HashTable ILStatement (List IdentSet IdentSet)))
+
+(: used+defined/statement* (-> ILStatement* Statement2UseDef))
+(define (used+defined/statement* stms)
+  (for/hash : Statement2UseDef ([stm stms])
+    (values stm (used+defined/statement stm))))
 
 (: flatten-if-else/expr (-> ILExpr ILExpr))
 (define flatten-if-else/expr
