@@ -46,9 +46,9 @@
     [(Module? form) (error 'absyn-top-level->il
                            "Not supported. Todo.")]
     [(Expr? form)
-     (define-values (stmt v) (absyn-expr->il form))
+     (define-values (stmt v) (absyn-expr->il form #f))
      (append1 stmt v)]
-    [(Begin? form) (absyn-expr->il form)]
+    [(Begin? form) (absyn-expr->il form #f)]
     [else (error "only modules supported at top level")]))
 
 
@@ -154,7 +154,7 @@
 (define (absyn-gtl-form->il form)
   (cond
     [(Expr? form)
-     (define-values (stms v) (absyn-expr->il form))
+     (define-values (stms v) (absyn-expr->il form #f))
      (append1 stms v)]
     [(DefineValues? form)
      (match-define (DefineValues ids expr) form)
@@ -186,13 +186,13 @@
          (append result
                  (map RenamedProvide to-export new-ids)))])))
 
-(: absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
+(: absyn-expr->il (-> Expr Boolean (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
 ;;; statements in JS. However, since expression always has a
 ;;; values, we return pair of statements and the final value
 ;;; of expression.
 ;;; TODO: returned ILExpr should be just ILValue?
-(define (absyn-expr->il expr)
+(define (absyn-expr->il expr overwrite-mark-frame?)
   (match expr
     [(PlainLambda formals body)
      ;; TODO: This is terribly mixed up lower level details. Perhaps
@@ -235,7 +235,8 @@
        (for/fold/last ([stms : ILStatement* '()]
                        [rv : ILExpr (ILValue (void))])
                       ([e last? body])
-                      (define-values (s v) (absyn-expr->il e))
+                      (define-values (s v)
+                        (absyn-expr->il e (and last? overwrite-mark-frame?)))
                       (if last?
                           (values (append stms s) v)
                           (values (append stms s (list v)) v))))
@@ -247,12 +248,12 @@
                                (list (ILReturn body-value)))))]
 
     [(CaseLambda clauses)
-     (absyn-expr->il (expand-case-lambda expr))]
+     (absyn-expr->il (expand-case-lambda expr) #f)]
 
     [(If pred-e t-branch f-branch)
-     (define-values (ps pe) (absyn-expr->il pred-e))
-     (define-values (ts te) (absyn-expr->il t-branch))
-     (define-values (fs fe) (absyn-expr->il f-branch))
+     (define-values (ps pe) (absyn-expr->il pred-e #f))
+     (define-values (ts te) (absyn-expr->il t-branch overwrite-mark-frame?))
+     (define-values (fs fe) (absyn-expr->il f-branch overwrite-mark-frame?))
      (define result-id (fresh-id 'if_res))
      (values (append ps
                      (list
@@ -270,7 +271,8 @@
      (for/fold/last ([stms binding-stms]
                      [rv : ILExpr (ILValue (void))])
                     ([e last? body])
-                    (define-values (s nv) (absyn-expr->il e))
+                    (define-values (s nv)
+                      (absyn-expr->il e (and last? overwrite-mark-frame?)))
                     (if last?
                         (values (append stms s) nv)
                         (values (append stms s (list nv)) nv)))]
@@ -286,13 +288,14 @@
      (for/fold/last ([stms binding-stms]
                      [rv : ILExpr (ILValue (void))])
                     ([e last? body])
-                    (define-values (s nv) (absyn-expr->il e))
+                    (define-values (s nv)
+                      (absyn-expr->il e (and last? overwrite-mark-frame?)))
                     (if last?
                         (values (append stms s) nv)
                         (values (append stms s (list nv)) nv)))]
 
     [(Set! id e)
-     (values (let-values ([(stms v) (absyn-expr->il e)])
+     (values (let-values ([(stms v) (absyn-expr->il e #f)])
                (append1 stms
                         (ILAssign id v)))
              (ILValue (void)))]
@@ -302,7 +305,7 @@
        [(list (Quote 'var) (Quote var))
         (values '() (cast var Symbol))]
        [(list (Quote 'ref) b xs ...)
-        (define-values (stms il) (absyn-expr->il b))
+        (define-values (stms il) (absyn-expr->il b #f))
         (values stms
                 (for/fold ([il il])
                           ([x xs])
@@ -317,25 +320,25 @@
                              (cast s Symbol))
                       (ILRef il (cast s Symbol)))))]
        [(list (Quote 'index) b xs ...)
-        (define-values (stms il) (absyn-expr->il b))
+        (define-values (stms il) (absyn-expr->il b #f))
         (for/fold ([stms stms]
                    [il il])
                   ([x xs])
-          (define-values (x-stms s-il) (absyn-expr->il x))
+          (define-values (x-stms s-il) (absyn-expr->il x #f))
           (values (append stms x-stms)
                   (if (ILValue? il)
                       (ILIndex (cast (ILValue-v il) Symbol)
                                s-il)
                       (ILIndex il s-il))))]
        [(list (Quote 'assign) lv rv)
-        (define-values (lv-stms lv-il) (absyn-expr->il lv))
-        (define-values (rv-stms rv-il) (absyn-expr->il rv))
+        (define-values (lv-stms lv-il) (absyn-expr->il lv #f))
+        (define-values (rv-stms rv-il) (absyn-expr->il rv #f))
         (values (append lv-stms
                         rv-stms
                         (list (ILAssign (cast lv-il ILLValue) rv-il)))
                 (ILValue (void)))]
        [(list (Quote 'new) lv)
-        (define-values (stms il) (absyn-expr->il lv))
+        (define-values (stms il) (absyn-expr->il lv #f))
         (values stms
                 (ILNew (cast il (U ILLValue ILApp))))]
        [(list (Quote 'array) items ...)
@@ -343,7 +346,7 @@
           (for/fold ([stms : ILStatement* '()]
                      [vals : (Listof ILExpr) '()])
                     ([item items])
-            (define-values (s* v*) (absyn-expr->il item))
+            (define-values (s* v*) (absyn-expr->il item #f))
             (values (append stms s*)
                     (append vals (list v*)))))
         (values stms*
@@ -356,7 +359,7 @@
                      [kvs : (Listof (Pairof ObjectKey ILExpr)) '()])
                     ([k (cast keys (Listof Quote))]
                      [v (cast vals (Listof Expr))])
-            (define-values (s* v*) (absyn-expr->il v))
+            (define-values (s* v*) (absyn-expr->il v #f))
             (values (append stms s*)
                     (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
                                             v*))))))
@@ -373,7 +376,7 @@
 
      (: il-app/binop (-> Ident (Listof ILExpr) (U ILApp ILBinaryOp)))
      (define (il-app/binop v arg*)
-       (define v-il (let-values ([(_ v) (absyn-expr->il v)])
+       (define v-il (let-values ([(_ v) (absyn-expr->il v #f)])
                       v))
        (cond
          [(and (equal? v (ImportedIdent '- '#%kernel))
@@ -393,7 +396,7 @@
                        [vals : (Listof ILExpr) '()]
                        [next-has-stms? : Boolean #f])
                       ([arg last? (reverse (cons lam args))])
-         (define-values (s v) (absyn-expr->il arg))
+         (define-values (s v) (absyn-expr->il arg #f))
          (cond
            [(and next-has-stms? (has-application? v))
             ;; If this argument expression has function application,
@@ -426,12 +429,12 @@
 
     [(cons hd '())
      (cond
-       [(Expr? hd) (absyn-expr->il hd)]
+       [(Expr? hd) (absyn-expr->il hd overwrite-mark-frame?)]
        [else (error "last datum in body must be expression")])]
 
     [(cons hd tl)
      (define hd-stms (absyn-top-level->il hd))
-     (define-values (tl-stms v) (absyn-expr->il tl))
+     (define-values (tl-stms v) (absyn-expr->il tl overwrite-mark-frame?))
      (values (append hd-stms tl-stms)
              v)]
 
@@ -445,10 +448,11 @@
      (define expr0-id (fresh-id 'begin-res))
      (absyn-expr->il
       (LetValues (list (cons `(,expr0-id) expr0))
-                 (append1 expr* (LocalIdent expr0-id))))]
+                 (append1 expr* (LocalIdent expr0-id)))
+      overwrite-mark-frame?)]
 
     [(Box e)
-     (define-values (stms val) (absyn-expr->il e))
+     (define-values (stms val) (absyn-expr->il e #f))
      (values stms
              (ILApp (name-in-module 'core 'Box.make) (list val)))]
 
@@ -460,11 +464,11 @@
      (values '() (ILRef (assert mod-obj-name symbol?) id))]
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key
-     (absyn-expr->il wcm)]
+     (absyn-expr->il wcm overwrite-mark-frame?)]
     [(WithContinuationMark key value result)
-     (define-values (key-stms key-expr) (absyn-expr->il key))
-     (define-values (value-stms value-expr) (absyn-expr->il value))
-     (define-values (result-stms result-expr) (absyn-expr->il result))
+     (define-values (key-stms key-expr) (absyn-expr->il key #f))
+     (define-values (value-stms value-expr) (absyn-expr->il value #f))
+     (define-values (result-stms result-expr) (absyn-expr->il result #t))
 
      (define old-context-id (fresh-id '__context))
      (define new-context-id (fresh-id '__context))
@@ -481,8 +485,10 @@
           (flatten-statements
            (list key-stms
                  value-stms
-                 (ILAssign new-context-id
-                           (ILApp (name-in-module 'core 'Marks.enterFrame) '()))
+                 (if overwrite-mark-frame?
+                     (ILAssign new-context-id old-context-id)
+                     (ILAssign new-context-id
+                               (ILApp (name-in-module 'core 'Marks.enterFrame) '())))
                  (ILApp (name-in-module 'core 'Marks.setMark)
                         (list key-expr value-expr))
                  result-stms
@@ -500,7 +506,7 @@
 (: absyn-binding->il (-> Binding ILStatement*))
 (define (absyn-binding->il b)
   (match-define (cons args expr) b)
-  (define-values (stms v) (absyn-expr->il expr))
+  (define-values (stms v) (absyn-expr->il expr #f))
   (match args
     [(list a)
      (append1 stms
@@ -579,6 +585,10 @@
   (require typed/rackunit
            racket/pretty)
 
+  (: -absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
+  (define (-absyn-expr->il expr)
+    (absyn-expr->il expr #f))
+
   (define-syntax-rule (values->list e)
     (call-with-values (λ () e) list))
 
@@ -591,7 +601,7 @@
        (list result ...))))
 
   (define-syntax-rule (check-ilexpr expr stms val)
-    (ilcheck absyn-expr->il expr stms val))
+    (ilcheck -absyn-expr->il expr stms val))
 
   (define-syntax-rule (check-iltoplevel form stms)
     (ilcheck absyn-top-level->il form stms))
