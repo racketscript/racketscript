@@ -783,6 +783,63 @@
 
   ;; FFI ------------------------------------------------------------
 
+  (define absyn-js-ffi (ImportedIdent '#%js-ffi "fakepath.rkt"))
+
+  (check-ilexpr
+   (PlainApp absyn-js-ffi (list (Quote 'var) (Quote 'console)))
+   '()
+   'console)
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'ref) (Quote 'obj) (Quote 'key1) (Quote 'key2)))
+    '()
+    (ILRef (ILRef 'obj 'key1) 'key2))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'index)
+          (Quote 'obj)
+          (PlainApp (LocalIdent 'do) (list (Quote "Hello!")))))
+   '()
+   (ILIndex 'obj (ILApp 'do (list (ILValue "Hello!")))))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'object)
+          (Quote 'key1) (Quote 'key2) (Quote 'key3)
+          (Quote 'val1) (Quote 'val2) (Quote 'val3)))
+   '()
+   (ILObject (list (cons 'key1 (ILValue 'val1))
+                   (cons 'key2 (ILValue 'val2))
+                   (cons 'key3 (ILValue 'val3)))))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'array)
+          (Quote 1) (Quote 2) (Quote 3)))
+   '()
+   (ILArray (list (ILValue 1) (ILValue 2) (ILValue 3))))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'assign)
+          (LocalIdent 'name) (Quote "John Doe")))
+   (list (ILAssign 'name (ILValue "John Doe")))
+   (ILValue (void))) ;;TODO: FFI special case!
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'new) (LocalIdent 'Array)))
+   '()
+   (ILNew 'Array))
+
   ;; Top Level ------------------------------------------------------
 
   (check-iltoplevel

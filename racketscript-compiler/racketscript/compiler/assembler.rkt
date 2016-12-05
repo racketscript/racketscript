@@ -192,11 +192,11 @@
      (assemble-statement* try out)
      (emit "}")
      (when (cons? catch)
-       (emit (~a "catch (" (normalize-symbol error) ") {"))
+       (emit (~a " catch (" (normalize-symbol error) ") {"))
        (assemble-statement* catch out)
        (emit "}"))
      (when (cons? finally)
-       (emit (~a "finally {"))
+       (emit (~a " finally {"))
        (assemble-statement* finally out)
        (emit "}"))]
     [(ILLabel name)
@@ -474,6 +474,25 @@
   (check-expr (ILRef (ILNew (ILApp 'String (list (ILValue "Hello!")))) 'valueOf)
               "(new String(\"Hello!\")).valueOf")
 
+  ;; Objects
+
+  (check-expr (ILObject (list (cons 'name (ILValue "Vishesh"))
+                              (cons 'location (ILValue "Boston"))))
+              "{'name':\"Vishesh\",'location':\"Boston\"}")
+
+  (check-expr (ILObject (list (cons 'full-name (ILValue "Vishesh"))
+                              (cons 'location (ILValue "Boston"))))
+              "{'full-name':\"Vishesh\",'location':\"Boston\"}")
+
+  ;; Arrays
+
+  (check-expr (ILArray (list (ILValue 1) (ILValue "1") (ILObject '())))
+              "[1,\"1\",{}]")
+
+  ;; Instanceof
+  (check-expr (ILInstanceOf (ILValue 1))
+              "instanceof(1)")
+
   ;;; Statements --------------------------------------------------------------
 
   ;; declaration
@@ -494,6 +513,33 @@
   (check-stm (ILIf* (list
                      (ILIfClause (ILValue 1) (list 't-branch-1))))
              "if (1) {t_branch_1;}")
+
+  ;; Exceptions
+
+  (check-stm (ILThrow (ILValue 1))
+             "throw 1;")
+
+  (check-stm (ILThrow (ILNew 'Error))
+             "throw new Error;")
+
+  (check-stm (ILExnHandler (list (ILApp 'add (list (ILValue 1) (ILValue 2))))
+                           'error
+                           '()
+                           (list (ILApp 'done '())))
+             "try {add(1,2);} finally {done();}")
+
+  (check-stm (ILExnHandler (list (ILApp 'add (list (ILValue 1) (ILValue 2))))
+                           'error
+                           (list (ILApp 'done '(error)))
+                           '())
+             "try {add(1,2);} catch (error) {done(error);}")
+
+  (check-stm (ILExnHandler (list (ILApp 'add (list (ILValue 1) (ILValue 2))))
+                           'error
+                           (list (ILApp 'done '(error)))
+                           (list (ILApp 'done '())))
+             "try {add(1,2);} catch (error) {done(error);} finally {done();}")
+
 
   ;;; Requires ----------------------------------------------------------------
   ;; TODO
