@@ -20,3 +20,5 @@
 
 (equal? (unbox a) 100)
 (equal? (unbox b) 200)
+
+(equal? (unbox #&10) 10)
