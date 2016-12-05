@@ -171,11 +171,11 @@
                         (to-absyn e)))
                 (map to-absyn (syntax->list #'(b ...))))]
     [(letrec-values ([xs es] ...) b ...)
-     (LetRecValues (for/list ([x (syntax->list #'(xs ...))]
-                              [e (syntax->list #'(es ...))])
-                     (cons (syntax->datum x)
-                           (to-absyn e)))
-                   (map to-absyn (syntax->list #'(b ...))))]
+     (LetValues (for/list ([x (syntax->list #'(xs ...))]
+                           [e (syntax->list #'(es ...))])
+                  (cons (syntax->datum x)
+                        (to-absyn e)))
+                (map to-absyn (syntax->list #'(b ...))))]
     [(quote e) (Quote
                 (parameterize ([quoted? #t])
                   (to-absyn #'e)))] ;;;; TODO: HACK! See what actually happens
@@ -504,7 +504,7 @@
                (or (not (zero? n))
                    (even? (sub1 n)))))])
         (or (even? 50))))
-   (LetRecValues
+   (LetValues
     (list
      (cons
       '(even? odd?)

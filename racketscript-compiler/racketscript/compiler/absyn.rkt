@@ -65,11 +65,11 @@
            (If                [pred     : Expr]
                               [t-branch : Expr]
                               [f-branch : Expr])
+
+           ;; This also acts as LetRecValues because Absyn is
+           ;; freshened.
            (LetValues         [bindings : (Listof Binding)]
                               [body     : (Listof Expr)])
-           (LetRecValues      [bindings : (Listof Binding)]
-                              [body     : (Listof Expr)])
-
            (Set!              [id       : Symbol] [expr : Expr])
            (Box               [expr     : Expr])
 

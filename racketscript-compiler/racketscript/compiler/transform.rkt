@@ -277,23 +277,6 @@
                         (values (append stms s) nv)
                         (values (append stms s (list nv)) nv)))]
 
-    [(LetRecValues bindings body)
-     ;; FIXME: body same as LetValues, however using 'or' on pattern
-     ;; failed type checker
-     (define binding-stms
-       (for/fold ([stms : ILStatement* '()])
-                 ([b bindings])
-         (append stms
-                 (absyn-binding->il b))))
-     (for/fold/last ([stms binding-stms]
-                     [rv : ILExpr (ILValue (void))])
-                    ([e last? body])
-                    (define-values (s nv)
-                      (absyn-expr->il e (and last? overwrite-mark-frame?)))
-                    (if last?
-                        (values (append stms s) nv)
-                        (values (append stms s (list nv)) nv)))]
-
     [(Set! id e)
      (values (let-values ([(stms v) (absyn-expr->il e #f)])
                (append1 stms
