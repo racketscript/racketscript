@@ -101,7 +101,7 @@
     [v:identifier (Require (syntax-e #'v) #f)]
     [_ (error "unsupported require format")]))
 
-(define (provide-parse r)
+(define (parse-provide r)
   (syntax-parse r
     [v:str (list (SimpleProvide (syntax-e #'v)))]
     [v:identifier (list (SimpleProvide (syntax-e #'v)))]
@@ -184,7 +184,7 @@
      #f
      #;(map require-parse (syntax->list #'(x ...)))]
     [(#%provide x ...)
-     (append-map provide-parse (syntax->list #'(x ...)))]
+     (append-map parse-provide (syntax->list #'(x ...)))]
     [(case-lambda . clauses)
      (CaseLambda
       (stx-map (λ (c)
@@ -588,7 +588,7 @@
                                                  (LocalIdent 'b)
                                                  (LocalIdent 'c))))))))
 
-;;; Check module
+;;; Check module and provides
 
   (test-case "simple module"
     (define module-output
@@ -609,4 +609,31 @@
                      (PlainLambda '(name)
                                   (list
                                    (PlainApp (ident #'write)
-                                             (list (Quote "Hello"))))))))))
+                                             (list (Quote "Hello")))))))))
+
+  (check-equal? (parse-provide #'foo) (list (SimpleProvide 'foo)))
+  (check-equal? (parse-provide #'(all-defined)) (list (AllDefined (set))))
+  (check-equal? (parse-provide #'(all-defined-except foo bar))
+                (list (AllDefined (set 'foo 'bar))))
+  (check-equal? (parse-provide #'(rename foo bar))
+                (list (RenamedProvide 'foo 'bar)))
+  (check-equal? (parse-provide #'(prefix-all-defined foo))
+                (list (PrefixAllDefined 'foo (set))))
+  (check-equal? (parse-provide #'(prefix-all-defined-except foo add sub))
+                (list (PrefixAllDefined 'foo (set 'add 'sub))))
+
+  (test-case "check normal and prefix provides in module"
+    (define module-output
+      (parameterize ([global-export-graph (hash)])
+        (convert (expand
+                  #'(module foo racket/base
+                      (provide (prefix-out f: (combine-out foo bar)))
+                      (define foo #f)
+                      (define bar #f)))
+                 (build-path "/tmp/" "racketscript-test-expand.rkt"))))
+    (check-equal? (Module-forms module-output)
+                  (list
+                   (list (RenamedProvide 'foo 'f:foo)
+                         (RenamedProvide 'bar 'f:bar))
+                   (DefineValues '(foo) (Quote #f))
+                   (DefineValues '(bar) (Quote #f))))))

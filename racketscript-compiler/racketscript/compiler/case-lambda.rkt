@@ -6,20 +6,31 @@
                      racket/stxparam))
 
 (provide s-case-lambda
-         expand-case-lambda)
+         module-replace-case-lambda)
+
+(define (module-replace-case-lambda mod)
+  (syntax-parse mod
+    #:literal-sets ((kernel-literals))
+    [(module id path (#%plain-module-begin form ...))
+     (expand-case-lambda mod)]))
 
 (define (expand-case-lambda e)
   (syntax-parse e
     #:literal-sets ((kernel-literals))
     [(case-lambda (formals body ...+) ...)
-     (expand-case-lambda (expand #'(s-case-lambda (formals body ...) ...)))]
-    [(module id path form ...)
-     #`(module id path #,@(stx-map expand-case-lambda #'(form ...)))]
-    [(#%plain-module-begin form ...)
-     #`(#%plain-module-begin #,@(stx-map expand-case-lambda #'(form ...)))]
-    [(#%module-begin form ...)
-     #`(#%module-begin #,@(stx-map expand-case-lambda #'(form ...)))]
-    [(#%expression v)
+     #:with (new-clauses ...) (stx-map (λ (f b)
+                                         #`(#,f #,@(stx-map expand-case-lambda b)))
+                                       #`(formals ...)
+                                       #`((body ...) ...))
+     #`(case-lambda new-clauses ...)]
+    [(module id path (#%plain-module-begin form ...))
+     (expand #`(module id path
+                 (#%plain-module-begin
+                  (#%require (rename racketscript/compiler/case-lambda
+                                     case-lambda
+                                     s-case-lambda))
+                  #,@(stx-map expand-case-lambda #'(form ...)))))]
+    [(#%expression v)1
      #`(#%expression #,(expand-case-lambda #'v))]
     [(begin0 e0 e ...)
      #`(begin0 #,@(stx-map expand-case-lambda #'(e0 e ...)))]
@@ -62,7 +73,7 @@
   (define-syntax-class clause
     #:description "A single case-lambda clause"
     (pattern (f:formals body:expr ...+)))
-  
+
   ;; formals-check : Syntax Syntax:Formals -> stx
   ;; Produce expression to check if arguments given at `args`
   ;; from the driver lambda is valid for current case
@@ -88,7 +99,7 @@
        #'(if check-expr
              (apply (λ fs body ...) args)
              rest-clauses)]))
-  
+
   (syntax-parse stx
     #:literals (λ)
     [(c-λ (fs:formals body:expr ...+) ...)
@@ -97,7 +108,7 @@
 
 (module+ test
   (require rackunit)
-  
+
   (define lam1
     (s-case-lambda
      [(a b c) (* a b c)]
@@ -132,6 +143,46 @@
   (check-equal? (lam3 3 4) (+ 3 4) "match with second case")
   (check-equal? (lam3 3 4 5 6) (+ 3 4 5 6) "match the variable arg clause")
   (check-equal? (lam3 3 4 5 6 7 8 9) (+ 3 4 5 (* 6 7 8 9))
-                "match the variable arg clause"))
+                "match the variable arg clause")
 
 
+
+  (check-equal?
+   (syntax->datum
+    (module-replace-case-lambda
+     (expand
+      #'(module foo '#%kernel
+          (if (add1 0)
+              (case-lambda
+                [(a b c) (* a b c)]
+                [(a b) (+ a b)])
+              (begin
+                (let-values ([(lam) (case-lambda
+                                      [(a b c) (* a b c)]
+                                      [(a b) (+ a b)])])
+                  lam)))))))
+   (syntax->datum
+    (expand
+     #`(module foo '#%kernel
+         (#%plain-module-begin
+          (#%require
+           (rename racketscript/compiler/case-lambda case-lambda s-case-lambda))
+          (if (add1 0)
+              (case-lambda
+                [(a b c) (* a b c)]
+                [(a b) (+ a b)])
+              (begin
+                (let-values ([(lam) (case-lambda
+                                      [(a b c) (* a b c)]
+                                      [(a b) (+ a b)])])
+                  lam))))))))
+
+  #;(check-equal?
+   (syntax->datum
+    (module-replace-case-lambda
+     (expand
+      #'(module foo racket/base
+          (define (add a [b 10])
+            (+ a b))))))
+   #f)
+  )
