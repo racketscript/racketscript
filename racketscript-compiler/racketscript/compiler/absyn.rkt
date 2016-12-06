@@ -71,7 +71,6 @@
            (LetValues         [bindings : (Listof Binding)]
                               [body     : (Listof Expr)])
            (Set!              [id       : Symbol] [expr : Expr])
-           (Box               [expr     : Expr])
 
            (WithContinuationMark   [key    : Expr]
                                    [value  : Expr]

@@ -290,8 +290,8 @@
     [_ #:when (bytes? (syntax-e v)) (syntax-e v)]
     [_ #:when (boolean? (syntax-e v)) (syntax-e v)]
     [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
-    [_ #:when (box? (syntax-e v))
-       (Box (to-absyn (unbox (syntax-e v))))]
+    [_ #:when (box? (syntax-e v)) (box (parameterize ([quoted? #t])
+                                         (to-absyn (unbox (syntax-e v)))))]
     [_ #:when (exact-integer? (syntax-e v))
        (Quote (syntax-e v))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]

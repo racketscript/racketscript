@@ -330,6 +330,10 @@
      (emit ", ")
      (assemble-value (cdr v) out)
      (emit ")")]
+    [(box? v)
+     (emit (~a (name-in-module 'core 'Box.make) "("))
+     (assemble-value (unbox v) out)
+     (emit ")")]
     [(char? v)
      (write (~a v) out)]
     [(bytes? v)

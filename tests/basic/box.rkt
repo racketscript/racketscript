@@ -22,3 +22,5 @@
 (equal? (unbox b) 200)
 
 (equal? (unbox #&10) 10)
+(equal? (unbox #&(1 2 3 4)) '(1 2 3 4))
+(equal? (hash-ref (unbox #&#hash((1 . 2) (3 . 4))) 3) 4)

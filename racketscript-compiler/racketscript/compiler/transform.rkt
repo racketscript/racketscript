@@ -434,20 +434,17 @@
                  (append1 expr* (LocalIdent expr0-id)))
       overwrite-mark-frame?)]
 
-    [(Box e)
-     (define-values (stms val) (absyn-expr->il e #f))
-     (values stms
-             (ILApp (name-in-module 'core 'Box.make) (list val)))]
-
     [(ImportedIdent id src)
      (when (symbol? src)
        ;; TODO: need to move this ident-use out of expand
        (register-ident-use! src id))
      (define mod-obj-name (hash-ref (module-object-name-map) src))
      (values '() (ILRef (assert mod-obj-name symbol?) id))]
+
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key
      (absyn-expr->il wcm overwrite-mark-frame?)]
+
     [(WithContinuationMark key value result)
      (define-values (key-stms key-expr) (absyn-expr->il key #f))
      (define-values (value-stms value-expr) (absyn-expr->il value #f))
@@ -483,6 +480,7 @@
           (list (ILApp (name-in-module 'core 'Marks.updateFrame)
                        (list old-context-id new-context-id))))))
      (values stms result-id)]
+
     [_ (error (~a "unsupported expr " expr))]))
 
 
@@ -517,6 +515,7 @@
          (list? d)
          (cons? d)
          (hash? d)
+         (box? d)
          (boolean? d)
          (vector? d)
          (struct? d)
