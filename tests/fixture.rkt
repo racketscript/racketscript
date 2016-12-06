@@ -52,12 +52,14 @@
 ;; stdout and stderr produced
 (define run-in-racket
   (memoized-λ (fpath)
-    (match-define (list in-p-out out-p-in pid in-p-err control)
-      (process* (find-executable-path "racket")
-                (~a fpath)))
-    (control 'wait)
-    (list (port->string in-p-out)
-          (port->string in-p-err))))
+    (let ([p-std-err (open-output-string)]
+          [p-std-out (open-output-string)])
+      (parameterize ([current-error-port p-std-err]
+                     [current-output-port p-std-out]
+                     [current-namespace (make-base-namespace)])
+        (eval `(require (file ,fpath))))
+      (list (get-output-string p-std-out)
+            (get-output-string p-std-err)))))
 
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
@@ -65,7 +67,9 @@
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (build-path (output-directory) "node_modules" ".bin" "traceur")
-              (module-output-file (build-path (current-directory) fpath))))
+              (module-output-file (if (absolute-path? fpath)
+                                      (string->path fpath)
+                                      (build-path (current-directory) fpath)))))
   (control 'wait)
   (list (port->string in-p-out)
         (port->string in-p-err)))
@@ -104,10 +108,7 @@
   (match-define (list (list r-p-out r-p-err)
                       (list j-p-out j-p-err))
     (compile-run-test-case fpath))
-
-  (if (results-equal? r-p-out j-p-out)
-      (begin (displayln "✔") #t)
-      (begin (displayln "✘") #f)))
+  (results-equal? r-p-out j-p-out))
 
 ;; -> Void
 ;; Initialize test environment.
@@ -121,8 +122,9 @@
   ;; clean the compiled modules always, to avoid
   ;; cases where compilation fails but it anyway
   ;; proceeds with last module output
-  (for ([f (glob (~a (output-directory) "/modules" "/*"))])
-    (delete-file f))
+  (let ([modules-directory (build-path (output-directory) "modules")])
+    (when (directory-exists? modules-directory)
+      (delete-directory/files modules-directory)))
 
   (prepare-build-directory "") ;; We don't care about bootstrap file
   (unless (skip-npm-install)
@@ -143,6 +145,7 @@
 
   (define failed-tests '())
 
+
   ;; Handler when exception is raised by check failures. Gather
   ;; all failed tests, and in verbose mode show check failure
   ;; message.
@@ -154,16 +157,33 @@
          ;; Show check failure result
          (original-handler t)))))
 
+  (current-check-around
+   (let ([original-check-around (current-check-around)])
+     (λ (test-thunk)
+       (with-handlers ([exn:test? (λ (e)
+                                    (displayln "✘")
+                                    ((current-check-handler) e)
+                                    #f)]
+                       [(thunk* #t) (λ (e)
+                                      (displayln "✘ [𝚌𝚛𝚊𝚜𝚑]")
+                                      ((current-check-handler) e)
+                                      #f)])
+         (let ([result (test-thunk)])
+           (displayln (if result "✔" "✘")))))))
 
   (for ([test testcases]
         [i (in-naturals 1)])
     (define test-rel-path (find-relative-path (current-directory) test))
+
     (display (format "TEST (~a/~a) => ~a " i (length testcases) test-rel-path))
+    (flush-output)
+
     (parameterize ([current-test-name test])
       (check-racketscript test))
+
+    ;; Disable Gulp build as soon as we have run it once, as all we
+    ;; need is HAMT built in runtime.1
     (unless (skip-gulp-build)
-      ;; Disable Gulp build as soon as we have run it once, as all we
-      ;; need is HAMT built in runtime.
       (skip-gulp-build #t)))
 
   (unless (empty? failed-tests)
@@ -238,7 +258,8 @@
            (~a (build-path fixture-module-dir p) "/*.rkt"))
          paths))
 
-  (run (fixture-path-patterns "basic"
+  (run (fixture-path-patterns "test-the-test"
+                              "basic"
                               "struct"
                               "hash"
                               "wcm")))
