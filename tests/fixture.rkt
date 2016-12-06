@@ -5,6 +5,7 @@
          glob
          racket/runtime-path
          racketscript/compiler/main
+         racketscript/compiler/util
          racketscript/compiler/global
          racketscript/compiler/moddeps
          racketscript/compiler/il-analyze)
@@ -63,8 +64,8 @@
 ;; stdout and stderr produced
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* (find-executable-path "node")
-              (build-path (output-directory) "bootstrap.js")))
+    (process* (build-path (output-directory) "node_modules" ".bin" "traceur")
+              (module-output-file (build-path (current-directory) fpath))))
   (control 'wait)
   (list (port->string in-p-out)
         (port->string in-p-err)))
@@ -81,7 +82,7 @@
 
 ;; Path-String -> Void
 ;; Compile test-case in `fpath` to JavaScript
-(define (compile-test-case fpath)
+(define (compile-run-test-case fpath)
   (define test-path
     (if (absolute-path? fpath)
         (string->path fpath)
@@ -92,18 +93,18 @@
                  [current-output-port (if (racketscript-stdout?)
                                           (current-output-port)
                                           (open-output-nowhere))])
-    (skip-gulp-build #f) ;;TODO: Remove this to speed up
-    (racket->js)))
+    (racket->js)
+    (list (log-and-return 'racket (run-in-racket fpath))
+          (log-and-return 'nodejs (run-in-nodejs fpath)))))
 
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
 (define-simple-check (check-racketscript fpath)
-  (compile-test-case fpath)
-  (match-define (list r-p-out r-p-err) (log-and-return 'racket
-                                                       (run-in-racket fpath)))
-  (match-define (list j-p-out j-p-err) (log-and-return 'nodejs
-                                                       (run-in-nodejs fpath)))
+  (match-define (list (list r-p-out r-p-err)
+                      (list j-p-out j-p-err))
+    (compile-run-test-case fpath))
+
   (if (results-equal? r-p-out j-p-out)
       (begin (displayln "✔") #t)
       (begin (displayln "✘") #f)))
@@ -159,7 +160,11 @@
     (define test-rel-path (find-relative-path (current-directory) test))
     (display (format "TEST (~a/~a) => ~a " i (length testcases) test-rel-path))
     (parameterize ([current-test-name test])
-      (check-racketscript test)))
+      (check-racketscript test))
+    (unless (skip-gulp-build)
+      ;; Disable Gulp build as soon as we have run it once, as all we
+      ;; need is HAMT built in runtime.
+      (skip-gulp-build #t)))
 
   (unless (empty? failed-tests)
     (displayln (format "\nFailed tests (~a/~a) => "
