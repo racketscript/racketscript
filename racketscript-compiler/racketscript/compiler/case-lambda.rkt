@@ -15,7 +15,7 @@
      (expand-case-lambda mod)]))
 
 (define (expand-case-lambda e)
-  (syntax-parse e
+  (syntax-parse (syntax-disarm e #f)
     #:literal-sets ((kernel-literals))
     [(case-lambda (formals body ...+) ...)
      #:with (new-clauses ...) (stx-map (λ (f b)
@@ -23,8 +23,8 @@
                                        #`(formals ...)
                                        #`((body ...) ...))
      #`(case-lambda new-clauses ...)]
-    [(module id path (#%plain-module-begin form ...))
-     (expand #`(module id path
+    [(module name:id path:expr (#%plain-module-begin form ...))
+     (expand #`(module name path
                  (#%plain-module-begin
                   (#%require (rename racketscript/compiler/case-lambda
                                      case-lambda
@@ -103,11 +103,24 @@
   (syntax-parse stx
     #:literals (λ)
     [(c-λ (fs:formals body:expr ...+) ...)
+     ;#:with args (gensym 'args)
      #:with body* (transform #'(args (fs body ...) ...))
      #'(λ args body*)]))
 
 (module+ test
   (require rackunit)
+
+  (define (case-lambda-inside? stx)
+    (syntax-parse stx
+      [((~literal case-lambda) c ...) #t]
+      [(f ...) (ormap case-lambda-inside? (syntax-e #'(f ...)))]
+      [v #f]))
+  (check-false (case-lambda-inside? #'(+ 1 3 4)))
+  (check-false (case-lambda-inside? #'(if #t (λ (x) x) #f)))
+  (check-true (case-lambda-inside? #'(if #t
+                                         (case-lambda
+                                           [(a) a]
+                                           [(a b) (+ a b)]))))
 
   (define lam1
     (s-case-lambda
@@ -145,8 +158,6 @@
   (check-equal? (lam3 3 4 5 6 7 8 9) (+ 3 4 5 (* 6 7 8 9))
                 "match the variable arg clause")
 
-
-
   (check-equal?
    (syntax->datum
     (module-replace-case-lambda
@@ -177,12 +188,24 @@
                                       [(a b) (+ a b)])])
                   lam))))))))
 
-  #;(check-equal?
-   (syntax->datum
-    (module-replace-case-lambda
-     (expand
-      #'(module foo racket/base
-          (define (add a [b 10])
-            (+ a b))))))
-   #f)
-  )
+  (define define-user-mod
+    (expand
+     #'(module test-case-lambda-define '#%kernel
+         (#%require (only racket/base define displayln))
+         (define (add a [b 10])
+           (+ a b))
+         (displayln (add 1))
+         (displayln (add 1 2)))))
+
+  (define define-user-mod-c (module-replace-case-lambda define-user-mod))
+
+  ;; Check if original code had case-lambda, but new one didn't
+  (check-true (case-lambda-inside? define-user-mod))
+  (check-false (case-lambda-inside? define-user-mod-c))
+
+  (let ([stdout (open-output-string)])
+    (parameterize ([current-namespace (make-base-namespace)]
+                   [current-output-port stdout])
+      (eval-syntax define-user-mod-c)
+      (eval `(require 'test-case-lambda-define)))
+    (check-equal? (get-output-string stdout) "11\n3\n")))

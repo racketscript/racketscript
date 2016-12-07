@@ -87,7 +87,6 @@
 
 (define (parse-provide r)
   (syntax-parse r
-    [v:str (list (SimpleProvide (syntax-e #'v)))]
     [v:identifier (list (SimpleProvide (syntax-e #'v)))]
     [((~datum for-meta) 0 p ...)
      (stx-map (λ (pv) (SimpleProvide (syntax-e pv))) #'(p ...))]
@@ -290,8 +289,6 @@
        (Quote (syntax-e v))]
     [_ #:when (void? (syntax-e v))
        (Quote (void))]
-    [((~literal with-continuation-mark) e0 e1 e2)
-     (error "with-continuation-mark is not supported")]
     [_ (displayln "unsupported form =>")
        (pretty-print (syntax->datum v))
        (error 'expand)]))
