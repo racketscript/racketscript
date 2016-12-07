@@ -37,7 +37,7 @@ script:
   - make integration-test
 
 after_success:
-  - raco cover -bf codecov -d $TRAVIS_BUILD_DIR/coverage
+  - COVERAGE_MODE=1 raco cover -bf codecov -d $TRAVIS_BUILD_DIR/coverage
         racketscript-compiler/racketscript/ tests/fixture.rkt
 
 after_script:

@@ -22,6 +22,16 @@
 ;; produced by compiler
 (define racketscript-stdout? (make-parameter #f))
 
+;; For coverage mode, we just compile the test cases, but not the
+;; examples, as we don't care about knowing result of tests.
+(define coverage-mode? (let ([mod (getenv "COVERAGE_MODE")])
+                         (and mod (equal? (string->number mod) 1))))
+
+(define (displayln* v)
+  (if coverage-mode?
+      (displayln "")
+      (displayln v)))
+
 (define (memoize lam)
   (let ([cache (make-hash)])
     (λ new-formals
@@ -102,8 +112,11 @@
                                    ((error-display-handler) "racket->js failed" e))
                                  #f)])
       (racket->js)
-      (list (log-and-return 'racket (run-in-racket fpath))
-            (log-and-return 'nodejs (run-in-nodejs fpath))))))
+      (if (false? coverage-mode?)
+          (list (log-and-return 'racket (run-in-racket fpath))
+                (log-and-return 'nodejs (run-in-nodejs fpath)))
+          (list (list "" "")
+                (list "" ""))))))
 
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
@@ -172,12 +185,12 @@
    (let ([original-check-around (current-check-around)])
      (λ (test-thunk)
        (with-handlers ([exn:test:check? (λ (e)
-                                          (displayln "✘")
+                                          (displayln* "✘")
                                           ((current-check-handler) e)
                                           #f)])
          (case (test-thunk)
-           [(#t) (displayln "✔") #t]
-           [(#f) (displayln "✘") #f])))))
+           [(#t) (displayln* "✔") #t]
+           [(#f) (displayln* "✘") #f])))))
 
   (for ([test testcases]
         [i (in-naturals 1)])
@@ -206,25 +219,28 @@
   (setup)
 
   (displayln "-> RacketScript Fixtures Runner <-\n")
-  (parameterize ([enabled-optimizations (set)])
-    (displayln "---------------------------------")
-    (displayln "::: Optimizations on ::: none :::")
-    (displayln "---------------------------------")
-    (run-tests tc-search-patterns))
+  (when coverage-mode? (displayln "Running in coverage mode."))
 
-  (displayln "")
-  (parameterize ([enabled-optimizations (set self-tail->loop)])
-    (displayln "--------------------------------")
-    (displayln "::: Optimizations on ::: TCO :::")
-    (displayln "--------------------------------")
-    (run-tests tc-search-patterns))
+  (unless coverage-mode?
+    (parameterize ([enabled-optimizations (set)])
+      (displayln "---------------------------------")
+      (displayln "::: Optimizations on ::: none :::")
+      (displayln "---------------------------------")
+      (run-tests tc-search-patterns)))
 
-  (displayln "")
-  (parameterize ([enabled-optimizations (set flatten-if-else)])
-    (displayln "--------------------------------------------")
-    (displayln "::: Optimizations on ::: Flatten If-Else :::")
-    (displayln "-------------------------------------------")
-    (run-tests tc-search-patterns))
+  ;; (displayln "")
+  ;; (parameterize ([enabled-optimizations (set self-tail->loop)])
+  ;;   (displayln "--------------------------------")
+  ;;   (displayln "::: Optimizations on ::: TCO :::")
+  ;;   (displayln "--------------------------------")
+  ;;   (run-tests tc-search-patterns))
+
+  ;; (displayln "")
+  ;; (parameterize ([enabled-optimizations (set flatten-if-else)])
+  ;;   (displayln "--------------------------------------------")
+  ;;   (displayln "::: Optimizations on ::: Flatten If-Else :::")
+  ;;   (displayln "-------------------------------------------")
+  ;;   (run-tests tc-search-patterns))
 
   (displayln "")
   (parameterize ([enabled-optimizations (set flatten-if-else

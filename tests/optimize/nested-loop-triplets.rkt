@@ -15,4 +15,4 @@
     (when (< i n) (loop-i (add1 i))))
   results)
 
-(displayln (triplets 100))
+(displayln (triplets 200))
