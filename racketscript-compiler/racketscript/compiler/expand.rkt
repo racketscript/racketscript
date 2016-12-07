@@ -76,22 +76,6 @@
       (list (resolved-module-path-name (module-path-index-resolve i)) #f)
       (list (current-module) #t)))
 
-(define (full-path-string p)
-  (path->string (normalize-path (simplify-path p #t))))
-(define (desymbolize s)
-  (cond
-    [(symbol? s) (symbol->string s)]
-    [(path? s)   (full-path-string s)]
-    [else        s]))
-
-(define (make-path-strings xs)
-  (define (path-string p)
-    (if (path? p)
-      (path->string
-        (simplify-path p))
-      p))
-  (map path-string xs))
-
 ;;;-----------------------------------------------------------------------------
 ;;;; Conversion and expansion
 
@@ -128,11 +112,6 @@
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
 (define (to-absyn v)
-  (define (proper l)
-    (match l
-      [(cons a b) (cons a (proper b))]
-      [_ null]))
-
   (define (formals->absyn formals)
     (parameterize ([quoted? #t])
       (let ([f (to-absyn formals)])
