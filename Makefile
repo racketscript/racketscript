@@ -64,10 +64,7 @@ jshint:
 
 ## Test recipes
 
-test:
-	@echo "     RACKETSCRIPT TEST       "
-	@echo "++++++++++++++++++++++++"
-	raco test -t racketscript-compiler/ tests/fixture.rkt
+test: unit-test integration-test
 
 unit-test:
 	@echo "    RACKETSCRIPT UNIT-TEST   "
