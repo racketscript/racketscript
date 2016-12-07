@@ -97,18 +97,30 @@
                  [current-output-port (if (racketscript-stdout?)
                                           (current-output-port)
                                           (open-output-nowhere))])
-    (racket->js)
-    (list (log-and-return 'racket (run-in-racket fpath))
-          (log-and-return 'nodejs (run-in-nodejs fpath)))))
+    (with-handlers ([exn:fail? (λ (e)
+                                 (when (verbose?)
+                                   ((error-display-handler) "racket->js failed" e))
+                                 #f)])
+      (racket->js)
+      (list (log-and-return 'racket (run-in-racket fpath))
+            (log-and-return 'nodejs (run-in-nodejs fpath))))))
 
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
 (define-simple-check (check-racketscript fpath)
-  (match-define (list (list r-p-out r-p-err)
-                      (list j-p-out j-p-err))
-    (compile-run-test-case fpath))
-  (results-equal? r-p-out j-p-out))
+  (let ([result (compile-run-test-case fpath)])
+    (cond
+      [(false? result)
+       ;;FIXME
+       ;;   We output here because if we return a non-false value
+       ;;   from here, it doens't show up as a test failure. We
+       ;;   ideally would like to handle this in check-around.
+       (display "[𝚌𝚛𝚊𝚜𝚑]") result]
+      [else (match-define (list (list r-p-out r-p-err)
+                                (list j-p-out j-p-err))
+              result)
+            (results-equal? r-p-out j-p-out)])))
 
 ;; -> Void
 ;; Initialize test environment.
@@ -145,7 +157,6 @@
 
   (define failed-tests '())
 
-
   ;; Handler when exception is raised by check failures. Gather
   ;; all failed tests, and in verbose mode show check failure
   ;; message.
@@ -160,16 +171,13 @@
   (current-check-around
    (let ([original-check-around (current-check-around)])
      (λ (test-thunk)
-       (with-handlers ([exn:test? (λ (e)
-                                    (displayln "✘")
-                                    ((current-check-handler) e)
-                                    #f)]
-                       [(thunk* #t) (λ (e)
-                                      (displayln "✘ [𝚌𝚛𝚊𝚜𝚑]")
-                                      ((current-check-handler) e)
-                                      #f)])
-         (let ([result (test-thunk)])
-           (displayln (if result "✔" "✘")))))))
+       (with-handlers ([exn:test:check? (λ (e)
+                                          (displayln "✘")
+                                          ((current-check-handler) e)
+                                          #f)])
+         (case (test-thunk)
+           [(#t) (displayln "✔") #t]
+           [(#f) (displayln "✘") #f])))))
 
   (for ([test testcases]
         [i (in-naturals 1)])

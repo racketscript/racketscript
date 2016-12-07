@@ -33,7 +33,8 @@ install:
   - raco pkg install --auto cover-codecov
 
 script:
-  - make test
+  - make unit-test
+  - make integration-test
 
 after_success:
   - raco cover -bf codecov -d $TRAVIS_BUILD_DIR/coverage
