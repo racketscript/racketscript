@@ -19,11 +19,13 @@
 	"gulp",
 	"gulp-replace",
 	"gulp-babel",
+        "gulp-strip-comments",
 	"hamt_plus",
 	"babel-core",
 	"babel-cli",
 	"babel-preset-es2015",
 	"babel-deps",
-	"babel-polyfill"
+	"babel-polyfill",
+	"babel-plugin-transform-helper"
     ]
 }

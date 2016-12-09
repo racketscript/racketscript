@@ -2,6 +2,7 @@ const gulp = require('gulp');
 const babel = require('gulp-babel');
 const replace = require('gulp-replace');
 const babelDeps = require("babel-deps");
+const strip = require('gulp-strip-comments');
 
 const target = "~a" + ".rkt.js";
 
@@ -17,8 +18,10 @@ gulp.task('build', ['copy-hamt'], function() {
 		     '!./dist/**',
 		     '!./*.js'])
 	.pipe(babel({
-	    presets: ["es2015", "babel-polyfill"]
+	    presets: ["es2015", "babel-polyfill"],
+	    plugins:["babel-plugin-transform-helper"]
 	}))
+        .pipe(strip())
 	.pipe(gulp.dest('dist'));
 });
 
