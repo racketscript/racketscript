@@ -203,7 +203,14 @@
      (emit "~a:" (normalize-symbol name))]
     [(ILValue v) #:when (void? v) (void)] ;; ignore this NOP case
     [_ #:when (ILExpr? stmt)
+       ;; When we have a lambda expression as a statement, wrap it in
+       ;; paranthesis. It's a JavaScript syntax ambiguity mentioned in
+       ;; ECMAScript spec.
+       (when (ILLambda? stmt)
+         (emit  "("))
        (assemble-expr stmt out)
+       (when (ILLambda? stmt)
+         (emit ")"))
        (emit ";")]))
 
 (: assemble-module (-> ILModule (Option Output-Port) Void))
@@ -431,6 +438,10 @@
               "function(x) {return x;}")
   (check-expr (ILLambda '(a b c) (list (ILReturn (ILBinaryOp '+ '(a b c)))))
               "function(a, b, c) {return a+b+c;}")
+
+  (check-stm (ILLambda '() '())
+             "(function() {});"
+             "Lambda as a lone statement should be wrapped in brackets")
 
   ;; Application
   (check-expr (ILApp 'add (list 'a 'b)) "add(a,b)")
