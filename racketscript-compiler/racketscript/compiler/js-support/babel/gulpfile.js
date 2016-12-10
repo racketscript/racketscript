@@ -12,17 +12,27 @@ gulp.task('copy-hamt', function() {
 	.pipe(gulp.dest("runtime/third-party/"));
 });
 
-gulp.task('build', ['copy-hamt'], function() {
+gulp.task('transform', ['copy-hamt'], function() {
     return gulp.src(['./**/*.js',
 		     '!./node_modules/**',
 		     '!./dist/**',
 		     '!./*.js'])
 	.pipe(babel({
 	    presets: ["es2015", "babel-polyfill"],
-	    plugins:["babel-plugin-transform-helper"]
+	    plugins: [
+              ["babel-plugin-transform-helper", {
+                      helperFilename: "./runtime/babel-helper.js"
+                  }
+              ]
+            ]
 	}))
         .pipe(strip())
-	.pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build', ['transform'], function () {
+    return gulp.src(['./runtime/babel-helper.js'])
+        .pipe(gulp.dest('dist/runtime/'));
 });
 
 gulp.task('default', ['build']);
