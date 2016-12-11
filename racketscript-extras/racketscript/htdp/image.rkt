@@ -20,6 +20,7 @@
          square
          circle
          text
+         text/font
          triangle
          frame
          color-frame
@@ -277,6 +278,15 @@
              "normal"   ;; weight
              #f)))      ;; underline
 
+(define (text/font txt size color face family style weight underline?)
+  (new (Text txt
+             size
+             color
+             (or face "")
+             (if (symbol? family) (symbol->string family) family)
+             (if (symbol? style) (symbol->string style) style)
+             (if (symbol? weight) (symbol->string weight) weight)
+              underline?)))
 
 (define (line x y pen-or-color)
   (new (Line x y pen-or-color)))
