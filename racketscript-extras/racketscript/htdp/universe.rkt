@@ -7,6 +7,7 @@
 (provide on-mouse
          on-tick
          on-key
+         on-release
          to-draw
          stop-when
          big-bang
@@ -240,29 +241,33 @@
         (#js.bb.change-world new-world)
         #t)])))
 
-(define (on-key cb)
-  (λ (bb)
-    ($/obj
-     [name        "on-key"]
-     [register
-      (λ ()
-        (define canvas #js.bb.-canvas)
-        (:= #js*.this.listener
-            (λ (evt)
-              (#js.evt.preventDefault)
-              (#js.evt.stopPropagation)
-              (#js.bb.queue-event ($/obj [type "on-key"]
-                                         [key  (key-event->key-name evt)]))))
-        (#js.canvas.addEventListener "keydown" #js*.this.listener))]
-     [deregister
-      (λ ()
-        (#js.bb.-canvas.removeEventListener "keydown" #js*.this.listener)
-        (:= #js*.this.listener #js*.undefined))]
-     [invoke
-      (λ (world evt)
-        (define new-world (cb world #js.evt.key))
-        (#js.bb.change-world new-world)
-        #t)])))
+(define-syntax-rule (-on-key-* r-evt-name evt-name)
+  (λ (cb)
+    (λ (bb)
+      ($/obj
+       [name        r-evt-name]
+       [register
+        (λ ()
+          (define canvas #js.bb.-canvas)
+          (:= #js*.this.listener
+              (λ (evt)
+                (#js.evt.preventDefault)
+                (#js.evt.stopPropagation)
+                (#js.bb.queue-event ($/obj [type r-evt-name]
+                                           [key  (key-event->key-name evt)]))))
+          (#js.canvas.addEventListener evt-name #js*.this.listener))]
+       [deregister
+        (λ ()
+          (#js.bb.-canvas.removeEventListener evt-name #js*.this.listener)
+          (:= #js*.this.listener #js*.undefined))]
+       [invoke
+        (λ (world evt)
+          (define new-world (cb world #js.evt.key))
+          (#js.bb.change-world new-world)
+          #t)]))))
+
+(define on-key     (-on-key-* "on-key" "keydown"))
+(define on-release (-on-key-* "on-release" "keyup"))
 
 (define (stop-when last-world? [last-picture #f])
   (λ (bb)
