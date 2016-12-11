@@ -39,12 +39,14 @@ export function makeParameter(initValue) {
 	// `param` that we result is the key.
 	let pv = getCurrentParameterization().get(param, false) ||
 	    __top.get(param, false);
-	if (!pv) {
+	// Create entry in __top if its a mutation.
+	if (!pv && maybeSetVal !== undefined) {
 	    pv = Box.make(initValue);
 	    __top.set(param, pv);
 	}
+	// Get/Set
 	if (maybeSetVal === undefined) {
-	    return pv.get();
+	    return (pv && pv.get()) || initValue;
 	} else {
 	    pv.set(maybeSetVal);
 	}
