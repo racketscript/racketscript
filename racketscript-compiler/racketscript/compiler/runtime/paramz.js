@@ -21,13 +21,13 @@ const Box = Core.Box;
 // When a parameter is created, it keeps an stores the initial value
 // inside. An entry is not added to parameterization map. An entry is
 // created in this map only when a context is created using
-// `with-continuation-mark` or `parameterize`. `__locals` keeps the
-// parameter value local to current async callback. When a callback is
-// created current parameterization should be copied using ffi's "=>$"
-// form.
+// `with-continuation-mark` or `parameterize`. `__top` keeps the top
+// level parameter value local to current async callback. When a
+// callback is created current parameterization should be copied using
+// ffi's "=>$" form.
 
 const ParameterizationKey = {}; /* a unique reference that can act as key */
-let __locals = undefined;
+let __top = undefined;
 
 export function getCurrentParameterization() {
     return Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false);
@@ -38,10 +38,10 @@ export function makeParameter(initValue) {
 	// Get current value box from parameterization. The function
 	// `param` that we result is the key.
 	let pv = getCurrentParameterization().get(param, false) ||
-	    __locals.get(param, false);
+	    __top.get(param, false);
 	if (!pv) {
 	    pv = Box.make(initValue);
-	    __locals.set(param, pv);
+	    __top.set(param, pv);
 	}
 	if (maybeSetVal === undefined) {
 	    return pv.get();
@@ -74,16 +74,24 @@ export function copyParameterization(parameterization) {
     } else {
 	Marks.setMark(ParameterizationKey, hamt.make());
     }
-    __locals = new Map();
+    __top = new Map();
 
-    Marks.registerAsynCallbackWrapper(function (oldFrames) {
-	let oldP = Marks.getFirstMark(oldFrames, ParameterizationKey, false);
-	let oldL = __locals;
-	__locals = new Map();
-	for (let [key, val] in oldL) {
-	    __locals.set(key, Box.make(val.get()));
+    Marks.registerAsynCallbackWrapper({
+	onCreate: function (state) {
+	    let paramz = {};
+	    paramz.top = new Map();
+	    for (let [key, val] of __top) {
+		paramz.top.set(key, Box.make(val.get()));
+	    }
+
+	    paramz.bottom = copyParameterization(
+		Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false));
+	    state.paramz = paramz;
+	},
+	onInvoke: function (state) {
+	    __top = state.paramz.top;
+	    Marks.setMark(ParameterizationKey, state.paramz.bottom);
 	}
-	Marks.setMark(ParameterizationKey, copyParameterization(oldP));
     });
 })();
 

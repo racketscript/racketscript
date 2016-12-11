@@ -13,8 +13,8 @@ export function init() {
     enterFrame();
 }
 
-export function registerAsynCallbackWrapper(cb) {
-    __async_callback_wrappers.push(cb);
+export function registerAsynCallbackWrapper(w) {
+    __async_callback_wrappers.push(w);
 }
 
 init();
@@ -68,9 +68,11 @@ export function getFirstMark(frames, key, noneV) {
 
 export function wrapWithContext(fn) {
     return (function (currentFrames) {
+	let state = {};
+	__async_callback_wrappers.forEach((w) => w.onCreate(state));
 	return function (...args) {
 	    init();
-	    __async_callback_wrappers.forEach((cb) => cb(currentFrames));
+	    __async_callback_wrappers.forEach((w) => w.onInvoke(state));
 	    try {
 		return fn.apply(null, args);
 	    } finally {
