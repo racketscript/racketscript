@@ -33,25 +33,56 @@ Following system packages are required -
 - NodeJS (4.0 or higher) and NPM
 - Make
 
-NPM and Racket package installation steps could be done by directly by
-executing `make setup` or `raco pkg install` at RacketScript root
-directory.
+### Quick Installation
 
-RacketScript will generate Gulpfiles to compile ES6 to ES5 using
-Traceur or Babel.  If you wish to run ES6 modules directly, install
-Traceur using NPM. Babel is recommended for writing NodeJS programs.
+RacketScript can be installed by running one of the following commands
+in your terminal.
 
-If you wish to hack on RacketScript code or run tests, lints and
-coverage tool, run `make setup-extra` from RacketScript root
-directory.  See `Makefile` for more information. This will also
-install `js-beautify` which produces beautified JavaScript output.
+For installation via `curl`
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/vishesh/racketscript/master/install.sh)"
+```
+
+Or, for installation via `wget`
+
+```sh
+sh -c "$(wget https://raw.githubusercontent.com/vishesh/racketscript/master/install.sh -O -)"
+```
+
+See [Basic Usage](#basic-usage) to get started.
+
+### Install from Github
+
+Once RacketScript is cloned in your machine -
+
+1. Fire up your terminal and goto the root directory of the
+   repository.
+2. Execute `make setup` to install RacketScript compiler and all its
+   dependencies.
+
+Although not required, it is strongly recommeded that you install
+Traceur, and Gulp as global packages.
+
+```sh
+npm install -g traceur gulp
+```
 
 If you do not wish to pollute your root NPM directory, you can set a
 custom global location by changing your `npmrc` (eg.  `echo "prefix =
 $HOME/.npm-packages" >> ~/.npmrc`. Then add `/prefix/path/above/bin`
 to your `PATH`.
 
-### Build
+RacketScript will generate Gulpfiles to compile ES6 to ES5 using
+Traceur or Babel.  If you wish to run ES6 modules directly, install
+Traceur using NPM. Babel is recommended for writing NodeJS programs.
+
+### For hacking
+
+If you wish to hack on RacketScript code or run tests, lints and
+coverage tool, run `make setup-extra` from RacketScript root
+directory.  See `Makefile` for more information. This will also
+install `js-beautify` which produces beautified JavaScript output.
 
 The compiler is written in Typed Racket. To avoid long startups, it is
 advised to pre-compile Racket sources to bytecode. This step is not
