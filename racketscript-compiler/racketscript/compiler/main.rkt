@@ -300,52 +300,63 @@
   (control 'wait)
   (port->string in-p-out))
 
+(define (parse-command-line)
+  (command-line
+   #:program "racketscript"
+   #:usage-help "Compile Racket to JavaScript"
+   #:once-each
+   [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
+   [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
+   [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
+   [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
+   ["--dump-debug-info" "Dumps some debug information in output directory"
+    (dump-debug-info #t)]
+   ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
+    (input-from-stdin? #t)]
+   ["--enable-self-tail" "Translate self tail calls to loops"
+    (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
+   ["--enable-flatten-if" "Flatten nested if-else statements"
+    (enabled-optimizations (set-add (enabled-optimizations) flatten-if-else))]
+   ["--lift-returns" "Translate self tail calls to loops"
+    (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
+   #:multi
+   [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser]"
+    (if (member target *targets*)
+        (js-target target)
+        (error "`~a` is not a supported target."))]
+   #:once-any
+   ["--expand" "Fully expand Racket source" (build-mode 'expand)]
+   ["--ast" "Expand and print AST" (build-mode 'absyn)]
+   ["--rename" "Expand and print AST after α-renaming" (build-mode 'rename)]
+   ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
+   ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
+   ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
+   #:args ([filename 'stdin])
+   (match `(,filename ,(input-from-stdin?))
+     [`(,'stdin ,#t)
+      (let ([complete-filename (build-path "/tmp/not-exist.rkt")])
+        (current-source-file complete-filename)
+        (main-source-file complete-filename)
+        complete-filename)]
+     [`(,'stdin ,#f) #f]
+     [`(,_ ,#t) (error 'racketscript "Don't expect filename with `--stdin` mode")]
+     [`(,filename ,#f)
+      (let ([complete-filename (path->complete-path filename)])
+        (current-source-file complete-filename)
+        (main-source-file complete-filename)
+        complete-filename)])))
+
 (module+ main
+  ;; Parse command line. If source is 'show-help, we call it again
+  ;; with no arguments to show help. This is a little hack we had to
+  ;; add for stdin compilation, as we don't expect any argument
+  ;; (#:args) in that case but it matches anyway with no way of
+  ;; falling back to help.
   (define source
-    (command-line
-     #:program "racketscript"
-     #:usage-help "Compile Racket to JavaScript"
-     #:once-each
-     [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
-     [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
-     [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
-     [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
-     ["--dump-debug-info" "Dumps some debug information in output directory"
-      (dump-debug-info #t)]
-     ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
-      (input-from-stdin? #t)]
-     ["--enable-self-tail" "Translate self tail calls to loops"
-      (enabled-optimizations (set-add (enabled-optimizations) self-tail->loop))]
-     ["--enable-flatten-if" "Flatten nested if-else statements"
-      (enabled-optimizations (set-add (enabled-optimizations) flatten-if-else))]
-     ["--lift-returns" "Translate self tail calls to loops"
-      (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
-     #:multi
-     [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser]"
-      (if (member target *targets*)
-          (js-target target)
-          (error "`~a` is not a supported target."))]
-     #:once-any
-     ["--expand" "Fully expand Racket source" (build-mode 'expand)]
-     ["--ast" "Expand and print AST" (build-mode 'absyn)]
-     ["--rename" "Expand and print AST after α-renaming" (build-mode 'rename)]
-     ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
-     ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
-     ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
-     #:args ([filename 'stdin])
-     (match `(,filename ,(input-from-stdin?))
-       [`(,'stdin ,#t)
-        (let ([complete-filename (build-path "/tmp/not-exist.rkt")])
-          (current-source-file complete-filename)
-          (main-source-file complete-filename)
-          complete-filename)]
-       [`(,'stdin ,#f) (error 'racketscript "Expect `--stdin` parameter when no filename is provided")]
-       [`(,_ ,#t) (error 'racketscript "Don't expect filename with `--stdin` mode")]
-       [`(,filename ,#f)
-        (let ([complete-filename (path->complete-path filename)])
-          (current-source-file complete-filename)
-          (main-source-file complete-filename)
-          complete-filename)])))
+    (match (parse-command-line)
+      [#f (parameterize ([current-command-line-arguments #("--help")])
+            (parse-command-line))]
+      [v v]))
 
   ;; We can read module from stdin only when we wish to see different
   ;; IL or JS output on stdout. For complete compilation (or more
