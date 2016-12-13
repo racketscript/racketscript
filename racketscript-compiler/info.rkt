@@ -4,12 +4,17 @@
 (define version "0.1")
 
 (define deps
-  (list "racket"
-        "typed-racket"
-        "threading"
-        "graph"))
+  '("base"
+    ["racket" "6.4"]
+    "typed-racket-lib"
+    "typed-racket-more"
+    "threading"
+    "graph"))
 
-(define build-deps '())
+(define build-deps '("base"
+                     "typed-racket-lib"
+                     "typed-racket-more"
+                     "rackunit-lib"))
 
 (define pkg-authors '(vishesh))
 (define pkg-desc "Racket to JavaScript compiler")
