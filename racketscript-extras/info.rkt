@@ -12,3 +12,7 @@
 
 (define pkg-authors '(vishesh))
 (define pkg-desc "Extras to play with RacketScript.")
+
+;; Since it uses the FFI
+(define test-omit-paths '("racketscript/htdp/"
+                          "racketscript/private/jscommon.rkt"))
