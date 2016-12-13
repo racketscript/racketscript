@@ -38,6 +38,12 @@ Following system packages are required -
 RacketScript can be installed by running one of the following commands
 in your terminal.
 
+For installation via `raco`
+
+```sh
+raco pkg install racketscript
+```
+
 For installation via `curl`
 
 ```sh
