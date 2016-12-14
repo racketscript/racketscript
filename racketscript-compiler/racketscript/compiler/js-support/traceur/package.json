@@ -18,9 +18,9 @@
     "dependencies": [
 	"gulp",
 	"gulp-concat",
-        "gulp-strip-comments",
 	"gulp-traceur-cmdline",
         "gulp-replace",
+        "gulp-uglify",
 	"hamt_plus",
 	"traceur"
     ]

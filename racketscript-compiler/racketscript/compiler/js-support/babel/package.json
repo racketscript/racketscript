@@ -19,7 +19,7 @@
 	"gulp",
 	"gulp-replace",
 	"gulp-babel",
-        "gulp-strip-comments",
+        "gulp-uglify",
 	"hamt_plus",
 	"babel-core",
 	"babel-cli",

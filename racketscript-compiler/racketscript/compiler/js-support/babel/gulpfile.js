@@ -1,8 +1,8 @@
 const gulp = require('gulp');
 const babel = require('gulp-babel');
 const replace = require('gulp-replace');
+const uglify = require('gulp-uglify');
 const babelDeps = require("babel-deps");
-const strip = require('gulp-strip-comments');
 
 const target = "~a" + ".rkt.js";
 
@@ -26,12 +26,12 @@ gulp.task('transform', ['copy-hamt'], function() {
               ]
             ]
 	}))
-        .pipe(strip())
         .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build', ['transform'], function () {
     return gulp.src(['./runtime/babel-helper.js'])
+        .pipe(uglify())
         .pipe(gulp.dest('dist/runtime/'));
 });
 
