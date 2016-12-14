@@ -293,51 +293,63 @@
 
 
 ;; TODO: A JS object would be faster.
+;; maps JS KeyboardEvent.key to big-bang KeyEvent
 (define *key-table*
-  (hasheq 16 "shift"
-          17 "control"
-          19 "pause"
-          27 "escape"
-          33 "prior"
-          34 "next"
-          35 "end"
-          36 "home"
-          37 "left"
-          38 "up"
-          39 "right"
-          40 "down"
-          42 "print"
-          45 "insert"
-          106 "*"
-          107 "+"
-          109 "-"
-          110 "."
-          111 "/"
-          144 "numlock"
-          145 "scroll"
-          186 ";"
-          187 "="
-          188 ","
-          189 "-"
-          190 "."
-          191 "/"
-          192 "`"
-          219 "["
-          220 "\\"
-          221 "]"
-          22  "'"))
+  (hasheq "Backspace" "\b"
+          "Enter"     "\r"
+          "Tab"       "\t"
+          "ArrowLeft"  "left"
+          "ArrowRight" "right"
+          "ArrowDown"  "down"
+          "ArrowUp"    "up"
+          "Shift"        "shift"   
+          "Control"      "control" 
+          "ControlRight" "rcontrol"
+          "ControlLeft"  "control"
+          "ShiftRight"   "rshift"
+          "ShiftLeft"    "shift"
+          "Escape"  "escape"
+          "Home"    "home"
+          "End"     "end"
+          "Insert"  "insert" ; no pageup/down in big-bang?
+          "Delete"  "\u007F" ; rubout
+          "Pause"   "pause"
+          "NumLock" "numlock"
+          "F1" "f1"
+          "F2" "f2"
+          "F3" "f3"
+          "F4" "f4"
+          "F5" "f5"
+          "F6" "f6"
+          "F7" "f7"
+          "F8" "f8"
+          "F9" "f9"
+          "F10" "f10"
+          "F11" "f11"
+          "F12" "f12"
+          ; unsure about these big bang KeyEvents:
+          ;; "start"
+          ;; "cancel"
+          ;; "clear"
+          ;; "menu"
+          ;; "capital"
+          ;; "prior"
+          ;; "next"
+          ;; "select"
+          ;; "print"
+          ;; "execute"
+          ;; "snapshot"
+          ;; "help"
+          ;; "scroll"
+          ))
 
 (define (key-event->key-name e)
-  (define code (or #js.e.charCode #js.e.keyCode))
-  (or (hash-ref *key-table* code #f)
-      (cond
-        [(<= 96 code 105)
-         ($> (- code 96) (toString))]
-        [(<= 112 code 123)
-         (++ "f" ($> (- code 111) (toString)))]
-        [else
-         ($> (#js*.String.fromCharCode code)
-             (toLowerCase))])))
+  (define k #js.e.key)
+  (define code ; use .code to differentiate left/right shift, ctrl, alt
+    (if (or (equal? k "Shift") (equal? k "Control") (equal? k "Alt"))
+        #js.e.code
+        k))
+  (hash-ref *key-table* code code))
 
 (define (canvas-posn-δ canvas evt)
   (define rect (#js.canvas.getBoundingClientRect))
