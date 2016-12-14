@@ -295,7 +295,7 @@
 ;; TODO: A JS object would be faster.
 (define *key-table*
   (hasheq 16 "shift"
-          17 "controxl"
+          17 "control"
           19 "pause"
           27 "escape"
           33 "prior"
