@@ -554,10 +554,13 @@
                (equal? (length (lambda-formals))
                        (length args)))
           ;; Its self recursive call
-          (define new-frmls : (Listof Symbol)
-            (map (λ (f)
-                   (fresh-id (string->symbol (format "_~a" f))))
-                 (lambda-formals)))
+          (define new-frmls
+            (let ([old-updated-frmls (lambda-updated-formals)])
+              (if (false? old-updated-frmls)
+                  (map (λ (f)
+                         (fresh-id (string->symbol (format "_~a" f))))
+                       (lambda-formals))
+                  old-updated-frmls)))
           (lambda-updated-formals new-frmls)
           (define compute-args : (Listof ILAssign)
             (for/list  ([frml new-frmls]
@@ -620,6 +623,7 @@
     (parameterize ([fresh-id-counter 0])
       (check-equal? args ...)))
 
+
   (check-equal?*
    (x-self-tail->loop
     (list
@@ -654,7 +658,37 @@
                 (ILAssign '_n2 (ILApp 'sub1 '(n)))
                 (ILAssign '_a3 (ILBinaryOp '* '(n a)))
                 (ILContinue 'lambda-start1)))))))))
-   "Translate self tail recursive factorial to loops"))
+   "Translate self tail recursive factorial to loops")
+
+  (check-equal?*
+   (x-self-tail->loop
+    (list
+     (ILVarDec
+      'fact
+      (ILLambda
+       '(n)
+       (list (ILIf
+              'x
+              (list (ILReturn (ILApp 'fact (list (ILApp 'sub1 '(n))))))
+              (list (ILReturn (ILApp 'fact (list (ILApp 'add1 '(n))))))))))))
+   (list
+    (ILVarDec
+     'fact
+     (ILLambda
+      '(_n2)
+      (list
+       (ILLabel 'lambda-start1)
+       (ILWhile
+        (ILValue #t)
+        (list
+         (ILLetDec 'n '_n2)
+         (ILIf
+          'x
+          (list (ILAssign '_n2 (ILApp 'sub1 '(n))) (ILContinue 'lambda-start1))
+          (list
+           (ILAssign '_n2 (ILApp 'add1 '(n)))
+           (ILContinue 'lambda-start1)))))))))
+   "Assign to same argument names in both branches"))
 
 
 ;; ----------------------------------------------------------------------------
