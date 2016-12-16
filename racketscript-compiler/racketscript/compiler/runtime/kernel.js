@@ -241,8 +241,8 @@ exports["make-struct-type-property"] = function (name, guard, supers, canImperso
 exports["check-struct-type"] = function (name, what) {
     // TODO: in define-struct.rkt. See struct/super.rkt
     if (what) {
-	if (!Core.Struct.isStructType(v)) {
-	    throw racketCoreError("not a struct-type");
+	if (!Core.Struct.isStructType(what)) {
+	    throw Core.racketCoreError("not a struct-type");
 	}
 	return what;
     }
@@ -279,7 +279,7 @@ exports["vector-set!"] = function (vec, i, v) {
 // Hashes
 
 exports["make-immutable-hash"] = function (assocs) {
-    return rcore.Hash.makeFromAssocs(assocs, "equal", false);
+    return Core.Hash.makeFromAssocs(assocs, "equal", false);
 }
 
 exports["hash"] = function (...vals) {

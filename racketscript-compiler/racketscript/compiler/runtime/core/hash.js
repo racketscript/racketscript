@@ -61,7 +61,7 @@ class Hash extends Primitive {
 	} else if (fail !== undefined) {
 	    return fail;
 	} else {
-	    throw racketCoreError("hash-ref", "key not found");
+	    throw $.racketCoreError("hash-ref", "key not found");
 	}
     }
 
