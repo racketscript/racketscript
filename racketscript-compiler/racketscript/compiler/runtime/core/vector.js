@@ -45,7 +45,7 @@ class Vector extends Primitive {
     }
 
     length() {
-	return this.size;
+	return this.items.length;
     }
 
     equals(v) {

@@ -485,8 +485,8 @@ exports["string-append"] = function (...args) {
 
 exports["string"] = function () {
     var result = "";
-    for (var v in arguments) {
-	result += arguments[v];
+    for (let [_, v] of arguments) {
+	result += v;
     }
     return result;
 }

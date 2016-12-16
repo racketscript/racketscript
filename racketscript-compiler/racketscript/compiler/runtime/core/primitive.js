@@ -10,6 +10,7 @@ export class Primitive {
 	// if (new.target === Primitive) {
 	//     throw new TypeError("Cannot construct Abstract instances directly");
 	// }
+	this.__cachedHashCode = undefined;
     }
 
     toString() {

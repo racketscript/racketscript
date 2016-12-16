@@ -28,7 +28,6 @@
 
 (define *color-table*
   ($/obj ["orange" (-color 255 165 0)]
-         ["red" (-color 255 0 0)]
          ["orangered" (-color 255 69 0)]
          ["tomato" (-color 255 99 71)]
          ["darkred" (-color 139 0 0)]
@@ -58,7 +57,6 @@
          ["darkorange" (-color 255 140 0)]
          ["coral" (-color 255 127 80)]
          ["sienna" (-color 160 82 45)]
-         ["orange" (-color 255 165 0)]
          ["salmon" (-color 250 128 114)]
          ["peru" (-color 205 133 63)]
          ["darkgoldenrod" (-color 184 134 11)]
