@@ -54,8 +54,12 @@ export function makeParameter(initValue) {
     return param;
 }
 
-export function extendParameterization(parameterization, param, val) {
-    return parameterization.set(param, Box.make(val));
+export function extendParameterization(parameterization, ...args) {
+    let result = parameterization;
+    for (let i = 0; i < args.length; i += 2) {
+	result = result.set(args[i], Box.make(args[i + 1]));
+    }
+    return result;
 }
 
 export function copyParameterization(parameterization) {
