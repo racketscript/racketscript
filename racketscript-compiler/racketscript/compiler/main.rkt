@@ -58,6 +58,7 @@
 (define *targets* (list "traceur"
                         "traceur-browser"
                         "babel"
+                        "babel-webpack"
                         "closure-compiler"))
 (define js-target (make-parameter "traceur"))
 
@@ -321,7 +322,7 @@
    ["--lift-returns" "Translate self tail calls to loops"
     (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
    #:multi
-   [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser|closure-compiler]"
+   [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser|closure-compiler|babel-webpack]"
     (if (member target *targets*)
         (js-target target)
         (error "`~a` is not a supported target."))]
