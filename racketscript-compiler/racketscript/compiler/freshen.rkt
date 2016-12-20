@@ -3,7 +3,9 @@
 (require (for-syntax syntax/parse)
          syntax/id-table
          syntax/parse
-         syntax/stx)
+         syntax/stx
+         racket/syntax
+         "stx-utils.rkt")
 
 (provide (rename-out [freshen* freshen]))
 
@@ -15,23 +17,14 @@
  (define (freshen* e)
    (freshen e (make-immutable-free-id-table)))
 
-;; formals-dict-set : immutable-dict? stx stx -> immutable-dict?
-;; Takes in syntax containing formals and new names for each
-;; identifiedr, returning updated identifier `table`
+;; formals-dict-set : immutable-dict? Formals Formals -> immutable-dict?
+;; Updates `table` by mapping ids in `keys` formals to new ids `vals`.
 (define (formals-dict-set table keys vals)
-  (define-values (keys* vals*)
-    (values (if (syntax? keys)
-                (syntax-e keys)
-                keys)
-            (if (syntax? vals)
-                (syntax-e vals)
-                vals)))
-  (match (list keys* vals*)
-    [`(,(cons ka kb) ,(cons va vb))
-     (dict-set (formals-dict-set table kb vb)
-               ka va)]
-    [`(,empty ,empty) table]
-    [_ #:when (symbol? keys*) (dict-set table keys vals)]))
+  (syntax-parse (list keys vals)
+    [(x:id y:id) (dict-set table #'x #'y)]
+    [((_:id ...) (_:id ...)) (stx-foldl* dict-set table keys vals)]
+    [((x:id ...+ . xn:id) (y:id ...+ . yn:id))
+     (dict-set (stx-foldl* dict-set table #'(x ...) #'(y ...)) #'xn #'yn)]))
 (module+ test
   (require rackunit)
   
@@ -65,102 +58,80 @@
   (check-symap SYMAP4 #'f #'f1)
   (check-symap SYMAP4 #'g #'g2))
   
-;; bindings-dict-set : immutable-dict? stx-list stx-list -> immutable-dict?
-;; Takes a syntax with list of identifiers for let bindings and of freshened
-;; names of same structure, and updates the identifier table
-(define (bindings-dict-set table keys* vals*)
-  (for/fold ([t table])
-            ([k (syntax-e keys*)]
-             [v (syntax-e vals*)])
-    (formals-dict-set t k v)))
-
-;; formals-freshen : stx -> stx
-;; Recursively call generate-temporary on each identifier
-;; inside syntax object `ids`
+;; formals-freshen : Formals -> Formals
+;; Replace ids in case-lambda/#%plain-lambda formals list with unique ids
 (define (formals-freshen ids)
   (syntax-parse ids
-    [xs:id (car (generate-temporaries (list ids)))]
-    [(xs:id ...)
-     #:with fresh-xs (generate-temporaries #'(xs ...))
+    [x:id (generate-temporary #'x)]
+    [(x:id ...)
+     #:with fresh-xs (generate-temporaries #'(x ...))
      #'fresh-xs]
-    [(xs:id ...+ . xn:id)
-     #:with (fresh-xs ...) (generate-temporaries #'(xs ...))
-     #:with fresh-xn (formals-freshen #'xn)
-     #`(fresh-xs ... . fresh-xn)]))
+    [(x:id ...+ . xn:id)
+     #:with (fresh-x ... fresh-xn) (generate-temporaries #'(x ... xn))
+     #`(fresh-x ... . fresh-xn)]))
 
-;; freshen : stx-expr immutable-free-id-table? -> stx-expr
+;; freshens : stx-forms immutable-free-id-table? -> stx-forms
+;; Renames bound ids in fs to be unique
+(define (freshens fs sym-map)
+  (stx-map (λ (f) (freshen f sym-map)) fs))
+
+;; freshen : stx-form immutable-free-id-table? -> stx-form
 ;; Renames bound ids in e to be unique
 (define (freshen e sym-map)
   (syntax-parse e
     #:literal-sets ((kernel-literals))
     [x:id (dict-ref sym-map #'x #'x)]
     [(#%top . x) #`(#%top . #,(freshen #'x sym-map))]
-    [(module name forms ...)
-     #:with (fresh-forms ...) (stx-map (λ (f) (freshen f sym-map)) #'(forms ...))
-     #'(module name fresh-forms ...)]
-    [(module* name forms ...)
-     #:with (forms-forms ...) (stx-map (λ (f) (freshen f sym-map)) #'(forms ...))
-     #'(module* name forms-forms ...)]
-    [(#%require x ...) e]
-    [((~datum quote-syntax) d) e]
-    [((~datum quote) d) e]
+    [(module name . forms) #`(module name #,@(freshens #'forms sym-map))]
+    [(module* name . forms) #`(module* name #,@(freshens #'forms sym-map))]
+    [((~or #%require #%provide) x ...) e]
+    [((~or (~datum quote-syntax) (~datum quote)) d) e]
+    [((~and f (~or begin0 begin
+                   #%plain-app
+                   #%plain-module-begin
+                   with-continuation-mark)) . es)
+     #`(f #,@(freshens #'es sym-map))]
     [(#%declare _) e]
-    #;[(~or (~datum module)
-            (~datum module*)
-            (~datum #%require)
-            (~datum quote)) e]
     [(#%expression v)
      #`(#%expression #,(freshen #'v sym-map))]
     [(set! s:id e)
      #:with fresh-s (freshen #'s sym-map)
      #:with fresh-e (freshen #'e sym-map)
      #`(set! fresh-s fresh-e)]
-    [(begin0 e0 e ...)
-     #`(begin0 #,@(stx-map (λ (e)
-                             (freshen e sym-map))
-                           #'(e0 e ...)))]
-    [(begin e ...)
-     #`(begin #,@(stx-map (λ (e)
-                            (freshen e sym-map))
-                          #'(e ...)))]
     [(if e0 e1 e2)
      #`(if #,(freshen #'e0 sym-map)
            #,(freshen #'e1 sym-map)
            #,(freshen #'e2 sym-map))]
     [(#%plain-lambda xs . body)
      #:with fresh-xs (formals-freshen #'xs)
-     #:with fresh-body (freshen #'body
-                                (formals-dict-set sym-map #'xs #'fresh-xs))
+     #:with fresh-body (freshens #'body
+                                 (formals-dict-set sym-map #'xs #'fresh-xs))
      #'(#%plain-lambda fresh-xs . fresh-body)]
     [(case-lambda . clauses)
      (define (freshen-clause clause)
        (syntax-parse clause
          [(xs . body)
           #:with fresh-xs (formals-freshen #'xs)
-          #:with fresh-body (freshen #'body
-                                     (formals-dict-set sym-map #'xs #'fresh-xs))
+          #:with fresh-body (freshens #'body
+                                      (formals-dict-set sym-map #'xs #'fresh-xs))
           #'(fresh-xs . fresh-body)]))
      #`(case-lambda #,@(stx-map freshen-clause #'clauses))]
-    [(let-values ([xs es] ...) b ...)
-     #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
-     #:with (fresh-es ...) (stx-map (λ (e)
-                                      (freshen e sym-map))
-                                    #'(es ...))
-     (define sym-map* (bindings-dict-set sym-map
-                                         #'(xs ...)
-                                         #'(fresh-xs ...)))
-     #`(let-values ([fresh-xs fresh-es] ...)
-         #,@(stx-map (λ (b) (freshen b sym-map*)) #'(b ...)))]
-    [(letrec-values ([xs es] ...) b ...)
-     #:with (fresh-xs ...) (stx-map formals-freshen #'(xs ...))
-     (define sym-map* (bindings-dict-set sym-map
-                                         #'(xs ...)
-                                         #'(fresh-xs ...)))
-     (with-syntax ([(fresh-es ...) (stx-map (λ (e)
-                                              (freshen e sym-map*))
-                                            #'(es ...))])
-       #`(letrec-values ([fresh-xs fresh-es] ...)
-           #,@(stx-map (λ (b) (freshen b sym-map*)) #'(b ...))))]
+    [(let-values ([xs e] ...) b ...)
+     #:with (fresh-xs ...) (stx-map generate-temporaries #'(xs ...))
+     #:with (fresh-e ...) (freshens #'(e ...) sym-map)
+     (define sym-map* (stx-foldl* formals-dict-set sym-map
+                                                   #'(xs ...)
+                                                   #'(fresh-xs ...)))
+     #`(let-values ([fresh-xs fresh-e] ...)
+         #,@(freshens #'(b ...) sym-map*))]
+    [(letrec-values ([xs e] ...) b ...)
+     #:with (fresh-xs ...) (stx-map generate-temporaries #'(xs ...))
+     #:do [(define sym-map* (stx-foldl* formals-dict-set sym-map
+                                                         #'(xs ...)
+                                                         #'(fresh-xs ...)))]
+     #:with (fresh-e ...) (freshens #'(e ...) sym-map*)
+     #`(letrec-values ([fresh-xs fresh-e] ...)
+         #,@(freshens #'(b ...) sym-map*))]
     [(#%top . x)
      ;; Since we don't rename top levels we don't need to rename these
      e]
@@ -169,20 +140,6 @@
      ;; define-values in an internal-defintion context reduces
      ;; to let-values. 
      #`(define-values (id ...) #,(freshen #'b sym-map))]
-    [(#%plain-app lam arg ...)
-     #:with fresh-lam (freshen #'lam sym-map)
-     #:with (fresh-arg ...) (stx-map (λ (e) (freshen e sym-map)) #'(arg ...))
-     #'(#%plain-app fresh-lam fresh-arg ...)]
-    [(#%plain-module-begin form ...)
-     #:with (fresh-form ...) (stx-map (λ (f) (freshen f sym-map)) #'(form ...))
-     #'(#%plain-module-begin fresh-form ...)]
-    [(#%provide p ...) e]
-    [(with-continuation-mark key value result)
-     #`(with-continuation-mark #,(freshen #'key sym-map) #,(freshen #'value sym-map)
-         #,(freshen #'result sym-map))]
-    [(e ...)
-     #:with fresh-es (stx-map (λ (e) (freshen e sym-map)) #'(e ...))
-     #'fresh-es]
     [_ e]))
 
 (module+ test
