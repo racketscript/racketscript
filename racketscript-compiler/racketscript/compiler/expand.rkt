@@ -329,7 +329,7 @@
   ;; work
 
   (parameterize ([current-namespace (make-base-namespace)])
-    (namespace-syntax-introduce (expand stx))))
+    (expand stx)))
 
 ;;; Read modules
 
