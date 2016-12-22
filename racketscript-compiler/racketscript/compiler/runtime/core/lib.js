@@ -12,6 +12,13 @@ export function isEqual(v1, v2) {
     } else if (typeof v1 === 'object' && typeof v2 === 'object' &&
 	       v1.constructor !== v2.constructor) {
 	return false;
+    } else if (v1 instanceof Uint8Array && v2 instanceof Uint8Array // bytes
+	       && v1.length === v2.length) {
+	// TODO: bytes currently not interned, so wont be eq or eqv
+	for (var i = 0; i < v1.length; i++) {
+	    if (v1[i] !== v2[i]) return false;
+	}
+	return true;
     } else if (typeof v1.equals === 'function') {
 	// Its a Primitive instance
 	return v1.equals(v2) || false;
@@ -51,7 +58,8 @@ export function hashEqual(o) {
 /* Strings */
 
 export function toString(v) {
-    return v.toString();
+    //TODO: move displayln logic here and displayln should call toString
+    return (v === undefined) ? "#<void>" : v.toString();
 }
 
 export function format1(pattern, args) {
