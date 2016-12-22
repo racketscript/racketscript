@@ -370,6 +370,9 @@ var map = exports["map"] = function map(fn, ...lists) {
 }
 
 var foldl = exports["foldl"] = function (fn, init, ...lists) {
+    if (typeof fn !== 'function') {
+	throw Core.racketContractError("first arg must be a procedure");
+    }
     if (lists.length <= 0) {
 	error("foldl: foldl needs at-least one list");
     }
@@ -599,6 +602,8 @@ var displayln = exports["displayln"] = function (v) {
 	console.log(__buffer + "#f");
     } else if (v === undefined || v === null) {
 	console.log(__buffer + "#<void>");
+    } else if (isBytes(v)) {
+	console.log(__buffer + utf8ToString(v));
     } else {
 	console.log(__buffer + Core.toString(v));
     }
@@ -613,6 +618,8 @@ exports["display"] = function (v) {
 	__buffer += "#f";
     } else if (v === undefined || v === null) {
 	__buffer += "#<void>";
+    } else if (isBytes(v)) {
+	__buffer = __buffer + utf8ToString(v);
     } else {
 	__buffer += Core.toString(v);
     }
@@ -852,3 +859,92 @@ exports["continuation-mark-set-first"] = function (markSet, keyV, noneV, promptT
 }
 
 exports["make-parameter"] = makeParameter;
+
+// bytes
+
+var isBytes = exports["bytes?"] = function (bs) {
+    return bs instanceof Uint8Array;
+}
+
+var utf8ToString = exports["bytes->string/utf-8"] = function (bs) {
+    if (!exports["bytes?"](bs)) {
+    	throw Core.racketContractError("expected bytes");
+    }
+    return String.fromCharCode.apply(null,bs);
+}
+
+var stringToUtf8 = exports["string->bytes/utf-8"] = function (str) {
+    if (!(typeof str) == 'string') {
+    	throw Core.racketContractError("expected string");
+    }
+     return new Uint8Array(Array.prototype.map.call(str,(x)=>x.charCodeAt(0)));
+ }
+
+ // Regexp
+
+ // TODO: both regexps and pregexps currently compile to js regexps,
+ //       but js doesnt support posix patterns
+var isRegExp =  exports["regexp?"] = function (x) {
+     return x instanceof RegExp;
+ }
+
+exports["pregexp?"] = function (x) {
+     return x instanceof RegExp;
+ }
+
+exports["byte-regexp?"] = function (x) {
+     return x instanceof RegExp;
+ }
+
+exports["byte-pregexp?"] = function (x) {
+     return x instanceof RegExp;
+ }
+
+ // TODO: support optional handler arg
+exports["regexp"] = function (str) {
+    if ((typeof str) !== 'string') {
+    	throw Core.racketContractError("expected string");
+    }
+    return new RegExp(str);
+}
+exports["pregexp"] = function (str) {
+    if ((typeof str) !== 'string') {
+    	throw Core.racketContractError("expected string");
+    }
+    return new RegExp(str);
+}
+exports["byte-regexp"] = function (bs) {
+    if (isBytes(bs)) {
+    	throw Core.racketContractError("expected bytes");
+    }
+    return new RegExp(utf8ToString(bs));
+}
+exports["byte-pregexp"] = function (bs) {
+    if (isBytes(bs)) {
+    	throw Core.racketContractError("expected bytes");
+    }
+    return new RegExp(utf8ToString(bs));
+}
+
+ exports["regexp-match"] = function (p, i) {
+     var is_rx_p = isRegExp(p);
+     var is_bytes_p = isBytes(p);
+     var is_bytes_i = isBytes(i);
+     var is_str_p = (typeof p) === 'string';
+     var is_str_i = (typeof i) === 'string';
+
+     if (!(is_rx_p || is_bytes_p || is_str_p) && !(is_bytes_i || is_str_i)) {
+	 throw Core.racketContractError("expected regexp, string or byte pat,"
+				       + " and string or byte input");
+     }
+     var str = is_str_i ? i : utf8ToString(i);
+     var pat = is_rx_p ? p : (is_str_p ? p : utf8ToString(p));
+     var res = str.match(pat);
+     if (res === null) return false;
+     else if ((is_str_p || is_rx_p) && is_str_i) { // result as list of strs
+	 return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : x));
+     } else { // result as list of bytes
+	 return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : stringToUtf8(x)));
+     }
+	
+}
