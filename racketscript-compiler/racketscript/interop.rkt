@@ -9,6 +9,7 @@
          $$
          $>
          $/:=
+         $/throw
          =>$
          assoc->object)
 
@@ -73,6 +74,11 @@
   (syntax-parse stx
     [(_ v:expr)
      #`(#%js-ffi 'new v)]))
+
+(define-syntax ($/throw stx)
+  (syntax-parse stx
+    [(_ e:expr)
+     #`(#%js-ffi 'throw e)]))
 
 (define-syntax ($/obj stx)
   ;; TODO: What to do about ambiguity with the cases where fieldname

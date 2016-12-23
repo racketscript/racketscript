@@ -347,6 +347,9 @@
                     (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
                                             v*))))))
         (values stms* (ILObject items*))]
+       [(list (Quote 'throw) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values (append1 stms (ILThrow val)) (ILValue (void)))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)
@@ -821,6 +824,13 @@
     (list (Quote 'new) (LocalIdent 'Array)))
    '()
    (ILNew 'Array))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'throw) (Quote "What")))
+    (list (ILThrow (ILValue "What")))
+    (ILValue (void)))
 
   ;; Top Level ------------------------------------------------------
 
