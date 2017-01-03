@@ -10,6 +10,8 @@
          $>
          $/:=
          $/throw
+         $/undefined
+         $/null
          =>$
          assoc->object)
 
@@ -79,6 +81,14 @@
   (syntax-parse stx
     [(_ e:expr)
      #`(#%js-ffi 'throw e)]))
+
+(define-syntax ($/undefined stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'var 'undefined)]))
+
+(define-syntax ($/null stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'var 'null)]))
 
 (define-syntax ($/obj stx)
   ;; TODO: What to do about ambiguity with the cases where fieldname

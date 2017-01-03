@@ -9,7 +9,8 @@
     "typed-racket-lib"
     "typed-racket-more"
     "threading"
-    "graph"))
+    "graph"
+    "anaphoric"))
 
 (define build-deps '("base"
                      "typed-racket-lib"
@@ -21,5 +22,7 @@
 
 ;; Test configuration
 
-(define test-omit-paths '("racketscript/browser.rkt"))
-(define cover-omit-paths '("racketscript/browser.rkt"))
+(define test-omit-paths '("racketscript/browser.rkt"
+                          "racketscript/compiler/runtime/"))
+(define cover-omit-paths '("racketscript/browser.rkt"
+                           "racketscript/compiler/runtime/"))

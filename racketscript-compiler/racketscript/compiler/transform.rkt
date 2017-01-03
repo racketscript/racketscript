@@ -75,9 +75,10 @@
 
   (define imported-mod-path-list (set->list imports))
 
-  (: requires* (Listof ILRequire))
+  (: requires* ILRequire*)
   (define requires*
-    (for/list ([mod-path imported-mod-path-list]
+    (for/fold ([result : ILRequire* '()])
+              ([mod-path imported-mod-path-list]
                [counter (in-naturals)])
       (define mod-obj-name (string->symbol (~a "M" counter)))
       (define import-name
@@ -86,7 +87,13 @@
            (jsruntime-import-path path
                                   (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
-      (ILRequire import-name mod-obj-name '*)))
+      (if (or (and (symbol? mod-path)
+                   (equal? path (actual-module-path mod-path)))
+              ;; See expansion of identifier in `expand.rkt` for
+              ;; primitive modules
+              (set-member? ignored-module-imports mod-path))
+          result
+          (cons (ILRequire import-name mod-obj-name '*) result))))
 
   ;; Append all JavaScript requires we find at GTL over here
   (: js-requires (Boxof (Listof ILRequire)))
@@ -108,7 +115,7 @@
             (set-box! js-requires
                       (cons (ILRequire (~a (JSRequire-path form))
                                        (JSRequire-alias form)
-                                       'default)
+                                       '*)
                             (unbox js-requires)))
             '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
@@ -441,8 +448,20 @@
      (when (symbol? src)
        ;; TODO: need to move this ident-use out of expand
        (register-ident-use! src id))
-     (define mod-obj-name (hash-ref (module-object-name-map) src))
-     (values '() (ILRef (assert mod-obj-name symbol?) id))]
+
+     ;; For compiling #%kernel (or primitive module) we may end
+     ;; up thinking that's id is imported as we are actually
+     ;; overriding the module. Don't make it happen.
+     ;; TODO: Look at this again.
+     (cond
+       [(and (or (symbol? (current-source-file))
+                 (path? (current-source-file)))
+             (equal? (actual-module-path (cast (current-source-file) ModuleName))
+                     (actual-module-path (cast src ModuleName))))
+        (absyn-expr->il (LocalIdent id) overwrite-mark-frame?)]
+       [else
+        (define mod-obj-name (hash-ref (module-object-name-map) src))
+        (values '() (ILRef (assert mod-obj-name symbol?) id))])]
 
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key

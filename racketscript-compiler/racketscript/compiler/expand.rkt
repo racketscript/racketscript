@@ -240,6 +240,9 @@
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
                   (values id mod))]))
 
+           ;; For compiling #%kernel (or primitive module) we may end
+           ;; up thinking that's id is imported as we are actually
+           ;; overriding the module. Don't make it happen.
            (register-ident-use! effective-mod effective-id)
            (ImportedIdent effective-id effective-mod)])])]
     [(define-syntaxes (i ...) b) #f]
@@ -338,13 +341,7 @@
   (read-syntax (object-name input) input))
 
 (define (open-read-module in-path)
-  (define in-path*
-    (cond
-      [(path? in-path) in-path]
-      [(symbol? in-path)
-       in-path
-       ]))
-  (call-with-input-file in-path*
+  (call-with-input-file (actual-module-path in-path)
     (λ (in)
       (read-module in))))
 
@@ -352,7 +349,7 @@
   (log-rjs-info "[expand] ~a" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (define full-path (path->complete-path in-path))
+  (define full-path (path->complete-path (actual-module-path in-path)))
   (parameterize ([current-directory (path-only full-path)])
     (do-expand (open-read-module in-path) in-path)))
 

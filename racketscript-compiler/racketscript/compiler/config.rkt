@@ -3,6 +3,7 @@
 (require racket/match
          racket/path
          racket/runtime-path
+         racket/set
          threading)
 
 (provide output-directory
@@ -14,9 +15,12 @@
 
          racketscript-dir
          racketscript-compiler-dir
+         racketscript-runtime-dir
 
          jsruntime-module-path
-         jsruntime-core-module)
+         jsruntime-core-module
+
+         ignored-module-imports)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -36,6 +40,10 @@
 (: racketscript-compiler-dir Path)
 (define racketscript-compiler-dir
   (cast (path-only racketscript-main-module) Path))
+
+(: racketscript-runtime-dir Path)
+(define racketscript-runtime-dir
+  (build-path racketscript-compiler-dir "runtime"))
 
 (: racketscript-dir Path)
 ;; Root directory of Racketscript project
@@ -72,3 +80,8 @@
 
 (: logging? (Parameter Boolean))
 (define logging? (make-parameter #t))
+
+(: ignored-module-imports (Setof Path))
+(define ignored-module-imports
+  (set
+   (build-path racketscript-dir "private" "interop.rkt")))
