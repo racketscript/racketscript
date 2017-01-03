@@ -62,16 +62,6 @@
                         "closure-compiler"))
 (define js-target (make-parameter "traceur"))
 
-(define-runtime-path racketscript-main-module ".")
-
-;; Path
-;; Root directory of Racketscript project
-(define racketscript-dir
-  (~> racketscript-main-module
-      (path-only _)
-      (build-path _ "..")
-      (simplify-path _)))
-
 ;; Path-String -> Path
 ;; Return path of support file named f
 (define (support-file f)
@@ -388,9 +378,8 @@
        ;; need stdin from playground, its fine for now.
        ;; TODO: Figure out a way to compile this syntax to
        ;; module code bytecode
-       (global-export-graph (get-export-tree (build-path
-                                              (path-only racketscript-main-module)
-                                              "nothing.rkt")))
+       (global-export-graph (get-export-tree (build-path racketscript-compiler-dir
+                                                         "nothing.rkt")))
        (read-and-expand-module (current-input-port))]
       [else
        (quick-expand source)]))

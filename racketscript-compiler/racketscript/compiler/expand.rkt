@@ -338,7 +338,13 @@
   (read-syntax (object-name input) input))
 
 (define (open-read-module in-path)
-  (call-with-input-file in-path
+  (define in-path*
+    (cond
+      [(path? in-path) in-path]
+      [(symbol? in-path)
+       in-path
+       ]))
+  (call-with-input-file in-path*
     (λ (in)
       (read-module in))))
 

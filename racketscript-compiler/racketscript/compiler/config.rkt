@@ -1,6 +1,9 @@
 #lang typed/racket/base
 
-(require racket/match)
+(require racket/match
+         racket/path
+         racket/runtime-path
+         threading)
 
 (provide output-directory
          logging?
@@ -8,6 +11,10 @@
          main-source-file
          FFI-CALL-ID
          test-environment?
+
+         racketscript-dir
+         racketscript-compiler-dir
+
          jsruntime-module-path
          jsruntime-core-module)
 
@@ -22,6 +29,20 @@
 
 (: main-source-file (Parameter (Option Path)))
 (define main-source-file (make-parameter #f))
+
+;; Path to the main compiler module
+(define-runtime-path racketscript-main-module "main.rkt")
+
+(: racketscript-compiler-dir Path)
+(define racketscript-compiler-dir
+  (cast (path-only racketscript-main-module) Path))
+
+(: racketscript-dir Path)
+;; Root directory of Racketscript project
+(define racketscript-dir
+  (~> racketscript-compiler-dir
+      (build-path _ "..")
+      (simplify-path _)))
 
 ;;; ---------------------------------------------------------------------------
 
