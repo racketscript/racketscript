@@ -60,6 +60,10 @@ exports["number?"] = Core.Number.check;
 
 exports["integer?"] = Number.isInteger;
 
+exports["exact-nonnegative-integer?"] = function (v) {
+    return Number.isInteger(v) && v >= 0;
+}
+
 exports["zero?"] = function (v) {
     return v === 0;
 }
@@ -73,6 +77,17 @@ exports["negative?"] = function (v) {
     typeCheckOrRaise(Core.Number, v);
     return v < 0;
 }
+
+exports["even?"] = function (v) {
+    typeCheckOrRaise(Core.Number, v);
+    return (v % 2) === 0;
+}
+
+exports["odd?"] = function (v) {
+    typeCheckOrRaise(Core.Number, v);
+    return (v % 2) !== 0;
+}
+    
 
 exports["add1"] = function (v) {
     typeCheckOrRaise(Core.Number, v);
@@ -307,6 +322,9 @@ exports["hasheq"] = function (...vals) {
 
     return Core.Hash.makeEq(items, false);
 }
+exports["make-hasheq"] = function (assocs) {
+    return Core.Hash.makeFromAssocs(assocs, "eq", true);
+}
 
 exports["hash-ref"] = function (h, k, fail) {
     return h.ref(k, fail);
@@ -498,6 +516,19 @@ exports["string=?"] = function (sa, sb) {
     return sa === sb;
 }
 
+exports["string<?"] = function (sa, sb) {
+    return sa < sb;
+}
+exports["string<=?"] = function (sa, sb) {
+    return sa <= sb;
+}
+exports["string>?"] = function (sa, sb) {
+    return sa > sb;
+}
+exports["string>=?"] = function (sa, sb) {
+    return sa >= sb;
+}
+
 exports["string?"] = function (v) {
     return typeof(v) === 'string';
 }
@@ -557,6 +588,7 @@ exports["string-split"] = function (str, sep) {
     }
     return Core.Pair.listFromArray(str.split(sep));
 }
+
 
 /* --------------------------------------------------------------------------*/
 // Box
@@ -689,10 +721,51 @@ exports["random"] = function (...args) {
     }
 }
 
+// TODO: add optional equal? pred
 exports["member"] = function (v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (Core.isEqual(v, lst.hd)) {
 	    return lst;
+	}
+	lst = lst.tl;
+	continue;
+    }
+    return false;
+}
+exports["memv"] = function (v, lst) {
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (Core.isEqv(v, lst.hd)) {
+	    return lst;
+	}
+	lst = lst.tl;
+	continue;
+    }
+    return false;
+}
+exports["memq"] = function (v, lst) {
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (Core.isEq(v, lst.hd)) {
+	    return lst;
+	}
+	lst = lst.tl;
+	continue;
+    }
+    return false;
+}
+exports["memf"] = function (f, lst) {
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (f(lst.hd)) {
+	    return lst;
+	}
+	lst = lst.tl;
+	continue;
+    }
+    return false;
+}
+exports["findf"] = function (f, lst) {
+    while (Core.Pair.isEmpty(lst) == false) {
+	if (f(lst.hd)) {
+	    return list.hd;
 	}
 	lst = lst.tl;
 	continue;
@@ -710,11 +783,11 @@ exports["number->string"] = function (n) {
 }
 
 exports["ormap"] = function (fn, ...lists) {
-    return foldl.apply(this, [(v, a) => a || fn(v), false].concat(lists));
+    return foldl.apply(this, [(...args) => fn.apply(null,args), false].concat(lists));
 }
 
 exports["andmap"] = function (fn, ...lists) {
-    return foldl.apply(this, [(v, a) => a && fn(v), true].concat(lists));
+    return foldl.apply(this, [(...args) => fn.apply(null,args), true].concat(lists));
 }
 
 exports["filter"] = function (fn, lst) {
@@ -726,6 +799,24 @@ exports["filter"] = function (fn, lst) {
 	lst = lst.tl;
     }
     return reverse(result);
+}
+
+// TODO: more faithfully reproduce Racket sort?
+// Not working due to compile issues with sort in racket/private/list
+exports["sort9"] = function (lst, cmp) {
+    var arr = Core.Pair.listToArray(lst);
+    var x2i = new Map();
+    arr.forEach(function (x,i) { x2i.set(x,i); });
+    var srted = arr.sort(function (x,y) {
+	if (cmp(x,y)) {
+	    return -1;
+	} else if (cmp(y,x)) {
+	    return 1;
+	} else { // x = y, simulate stable sort by comparing indices
+	    return x2i.get(x) - x2i.get(y);
+	}});
+ 
+    return Core.Pair.listFromArray(srted);
 }
 
 exports["abs"] = Math.abs;
@@ -779,6 +870,33 @@ exports["make-list"] = function (n, v) {
 exports["assoc"] = function (k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
 	if (Core.isEqual(k, lst.hd.hd)) {
+	    return lst.hd;
+	}
+	lst = lst.tl;
+    }
+    return false;
+}
+exports["assv"] = function (k, lst) {
+    while (Core.Pair.isEmpty(lst) === false) {
+	if (Core.isEqv(k, lst.hd.hd)) {
+	    return lst.hd;
+	}
+	lst = lst.tl;
+    }
+    return false;
+}
+exports["assq"] = function (k, lst) {
+    while (Core.Pair.isEmpty(lst) === false) {
+	if (Core.isEq(k, lst.hd.hd)) {
+	    return lst.hd;
+	}
+	lst = lst.tl;
+    }
+    return false;
+}
+exports["assf"] = function (f, lst) {
+    while (Core.Pair.isEmpty(lst) === false) {
+	if (f(lst.hd.hd)) {
 	    return lst.hd;
 	}
 	lst = lst.tl;
@@ -948,3 +1066,27 @@ exports["byte-pregexp"] = function (bs) {
      }
 	
 }
+
+/* --------------------------------------------------------------------------*/
+// procedure
+exports["procedure?"] = function (f) {
+    return typeof(f) === 'function';
+}
+exports["procedure-arity-includes?"] = function (f) {
+    return true;
+}
+exports["procedure-arity"] = function (f) {
+    return f.length;
+}
+exports["eval-jit-enabled"] = function (f) { return true; }
+
+exports["make-sequence"] = function (who, v) {
+    return Core.Values.make([exports["car"],
+			     exports["cdr"],
+			     v,
+			     exports["pair?"],
+			     false,
+			     false]);
+}
+
+exports["variable-reference-constant?"] = function (x) { return false; }
