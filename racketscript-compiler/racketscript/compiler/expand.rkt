@@ -179,6 +179,7 @@
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]
+    [(#%variable-reference x) (to-absyn #'x)]
     [i:identifier #:when (quoted?) (syntax-e #'i)]
     [i:identifier
      (define (rename-module mpath)

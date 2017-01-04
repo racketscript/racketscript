@@ -1,6 +1,6 @@
 import * as $ from "./lib.js";
 
-/* Arithmatic */
+/* Arithmetic */
 
 export function add(...operands) {
     return [].reduce.call(operands, function(a, b) {

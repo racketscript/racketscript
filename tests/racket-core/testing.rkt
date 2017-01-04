@@ -1,11 +1,8 @@
 #lang racket/base
 (require syntax/parse/define)
-(provide test err/rt-test)
+(provide (all-defined-out))
 
-(define-simple-macro (test expected f . args)
-  (let ([res (f . args)]
-        [exp expected])
-  (displayln (equal? exp res))))
+(define (test expected f . args)
+  (displayln (equal? expected (apply f args))))
 
 (define-simple-macro (err/rt-test e) e)
-
