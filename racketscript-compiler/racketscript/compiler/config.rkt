@@ -4,7 +4,6 @@
 
 (provide output-directory
          logging?
-         racket-collects-dir
          current-source-file
          main-source-file
          FFI-CALL-ID
@@ -46,10 +45,6 @@
                  mod-name))))
 
 ;;; ---------------------------------------------------------------------------
-
-(: racket-collects-dir (Parameter Path))
-(define racket-collects-dir (make-parameter
-                             (build-path "/usr/share/racket/collects")))
 
 (: test-environment? (Parameter Boolean))
 (define test-environment? (make-parameter #f))

@@ -29,7 +29,7 @@
        (subpath? (~a (simplify-path (build-path dir path)))
                  (~a mod-path))]
       [(list name path re) #f]))
-  
+
   ;; Path LinkEntry -> (list Symbol Path)
   ;; Returns (list link-name pkg-root-dir)
   ;; WHERE: LinkEntry is  an entry in links.rktd file
@@ -48,7 +48,7 @@
              (simplify-path (build-path (path-only link-fpath)
                                         path)))]
       [_ (error 'link->result "unsupported form")]))
-  
+
   ;; Path -> (list Symbol Path)
   ;; Iterate through each entry in links.rktd file pointed
   ;; by link-fpath and find the entry with module mod-path

@@ -16,9 +16,8 @@
 
 (require/typed "util-untyped.rkt"
   [improper->proper (-> (Pairof Any Any) (Listof Any))]
-  [links-module? (-> Path-String
-                     (Option (Pairof String
-                                     (Pairof Path-String '()))))])
+  [links-module? (-> Path
+                     (Option (List String Path)))])
 
 (provide hash-set-pair*
          improper->proper
@@ -240,20 +239,16 @@
 
 (: module-output-file (-> (U Path Symbol) Path))
 (define (module-output-file mod)
-  (define links? (if (symbol? mod) #t (links-module? mod)))
-  (cond
-    [(symbol? mod)
+  (match (module-kind mod)
+    [(list 'primitive mod-path)
      ;; Eg. #%kernel, #%utils ...
      (path->complete-path (build-path (output-directory)
                                       "runtime"
-                                      (substring (symbol->string mod) 2)))]
-    [(collects-module? mod)
-     (let ([rel-collects (find-relative-path (racket-collects-dir) mod)])
-       (path->complete-path
-        (build-path (output-directory) "collects" (~a rel-collects ".js"))))]
-    [links?
-     (match-define (list name root-path) links?)
-     (define rel-path (find-relative-path root-path mod))
+                                      (substring (symbol->string mod-path) 2)))]
+    [(list 'collects base rel-path)
+     (path->complete-path
+      (build-path (output-directory) "collects" (~a rel-path ".js")))]
+    [(list 'links name root-path rel-path)
      (define output-path
        (build-path (output-directory) "links" name (~a rel-path ".js")))
      ;; because we just created root links directory, but files could be
@@ -261,9 +256,9 @@
      (make-directory* (assert (path-only output-path) path?))
      ;; TODO: doesn't handle arbitrary deep files for now
      (path->complete-path output-path)]
-    [else
+    [(list 'general mod-path)
      (let* ([main (assert (main-source-file) path?)]
-            [rel-path (find-relative-path (path-parent main) mod)])
+            [rel-path (find-relative-path (path-parent main) mod-path)])
        (path->complete-path
         (build-path (output-directory) "modules" (~a rel-path ".js"))))]))
 
@@ -277,18 +272,13 @@
     (if (string-prefix? p-str "..")
         p
         (build-path (~a "./" p-str))))
-  ;; FIX: Later when collects is supports, don't use kernel instead
-  (let ([src (assert (current-source-file) path?)]
-        [collects? (collects-module? mod-path)]
-        [links-module? (links-module? mod-path)])
+  (let ([src (assert (current-source-file) path?)])
     (fix-for-down
      (cast (find-relative-path (path-parent (module-output-file src))
-                               (cond
-                                 [collects? (module-output-file mod-path)]
-                                 [else (module-output-file mod-path)]))
+                               (module-output-file mod-path))
            Path))))
 
-(: collects-module? (-> (U String Path) (Option Path)))
+(: collects-module? (-> Path (Option Path)))
 (define (collects-module? mod-path)
   (let loop ([collects (current-library-collection-paths)])
     (match collects
@@ -297,6 +287,28 @@
        (if (string-prefix? (~a mod-path) (~a ch))
            ch
            (loop ct))])))
+
+
+(: module-kind (-> (U Symbol Path)
+                   (U (List 'collects  Path Path)
+                      (List 'links     String Path Path)
+                      (List 'primitive Symbol)
+                      (List 'general   Path))))
+(define (module-kind mod-path)
+  (if (symbol? mod-path)
+      (list 'primitive mod-path)
+      (let ([collects-base (collects-module? mod-path)])
+        (if collects-base
+            (list 'collects
+                  collects-base
+                  (cast (find-relative-path collects-base mod-path) Path))
+            (let ([links-result (links-module? mod-path)])
+              (if links-result
+                  (list 'links
+                        (car links-result)   ;; name
+                        (cadr links-result)  ;; root-path to links
+                        (cast (find-relative-path (cadr links-result) mod-path) Path))
+                  (list 'general mod-path)))))))
 
 (: converge (∀ [X] (-> (-> X X) X X)))
 (define (converge fn init-val)
