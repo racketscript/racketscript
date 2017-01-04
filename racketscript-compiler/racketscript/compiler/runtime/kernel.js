@@ -30,7 +30,11 @@ exports["eq?"] = Core.isEq;
 // Values
 
 exports["values"] = function (...vals) {
-    return Core.Values.make(vals);
+    if (vals.length === 1) {
+	return vals[0];
+    } else {
+	return Core.Values.make(vals);
+    }
 }
 
 var callWithValues = exports["call-with-values"] = function (generator, receiver) {
@@ -159,7 +163,7 @@ exports["second"] = function (lst) {
 }
 exports["rest"] = exports["cdr"];
 
-exports["list?"] = function isList(v) {
+var isList = exports["list?"] = function (v) {
     //TODO: Make this iterative
     if (Core.Pair.isEmpty(v)) {
 	return true;
@@ -181,16 +185,6 @@ exports["null?"] = Core.Pair.isEmpty;
 
 var length = exports["length"] = function (lst) {
     return Core.Pair.listLength(lst);
-}
-
-exports["reverse"] = function(lst) {
-    typeCheckOrRaise(Core.Pair, lst);
-    let result = Core.Pair.Empty;
-    while (Core.Pair.isEmpty(lst) === false) {
-	result = Core.Pair.make(lst.hd, result);
-	lst = lst.tl;
-    }
-    return result;
 }
 
 exports["for-each"] = function (lam, ...lsts) {
@@ -270,6 +264,10 @@ exports["check-struct-type"] = function (name, what) {
 exports["vector"] = function () {
     var items = Core.argumentsToArray(arguments);
     return Core.Vector.make(items, true);
+}
+
+exports["make-vector"] = function (size, v) {
+    return Core.Vector.makeInit(size, v || 0);
 }
 
 exports["vector?"] = function(v) {
@@ -354,13 +352,16 @@ exports["apply"] = function (lam, ...args) {
 
 var reverse = exports["reverse"] = function (lst) {
     let result = Core.Pair.Empty;
+    if (!isList(lst)) {
+	throw Core.racketContractError("expected list");
+    }
     while (Core.Pair.isEmpty(lst) === false) {
 	result = Core.Pair.make(lst.hd, result);
 	lst = lst.tl;
     }
     return result;
 }
-
+exports["alt-reverse"] = reverse; // used internally by for*/list
 
 var map = exports["map"] = function map(fn, ...lists) {
     if (lists.length <= 0) {

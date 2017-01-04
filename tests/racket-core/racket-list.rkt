@@ -41,19 +41,19 @@
          ;; take-common-prefix
          ;; drop-common-prefix
 
-         ;; append*
-         ;; flatten
+         append*
+         flatten
          ;; add-between
          ;; remove-duplicates
          ;; check-duplicates
-         ;; filter-map
-         ;; count
-         ;; partition
+         filter-map
+         count
+         partition
 
          ;; ;; convenience
          ;; range
-         ;; append-map
-         ;; filter-not
+         append-map
+         filter-not
          ;; shuffle
          ;; combinations
          ;; in-combinations
@@ -326,73 +326,73 @@
 ;;                 (internal-split-common-prefix as bs same? #f 'drop-common-prefix)])
 ;;     (values atail btail)))
 
-;; (define append*
-;;   (case-lambda [(ls) (apply append ls)] ; optimize common case
-;;                [(l1 l2) (apply append l1 l2)]
-;;                [(l1 l2 l3) (apply append l1 l2 l3)]
-;;                [(l1 l2 l3 l4) (apply append l1 l2 l3 l4)]
-;;                [(l . lss) (apply apply append l lss)]))
+(define append*
+  (case-lambda [(ls) (apply append ls)] ; optimize common case
+               [(l1 l2) (apply append l1 l2)]
+               [(l1 l2 l3) (apply append l1 l2 l3)]
+               [(l1 l2 l3 l4) (apply append l1 l2 l3 l4)]
+               [(l . lss) (apply apply append l lss)]))
 
-;; (define (flatten orig-sexp)
-;;   (let loop ([sexp orig-sexp] [acc null])
-;;     (cond [(null? sexp) acc]
-;;           [(pair? sexp) (loop (car sexp) (loop (cdr sexp) acc))]
-;;           [else (cons sexp acc)])))
+(define (flatten orig-sexp)
+  (let loop ([sexp orig-sexp] [acc null])
+    (cond [(null? sexp) acc]
+          [(pair? sexp) (loop (car sexp) (loop (cdr sexp) acc))]
+          [else (cons sexp acc)])))
 
 ;; ;; General note: many non-tail recursive, which are just as fast in racket
 
-;; (define (add-between l x
-;;                      #:splice? [splice? #f]
-;;                      #:before-first [before-first '()]
-;;                      #:before-last [before-last x]
-;;                      #:after-last [after-last '()])
-;;   (unless (list? l)
-;;     (raise-argument-error 'add-between "list?" 0 l x))
-;;   (cond
-;;     [splice?
-;;      (define (check-list x which)
-;;        (unless (list? x)
-;;          (raise-arguments-error
-;;           'add-between
-;;           (string-append "list needed in splicing mode" which)
-;;           "given" x
-;;           "given list..." l)))
-;;      (check-list x "")
-;;      (check-list before-first " for #:before-first")
-;;      (check-list before-last  " for #:before-last")
-;;      (check-list after-last   " for #:after-last")]
-;;     [else
-;;      (define (check-not-given x which)
-;;        (unless (eq? '() x)
-;;          (raise-arguments-error
-;;           'add-between
-;;           (string-append which " can only be used in splicing mode")
-;;           "given" x
-;;           "given list..." l)))
-;;      (check-not-given before-first "#:before-first")
-;;      (check-not-given after-last   "#:after-last")])
-;;   (cond
-;;     [(or (null? l) (null? (cdr l)))
-;;      (if splice? (append before-first l after-last) l)]
-;;     ;; two cases for efficiency, maybe not needed
-;;     [splice?
-;;      (let* ([x (reverse x)]
-;;             ;; main loop
-;;             [r (let loop ([i (cadr l)] [l (cddr l)] [r '()])
-;;                  (if (pair? l)
-;;                    (loop (car l) (cdr l) (cons i (append x r)))
-;;                    (cons i (append (reverse before-last) r))))]
-;;             ;; add `after-last' & reverse
-;;             [r (reverse (append (reverse after-last) r))]
-;;             ;; add first item and `before-first'
-;;             [r `(,@before-first ,(car l) ,@r)])
-;;        r)]
-;;     [else
-;;      (cons (car l)
-;;            (reverse (let loop ([i (cadr l)] [l (cddr l)] [r '()]) ; main loop
-;;                       (if (pair? l)
-;;                         (loop (car l) (cdr l) (cons i (cons x r)))
-;;                         (cons i (cons before-last r))))))]))
+#;(define (add-between l x
+                     #:splice? [splice? #f]
+                     #:before-first [before-first '()]
+                     #:before-last [before-last x]
+                     #:after-last [after-last '()])
+  (unless (list? l)
+    (raise-argument-error 'add-between "list?" 0 l x))
+  (cond
+    [splice?
+     (define (check-list x which)
+       (unless (list? x)
+         (raise-arguments-error
+          'add-between
+          (string-append "list needed in splicing mode" which)
+          "given" x
+          "given list..." l)))
+     (check-list x "")
+     (check-list before-first " for #:before-first")
+     (check-list before-last  " for #:before-last")
+     (check-list after-last   " for #:after-last")]
+    [else
+     (define (check-not-given x which)
+       (unless (eq? '() x)
+         (raise-arguments-error
+          'add-between
+          (string-append which " can only be used in splicing mode")
+          "given" x
+          "given list..." l)))
+     (check-not-given before-first "#:before-first")
+     (check-not-given after-last   "#:after-last")])
+  (cond
+    [(or (null? l) (null? (cdr l)))
+     (if splice? (append before-first l after-last) l)]
+    ;; two cases for efficiency, maybe not needed
+    [splice?
+     (let* ([x (reverse x)]
+            ;; main loop
+            [r (let loop ([i (cadr l)] [l (cddr l)] [r '()])
+                 (if (pair? l)
+                   (loop (car l) (cdr l) (cons i (append x r)))
+                   (cons i (append (reverse before-last) r))))]
+            ;; add `after-last' & reverse
+            [r (reverse (append (reverse after-last) r))]
+            ;; add first item and `before-first'
+            [r `(,@before-first ,(car l) ,@r)])
+       r)]
+    [else
+     (cons (car l)
+           (reverse (let loop ([i (cadr l)] [l (cddr l)] [r '()]) ; main loop
+                      (if (pair? l)
+                        (loop (car l) (cdr l) (cons i (cons x r)))
+                        (cons i (cons before-last r))))))]))
 
 ;; (define (remove-duplicates l [=? equal?] #:key [key #f])
 ;;   ;; `no-key' is used to optimize the case for long lists, it could be done for
@@ -483,88 +483,88 @@
 ;;                (car items)
 ;;                (loop (cdr items) (cons key-item sofar)))))))
 
-;; ;; Eli: Just to have a record of this: my complaint about having this
-;; ;; code separately from `remove-duplicates' still stands.  Specifically,
-;; ;; that function decides when to use a hash table to make things faster,
-;; ;; and this code would benefit from the same.  It would be much better
-;; ;; to extend that function so it can be used for both tasks rather than
-;; ;; a new piece of code that does it (only do it in a worse way, re
-;; ;; performance).  Doing this can also benefit `remove-duplicates' -- for
-;; ;; example, make it accept a container so that users can choose how
-;; ;; when/if to use a hash table.
+;; Eli: Just to have a record of this: my complaint about having this
+;; code separately from `remove-duplicates' still stands.  Specifically,
+;; that function decides when to use a hash table to make things faster,
+;; and this code would benefit from the same.  It would be much better
+;; to extend that function so it can be used for both tasks rather than
+;; a new piece of code that does it (only do it in a worse way, re
+;; performance).  Doing this can also benefit `remove-duplicates' -- for
+;; example, make it accept a container so that users can choose how
+;; when/if to use a hash table.
 
 
-;; (define (check-filter-arguments who f l ls)
-;;   (unless (procedure? f)
-;;     (apply raise-argument-error who "procedure?" 0 f l ls))
-;;   (unless (procedure-arity-includes? f (add1 (length ls)))
-;;     (raise-arguments-error
-;;      who "mismatch between procedure arity and argument count"
-;;      "procedure" f
-;;      "expected arity" (add1 (length ls))))
-;;   (unless (and (list? l) (andmap list? ls))
-;;     (for ([(x i) (in-indexed (cons l ls))])
-;;       (unless (list? x)
-;;         (apply raise-argument-error who "list?" (add1 i) f l ls)))))
+(define (check-filter-arguments who f l ls)
+  (unless (procedure? f)
+    (apply raise-argument-error who "procedure?" 0 f l ls))
+  (unless (procedure-arity-includes? f (add1 (length ls)))
+    (raise-arguments-error
+     who "mismatch between procedure arity and argument count"
+     "procedure" f
+     "expected arity" (add1 (length ls))))
+  (unless (and (list? l) (andmap list? ls))
+    (for ([(x i) (in-indexed (cons l ls))])
+      (unless (list? x)
+        (apply raise-argument-error who "list?" (add1 i) f l ls)))))
 
-;; (define (filter-map f l . ls)
-;;   (check-filter-arguments 'filter-map f l ls)
-;;   (if (pair? ls)
-;;     (let ([len (length l)])
-;;       (if (andmap (λ(l) (= len (length l))) ls)
-;;         (let loop ([l l] [ls ls])
-;;           (if (null? l)
-;;             null
-;;             (let ([x (apply f (car l) (map car ls))])
-;;               (if x
-;;                 (cons x (loop (cdr l) (map cdr ls)))
-;;                 (loop (cdr l) (map cdr ls))))))
-;;         (raise-arguments-error 'filter-map "all lists must have same size")))
-;;     (let loop ([l l])
-;;       (if (null? l)
-;;         null
-;;         (let ([x (f (car l))])
-;;           (if x (cons x (loop (cdr l))) (loop (cdr l))))))))
+(define (filter-map f l . ls)
+  (check-filter-arguments 'filter-map f l ls)
+  (if (pair? ls)
+    (let ([len (length l)])
+      (if (andmap (λ(l) (= len (length l))) ls)
+        (let loop ([l l] [ls ls])
+          (if (null? l)
+            null
+            (let ([x (apply f (car l) (map car ls))])
+              (if x
+                (cons x (loop (cdr l) (map cdr ls)))
+                (loop (cdr l) (map cdr ls))))))
+        (raise-arguments-error 'filter-map "all lists must have same size")))
+    (let loop ([l l])
+      (if (null? l)
+        null
+        (let ([x (f (car l))])
+          (if x (cons x (loop (cdr l))) (loop (cdr l))))))))
 
-;; ;; very similar to `filter-map', one more such function will justify some macro
-;; (define (count f l . ls)
-;;   (check-filter-arguments 'count f l ls)
-;;   (if (pair? ls)
-;;     (let ([len (length l)])
-;;       (if (andmap (λ(l) (= len (length l))) ls)
-;;         (let loop ([l l] [ls ls] [c 0])
-;;           (if (null? l)
-;;             c
-;;             (loop (cdr l) (map cdr ls)
-;;                   (if (apply f (car l) (map car ls)) (add1 c) c))))
-;;         (raise-arguments-error 'count "all lists must have same size")))
-;;     (let loop ([l l] [c 0])
-;;       (if (null? l) c (loop (cdr l) (if (f (car l)) (add1 c) c))))))
+;; very similar to `filter-map', one more such function will justify some macro
+(define (count f l . ls)
+  (check-filter-arguments 'count f l ls)
+  (if (pair? ls)
+    (let ([len (length l)])
+      (if (andmap (λ(l) (= len (length l))) ls)
+        (let loop ([l l] [ls ls] [c 0])
+          (if (null? l)
+            c
+            (loop (cdr l) (map cdr ls)
+                  (if (apply f (car l) (map car ls)) (add1 c) c))))
+        (raise-arguments-error 'count "all lists must have same size")))
+    (let loop ([l l] [c 0])
+      (if (null? l) c (loop (cdr l) (if (f (car l)) (add1 c) c))))))
 
-;; ;; Originally from srfi-1 -- shares common tail with the input when possible
-;; ;; (define (partition f l)
-;; ;;   (unless (and (procedure? f) (procedure-arity-includes? f 1))
-;; ;;     (raise-argument-error 'partition "procedure (arity 1)" f))
-;; ;;   (unless (list? l) (raise-argument-error 'partition "proper list" l))
-;; ;;   (let loop ([l l])
-;; ;;     (if (null? l)
-;; ;;       (values null null)
-;; ;;       (let* ([x (car l)] [x? (f x)])
-;; ;;         (let-values ([(in out) (loop (cdr l))])
-;; ;;           (if x?
-;; ;;             (values (if (pair? out) (cons x in) l) out)
-;; ;;             (values in (if (pair? in) (cons x out) l))))))))
-
-;; ;; But that one is slower than this, probably due to value packaging
-;; (define (partition pred l)
-;;   (unless (and (procedure? pred) (procedure-arity-includes? pred 1))
-;;     (raise-argument-error 'partition "(any/c . -> . any/c)" 0 pred l))
-;;   (unless (list? l) (raise-argument-error 'partition "list?" 1 pred l))
-;;   (let loop ([l l] [i '()] [o '()])
+;; Originally from srfi-1 -- shares common tail with the input when possible
+;; (define (partition f l)
+;;   (unless (and (procedure? f) (procedure-arity-includes? f 1))
+;;     (raise-argument-error 'partition "procedure (arity 1)" f))
+;;   (unless (list? l) (raise-argument-error 'partition "proper list" l))
+;;   (let loop ([l l])
 ;;     (if (null? l)
-;;       (values (reverse i) (reverse o))
-;;       (let ([x (car l)] [l (cdr l)])
-;;         (if (pred x) (loop l (cons x i) o) (loop l i (cons x o)))))))
+;;       (values null null)
+;;       (let* ([x (car l)] [x? (f x)])
+;;         (let-values ([(in out) (loop (cdr l))])
+;;           (if x?
+;;             (values (if (pair? out) (cons x in) l) out)
+;;             (values in (if (pair? in) (cons x out) l))))))))
+
+;; But that one is slower than this, probably due to value packaging
+(define (partition pred l)
+  (unless (and (procedure? pred) (procedure-arity-includes? pred 1))
+    (raise-argument-error 'partition "(any/c . -> . any/c)" 0 pred l))
+  (unless (list? l) (raise-argument-error 'partition "list?" 1 pred l))
+  (let loop ([l l] [i '()] [o '()])
+    (if (null? l)
+      (values (reverse i) (reverse o))
+      (let ([x (car l)] [l (cdr l)])
+        (if (pred x) (loop l (cons x i) o) (loop l i (cons x o)))))))
 
 ;; ;; similar to in-range, but returns a list
 ;; (define range
@@ -573,25 +573,25 @@
 ;;     [(start end)      (for/list ([i (in-range start end)])      i)]
 ;;     [(start end step) (for/list ([i (in-range start end step)]) i)]))
 
-;; (define append-map
-;;   (case-lambda [(f l)      (apply append (map f l))]
-;;                [(f l1 l2)  (apply append (map f l1 l2))]
-;;                [(f l . ls) (apply append (apply map f l ls))]))
+(define append-map
+  (case-lambda [(f l)      (apply append (map f l))]
+               [(f l1 l2)  (apply append (map f l1 l2))]
+               [(f l . ls) (apply append (apply map f l ls))]))
 
-;; ;; this is an exact copy of `filter' in racket/private/list, with the
-;; ;; `if' branches swapped.
-;; (define (filter-not f list)
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'filter-not "(any/c . -> . any/c)" 0 f list))
-;;   (unless (list? list)
-;;     (raise-argument-error 'filter-not "list?" 1 f list))
-;;   ;; accumulating the result and reversing it is currently slightly
-;;   ;; faster than a plain loop
-;;   (let loop ([l list] [result null])
-;;     (if (null? l)
-;;       (reverse result)
-;;       (loop (cdr l) (if (f (car l)) result (cons (car l) result))))))
+;; this is an exact copy of `filter' in racket/private/list, with the
+;; `if' branches swapped.
+(define (filter-not f list)
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'filter-not "(any/c . -> . any/c)" 0 f list))
+  (unless (list? list)
+    (raise-argument-error 'filter-not "list?" 1 f list))
+  ;; accumulating the result and reversing it is currently slightly
+  ;; faster than a plain loop
+  (let loop ([l list] [result null])
+    (if (null? l)
+      (reverse result)
+      (loop (cdr l) (if (f (car l)) result (cons (car l) result))))))
 
 ;; ;; Fisher-Yates Shuffle
 ;; (define (shuffle l)

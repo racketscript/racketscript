@@ -258,31 +258,31 @@
 ;;     (err/rt-test (fun '(1) 2) exn:application:mismatch?)
 ;;     (err/rt-test (fun '(1 2 . 3) 3) exn:application:mismatch?)))
 
-;; ;; ---------- append* ----------
-;; (let ()
-;;   (test '()        append* '())
-;;   (test '()        append* '(()))
-;;   (test '()        append* '(() ()))
-;;   (test '(0 1 2 3) append* '((0 1 2 3)))
-;;   (test '(0 1 2 3) append* '(0 1 2 3) '())
-;;   (test '(0 1 2 3) append* '(0 1 2 3) '(()))
-;;   (test '(0 1 2 3) append* '(0 1 2 3) '(() ()))
-;;   (test '(0 1 2 3) append* '(0 1) '((2) (3)))
-;;   (test '(0 1 0 2 0 3) append* (map (lambda (x) (list 0 x)) '(1 2 3)))
-;;   (test '(1 2 3 4 5 6 7 8 9) append* '(1 2 3) '(4 5) '((6 7 8) (9))))
+;; ---------- append* ----------
+(let ()
+  (test '()        append* '())
+  (test '()        append* '(()))
+  (test '()        append* '(() ()))
+  (test '(0 1 2 3) append* '((0 1 2 3)))
+  (test '(0 1 2 3) append* '(0 1 2 3) '())
+  (test '(0 1 2 3) append* '(0 1 2 3) '(()))
+  (test '(0 1 2 3) append* '(0 1 2 3) '(() ()))
+  (test '(0 1 2 3) append* '(0 1) '((2) (3)))
+  (test '(0 1 0 2 0 3) append* (map (lambda (x) (list 0 x)) '(1 2 3)))
+  (test '(1 2 3 4 5 6 7 8 9) append* '(1 2 3) '(4 5) '((6 7 8) (9))))
 
-;; ;; ---------- flatten ----------
-;; (let ()
-;;   (define (all-sexps n)
-;;     (if (zero? n)
-;;       '(x ())
-;;       (let ([r (all-sexps (sub1 n))])
-;;         (append r (for*/list ([x r] [y r]) (cons x y))))))
-;;   (define sexps (all-sexps 3)) ; can use 4 on fast machines
-;;   (define (flat? x) (and (list? x) (andmap (lambda (x) (eq? 'x x)) x)))
-;;   (for ([x sexps]) (test #t flat? (flatten x))))
+;; ---------- flatten ----------
+(let ()
+  (define (all-sexps n)
+    (if (zero? n)
+      '(x ())
+      (let ([r (all-sexps (sub1 n))])
+        (append r (for*/list ([x r] [y r]) (cons x y))))))
+  (define sexps (all-sexps 3)) ; can use 4 on fast machines
+  (define (flat? x) (and (list? x) (andmap (lambda (x) (eq? 'x x)) x)))
+  (for ([x sexps]) (test #t flat? (flatten x))))
 
-;; ;; ---------- add-between ----------
+;; ---------- add-between ----------
 ;; (let ()
 ;;   ;; simple cases
 ;;   (for ([l  (in-list '(() (x) (x y) (x y z) (x y z w)))]
@@ -363,17 +363,17 @@
 ;;     (test long rd (append long (map (lambda (x) (- x)) long)) #:key abs)
 ;;     (test long rd (append long (map (lambda (x) (- x)) long)) = #:key abs)))
 
-;; ;; ---------- filter and filter-not ----------
-;; (let ()
-;;   (define f filter)
-;;   (define fn filter-not)
+;; ---------- filter and filter-not ----------
+(let ()
+  (define f filter)
+  (define fn filter-not)
 
-;;   (test '()              f  number? '())
-;;   (test '()              fn number? '())
-;;   (test '(1 2 3)         f  number? '(1 a 2 b 3 c d))
-;;   (test '(a b c d)       fn number? '(1 a 2 b 3 c d))
-;;   (test '()              f  string? '(1 a 2 b 3 c d))
-;;   (test '(1 a 2 b 3 c d) fn string? '(1 a 2 b 3 c d))
+  (test '()              f  number? '())
+  (test '()              fn number? '())
+  (test '(1 2 3)         f  number? '(1 a 2 b 3 c d))
+  (test '(a b c d)       fn number? '(1 a 2 b 3 c d))
+  (test '()              f  string? '(1 a 2 b 3 c d))
+  (test '(1 a 2 b 3 c d) fn string? '(1 a 2 b 3 c d)))
 ;;   (err/rt-test (f string? '(1 2 3 . 4)) exn:application:mismatch?)
 ;;   (err/rt-test (fn string? '(1 2 3 . 4)) exn:application:mismatch?)
 ;;   (err/rt-test (f  2 '(1 2 3)))
@@ -383,40 +383,39 @@
 ;;   (arity-test f  2 2)
 ;;   (arity-test fn 2 2))
 
-;; ;; ---------- partition ----------
-;; (let ()
-;;   (define (p pred l) (call-with-values (lambda () (partition pred l)) list))
-;;   (test '(() ()) p (lambda (_) #t) '())
-;;   (test '(() ()) p (lambda (_) #f) '())
-;;   (test '((1 2 3 4) ()) p (lambda (_) #t) '(1 2 3 4))
-;;   (test '(() (1 2 3 4)) p (lambda (_) #f) '(1 2 3 4))
-;;   (test '((2 4) (1 3)) p even? '(1 2 3 4))
-;;   (test '((1 3) (2 4)) p odd? '(1 2 3 4)))
+;; ---------- partition ----------
+(let ()
+  (define (p pred l) (call-with-values (lambda () (partition pred l)) list))
+  (test '(() ()) p (lambda (_) #t) '())
+  (test '(() ()) p (lambda (_) #f) '())
+  (test '((1 2 3 4) ()) p (lambda (_) #t) '(1 2 3 4))
+  (test '(() (1 2 3 4)) p (lambda (_) #f) '(1 2 3 4))
+  (test '((2 4) (1 3)) p even? '(1 2 3 4))
+  (test '((1 3) (2 4)) p odd? '(1 2 3 4)))
 
-;; ;; ---------- filter-map ----------
-;; (let ()
-;;   (define fm filter-map)
-;;   (test '() fm values '())
-;;   (test '(1 2 3) fm values '(1 2 3))
-;;   (test '() fm values '(#f #f #f))
-;;   (test '(1 2 3) fm values '(#f 1 #f 2 #f 3 #f))
-;;   (test '(4 8 12) fm (lambda (x) (and (even? x) (* x 2))) '(1 2 3 4 5 6)))
+;; ---------- filter-map ----------
+(let ()
+  (define fm filter-map)
+  (test '() fm values '())
+  (test '(1 2 3) fm values '(1 2 3))
+  (test '() fm values '(#f #f #f))
+  (test '(1 2 3) fm values '(#f 1 #f 2 #f 3 #f))
+  (test '(4 8 12) fm (lambda (x) (and (even? x) (* x 2))) '(1 2 3 4 5 6)))
 
-;; ;; ---------- count ----------
+;; ---------- count ----------
+(let ()
+  (test 0 count even? '())
+  (test 4 count even? '(0 2 4 6))
+  (test 0 count even? '(1 3 5 7))
+  (test 2 count even? '(1 2 3 4))
+  (test 2 count < '(1 2 3 4) '(4 3 2 1)))
 
-;; (let ()
-;;   (test 0 count even? '())
-;;   (test 4 count even? '(0 2 4 6))
-;;   (test 0 count even? '(1 3 5 7))
-;;   (test 2 count even? '(1 2 3 4))
-;;   (test 2 count < '(1 2 3 4) '(4 3 2 1)))
-
-;; ;; ---------- append-map ----------
-;; (let ()
-;;   (define am append-map)
-;;   (test '() am list '())
-;;   (test '(1 2 3) am list '(1 2 3))
-;;   (test '(1 1 2 2 3 3) am (lambda (x) (list x x)) '(1 2 3)))
+;; ---------- append-map ----------
+(let ()
+  (define am append-map)
+  (test '() am list '())
+  (test '(1 2 3) am list '(1 2 3))
+  (test '(1 1 2 2 3 3) am (lambda (x) (list x x)) '(1 2 3)))
 
 ;; ;; ---------- shuffle ----------
 ;; (let loop ([l (reverse '(1 2 4 8 16 32))])
