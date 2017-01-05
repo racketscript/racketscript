@@ -5,7 +5,7 @@ import * as $ from "./lib.js";
 export function add(...operands) {
     return [].reduce.call(operands, function(a, b) {
 	return a + b
-    });
+    }, 0);
 }
 
 export function sub(...operands) {
@@ -38,7 +38,7 @@ export function div(...operands) {
     }
 }
 
-/* Comparision */
+/* Comparison */
 
 export function compare(cmp, operands) {
     if (operands.length < 2) {

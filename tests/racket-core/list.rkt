@@ -417,13 +417,13 @@
   (test '(1 2 3) am list '(1 2 3))
   (test '(1 1 2 2 3 3) am (lambda (x) (list x x)) '(1 2 3)))
 
-;; ;; ---------- shuffle ----------
-;; (let loop ([l (reverse '(1 2 4 8 16 32))])
-;;   (define (length+sum l) (list (length l) (apply + l)))
-;;   (define expected (length+sum l))
-;;   (for ([i (in-range 100)])
-;;     (test expected length+sum (shuffle l)))
-;;   (when (pair? l) (loop (cdr l))))
+;; ---------- shuffle ----------
+(let loop ([l (reverse '(1 2 4 8 16 32))])
+  (define (length+sum l) (list (length l) (apply + l)))
+  (define expected (length+sum l))
+  (for ([i (in-range 100)])
+    (test expected length+sum (shuffle l)))
+  (when (pair? l) (loop (cdr l))))
 
 ;; ;; ---------- combinations ----------
 ;; (let ()
@@ -517,28 +517,28 @@
 ;;           x))))
 ;;   (test #t = (count-cons pl) (count-cons (minimize-cons pl))))
 
-;; ;; ---------- argmin & argmax ----------
+;; ---------- argmin & argmax ----------
 
-;; (let ()
+(let ()
 
-;;   (define ((check-regs . regexps) exn)
-;;     (and (exn:fail? exn)
-;;          (andmap (λ (reg) (regexp-match reg (exn-message exn)))
-;;                  regexps)))
+  #;(define ((check-regs . regexps) exn)
+    (and (exn:fail? exn)
+         (andmap (λ (reg) (regexp-match reg (exn-message exn)))
+                 regexps)))
 
-;;   (test 'argmin object-name argmin)
-;;   (test 1 argmin (lambda (x) 0) (list 1))
-;;   (test 1 argmin (lambda (x) x) (list 1 2 3))
-;;   (test 1 argmin (lambda (x) 1) (list 1 2 3))
+  ;(test 'argmin object-name argmin)
+  (test 1 argmin (lambda (x) 0) (list 1))
+  (test 1 argmin (lambda (x) x) (list 1 2 3))
+  (test 1 argmin (lambda (x) 1) (list 1 2 3))
 
-;;   (test 3
-;;         'argmin-makes-right-number-of-calls
-;;         (let ([c 0])
-;;           (argmin (lambda (x) (set! c (+ c 1)) 0)
-;;                   (list 1 2 3))
-;;           c))
+  (test 3
+;        'argmin-makes-right-number-of-calls
+        (let ([c 0])
+          (argmin (lambda (x) (set! c (+ c 1)) 0)
+                  (list 1 2 3))
+          c))
 
-;;   (test '(1 banana) argmin car '((3 pears) (1 banana) (2 apples)))
+  (test '(1 banana) argmin car '((3 pears) (1 banana) (2 apples)))
 
 ;;   (err/rt-test (argmin 1 (list 1)) (check-regs #rx"argmin" #rx"any/c . -> . real[?]"))
 ;;   (err/rt-test (argmin (lambda (x) x) 3) (check-regs #rx"argmin" #rx"list"))
@@ -548,19 +548,19 @@
 ;;   (err/rt-test (argmin (lambda (x) x) (list +i)) (check-regs #rx"argmin" #rx"real"))
 ;;   (err/rt-test (argmin (lambda (x) x) (list)) (check-regs #rx"argmin" #rx".and/c list[?] .not/c empty[?].."))
 
-;;   (test 'argmax object-name argmax)
-;;   (test 1 argmax (lambda (x) 0) (list 1))
-;;   (test 3 argmax (lambda (x) x) (list 1 2 3))
-;;   (test 1 argmax (lambda (x) 1) (list 1 2 3))
+  ;(test 'argmax object-name argmax)
+  (test 1 argmax (lambda (x) 0) (list 1))
+  (test 3 argmax (lambda (x) x) (list 1 2 3))
+  (test 1 argmax (lambda (x) 1) (list 1 2 3))
 
-;;   (test 3
-;;         'argmax-makes-right-number-of-calls
-;;         (let ([c 0])
-;;           (argmax (lambda (x) (set! c (+ c 1)) 0)
-;;                   (list 1 2 3))
-;;           c))
+  (test 3
+;        'argmax-makes-right-number-of-calls
+        (let ([c 0])
+          (argmax (lambda (x) (set! c (+ c 1)) 0)
+                  (list 1 2 3))
+          c))
 
-;;   (test '(3 pears) argmax car '((3 pears) (1 banana) (2 apples)))
+  (test '(3 pears) argmax car '((3 pears) (1 banana) (2 apples)))
 
 ;;   (err/rt-test (argmax 1 (list 1)) (check-regs #rx"argmax" #rx"any/c . -> . real[?]"))
 ;;   (err/rt-test (argmax (lambda (x) x) 3) (check-regs #rx"argmax" #rx"list"))
@@ -569,24 +569,25 @@
 
 ;;   (err/rt-test (argmax (lambda (x) x) (list +i)) (check-regs #rx"argmax" #rx"real?"))
 ;;   (err/rt-test (argmax (lambda (x) x) (list)) (check-regs #rx"argmax" #rx".and/c list[?] .not/c empty[?]..")))
+)
 
-;; ;; ---------- range ----------
+;; ---------- range ----------
 
-;; (let ()
-;;   (test '(0 1 2 3) range 4)
-;;   (test '() range 0)
-;;   (test '(0 1 2 3 4 5 6 7) range 8)
-;;   (test '() range 3 2)
-;;   (test '(3) range 3 2 -1)
-;;   (test '(3 4 5 6 7 8) range 3 9)
-;;   (test '(3 5 7) range 3 9 2)
-;;   (test '(3 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5) range 3 9 0.5)
-;;   (test '(9 7 5) range 9 3 -2)
-;;   (test '(0 1 2 3 4 5 6 7 8 9) range 10)
-;;   (test '(10 11 12 13 14 15 16 17 18 19) range 10 20)
-;;   (test '(20 22 24 26 28 30 32 34 36 38) range 20 40 2)
-;;   (test '(20 19 18 17 16 15 14 13 12 11) range 20 10 -1)
-;;   (test '(10 11.5 13.0 14.5) range 10 15 1.5))
+(let ()
+  (test '(0 1 2 3) range 4)
+  (test '() range 0)
+  (test '(0 1 2 3 4 5 6 7) range 8)
+  (test '() range 3 2)
+  (test '(3) range 3 2 -1)
+  (test '(3 4 5 6 7 8) range 3 9)
+  (test '(3 5 7) range 3 9 2)
+  (test '(3 3.5 4.0 4.5 5.0 5.5 6.0 6.5 7.0 7.5 8.0 8.5) range 3 9 0.5)
+  (test '(9 7 5) range 9 3 -2)
+  (test '(0 1 2 3 4 5 6 7 8 9) range 10)
+  (test '(10 11 12 13 14 15 16 17 18 19) range 10 20)
+  (test '(20 22 24 26 28 30 32 34 36 38) range 20 40 2)
+  (test '(20 19 18 17 16 15 14 13 12 11) range 20 10 -1)
+  (test '(10 11.5 13.0 14.5) range 10 15 1.5))
 
 ;; ;; ---------- group-by ----------
 
@@ -603,106 +604,106 @@
 ;; (err/rt-test (group-by '() #f))
 ;; (err/rt-test (group-by '() values #f))
 
-;; ;; ---------- cartesian-product ----------
+;; ---------- cartesian-product ----------
 
-;; (test '((1 a) (1 b) (1 c)
-;;         (2 a) (2 b) (2 c)
-;;         (3 a) (3 b) (3 c))
-;;       cartesian-product '(1 2 3) '(a b c))
-;; (test '((4 d #t) (4 d #f) (4 e #t) (4 e #f) (4 f #t) (4 f #f)
-;;         (5 d #t) (5 d #f) (5 e #t) (5 e #f) (5 f #t) (5 f #f)
-;;         (6 d #t) (6 d #f) (6 e #t) (6 e #f) (6 f #t) (6 f #f))
-;;       cartesian-product '(4 5 6) '(d e f) '(#t #f))
+(test '((1 a) (1 b) (1 c)
+        (2 a) (2 b) (2 c)
+        (3 a) (3 b) (3 c))
+      cartesian-product '(1 2 3) '(a b c))
+(test '((4 d #t) (4 d #f) (4 e #t) (4 e #f) (4 f #t) (4 f #f)
+        (5 d #t) (5 d #f) (5 e #t) (5 e #f) (5 f #t) (5 f #f)
+        (6 d #t) (6 d #f) (6 e #t) (6 e #f) (6 f #t) (6 f #f))
+      cartesian-product '(4 5 6) '(d e f) '(#t #f))
 ;; (err/rt-test (cartesian-product 3))
 
-;; ;; ---------- list-update ----------
+;; ---------- list-update ----------
 
-;; (test '("zero" one two) list-update '(zero one two) 0 symbol->string)
-;; (test '(zero "one" two) list-update '(zero one two) 1 symbol->string)
+(test '("zero" one two) list-update '(zero one two) 0 symbol->string)
+(test '(zero "one" two) list-update '(zero one two) 1 symbol->string)
 ;; (err/rt-test (list-update '(zero one two) 3 symbol->string))
 ;; (err/rt-test (list-update '(zero one two) -1 symbol->string))
 ;; (err/rt-test (list-update '(zero one two) #f symbol->string))
 ;; (err/rt-test (list-update #f 0 symbol->string))
 ;; (err/rt-test (list-update '(zero one two) 0 #f))
 
-;; ;; ---------- list-set ----------
+;; ---------- list-set ----------
 
-;; (test '(zero one "two") list-set '(zero one two) 2 "two")
+(test '(zero one "two") list-set '(zero one two) 2 "two")
 ;; (err/rt-test (list-set '(zero one two) 3 "two"))
 ;; (err/rt-test (list-set '(zero one two) -1 "two"))
 ;; (err/rt-test (list-set '(zero one two) #f "two"))
 
-;; ;; ---------- list prefix functions ----------
+;; ---------- list prefix functions ----------
 
-;; (test #t list-prefix? '(1 2) '(1 2 3 4 5))
-;; (test #f list-prefix? '(2 1) '(1 2 3 4 5))
-;; (test #t list-prefix? '(1 2) '(1 2 3 4 5) =)
-;; (test #f list-prefix? '(2 1) '(1 2 3 4 5) =)
+(test #t list-prefix? '(1 2) '(1 2 3 4 5))
+(test #f list-prefix? '(2 1) '(1 2 3 4 5))
+(test #t list-prefix? '(1 2) '(1 2 3 4 5) =)
+(test #f list-prefix? '(2 1) '(1 2 3 4 5) =)
 ;; (err/rt-test (list-prefix? #t '()))
 ;; (err/rt-test (list-prefix? '() #t))
-;; (test '(a b) take-common-prefix '(a b c d) '(a b x y z))
-;; (test '() take-common-prefix '(1 a b c d) '(a b x y z))
-;; (test '(a b c d) take-common-prefix '(a b c d) '(a b c d))
-;; (test '(1 2) take-common-prefix '(1 2 3 4) '(1 2 4 3) =)
+(test '(a b) take-common-prefix '(a b c d) '(a b x y z))
+(test '() take-common-prefix '(1 a b c d) '(a b x y z))
+(test '(a b c d) take-common-prefix '(a b c d) '(a b c d))
+(test '(1 2) take-common-prefix '(1 2 3 4) '(1 2 4 3) =)
 ;; (err/rt-test (take-common-prefix '() '() #f))
-;; (define (drop*-list xs ys [=? equal?])
-;;   (define-values (a b)
-;;     (drop-common-prefix xs ys =?))
-;;   (list a b))
-;; (test '((c d) (x y z)) drop*-list '(a b c d) '(a b x y z))
-;; (test '((1 a b c d) (a b x y z)) drop*-list '(1 a b c d) '(a b x y z))
-;; (test '(() ()) drop*-list '(a b c d) '(a b c d))
-;; (test '((3 4) (4 3)) drop*-list '(1 2 3 4) '(1 2 4 3) =)
+(define (drop*-list xs ys [=? equal?])
+  (define-values (a b)
+    (drop-common-prefix xs ys =?))
+  (list a b))
+(test '((c d) (x y z)) drop*-list '(a b c d) '(a b x y z))
+(test '((1 a b c d) (a b x y z)) drop*-list '(1 a b c d) '(a b x y z))
+(test '(() ()) drop*-list '(a b c d) '(a b c d))
+(test '((3 4) (4 3)) drop*-list '(1 2 3 4) '(1 2 4 3) =)
 ;; (err/rt-test (drop*-list '() '() #f))
-;; (define (split*-list xs ys [=? equal?])
-;;   (define-values (a b c)
-;;     (split-common-prefix xs ys =?))
-;;   (list a b c))
-;; (test '((a b) (c d) (x y z)) split*-list '(a b c d) '(a b x y z))
-;; (test '(() (1 a b c d) (a b x y z)) split*-list '(1 a b c d) '(a b x y z))
-;; (test '((a b c d) () ()) split*-list '(a b c d) '(a b c d))
-;; (test '((1 2) (3 4) (4 3)) split*-list '(1 2 3 4) '(1 2 4 3) =)
+(define (split*-list xs ys [=? equal?])
+  (define-values (a b c)
+    (split-common-prefix xs ys =?))
+  (list a b c))
+(test '((a b) (c d) (x y z)) split*-list '(a b c d) '(a b x y z))
+(test '(() (1 a b c d) (a b x y z)) split*-list '(1 a b c d) '(a b x y z))
+(test '((a b c d) () ()) split*-list '(a b c d) '(a b c d))
+(test '((1 2) (3 4) (4 3)) split*-list '(1 2 3 4) '(1 2 4 3) =)
 ;; (err/rt-test (split*-list '() '() #f))
 ;; (err/rt-test (take-common-prefix 1 1))
 
-;; ;; ---------- remf / remf* ----------
+;; ---------- remf / remf* ----------
 
-;; (test '() remf positive? '())
-;; (test '(-2 3 4 -5) remf positive? '(1 -2 3 4 -5))
-;; (test '(1 3 4 -5) remf even? '(1 -2 3 4 -5))
-;; (test '(1 -2 3 4 -5) remf (λ (x) #f) '(1 -2 3 4 -5))
-;; (test '() remf* positive? '())
-;; (test '(-2 -5) remf* positive? '(1 -2 3 4 -5))
-;; (test '(1 3 -5) remf* even? '(1 -2 3 4 -5))
-;; (test '(1 -2 3 4 -5) remf* (λ (x) #f) '(1 -2 3 4 -5))
+(test '() remf positive? '())
+(test '(-2 3 4 -5) remf positive? '(1 -2 3 4 -5))
+(test '(1 3 4 -5) remf even? '(1 -2 3 4 -5))
+(test '(1 -2 3 4 -5) remf (λ (x) #f) '(1 -2 3 4 -5))
+(test '() remf* positive? '())
+(test '(-2 -5) remf* positive? '(1 -2 3 4 -5))
+(test '(1 3 -5) remf* even? '(1 -2 3 4 -5))
+(test '(1 -2 3 4 -5) remf* (λ (x) #f) '(1 -2 3 4 -5))
 
-;; ;; ---------- index(es)-of / index(es)-where ----------
+;; ---------- index(es)-of / index(es)-where ----------
 
-;; (test #f index-of '() 'a)
-;; (test #f index-of '(a b) 'c)
-;; (test 0 index-of '(a b c) 'a)
-;; (test 1 index-of '(a b c) 'b)
-;; (test 0 index-of (list #'a #'b #'c) #'a free-identifier=?)
-;; (test 1 index-of (list #'a #'b #'c) #'b free-identifier=?)
+(test #f index-of '() 'a)
+(test #f index-of '(a b) 'c)
+(test 0 index-of '(a b c) 'a)
+(test 1 index-of '(a b c) 'b)
+;(test 0 index-of (list #'a #'b #'c) #'a free-identifier=?)
+;(test 1 index-of (list #'a #'b #'c) #'b free-identifier=?)
 
-;; (test #f index-where '() even?)
-;; (test #f index-where '(1 3 5) even?)
-;; (test 0 index-where '(1 2 3 4 5) odd?)
-;; (test 1 index-where '(1 2 3 4 5) even?)
+(test #f index-where '() even?)
+(test #f index-where '(1 3 5) even?)
+(test 0 index-where '(1 2 3 4 5) odd?)
+(test 1 index-where '(1 2 3 4 5) even?)
 
-;; (test '() indexes-of '() 'a)
-;; (test '() indexes-of '(a b) 'c)
-;; (test '(0) indexes-of '(a b c) 'a)
-;; (test '(1) indexes-of '(a b c) 'b)
-;; (test '(0 1) indexes-of '(a a b) 'a)
-;; (test '(1 2) indexes-of '(a b b) 'b)
-;; (test '(0 1 2) indexes-of '(a a a) 'a)
+(test '() indexes-of '() 'a)
+(test '() indexes-of '(a b) 'c)
+(test '(0) indexes-of '(a b c) 'a)
+(test '(1) indexes-of '(a b c) 'b)
+(test '(0 1) indexes-of '(a a b) 'a)
+(test '(1 2) indexes-of '(a b b) 'b)
+(test '(0 1 2) indexes-of '(a a a) 'a)
 ;; (test '(0 1) indexes-of (list #'a #'a #'b) #'a free-identifier=?)
 ;; (test '(1 2) indexes-of (list #'a #'b #'b) #'b free-identifier=?)
 
-;; (test '() indexes-where '() even?)
-;; (test '() indexes-where '(1 3 5) even?)
-;; (test '(1 3) indexes-where '(1 2 3 4 5) even?)
-;; (test '(0 2 4) indexes-where '(1 2 3 4 5) odd?)
+(test '() indexes-where '() even?)
+(test '() indexes-where '(1 3 5) even?)
+(test '(1 3) indexes-where '(1 2 3 4 5) even?)
+(test '(0 2 4) indexes-where '(1 2 3 4 5) odd?)
 
 ;; (report-errs)
