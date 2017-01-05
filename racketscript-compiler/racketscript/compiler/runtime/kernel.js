@@ -64,6 +64,10 @@ exports["number?"] = Core.Number.check;
 
 exports["integer?"] = Number.isInteger;
 
+exports["real?"] = function (v) {
+    return Core.Number.check(v);
+}
+
 exports["exact-nonnegative-integer?"] = function (v) {
     return Number.isInteger(v) && v >= 0;
 }
@@ -266,6 +270,7 @@ exports["vector"] = function () {
     return Core.Vector.make(items, true);
 }
 
+// v is optional
 exports["make-vector"] = function (size, v) {
     return Core.Vector.makeInit(size, v || 0);
 }
@@ -286,6 +291,10 @@ exports["vector-ref"] = function (vec, i) {
 exports["vector-set!"] = function (vec, i, v) {
     Core.Vector.check(vec);
     vec.set(i, v);
+}
+
+exports["vector->list"] = function (v) {
+    return Core.Pair.listFromArray(v.items);
 }
 
 /* --------------------------------------------------------------------------*/
@@ -803,7 +812,7 @@ exports["filter"] = function (fn, lst) {
 }
 
 // TODO: more faithfully reproduce Racket sort?
-// Not working due to compile issues with sort in racket/private/list
+// this implements raw-sort from #%kernel, see racket/private/list
 exports["sort9"] = function (lst, cmp) {
     var arr = Core.Pair.listToArray(lst);
     var x2i = new Map();
@@ -1081,13 +1090,17 @@ exports["procedure-arity"] = function (f) {
 }
 exports["eval-jit-enabled"] = function (f) { return true; }
 
+// TODO: add other types of sequences
+// TODO: HO use of sequence fns, eg in-list, not supported yet
 exports["make-sequence"] = function (who, v) {
-    return Core.Values.make([exports["car"],
-			     exports["cdr"],
-			     v,
-			     exports["pair?"],
-			     false,
-			     false]);
+    return Core.Values.make([exports["car"],   // pos -> vals
+		     // uncomment pre-pos-next arg if using Racket >= 6.7.0.4
+			     //false,            // pre-pos-next
+			     exports["cdr"],   // pos-next
+			     v,                // init
+			     exports["pair?"], // pos-cont?
+			     false,            // val-cont?
+			     false]);          //all-cont?
 }
 
 exports["variable-reference-constant?"] = function (x) { return false; }

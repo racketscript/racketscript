@@ -5,23 +5,23 @@
 ;; We copy it here bc Racketscript currently does not know where to find Racket
 ;; collects, but we still want to test that this file properly compiles.
 
-(provide ;first second third fourth fifth sixth seventh eighth ninth tenth
+(provide first second third fourth fifth sixth seventh eighth ninth tenth
 
-         last-pair last ; rest
+         last-pair last rest
 
-         ;; cons?
-         ;; empty
-         ;; empty?
+         cons?
+         empty
+         empty?
 
          make-list
 
-         ;; list-update
-         ;; list-set
+         list-update
+         list-set
 
-         ;; index-of
-         ;; index-where
-         ;; indexes-of
-         ;; indexes-where
+         index-of
+         index-where
+         indexes-of
+         indexes-where
 
          drop
          take
@@ -36,10 +36,10 @@
          dropf-right
          splitf-at-right
 
-         ;; list-prefix?
-         ;; split-common-prefix
-         ;; take-common-prefix
-         ;; drop-common-prefix
+         list-prefix?
+         split-common-prefix
+         take-common-prefix
+         drop-common-prefix
 
          append*
          flatten
@@ -50,49 +50,49 @@
          count
          partition
 
-         ;; ;; convenience
-         ;; range
+         ;; convenience
+         range
          append-map
          filter-not
-         ;; shuffle
+         shuffle
          ;; combinations
          ;; in-combinations
          ;; permutations
          ;; in-permutations
-         ;; argmin
-         ;; argmax
+         argmin
+         argmax
          ;; group-by
-         ;; cartesian-product
-         ;; remf
-         ;; remf*
+         cartesian-product
+         remf
+         remf*
 )
 
-;; (define (first x)
-;;   (if (and (pair? x) (list? x))
-;;     (car x)
-;;     (raise-argument-error 'first "(and/c list? (not/c empty?))" x)))
+(define (first x)
+  (if (and (pair? x) (list? x))
+    (car x)
+    (raise-argument-error 'first "(and/c list? (not/c empty?))" x)))
 
-;; (define-syntax define-lgetter
-;;   (syntax-rules ()
-;;     [(_ name npos)
-;;      (define (name l0)
-;;        (if (list? l0)
-;;          (let loop ([l l0] [pos npos])
-;;            (if (pair? l)
-;;              (if (eq? pos 1) (car l) (loop (cdr l) (sub1 pos)))
-;;              (raise-arguments-error 'name
-;;                                     "list contains too few elements"
-;;                                     "list" l0)))
-;;          (raise-argument-error 'name "list?" l0)))]))
-;; (define-lgetter second  2)
-;; (define-lgetter third   3)
-;; (define-lgetter fourth  4)
-;; (define-lgetter fifth   5)
-;; (define-lgetter sixth   6)
-;; (define-lgetter seventh 7)
-;; (define-lgetter eighth  8)
-;; (define-lgetter ninth   9)
-;; (define-lgetter tenth   10)
+(define-syntax define-lgetter
+  (syntax-rules ()
+    [(_ name npos)
+     (define (name l0)
+       (if (list? l0)
+         (let loop ([l l0] [pos npos])
+           (if (pair? l)
+             (if (eq? pos 1) (car l) (loop (cdr l) (sub1 pos)))
+             (raise-arguments-error 'name
+                                    "list contains too few elements"
+                                    "list" l0)))
+         (raise-argument-error 'name "list?" l0)))]))
+(define-lgetter second  2)
+(define-lgetter third   3)
+(define-lgetter fourth  4)
+(define-lgetter fifth   5)
+(define-lgetter sixth   6)
+(define-lgetter seventh 7)
+(define-lgetter eighth  8)
+(define-lgetter ninth   9)
+(define-lgetter tenth   10)
 
 (define (last-pair l)
   (if (pair? l)
@@ -110,14 +110,14 @@
         (car l)))
     (raise-argument-error 'last "(and/c list? (not/c empty?))" l)))
 
-;; (define (rest l)
-;;   (if (and (pair? l) (list? l))
-;;     (cdr l)
-;;     (raise-argument-error 'rest "(and/c list? (not/c empty?))" l)))
+(define (rest l)
+  (if (and (pair? l) (list? l))
+    (cdr l)
+    (raise-argument-error 'rest "(and/c list? (not/c empty?))" l)))
 
-;; (define (cons? l) (pair? l))
-;; (define (empty? l) (null? l))
-;; (define empty '())
+(define (cons? l) (pair? l))
+(define (empty? l) (null? l))
+(define empty '())
 
 (define (make-list n x)
   (unless (exact-nonnegative-integer? n)
@@ -125,24 +125,24 @@
   (let loop ([n n] [r '()])
     (if (zero? n) r (loop (sub1 n) (cons x r)))))
 
-;; (define (list-update l i f)
-;;   (unless (list? l)
-;;     (raise-argument-error 'list-update "list?" 0 l i f))
-;;   (unless (exact-nonnegative-integer? i)
-;;     (raise-argument-error 'list-update "exact-nonnegative-integer?" 1 l i f))
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'list-update "(-> any/c any/c)" 2 l i f))
-;;   (cond
-;;    [(zero? i) (cons (f (car l)) (cdr l))]
-;;    [else (cons (car l) (list-update (cdr l) (sub1 i) f))]))
+(define (list-update l i f)
+  (unless (list? l)
+    (raise-argument-error 'list-update "list?" 0 l i f))
+  (unless (exact-nonnegative-integer? i)
+    (raise-argument-error 'list-update "exact-nonnegative-integer?" 1 l i f))
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'list-update "(-> any/c any/c)" 2 l i f))
+  (cond
+   [(zero? i) (cons (f (car l)) (cdr l))]
+   [else (cons (car l) (list-update (cdr l) (sub1 i) f))]))
 
-;; (define (list-set l k v)
-;;   (unless (list? l)
-;;     (raise-argument-error 'list-set "list?" 0 l k v))
-;;   (unless (exact-nonnegative-integer? k)
-;;     (raise-argument-error 'list-set "exact-nonnegative-integer?" 1 l k v))
-;;   (list-update l k (lambda (_) v)))
+(define (list-set l k v)
+  (unless (list? l)
+    (raise-argument-error 'list-set "list?" 0 l k v))
+  (unless (exact-nonnegative-integer? k)
+    (raise-argument-error 'list-set "exact-nonnegative-integer?" 1 l k v))
+  (list-update l k (lambda (_) v)))
 
 ;; internal use below
 (define (drop* list n) ; no error checking, returns #f if index is too large
@@ -277,54 +277,54 @@
 (define (splitf-at-right list pred)
   (split-at list (count-from-right 'splitf-at-right list pred)))
 
-;; ; list-prefix? : list? list? -> boolean?
-;; ; Is l a prefix or r?
-;; (define (list-prefix? ls rs [same? equal?])
-;;   (unless (list? ls)
-;;     (raise-argument-error 'list-prefix? "list?" 0 ls rs))
-;;   (unless (list? rs)
-;;     (raise-argument-error 'list-prefix? "list?" 1 ls rs))
-;;   (unless (and (procedure? same?)
-;;                (procedure-arity-includes? same? 2))
-;;     (raise-argument-error 'list-prefix? "(any/c any/c . -> . any/c)" 2 ls rs same?))
-;;   (or (null? ls)
-;;       (and (pair? rs)
-;;            (same? (car ls) (car rs))
-;;            (list-prefix? (cdr ls) (cdr rs)))))
+; list-prefix? : list? list? -> boolean?
+; Is l a prefix or r?
+(define (list-prefix? ls rs [same? equal?])
+  (unless (list? ls)
+    (raise-argument-error 'list-prefix? "list?" 0 ls rs))
+  (unless (list? rs)
+    (raise-argument-error 'list-prefix? "list?" 1 ls rs))
+  (unless (and (procedure? same?)
+               (procedure-arity-includes? same? 2))
+    (raise-argument-error 'list-prefix? "(any/c any/c . -> . any/c)" 2 ls rs same?))
+  (or (null? ls)
+      (and (pair? rs)
+           (same? (car ls) (car rs))
+           (list-prefix? (cdr ls) (cdr rs)))))
 
-;; ;; Eli: How about a version that removes the equal prefix from two lists
-;; ;; and returns the tails -- this way you can tell if they're equal, or
-;; ;; one is a prefix of the other, or if there was any equal prefix at
-;; ;; all.  (Which can be useful for things like making a path relative to
-;; ;; another path.)  A nice generalization is to make it get two or more
-;; ;; lists, and return a matching number of values.
+;; Eli: How about a version that removes the equal prefix from two lists
+;; and returns the tails -- this way you can tell if they're equal, or
+;; one is a prefix of the other, or if there was any equal prefix at
+;; all.  (Which can be useful for things like making a path relative to
+;; another path.)  A nice generalization is to make it get two or more
+;; lists, and return a matching number of values.
 
-;; (define (internal-split-common-prefix as bs same? keep-prefix? name)
-;;   (unless (list? as)
-;;     (raise-argument-error name "list?" 0 as bs))
-;;   (unless (list? bs)
-;;     (raise-argument-error name "list?" 1 as bs))
-;;   (unless (and (procedure? same?)
-;;                (procedure-arity-includes? same? 2))
-;;     (raise-argument-error name "(any/c any/c . -> . any/c)" 2 as bs same?))
-;;   (let loop ([as as] [bs bs])
-;;     (if (and (pair? as) (pair? bs) (same? (car as) (car bs)))
-;;         (let-values ([(prefix atail btail) (loop (cdr as) (cdr bs))])
-;;           (values (and keep-prefix? (cons (car as) prefix)) atail btail))
-;;         (values null as bs))))
+(define (internal-split-common-prefix as bs same? keep-prefix? name)
+  (unless (list? as)
+    (raise-argument-error name "list?" 0 as bs))
+  (unless (list? bs)
+    (raise-argument-error name "list?" 1 as bs))
+  (unless (and (procedure? same?)
+               (procedure-arity-includes? same? 2))
+    (raise-argument-error name "(any/c any/c . -> . any/c)" 2 as bs same?))
+  (let loop ([as as] [bs bs])
+    (if (and (pair? as) (pair? bs) (same? (car as) (car bs)))
+        (let-values ([(prefix atail btail) (loop (cdr as) (cdr bs))])
+          (values (and keep-prefix? (cons (car as) prefix)) atail btail))
+        (values null as bs))))
 
-;; (define (split-common-prefix as bs [same? equal?])
-;;   (internal-split-common-prefix as bs same? #t 'split-common-prefix))
+(define (split-common-prefix as bs [same? equal?])
+  (internal-split-common-prefix as bs same? #t 'split-common-prefix))
 
-;; (define (take-common-prefix as bs [same? equal?])
-;;   (let-values ([(prefix atail btail)
-;;                 (internal-split-common-prefix as bs same? #t 'take-common-prefix)])
-;;     prefix))
+(define (take-common-prefix as bs [same? equal?])
+  (let-values ([(prefix atail btail)
+                (internal-split-common-prefix as bs same? #t 'take-common-prefix)])
+    prefix))
 
-;; (define (drop-common-prefix as bs [same? equal?])
-;;   (let-values ([(prefix atail btail)
-;;                 (internal-split-common-prefix as bs same? #f 'drop-common-prefix)])
-;;     (values atail btail)))
+(define (drop-common-prefix as bs [same? equal?])
+  (let-values ([(prefix atail btail)
+                (internal-split-common-prefix as bs same? #f 'drop-common-prefix)])
+    (values atail btail)))
 
 (define append*
   (case-lambda [(ls) (apply append ls)] ; optimize common case
@@ -339,7 +339,7 @@
           [(pair? sexp) (loop (car sexp) (loop (cdr sexp) acc))]
           [else (cons sexp acc)])))
 
-;; ;; General note: many non-tail recursive, which are just as fast in racket
+;; General note: many non-tail recursive, which are just as fast in racket
 
 #;(define (add-between l x
                      #:splice? [splice? #f]
@@ -566,12 +566,12 @@
       (let ([x (car l)] [l (cdr l)])
         (if (pred x) (loop l (cons x i) o) (loop l i (cons x o)))))))
 
-;; ;; similar to in-range, but returns a list
-;; (define range
-;;   (case-lambda
-;;     [(end)            (for/list ([i (in-range end)])            i)]
-;;     [(start end)      (for/list ([i (in-range start end)])      i)]
-;;     [(start end step) (for/list ([i (in-range start end step)]) i)]))
+;; similar to in-range, but returns a list
+(define range
+  (case-lambda
+    [(end)            (for/list ([i (in-range end)])            i)]
+    [(start end)      (for/list ([i (in-range start end)])      i)]
+    [(start end step) (for/list ([i (in-range start end step)]) i)]))
 
 (define append-map
   (case-lambda [(f l)      (apply append (map f l))]
@@ -593,14 +593,14 @@
       (reverse result)
       (loop (cdr l) (if (f (car l)) result (cons (car l) result))))))
 
-;; ;; Fisher-Yates Shuffle
-;; (define (shuffle l)
-;;   (define a (make-vector (length l)))
-;;   (for ([x (in-list l)] [i (in-naturals)])
-;;     (define j (random (add1 i)))
-;;     (unless (= j i) (vector-set! a i (vector-ref a j)))
-;;     (vector-set! a j x))
-;;   (vector->list a))
+;; Fisher-Yates Shuffle
+(define (shuffle l)
+  (define a (make-vector (length l)))
+  (for ([x (in-list l)] [i (in-naturals)])
+    (define j (random (add1 i)))
+    (unless (= j i) (vector-set! a i (vector-ref a j)))
+    (vector-set! a j x))
+  (vector->list a))
 
 ;; (define (combinations l [k #f])
 ;;   (for/list ([x (in-combinations l k)]) x))
@@ -727,164 +727,165 @@
 ;;                  [else      #f]))
 ;;          (in-producer (λ() (begin0 cur (set! cur (next)))) #f)]))
 
-;; ;; mk-min : (number number -> boolean) symbol (X -> real) (listof X) -> X
-;; (define (mk-min cmp name f xs)
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error name "(any/c . -> . real?)" 0 f xs))
-;;   (unless (and (list? xs)
-;;                (pair? xs))
-;;     (raise-argument-error name "(and/c list? (not/c empty?))" 1 f xs))
-;;   (let ([init-min-var (f (car xs))])
-;;     (unless (real? init-min-var)
-;;       (raise-result-error name "real?" init-min-var))
-;;     (let loop ([min (car xs)]
-;;                [min-var init-min-var]
-;;                [xs (cdr xs)])
-;;       (cond
-;;         [(null? xs) min]
-;;         [else
-;;          (let ([new-min (f (car xs))])
-;;            (unless (real? new-min)
-;;              (raise-result-error name "real?" new-min))
-;;            (cond
-;;              [(cmp new-min min-var)
-;;               (loop (car xs) new-min (cdr xs))]
-;;              [else
-;;               (loop min min-var (cdr xs))]))]))))
-;; (define (argmin f xs) (mk-min < 'argmin f xs))
-;; (define (argmax f xs) (mk-min > 'argmax f xs))
+;; mk-min : (number number -> boolean) symbol (X -> real) (listof X) -> X
+(define (mk-min cmp name f xs)
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error name "(any/c . -> . real?)" 0 f xs))
+  (unless (and (list? xs)
+               (pair? xs))
+    (raise-argument-error name "(and/c list? (not/c empty?))" 1 f xs))
+  (let ([init-min-var (f (car xs))])
+    (unless (real? init-min-var)
+      (raise-result-error name "real?" init-min-var))
+    (let loop ([min (car xs)]
+               [min-var init-min-var]
+               [xs (cdr xs)])
+      (cond
+        [(null? xs) min]
+        [else
+         (let ([new-min (f (car xs))])
+           (unless (real? new-min)
+             (raise-result-error name "real?" new-min))
+           (cond
+             [(cmp new-min min-var)
+              (loop (car xs) new-min (cdr xs))]
+             [else
+              (loop min min-var (cdr xs))]))]))))
+(define (argmin f xs) (mk-min < 'argmin f xs))
+(define (argmax f xs) (mk-min > 'argmax f xs))
 
-;; ;; (x -> y) (listof x) [(y y -> bool)] -> (listof (listof x))
-;; ;; groups together elements that are considered equal
-;; ;; =? should be reflexive, transitive and commutative
-;; (define (group-by key l [=? equal?])
+;; (x -> y) (listof x) [(y y -> bool)] -> (listof (listof x))
+;; groups together elements that are considered equal
+;; =? should be reflexive, transitive and commutative
+;; TODO: optional args unsupported?
+#;(define (group-by key l [=? equal?])
 
-;;   (unless (and (procedure? key)
-;;                (procedure-arity-includes? key 1))
-;;     (raise-argument-error 'group-by "(-> any/c any/c)" 0 key l))
-;;   (unless (and (procedure? =?)
-;;                (procedure-arity-includes? =? 2))
-;;     (raise-argument-error 'group-by "(any/c any/c . -> . any/c)" 2 key l =?))
-;;   (unless (list? l)
-;;     (raise-argument-error 'group-by "list?" 1 key l))
+  (unless (and (procedure? key)
+               (procedure-arity-includes? key 1))
+    (raise-argument-error 'group-by "(-> any/c any/c)" 0 key l))
+  (unless (and (procedure? =?)
+               (procedure-arity-includes? =? 2))
+    (raise-argument-error 'group-by "(any/c any/c . -> . any/c)" 2 key l =?))
+  (unless (list? l)
+    (raise-argument-error 'group-by "list?" 1 key l))
 
-;;   ;; like hash-update, but for alists
-;;   (define (alist-update al k up fail)
-;;     (let loop ([al al])
-;;       (cond [(null? al)
-;;              ;; did not find equivalence class, create one
-;;              (list (cons k (up '())))]
-;;             [(=? (car (car al)) k)
-;;              ;; found the right equivalence class
-;;              (cons
-;;               (cons k (up (cdr (car al)))) ; updater takes elements, w/o key
-;;               (cdr al))]
-;;             [else ; keep going
-;;              (cons (car al) (loop (cdr al)))])))
+  ;; like hash-update, but for alists
+  (define (alist-update al k up fail)
+    (let loop ([al al])
+      (cond [(null? al)
+             ;; did not find equivalence class, create one
+             (list (cons k (up '())))]
+            [(=? (car (car al)) k)
+             ;; found the right equivalence class
+             (cons
+              (cons k (up (cdr (car al)))) ; updater takes elements, w/o key
+              (cdr al))]
+            [else ; keep going
+             (cons (car al) (loop (cdr al)))])))
 
-;;   ;; In cases where `=?` is a built-in equality, can use hash tables instead
-;;   ;; of lists to compute equivalence classes.
-;;   (define-values (base update)
-;;     (cond [(equal? =? eq?)    (values (hasheq)  hash-update)]
-;;           [(equal? =? eqv?)   (values (hasheqv) hash-update)]
-;;           [(equal? =? equal?) (values (hash)    hash-update)]
-;;           [else               (values '()       alist-update)]))
+  ;; In cases where `=?` is a built-in equality, can use hash tables instead
+  ;; of lists to compute equivalence classes.
+  (define-values (base update)
+    (cond [(equal? =? eq?)    (values (hasheq)  hash-update)]
+          [(equal? =? eqv?)   (values (hasheqv) hash-update)]
+          [(equal? =? equal?) (values (hash)    hash-update)]
+          [else               (values '()       alist-update)]))
 
-;;   (define classes
-;;     (for/fold ([res base])
-;;         ([elt (in-list l)]
-;;          [idx (in-naturals)]) ; to keep ordering stable
-;;       (define k (key elt))
-;;       (define v (cons idx elt))
-;;       (update res k (lambda (o) (cons v o)) '())))
-;;   (define sorted-classes
-;;     (if (list? classes)
-;;         (for/list ([p (in-list classes)])
-;;           (sort (cdr p) < #:key car))
-;;         (for/list ([(_ c) (in-hash classes)])
-;;           (sort c < #:key car))))
-;;   ;; sort classes by order of first appearance, then remove indices
-;;   (for/list ([c (in-list (sort sorted-classes < #:key caar))])
-;;     (map cdr c)))
+  (define classes
+    (for/fold ([res base])
+        ([elt (in-list l)]
+         [idx (in-naturals)]) ; to keep ordering stable
+      (define k (key elt))
+      (define v (cons idx elt))
+      (update res k (lambda (o) (cons v o)) '())))
+  (define sorted-classes
+    (if (list? classes)
+        (for/list ([p (in-list classes)])
+          (sort (cdr p) < #:key car))
+        (for/list ([(_ c) (in-hash classes)])
+          (sort c < #:key car))))
+  ;; sort classes by order of first appearance, then remove indices
+  (for/list ([c (in-list (sort sorted-classes < #:key caar))])
+    (map cdr c)))
 
-;; ;; (listof x) ... -> (listof (listof x))
-;; (define (cartesian-product . ls)
-;;   (for ([(l i) (in-indexed ls)])
-;;     (unless (list? l)
-;;       (apply raise-argument-error 'cartesian-product "list?" i ls)))
-;;   (define (cp-2 as bs)
-;;     (for*/list ([i (in-list as)] [j (in-list bs)]) (cons i j)))
-;;   (foldr cp-2 (list (list)) ls))
+;; (listof x) ... -> (listof (listof x))
+(define (cartesian-product . ls)
+  (for ([(l i) (in-indexed ls)])
+    (unless (list? l)
+      (apply raise-argument-error 'cartesian-product "list?" i ls)))
+  (define (cp-2 as bs)
+    (for*/list ([i (in-list as)] [j (in-list bs)]) (cons i j)))
+  (foldr cp-2 (list (list)) ls))
 
-;; (define (remf f ls)
-;;   (unless (list? ls)
-;;     (raise-argument-error 'remf "list?" 1 f ls))
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'remf "(-> any/c any/c)" 0 f ls))
-;;   (cond [(null? ls) '()]
-;;         [(f (car ls)) (cdr ls)]
-;;         [else
-;;          (cons (car ls)
-;;                (remf f (cdr ls)))]))
+(define (remf f ls)
+  (unless (list? ls)
+    (raise-argument-error 'remf "list?" 1 f ls))
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'remf "(-> any/c any/c)" 0 f ls))
+  (cond [(null? ls) '()]
+        [(f (car ls)) (cdr ls)]
+        [else
+         (cons (car ls)
+               (remf f (cdr ls)))]))
 
-;; (define (remf* f ls)
-;;   (unless (list? ls)
-;;     (raise-argument-error 'remf* "list?" 1 f ls))
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'remf* "(-> any/c any/c)" 0 f ls))
-;;   (cond [(null? ls) '()]
-;;         [(f (car ls)) (remf* f (cdr ls))]
-;;         [else
-;;          (cons (car ls)
-;;                (remf* f (cdr ls)))]))
+(define (remf* f ls)
+  (unless (list? ls)
+    (raise-argument-error 'remf* "list?" 1 f ls))
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'remf* "(-> any/c any/c)" 0 f ls))
+  (cond [(null? ls) '()]
+        [(f (car ls)) (remf* f (cdr ls))]
+        [else
+         (cons (car ls)
+               (remf* f (cdr ls)))]))
 
-;; (define (index-of ls v [=? equal?])
-;;   (unless (list? ls)
-;;     (raise-argument-error 'index-of "list?" 0 ls v))
-;;   (unless (and (procedure? =?)
-;;                (procedure-arity-includes? =? 2))
-;;     (raise-argument-error 'index-of "(-> any/c any/c any/c)" 2 ls v =?))
-;;   (let loop ([ls ls]
-;;              [i 0])
-;;     (cond [(null? ls) #f]
-;;           [(=? (car ls) v) i]
-;;           [else (loop (cdr ls) (add1 i))])))
+(define (index-of ls v [=? equal?])
+  (unless (list? ls)
+    (raise-argument-error 'index-of "list?" 0 ls v))
+  (unless (and (procedure? =?)
+               (procedure-arity-includes? =? 2))
+    (raise-argument-error 'index-of "(-> any/c any/c any/c)" 2 ls v =?))
+  (let loop ([ls ls]
+             [i 0])
+    (cond [(null? ls) #f]
+          [(=? (car ls) v) i]
+          [else (loop (cdr ls) (add1 i))])))
 
-;; (define (index-where ls f)
-;;   (unless (list? ls)
-;;     (raise-argument-error 'index-where "list?" 0 ls f))
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'index-where "(-> any/c any/c)" 1 ls f))
-;;   (let loop ([ls ls]
-;;              [i 0])
-;;     (cond [(null? ls) #f]
-;;           [(f (car ls)) i]
-;;           [else (loop (cdr ls) (add1 i))])))
+(define (index-where ls f)
+  (unless (list? ls)
+    (raise-argument-error 'index-where "list?" 0 ls f))
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'index-where "(-> any/c any/c)" 1 ls f))
+  (let loop ([ls ls]
+             [i 0])
+    (cond [(null? ls) #f]
+          [(f (car ls)) i]
+          [else (loop (cdr ls) (add1 i))])))
 
-;; (define (indexes-of ls v [=? equal?])
-;;   (unless (list? ls)
-;;     (raise-argument-error 'indexes-of "list?" 0 ls v))
-;;   (unless (and (procedure? =?)
-;;                (procedure-arity-includes? =? 2))
-;;     (raise-argument-error 'indexes-of "(-> any/c any/c any/c)" 2 ls v =?))
-;;   (let loop ([ls ls]
-;;              [i 0])
-;;     (cond [(null? ls) '()]
-;;           [(=? (car ls) v) (cons i (loop (cdr ls) (add1 i)))]
-;;           [else (loop (cdr ls) (add1 i))])))
+(define (indexes-of ls v [=? equal?])
+  (unless (list? ls)
+    (raise-argument-error 'indexes-of "list?" 0 ls v))
+  (unless (and (procedure? =?)
+               (procedure-arity-includes? =? 2))
+    (raise-argument-error 'indexes-of "(-> any/c any/c any/c)" 2 ls v =?))
+  (let loop ([ls ls]
+             [i 0])
+    (cond [(null? ls) '()]
+          [(=? (car ls) v) (cons i (loop (cdr ls) (add1 i)))]
+          [else (loop (cdr ls) (add1 i))])))
 
-;; (define (indexes-where ls f)
-;;   (unless (list? ls)
-;;     (raise-argument-error 'indexes-where "list?" 0 ls f))
-;;   (unless (and (procedure? f)
-;;                (procedure-arity-includes? f 1))
-;;     (raise-argument-error 'indexes-where "(-> any/c any/c)" 1 ls f))
-;;   (let loop ([ls ls]
-;;              [i 0])
-;;     (cond [(null? ls) '()]
-;;           [(f (car ls)) (cons i (loop (cdr ls) (add1 i)))]
-;;           [else (loop (cdr ls) (add1 i))])))
+(define (indexes-where ls f)
+  (unless (list? ls)
+    (raise-argument-error 'indexes-where "list?" 0 ls f))
+  (unless (and (procedure? f)
+               (procedure-arity-includes? f 1))
+    (raise-argument-error 'indexes-where "(-> any/c any/c)" 1 ls f))
+  (let loop ([ls ls]
+             [i 0])
+    (cond [(null? ls) '()]
+          [(f (car ls)) (cons i (loop (cdr ls) (add1 i)))]
+          [else (loop (cdr ls) (add1 i))])))

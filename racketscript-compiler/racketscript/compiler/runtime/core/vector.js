@@ -77,7 +77,8 @@ export function make(items, mutable) {
 
 export function makeInit(size, init) {
     let r = new Array(size);
-    return r.fill(init);
+    r.fill(init);
+    return new Vector(r, true);
 }
 
 export function check(v1) {
