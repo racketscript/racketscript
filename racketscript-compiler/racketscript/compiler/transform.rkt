@@ -365,6 +365,12 @@
         (define-values (stms val) (absyn-expr->il e #f))
         (define-values (tstms tval) (absyn-expr->il t #f))
         (values (append stms tstms) (ILInstanceOf val tval))]
+       [(list (Quote 'operator) (Quote oper) e0 e1)
+        ;;TODO: not ANF
+        (define-values (stms0 val0) (absyn-expr->il e0 #f))
+        (define-values (stms1 val1) (absyn-expr->il e1 #f))
+        (values (append stms0 stms1)
+                (ILBinaryOp (cast oper Symbol) (list val0 val1)))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)
@@ -856,8 +862,15 @@
    (PlainApp
     absyn-js-ffi
     (list (Quote 'throw) (Quote "What")))
-    (list (ILThrow (ILValue "What")))
-    (ILValue (void)))
+   (list (ILThrow (ILValue "What")))
+   (ILValue (void)))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'operator) (Quote '+) (Quote 1) (Quote 2)))
+   '()
+   (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
 
   ;; Top Level ------------------------------------------------------
 

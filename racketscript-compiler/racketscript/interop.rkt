@@ -14,6 +14,7 @@
          $/null
          $/typeof
          $/instanceof
+         $/binop
          =>$
          assoc->object)
 
@@ -150,6 +151,11 @@
 (define-syntax ($/instanceof stx)
   (syntax-parse stx
     [(_ e:expr t:expr) #'(#%js-ffi 'instanceof e t)]))
+
+(define-syntax ($/binop stx)
+  (syntax-parse stx
+    [(_ oper:id operand0:expr operand1:expr)
+     #'(#%js-ffi 'operator 'oper operand0 operand1)]))
 
 (define (assoc->object pairs)
   (define result ($/obj))

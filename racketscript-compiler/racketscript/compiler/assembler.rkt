@@ -114,7 +114,7 @@
      (emit "(")
      (assemble-expr expr out)
      (emit ") instanceof (")
-     (assemble-expr expr out)
+     (assemble-expr type out)
      (emit ")")]
     [(ILTypeOf expr)
      (emit "tyopeof(")
