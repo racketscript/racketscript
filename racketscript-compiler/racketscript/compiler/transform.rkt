@@ -357,6 +357,14 @@
        [(list (Quote 'throw) e)
         (define-values (stms val) (absyn-expr->il e #f))
         (values (append1 stms (ILThrow val)) (ILValue (void)))]
+       [(list (Quote 'typeof) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values stms (ILTypeOf val))]
+       [(list (Quote 'instanceof) e t)
+        ;;TODO: Not ANF.
+        (define-values (stms val) (absyn-expr->il e #f))
+        (define-values (tstms tval) (absyn-expr->il t #f))
+        (values (append stms tstms) (ILInstanceOf val tval))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)

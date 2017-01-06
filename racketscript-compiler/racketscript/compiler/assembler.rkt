@@ -109,8 +109,15 @@
                 (unless last?
                   (emit ",")))
      (emit "}")]
-    [(ILInstanceOf expr)
-     (emit "instanceof(")
+    [(ILInstanceOf expr type)
+     ;;TODO: Remove parens
+     (emit "(")
+     (assemble-expr expr out)
+     (emit ") instanceof (")
+     (assemble-expr expr out)
+     (emit ")")]
+    [(ILTypeOf expr)
+     (emit "tyopeof(")
      (assemble-expr expr out)
      (emit ")")]
     [_ #:when (symbol? expr)
@@ -505,8 +512,8 @@
               "[1,\"1\",{}]")
 
   ;; Instanceof
-  (check-expr (ILInstanceOf (ILValue 1))
-              "instanceof(1)")
+  (check-expr (ILInstanceOf (ILValue 1) (ILValue 2))
+              "(1) instanceof (2)")
 
   ;;; Statements --------------------------------------------------------------
 

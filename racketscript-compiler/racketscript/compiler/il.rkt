@@ -53,7 +53,9 @@
                            [fieldexpr : ILExpr])
             (ILValue       [v         : Any])
             (ILNew         [v         : (U ILLValue ILApp)])
-            (ILInstanceOf  [expr      : ILExpr])
+            (ILInstanceOf  [expr      : ILExpr]
+                           [type      : ILExpr])
+            (ILTypeOf      [expr      : ILExpr])
             Symbol]
 
   [ILStatement   ILExpr

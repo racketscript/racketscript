@@ -12,6 +12,8 @@
          $/throw
          $/undefined
          $/null
+         $/typeof
+         $/instanceof
          =>$
          assoc->object)
 
@@ -132,6 +134,22 @@
 (define (=>$ lam-expr)
   ;; FIXME: We are referring to the core module name directly!
   (($ ($ '$rjs_core) 'Marks 'wrapWithContext) lam-expr))
+
+(define-syntax ($/typeof stx)
+  (syntax-parse stx
+    [(_ e:expr) #'(#%js-ffi 'typeof e)]
+    [(_ e:expr (~and v:str
+                     (~or (~datum "undefined")
+                          (~datum "object")
+                          (~datum "boolean")
+                          (~datum "number")
+                          (~datum "string")
+                          (~datum "function"))))
+     #'(eqv? (#%js-ffi 'typeof e) v)]))
+
+(define-syntax ($/instanceof stx)
+  (syntax-parse stx
+    [(_ e:expr t:expr) #'(#%js-ffi 'instanceof e t)]))
 
 (define (assoc->object pairs)
   (define result ($/obj))

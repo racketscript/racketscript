@@ -477,6 +477,9 @@
 ;; --------------------------------------------------------------------------
 ;; Strings
 
+(define+provide string (#js.String.prototype.concat.bind ""))
+(define+provide string=? equal?)
+
 ;; --------------------------------------------------------------------------
 ;; Box
 
@@ -512,7 +515,7 @@
 ;; --------------------------------------------------------------------------
 ;; Errors
 
-(define+provide error #js.Kernel.error)
+(define+provide error #js.Kernel.exports.error)
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
