@@ -56,6 +56,10 @@
             (ILInstanceOf  [expr      : ILExpr]
                            [type      : ILExpr])
             (ILTypeOf      [expr      : ILExpr])
+
+            ;; Should be ideally in values
+            (ILNull)
+            (ILUndefined)
             Symbol]
 
   [ILStatement   ILExpr

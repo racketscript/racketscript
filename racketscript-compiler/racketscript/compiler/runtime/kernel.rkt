@@ -7,7 +7,7 @@
 ;; ----------------------------------------------------------------------------
 ;; JS imports
 
-(define Kernel   ($/require "./kernel.js")) ;; old stuff
+(define Kernel ($/require "./kernel.js")) ;; old stuff
 (define Core   ($/require "./core.js"))
 (define Paramz ($/require "./paramz.js"))
 (define Values #js.Core.Values)
@@ -21,9 +21,24 @@
 (define-syntax array   (make-rename-transformer #'$/array))
 (define-syntax object  (make-rename-transformer #'$/obj))
 (define-syntax :=      (make-rename-transformer #'$/:=))
+(define-syntax binop   (make-rename-transformer #'$/binop))
+(define-syntax typeof  (make-rename-transformer #'$/typeof))
+(define-syntax instanceof  (make-rename-transformer #'$/instanceof))
 
 (define-syntax *null*       (make-rename-transformer #'$/null))
 (define-syntax *undefined*  (make-rename-transformer #'$/undefined))
+
+(define-syntax (define-binop stx)
+  (syntax-parse stx
+    [(_ name:id oper:id)
+     #`(define-syntax (name stx)
+         (syntax-parse stx
+           [(op e0:expr e1:expr) #`(binop oper e0 e1)]
+           [(op e0:expr e1:expr en:expr ...+)
+            #'(op (binop oper e0 e1) en (... ...))]))]))
+
+(define-binop and &&)
+(define-binop or \|\|)
 
 (define-syntax (introduce-id stx)
   (syntax-parse stx
@@ -45,6 +60,14 @@
   (lambda (stx)
     (raise-syntax-error (syntax-e stx) "can only be used in JS vararg lambda")))
 
+;; v-λ is a lambda with JS semantics. More specifically, for rest
+;; parameters are plain arrays instead of Racket lists. For sake of
+;; performance, v-λ is preferred for writing variadic functions in
+;; this file. `arguments` is syntax parameter to get the native JS
+;; arguments object.
+;;
+;; NOTE: Use `arguments` directly with extreme care! Loops are
+;; lambdas, therefore, rebind this variable with different name.
 (define-syntax (v-λ stx)
   (define (-arguments stx)
     (syntax-parse stx
@@ -52,9 +75,14 @@
       [(_ i:expr j:expr) #'($ 'arguments i)]
       [arguments #'($ 'arguments)]))
   (syntax-parse stx
-    [(_ (a0:id ...) body ...+)
+    [(_ args:id body ...+)
      #`(syntax-parameterize ([arguments #,-arguments])
          (λ ()
+           (define args (#js.Core.argumentsToArray arguments))
+           body ...))]
+    [(_ (a0:id ...) body ...+)
+     #`(syntax-parameterize ([arguments #,-arguments])
+         (λ (a0 ...)
            body ...))]
     [(_ (a0:id ...+ . as:id) body ...+)
      (define fixed-args (length (syntax-e #'(a0 ...))))
@@ -67,9 +95,9 @@
   (syntax-parse stx
     [(_ [index:id start:expr end:expr step:expr] body ...+)
      #`(let loop ([index start])
-         (when (< index end)
+         (when (binop < index end)
            body ...
-           (loop (+ index step))))]
+           (loop (binop + index step))))]
     [(_ [index:id start:expr end:expr] body ...+)
      #'(loop+ [index start end 1] body ...)]
     [(_ [index:id end:expr] body ...+)
@@ -78,6 +106,7 @@
 (define-syntax (for/array stx)
   (syntax-parse stx
     [(_ [(index:id item:id) arr:expr start:expr end:expr] body ...+)
+     ;; TODO: save the arr than than copying it everywhere
      #'(loop+ [index start end 1]
          (define item ($ arr index))
           body ...)]
@@ -93,7 +122,12 @@
 ;; Use some Native JS libs
 
 (introduce-id Math)
+(introduce-id Number)
+(introduce-id String)
+(introduce-id Uint8Array)
+(introduce-id Date)
 (introduce-id Array)
+(introduce-id console)
 
 ;; ----------------------------------------------------------------------------
 ;; Errors
@@ -114,7 +148,11 @@
 ;; ----------------------------------------------------------------------------
 ;; Values
 
-(define+provide values #js.Values.make)
+(define+provide values
+  (v-λ vals
+    (if (binop === #js.vals.length 1)
+        ($ vals 0)
+        (#js.Values.make vals))))
 
 (define+provide (call-with-values generator receiver)
   (let ([vals (generator)])
@@ -130,7 +168,7 @@
 (define+provide (void) *null*)
 
 (define+provide (void? v)
-  (and (equal? v *null*) (equal? v *undefined*)))
+  (or (binop === v *null*) (binop === v *undefined*)))
 
 ;; ----------------------------------------------------------------------------
 ;; Numbers
@@ -140,28 +178,31 @@
 (define+provide integer? #js.Core.Number.isInteger)
 
 (define+provide (zero? v)
-  (= v 0))
+  (binop === v 0))
 
 (define+provide (positive? v)
-  (> v 0))
+  (binop > v 0))
 
 (define+provide (negative? v)
-  (< v 0))
+  (binop < v 0))
 
 (define+provide (add1 v)
-  (+ v 1))
+  (binop + v 1))
 
 (define+provide (sub1 v)
-  (- v 1))
+  (binop - v 1))
 
 (define+provide (quotient dividend divisor)
-  (floor (/ dividend divisor)))
+  (floor (binop / dividend divisor)))
 
 (define+provide (even? v)
-  (= (quotient v 2) 0))
+  (binop === (binop % v 2) 0))
 
 (define+provide (odd? v)
-  (not (= (quotient v 2) 0)))
+  (not (binop === (binop % v 2) 0)))
+
+(define+provide (exact-nonnegative-integer? v)
+  (and (#js.Number.isInteger v) (binop >= v 0)))
 
 (define+provide (exact->inexact v) v)
 
@@ -180,15 +221,23 @@
 (define+provide sin #js.Math.sin)
 (define+provide cos #js.Math.cos)
 (define+provide tan #js.Math.tan)
-(define+provide ceiling #js.Math.ceilingg)
+(define+provide ceiling #js.Math.ceiling)
 (define+provide round #js.Math.round)
 (define+provide min #js.Math.min)
 (define+provide max #js.Math.max)
-(define+provide (false? v) (eq? v #f))
 
 ;;TODO: Support bignums
 (define+provide (expt w z) (#js.Math.pow w z))
 (define+provide (sqrt v) (#js.Math.sqrt v))
+
+(define+provide (sqr v)
+  (* v v))
+
+(define+provide (remainder a b)
+  (binop % a b))
+
+(define+provide (number->string n)
+  (#js.n.toString))
 
 ;; ----------------------------------------------------------------------------
 ;; Booleans
@@ -199,19 +248,22 @@
 (define+provide false #f)
 (define+provide true #t)
 
+(define+provide (false? v) (eq? v #f))
+
 ;; ----------------------------------------------------------------------------
 ;; Pairs
 
-(define+provide (car pair) #js.pair.car)
-(define+provide (cdr pair) #js.pair.cdr)
+(define+provide (car pair) #js.pair.hd)
+(define+provide (cdr pair) #js.pair.tl)
 (define+provide cons #js.Pair.make)
 (define+provide cons? #js.Pair.check)
 (define+provide pair? #js.Pair.check)
 
+(define+provide empty #js.Pair.Empty)
 (define+provide null #js.Pair.Empty)
 (define+provide list #js.Pair.makeList)
 (define+provide first car)
-(define+provide rest cdr)
+(define+provide rest  cdr)
 
 (define+provide null?  #js.Pair.isEmpty)
 (define+provide empty? #js.Pair.isEmpty)
@@ -245,13 +297,15 @@
 (define+provide append
   (v-λ ()
     (define result '())
-    (for/array [lst arguments]
+    (define lsts arguments)
+    (for/array [lst lsts]
       (set! result (foldr #js.Core.Pair.make lst result)))
     result))
 
-(define+provide (for-each lam . lsts)
-  (#js.map.apply *null* ($> (array lam) (concat lsts)))
-  *null*)
+(define+provide for-each
+  (v-λ (lam . lsts)
+    (#js.map.apply *null* ($> (array lam) (concat lsts)))
+    *null*))
 
 ;; --------------------------------------------------------------------------
 ;; Structs
@@ -267,18 +321,18 @@
                                   immutables
                                   guard
                                   constructor-name)
-  (#js.Core.Struct.make {object
-                         [name (#js.name.toString)]
-                         [superType super-type]
-                         [initFieldCount init-field-count]
-                         [autoFieldCount auto-field-count]
-                         [autoV auto-v]
-                         [props props]
-                         [inspector inspector]
-                         [procSpec proc-spec]
-                         [immutables immutables]
-                         [guard guard]
-                         [constructorName constructor-name]}))
+  (#js.Core.Struct.makeStructType
+   {object [name (#js.name.toString)]
+           [superType super-type]
+           [initFieldCount init-field-count]
+           [autoFieldCount auto-field-count]
+           [autoV auto-v]
+           [props props]
+           [inspector inspector]
+           [procSpec proc-spec]
+           [immutables immutables]
+           [guard guard]
+           [constructorName constructor-name]}))
 
 (define+provide (make-struct-field-accessor ref index field-name)
   (λ (s)
@@ -328,6 +382,9 @@
   (#js.Core.Vector.check vec)
   (#js.vec.set i v))
 
+(define+provide (vector->list vec)
+  (#js.Core.Pair.listFromArray #js.vec.items))
+
 ;; --------------------------------------------------------------------------
 ;; Hashes
 
@@ -336,11 +393,12 @@
 
 (define-syntax-rule (make-hash-contructor make)
   (v-λ ()
-    (when (> (quotient #js.arguments.length 2) 0)
+    (define kv* arguments)
+    (when (binop !== (binop % #js.kv*.length 2) 0)
       (throw (#js.Core.racketContractError "invalid number of arguments")))
     (let ([items (array)])
-      (loop+ [i 0 #js.arguments.length 2]
-        (#js.items.push (arguments i) (arguments (+ i 1))))
+      (loop+ [i 0 #js.kv*.length 2]
+             (#js.items.push (array ($ kv* i) ($ kv* (+ i 1)))))
       (make items #f))))
 
 (define+provide hash    (make-hash-contructor #js.Core.Hash.makeEqual))
@@ -377,8 +435,6 @@
          (#js.args.concat (#js.Core.Pair.listToArray (#js.args.pop)))]))
     (#js.lam.apply *null* final-args)))
 
-(define+provide alt+reverse reverse)
-
 (define+provide map
   (v-λ (fn . lists)
     (when (<= #js.lists.length 0)
@@ -392,8 +448,8 @@
     (define args (Array #js.lists.length))
     (loop+ [result-i lst-len]
       (for/array [(lst-j lst) lists]
-        (:= ($ args lst-j) (#js.lst.car))
-        (:= ($ lists lst-j) (#js.lst.cdr)))
+        (:= ($ args lst-j) #js.lst.hd)
+        (:= ($ lists lst-j) #js.lst.tl))
       (:= ($ result result-i) (#js.fn.apply *null* args)))
 
     (#js.Core.Pair.listFromArray result)))
@@ -408,11 +464,12 @@
         (error 'foldl "all input lists must have equal length")))
 
     (define result init)
-    (define args (Array #js.lists.length))
+    (define args (Array (binop + #js.lists.length 1)))
     (loop+ [result-i lst-len]
       (for/array [(lst-j lst) lists]
-        (:= ($ args lst-j) (#js.lst.car))
-        (:= ($ lists lst-j) (#js.lst.cdr)))
+        (:= ($ args lst-j) #js.lst.hd)
+        (:= ($ lists lst-j) #js.lst.tl))
+      (:= ($ args #js.lists.length) result)
       (set! result (#js.fn.apply *null* args)))
 
     result))
@@ -423,8 +480,8 @@
     [else
      (define args (Array (add1 #js.lists.length)))
      (for/array [(ii lst) lists]
-       (:= ($ args ii) (#js.lst.car))
-       (:= ($ lists ii) (#js.lst.cdr)))
+       (:= ($ args ii) #js.lst.hd)
+       (:= ($ lists ii) #js.lst.tl))
      (:= ($ args #js.lists.length) (_foldr fn init lists))
      (#js.fn.apply *null* args)]))
 
@@ -474,11 +531,175 @@
                              #js.lst.tl)]
       [else (loop result #js.lst.tl)])))
 
+(define+provide ormap
+  (v-λ (fn . lists)
+    (#js.foldl.apply #js*.this
+                     ($> (array (v-λ args
+                                  (define final-arg (#js.args.pop))
+                                  (and (or final-arg
+                                           (#js.fn.apply *null* args))
+                                       #t))
+                                #f)
+                         (concat lists)))))
+
+(define+provide andmap
+  (v-λ (fn . lists)
+    (#js.foldl.apply #js*.this
+                     ($> (array (v-λ args
+                                  (define final-arg (#js.args.pop))
+                                  (and final-arg
+                                       (#js.fn.apply *null* args)
+                                       #t))
+                                #t)
+                         (concat lists)))))
+
+;; TODO: add optional equal? pred
+(define+provide (member v lst)
+  (let loop ([lst lst])
+    (cond
+      [(null? lst) #f]
+      [(#js.Core.isEqual v #js.lst.hd) lst]
+      [else (loop #js.lst.tl)])))
+
+(define+provide compose
+  (v-λ procs
+    (v-λ ()
+      (define result (#js.Core.argumentsToArray arguments))
+      (define procs* (#js.procs.reverse))
+      (for/array [p procs*]
+        (set! result (#js.p.apply *null* result))
+        (if (#js.Core.Values.check result)
+            (set! result (#js.result.getAll))
+            (set! result (array result))))
+      (if (binop === #js.result.length 1)
+          ($ result 0)
+          (#js.Core.Values.make result)))))
+
+(define+provide compose1
+  (v-λ procs
+    (λ (v)
+      (define result v)
+      (define procs* (#js.procs.reverse))
+      (for/array [p procs*]
+        (set! result (p result)))
+      result)))
+
+;; Lists
+
+(define+provide (list-ref lst pos)
+  (let loop ([i 0]
+             [lst lst])
+    (cond
+      [(null? lst) (error 'list-ref? "insufficient elements")]
+      [(binop === i pos) #js.lst.hd]
+      [else (loop (binop + i 1) #js.lst.tl)])))
+
+(define+provide (build-list n proc)
+  (define arr (Array n))
+  (loop+ [i n]
+    (:= ($ arr i) (proc i)))
+  (#js.Core.Pair.listFromArray arr))
+
+(define+provide (make-list n v)
+  (let loop ([result '()]
+             [i 0])
+    (if (binop === i n)
+        result
+        (loop (#js.Core.Pair.make v result) (binop + i 1)))))
+
+(define+provide (flatten lst)
+  (cond
+    [(null? lst) lst]
+    [(pair? lst) (append (flatten #js.lst.hd) (flatten #js.lst.tl))]
+    [else (list lst)]))
+
+(define+provide (assoc k lst)
+  (let loop ([lst lst])
+    (cond
+      [(null? lst) #f]
+      [(#js.Core.isEqual k #js.lst.hd.hd) #js.lst.hd]
+      [else (loop #js.lst.tl)])))
+
+(define+provide memv #js.Kernel.memv)
+(define+provide memq #js.Kernel.memq)
+(define+provide memf #js.Kernel.memf)
+(define+provide findf #js.Kernel.findf)
+(define+provide sort9 #js.Kernel.sort9)
+(define+provide assv #js.Kernel.assv)
+(define+provide assq #js.Kernel.assq)
+(define+provide assf #js.Kernel.assf)
+(define+provide alt-reverse reverse)
+
 ;; --------------------------------------------------------------------------
 ;; Strings
 
+;; TODO: support both mutable/immutable strings
+
 (define+provide string (#js.String.prototype.concat.bind ""))
-(define+provide string=? equal?)
+
+(define+provide ~a
+  (v-λ args
+    ($> (array)
+        reduce
+        (call args
+              (λ (x r)
+                (binop + r (#js.Core.toString x)))
+              ""))))
+
+(define+provide string-append string)
+
+(define+provide (string=? sa sb)
+  (binop === sa sb))
+
+(define+provide (string<? sa sb)
+  (binop < sa sb))
+
+(define+provide (string<=? sa sb)
+  (binop <= sa sb))
+
+(define+provide (string>? sa sb)
+  (binop > sa sb))
+
+(define+provide (string>=? sa sb)
+  (binop >= sa sb))
+
+(define+provide (string? v)
+  (typeof v "string"))
+
+(define+provide format #js.Kernel.format)
+(define+provide symbol? #js.Core.Symbol.check)
+
+(define+provide (symbol->string v)
+  (#js.v.toString))
+
+(define+provide (symbol=? s v)
+  (#js.s.equals v))
+
+(define+provide (string-length v)
+  #js.v.length)
+
+(define+provide (string-downcase v)
+  (#js.v.toLowerCase v))
+
+(define+provide (string-upcase v)
+  (#js.v.toUpperCase v))
+
+(define+provide (substring str start end)
+  (define end (or end #f))
+  (cond
+    [(not (typeof str "string"))
+     (throw (#js.Core.racketContractError "expected a string"))]
+    [(binop < start 0)
+     (throw (#js.Core.racketContractError "invalid start index"))]
+    [(and (binop !== end #f)
+               (or (binop < end 0) (binop > end #js.str.length)))
+     (throw (#js.Core.racketContractError "invalid end index"))]
+    [(binop === end #f)
+     (set! end #js.str.length)])
+  (#js.str.substring start end))
+
+(define+provide (string-split str sep)
+  (#js.Core.Pair.listFromArray (#js.str.split sep)))
 
 ;; --------------------------------------------------------------------------
 ;; Box
@@ -507,15 +728,57 @@
 ;; --------------------------------------------------------------------------
 ;; Printing
 
-(define+provide (displayln v) (#js.Kernel.exports.displayln v))
-(define+provide (display v) (#js.Kernel.exports.display v))
-(define+provide (newline) (#js.Kernel.exports.newline))
-(define+provide (print-values v) (($ #js.Kernel.exports "print-values") v))
+(define+provide (displayln v) (#js.Kernel.displayln v))
+(define+provide (display v) (#js.Kernel.display v))
+
+(define+provide (newline)
+  (displayln ""))
+
+(define+provide (print-values v)
+  (unless (void? v)
+    (if (typeof v "string")
+        (#js.console.log (string "\"" v "\"")) ;;HACK: special cases
+        (displayln v))))
 
 ;; --------------------------------------------------------------------------
 ;; Errors
 
-(define+provide error #js.Kernel.exports.error)
+(define+provide error #js.Kernel.error)
+
+;; --------------------------------------------------------------------------
+;; Bytes
+
+(define+provide (bytes? bs)
+  (instanceof bs Uint8Array))
+
+(define+provide (bytes->string/utf-8 bs)
+  (if (bytes? bs)
+      (#js.String.fromCharCode.apply *null* bs)
+      (throw (#js.Core.racketContractError "expected bytes"))))
+
+(define+provide (string->bytes/utf-8 str)
+  (if (typeof str "string")
+      (new (Uint8Array (#js.Array.prototype.map.call str
+                                                     (λ (x) (#js.x.charCodeAt 0)))))
+      (throw (#js.Core.racketContractError "expected string"))))
+
+;; --------------------------------------------------------------------------
+;; Continuation Marks
+
+(define+provide current-continuation-marks #js.Core.Marks.getFrames)
+
+(define+provide (continuation-mark-set->list mark-set key)
+  (#js.Core.Marks.getMarks mark-set key))
+
+(define+provide (continuation-mark-set-first mark-set key-v none-v prompt-tag)
+  ;; TODO: implement prompt tag
+  (define mark-set (or mark-set (#js.Core.Marks.getFrames)))
+  (define marks (#js.Core.Marks.getMarks mark-set key-v))
+  (if (null? marks)
+      none-v
+      #js.marks.hd))
+
+(define+provide make-parameter #js.Paramz.makeParameter)
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
@@ -524,5 +787,38 @@
 (define+provide raise-argument-error error)
 (define+provide (check-method) #f)
 
+(define+provide random #js.Kernel.random)
+
+(define+provide (current-seconds)
+  (#js.Math.floor (binop / (#js.Date.now) 1000)))
+
 ;; --------------------------------------------------------------------------
 ;; Regexp
+
+(define+provide regexp? #js.Kernel.isRegExp)
+(define+provide pregexp? #js.Kernel.isPRegExp)
+(define+provide byte-regexp? #js.Kernel.isByteRegExp)
+(define+provide byte-pregexp? #js.Kernel.isBytePRegExp)
+(define+provide regexp #js.Kernel.regexp)
+(define+provide pregexp #js.Kernel.pregexp)
+(define+provide byte-regexp #js.Kernel.byteRegExp)
+(define+provide byte-pregexp #js.Kernel.bytePRegExp)
+(define+provide regexp-match #js.Kernel.regexpMatch)
+
+;; --------------------------------------------------------------------------
+;; Procedures
+
+(define+provide (procedure? f)
+  (typeof f "function"))
+
+(define+provide (procedure-arity-includes? f) #t)
+
+(define+provide (procedure-arity f)
+  #js.f.length)
+
+(define+provide (eval-jit-enabled) #t)
+
+(define+provide (make-sequence who v)
+  (#js.Core.Values.make [array car cdr v pair? #f #f]))
+
+(define+provide (variable-reference-constant? x) #f)

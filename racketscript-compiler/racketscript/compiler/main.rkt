@@ -220,6 +220,8 @@
 
   (put-to-pending! (path->complete-path (main-source-file)))
   (put-to-pending! '#%kernel)
+  (put-to-pending! '#%unsafe)
+  (put-to-pending! '#%paramz)
 
   (let loop ()
     (cond

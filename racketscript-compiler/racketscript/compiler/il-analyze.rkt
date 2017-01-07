@@ -100,6 +100,8 @@
       [(ILNew v)
        (ILNew (cast (handle-expr v) (U Symbol ILRef ILIndex ILApp)))]
       [(ILValue v) e]
+      [(ILUndefined) e]
+      [(ILNull) e]
       [(? symbol? v) v]))
 
   (: handle-stm (-> ILStatement ILResult))
@@ -547,6 +549,8 @@
       [(ILTypeOf expr)
        (ILTypeOf (handle-expr/general expr))]
       [(ILValue v) e]
+      [(ILUndefined) e]
+      [(ILNull) e]
       [(ILNew v) e]
       [(? symbol? v) e]))
 
@@ -771,6 +775,8 @@
        (match-define (list _ f-free) (find fieldexpr defs))
        (list (set) (set-union e-free f-free))]
       [(ILValue v) (list (set) (set))]
+      [(ILUndefined) (list (set) (set))]
+      [(ILNull) (list (set) (set))]
       [(ILNew e) (find e defs)]
       [(? symbol? v)
        (list (set)
@@ -852,6 +858,8 @@
     [(ILIndex expr fieldexpr) (or (has-application? expr)
                                   (has-application? fieldexpr))]
     [(ILValue _) #f]
+    [(ILUndefined) #f]
+    [(ILNull) #f]
     [(ILNew _) #t]
     [(ILInstanceOf expr type) (or (has-application? expr)
                                   (has-application? type))]
@@ -969,6 +977,8 @@
      (match-define (list f-used _) (used+defined/statement fieldexpr))
      (list (set-union e-used f-used) (set))]
     [(ILValue v) (list (set) (set))]
+    [(ILUndefined) (list (set) (set))]
+    [(ILNull) (list (set) (set))]
     [(ILNew e) (used+defined/statement e)]
     [(? symbol? v)
      (list (set v) (set))]))
@@ -1076,6 +1086,8 @@
     [(ILInstanceOf expr* type) (ILInstanceOf (flatten-if-else/expr expr*)
                                              (flatten-if-else/expr type))]
     [(ILTypeOf expr) (ILTypeOf (flatten-if-else/expr expr))]
+    [(? ILUndefined? v) v]
+    [(? ILNull? v) v]
     [(? ILValue? v) v]
     [(? symbol? s) s]))
 

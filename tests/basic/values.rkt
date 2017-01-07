@@ -25,5 +25,8 @@
 (displayln '(1 2 "string" 4 5))
 (displayln '(1 2 ("string" "in" ("quotes" "!")) 4 5))
 
+(displayln true)
+(displayln false)
+
 ;; TODO
 ;(displayln '(#"rx")) ; currently prints ([object Uint8Array])

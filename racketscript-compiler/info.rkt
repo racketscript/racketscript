@@ -25,4 +25,6 @@
 (define test-omit-paths '("racketscript/browser.rkt"
                           "racketscript/compiler/runtime/"))
 (define cover-omit-paths '("racketscript/browser.rkt"
-                           "racketscript/compiler/runtime/"))
+                           "racketscript/compiler/runtime/kernel.rkt"
+                           "racketscript/compiler/runtime/paramz.rkt"
+                           "racketscript/compiler/runtime/unsafe.rkt"))

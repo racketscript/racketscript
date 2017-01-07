@@ -4,7 +4,6 @@ import {hamt} from "./core/lib.js";
 /* --------------------------------------------------------------------------*/
 // All exports go in exports
 
-export const exports = {};
 const Marks = Core.Marks;
 const Box = Core.Box;
 
@@ -26,7 +25,7 @@ const Box = Core.Box;
 // callback is created current parameterization should be copied using
 // ffi's "=>$" form.
 
-const ParameterizationKey = {}; /* a unique reference that can act as key */
+export const ParameterizationKey = {}; /* a unique reference that can act as key */
 let __top = undefined;
 
 export function getCurrentParameterization() {
@@ -100,9 +99,3 @@ export function copyParameterization(parameterization) {
 	}
     });
 })();
-
-/* --------------------------------------------------------------------------*/
-// #%paramz exports
-
-exports["parameterization-key"]    = ParameterizationKey;
-exports["extend-parameterization"] = extendParameterization;

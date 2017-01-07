@@ -75,10 +75,11 @@
 
   (define imported-mod-path-list (set->list imports))
 
-  (: requires* ILRequire*)
+  (: requires* (Listof (Option ILRequire)))
   (define requires*
-    (for/fold ([result : ILRequire* '()])
-              ([mod-path imported-mod-path-list]
+    ;; FIXME: We put #f so that we can match it exactly
+    ;;  later in mod-stms
+    (for/list ([mod-path imported-mod-path-list]
                [counter (in-naturals)])
       (define mod-obj-name (string->symbol (~a "M" counter)))
       (define import-name
@@ -92,12 +93,16 @@
               ;; See expansion of identifier in `expand.rkt` for
               ;; primitive modules
               (set-member? ignored-module-imports mod-path))
-          result
-          (cons (ILRequire import-name mod-obj-name '*) result))))
+          #f
+          (ILRequire import-name mod-obj-name '*))))
 
   ;; Append all JavaScript requires we find at GTL over here
   (: js-requires (Boxof (Listof ILRequire)))
   (define js-requires (box '()))
+
+  ;; Filter out #f requires*
+  (: racket-requires ILRequire*)
+  (define racket-requires (filter ILRequire? requires*))
 
   (define mod-stms
     (parameterize ([module-object-name-map
@@ -105,9 +110,11 @@
                     (for/fold ([acc (module-object-name-map)])
                               ([req requires*]
                                [mod-path imported-mod-path-list])
-                      (hash-set acc
-                                mod-path
-                                (ILRequire-name req)))])
+                      (if (ILRequire? req)
+                          (hash-set acc
+                                    mod-path
+                                    (ILRequire-name req))
+                          acc))])
       (append-map
        (λ ([form : ModuleLevelForm])
          (cond
@@ -153,7 +160,7 @@
 
   (ILModule path
             final-provides
-            (append requires* (unbox js-requires))
+            (append racket-requires (unbox js-requires))
             mod-stms))
 
 
@@ -371,6 +378,10 @@
         (define-values (stms1 val1) (absyn-expr->il e1 #f))
         (values (append stms0 stms1)
                 (ILBinaryOp (cast oper Symbol) (list val0 val1)))]
+       [(list (Quote 'null))
+        (values '() (ILNull))]
+       [(list (Quote 'undefined))
+        (values '() (ILUndefined))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)

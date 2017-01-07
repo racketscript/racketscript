@@ -173,7 +173,8 @@
     [(#%plain-lambda formals . body)
      (define fabsyn (formals->absyn #'formals))
      (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
-    [(define-values (name) (#%plain-app (~datum #%js-ffi) (~datum 'require) 'mod))
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote require) (quote mod:str)))
      ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod))]
     [(define-values (id ...) b)
@@ -240,9 +241,6 @@
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
                   (values id mod))]))
 
-           ;; For compiling #%kernel (or primitive module) we may end
-           ;; up thinking that's id is imported as we are actually
-           ;; overriding the module. Don't make it happen.
            (register-ident-use! effective-mod effective-id)
            (ImportedIdent effective-id effective-mod)])])]
     [(define-syntaxes (i ...) b) #f]

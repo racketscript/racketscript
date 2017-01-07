@@ -5,6 +5,8 @@
 (define h3 #hash(((a b c) . d) (g . (e f g))))
 (define h4 #hash(("name" . "Vishesh") ("location" . "Boston")))
 
+(displayln (hash 1 2 3 4))
+
 (displayln "numbers")
 (equal? (hash-ref h1 1) 2)
 (equal? (hash-ref h1 3) 4)
@@ -35,3 +37,4 @@
         (hash-set h1 (posn 2 4) (list (posn 0 0) 'origin)))
 (equal? (hash-set h1 (posn 2 4) (list (posn 0 0) 'origin))
         (hash-set h1 (posn 2 4) (list (posn 0 0) 'not-origin)))
+

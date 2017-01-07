@@ -73,7 +73,6 @@
        (when (ILBinaryOp? arg) (emit ")"))
        (unless last?
          (emit (~a oper))))]
-    [(ILValue v) (assemble-value v out)]
     [(ILRef e s)
      (cond
        [(symbol? e) (emit (normalize-symbol e))]
@@ -117,9 +116,14 @@
      (assemble-expr type out)
      (emit ")")]
     [(ILTypeOf expr)
-     (emit "tyopeof(")
+     (emit "typeof(")
      (assemble-expr expr out)
      (emit ")")]
+    [(ILValue v) (assemble-value v out)]
+    [(ILNull)
+     (emit "null")]
+    [(ILUndefined)
+     (emit "undefined")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
@@ -466,6 +470,16 @@
                        (ILBinaryOp '+ (list 'i 'j)))
               "arr[i+1][i+j]"
               "successive indexing")
+  (check-expr (ILBinaryOp '+ '(a b))
+              "a+b"
+              "binary op")
+  (check-expr (ILBinaryOp '\|\| '(a b))
+              "a||b"
+              "binary op")
+  (check-expr (ILBinaryOp '\|\| (list (ILBinaryOp '&& '(a b))
+                                    (ILBinaryOp '&& '(c d))))
+              "(a&&b)||(c&&d)"
+              "nested binary ops")
 
     ;;; ILRef -------------------------------------------------------------------
 
