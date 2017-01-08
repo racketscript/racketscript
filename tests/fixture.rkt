@@ -139,17 +139,11 @@
 ;; Initialize test environment.
 ;; 1. Build directory structure and install packages
 ;;    if necessary
-;; 2. Always remove old compiled module outputs
-;; 3. Always skip-npm-install to save time
+;; 2. Always skip-npm-install to save time
+;; [3. Always remove old compiled module outputs)]
 (define (setup)
   (when (clean-output-before-test)
     (delete-directory/files (output-directory)))
-  ;; clean the compiled modules always, to avoid
-  ;; cases where compilation fails but it anyway
-  ;; proceeds with last module output
-  (let ([modules-directory (build-path (output-directory) "modules")])
-    (when (directory-exists? modules-directory)
-      (delete-directory/files modules-directory)))
 
   (prepare-build-directory "") ;; We don't care about bootstrap file
   (unless (skip-npm-install)
@@ -161,6 +155,13 @@
 ;; If tc-search-patterns is simply a path to directory, run all test
 ;; cases in that directory otherwise use glob pattern
 (define (run-tests tc-search-patterns)
+  ;; First clean the compiled modules always, to avoid cases where
+  ;; compilation fails but it anyway proceeds with last module output
+  (for ([dir '("modules" "cache")])
+    (let ([p (build-path (output-directory) dir)])
+      (when (directory-exists? p)
+        (delete-directory/files p))))
+
   (define testcases
     (append-map (λ (pattern)
                   (if (string-suffix? pattern ".rkt")
