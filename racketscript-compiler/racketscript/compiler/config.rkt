@@ -20,7 +20,8 @@
          jsruntime-module-path
          jsruntime-core-module
 
-         ignored-module-imports)
+         primitive-modules
+         ignored-module-imports-in-boot)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -81,7 +82,16 @@
 (: logging? (Parameter Boolean))
 (define logging? (make-parameter #t))
 
-(: ignored-module-imports (Setof Path))
-(define ignored-module-imports
+(: ignored-module-imports-in-boot (Setof Path))
+;; Ignore these imports in primtive modules.
+(define ignored-module-imports-in-boot
   (set
    (build-path racketscript-dir "private" "interop.rkt")))
+
+
+(: primitive-modules (Setof Symbol))
+(define primitive-modules
+  (set '#%kernel
+       '#%utils
+       '#%paramz
+       '#%unsafe))

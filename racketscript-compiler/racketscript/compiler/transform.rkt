@@ -88,11 +88,12 @@
            (jsruntime-import-path path
                                   (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
-      (if (or (and (symbol? mod-path)
+      ;; See expansion of identifier in `expand.rkt` for primitive
+      ;; modules
+      (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
                    (equal? path (actual-module-path mod-path)))
-              ;; See expansion of identifier in `expand.rkt` for
-              ;; primitive modules
-              (set-member? ignored-module-imports mod-path))
+              (and (primitive-module-path? (actual-module-path path))
+                   (set-member? ignored-module-imports-in-boot mod-path)))
           #f
           (ILRequire import-name mod-obj-name '*))))
 

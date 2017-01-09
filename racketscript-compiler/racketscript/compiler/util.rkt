@@ -1,14 +1,16 @@
 #lang typed/racket/base
 
-(require racket/match
-         racket/list
-         racket/format
-         racket/path
-         racket/string
-         racket/file
-         typed/rackunit
+(require (for-syntax racket/base)
          anaphoric
-         (for-syntax racket/base)
+         racket/file
+         racket/format
+         racket/list
+         racket/match
+         racket/path
+         racket/sequence
+         racket/set
+         racket/string
+         typed/rackunit
          "config.rkt"
          "util-untyped.rkt")
 
@@ -44,6 +46,8 @@
          log
          converge
          override-module-path
+         primitive-module?
+         primitive-module-path?
          ++)
 
 (: fresh-id-counter (Parameter Nonnegative-Integer))
@@ -244,9 +248,26 @@
 (define (actual-module-path in-path)
   (cond
     [(path? in-path) in-path]
-    [(symbol? in-path)
+    [(and (symbol? in-path) (primitive-module? in-path))
      (build-path racketscript-runtime-dir
-                 (~a (substring (symbol->string in-path) 2) ".rkt"))]))
+                 (~a (substring (symbol->string in-path) 2) ".rkt"))]
+    [else (error 'actual-module-path "~a is not a primtive module" in-path)]))
+
+
+(: primitive-module? (-> (U Path Symbol) Boolean))
+(define (primitive-module? mod)
+  (set-member? primitive-modules mod))
+
+(: primitive-module-path? (-> Path (Option Symbol)))
+(define (primitive-module-path? mod-path)
+  (let* ([primitive-modules-paths : (Listof (Pairof Path Symbol))
+                                  (set-map primitive-modules
+                                           (λ ([m : Symbol])
+                                             (cons (actual-module-path m) m)))]
+         [result (assoc mod-path primitive-modules-paths)])
+    (if (pair? result)
+        (cdr result)
+        #f)))
 
 (: override-module-path (-> (U Path Symbol) Path))
 (define (override-module-path mod)
@@ -348,8 +369,6 @@
           (loop new-val)))))
 
 ;;; ---------------------------------------------------------------------------
-
-(require racket/sequence)
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()

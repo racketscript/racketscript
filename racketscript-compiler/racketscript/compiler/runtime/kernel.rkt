@@ -365,6 +365,7 @@
   (v-λ ()
      (#js.Core.Vector.make (#js.Core.argumentsToArray arguments) #t)))
 
+;; v is optional
 (define+provide (make-vector size v)
   (#js.Core.Vector.makeInit size (or v 0)))
 
@@ -510,6 +511,7 @@
           (#js.result.push (- i)))])
      (#js.Core.Pair.listFromArray result)]))
 
+;; proc is optional
 (define+provide (remove v lst proc)
   (when (eq? proc *undefined*)
     (set! proc #js.Core.isEqual))
@@ -684,6 +686,7 @@
 (define+provide (string-upcase v)
   (#js.v.toUpperCase v))
 
+;; end is optional
 (define+provide (substring str start end)
   (define end (or end #f))
   (cond
