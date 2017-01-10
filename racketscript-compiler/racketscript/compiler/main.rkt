@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/cmdline
+(require racket/bool
+         racket/cmdline
          racket/file
          racket/format
          racket/match
@@ -11,6 +12,7 @@
          racket/runtime-path
          racket/set
          racket/system
+         racket/serialize
          syntax/moddep
 
          data/queue
@@ -47,6 +49,7 @@
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
+(define recompile-all-modules? (make-parameter #f))
 
 (define *js-bootstrap-file* "bootstrap.js")
 (define *browser-index-file* "index.html")
@@ -206,6 +209,45 @@
                   (string->symbol _)))
             (regexp-match* #rx"exports\\[\"([^\"\\]|\\.)*\"\\]" in))))))
 
+;;-----------------------------------------------------------------------------
+
+(define *module-compile-timestamp-file* "timestamps.rktl")
+
+(define (load-cached-module-timestamps)
+  (define fpath (build-path (cache-directory) *module-compile-timestamp-file*))
+  (if (file-exists? fpath)
+      (with-handlers ([exn:fail? (λ (e)
+                                   (log-rjs-info "invalid timestamp file")
+                                   (make-hash))])
+        (let ([ts (call-with-input-file fpath
+                    (λ (in)
+                      (deserialize (read in))))])
+          (make-hash ts)))
+      (make-hash)))
+
+(define (dump-module-timestamps! ts)
+  (define fpath (build-path (cache-directory) *module-compile-timestamp-file*))
+  (call-with-output-file fpath #:exists 'truncate
+    (λ (out)
+      (write (serialize (hash->list ts)) out))))
+
+(define (save-module-timestamp! ts mod)
+  (hash-set! ts mod (file-or-directory-modify-seconds (actual-module-path mod))))
+
+(define (get-module-timestamp ts mod)
+  (hash-ref ts mod 0))
+
+;; -> Void
+;; Returns true if we can skip compilation of module `mod`. We check -
+;;  - if parameter `recompile-all-modules?` is false
+;;  - timestamp of module against its timestamp when we last compiled.
+;;  - if the JavaScript output file exists
+(define (skip-module-compile? ts mod)
+  (and (not (recompile-all-modules?))
+       (file-exists? (module-output-file mod))
+       (= (get-module-timestamp ts mod)
+          (file-or-directory-modify-seconds (actual-module-path mod)))))
+
 ;; -> Void
 ;; For given global parameters starts build process starting
 ;; with entry point module and all its dependencies
@@ -218,20 +260,22 @@
       (set-add! added mod)
       (enqueue! pending mod)))
 
+  (define timestamps (load-cached-module-timestamps))
+
   (put-to-pending! (path->complete-path (main-source-file)))
   (put-to-pending! '#%kernel)
   (put-to-pending! '#%unsafe)
   (put-to-pending! '#%paramz)
 
   (let loop ()
+    (define next (and (non-empty-queue? pending) (dequeue! pending)))
     (cond
-      [(queue-empty? pending)
-       (log-rjs-info "Compiling ES6 to ES5.")
-       (es6->es5)
-       (log-rjs-info "Finished.")]
-      [else
-       (define next (dequeue! pending))
+      [(and next (skip-module-compile? timestamps next))
+       (log-rjs-info (~a "Skipping " next))
+       (loop)]
+      [next
        (current-source-file next)
+       (save-module-timestamp! timestamps next)
 
        (define expanded (quick-expand next))
        (define renamed (freshen expanded))
@@ -254,7 +298,12 @@
            [(? symbol? _) (void)]
            [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
-       (loop)])))
+       (loop)]
+      [(false? next)
+       (dump-module-timestamps! timestamps)
+       (log-rjs-info "Compiling ES6 to ES5.")
+       (es6->es5)
+       (log-rjs-info "Finished.")])))
 
 ;; String -> String
 (define (js-string-beautify js-str)
@@ -274,6 +323,7 @@
    [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
    [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
+   [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
    ["--dump-debug-info" "Dumps some debug information in output directory"
     (dump-debug-info #t)]
    ["--stdin" "Reads module from standard input, with file name argument being pseudo name"

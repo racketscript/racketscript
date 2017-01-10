@@ -16,6 +16,7 @@
          racketscript-dir
          racketscript-compiler-dir
          racketscript-runtime-dir
+         cache-directory
 
          jsruntime-module-path
          jsruntime-core-module
@@ -34,6 +35,14 @@
 
 (: main-source-file (Parameter (Option Path)))
 (define main-source-file (make-parameter #f))
+
+(: cache-directory (-> Path))
+(define (cache-directory)
+  (let ([dir (build-path (output-directory) "cache")])
+    (if (directory-exists? dir)
+        dir
+        (begin (make-directory dir)
+               dir))))
 
 ;; Path to the main compiler module
 (define-runtime-path racketscript-main-module "main.rkt")
