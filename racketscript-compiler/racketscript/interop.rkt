@@ -9,6 +9,12 @@
          $$
          $>
          $/:=
+         $/throw
+         $/undefined
+         $/null
+         $/typeof
+         $/instanceof
+         $/binop
          =>$
          assoc->object)
 
@@ -74,6 +80,19 @@
     [(_ v:expr)
      #`(#%js-ffi 'new v)]))
 
+(define-syntax ($/throw stx)
+  (syntax-parse stx
+    [(_ e:expr)
+     #`(#%js-ffi 'throw e)]))
+
+(define-syntax ($/undefined stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'undefined)]))
+
+(define-syntax ($/null stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'null)]))
+
 (define-syntax ($/obj stx)
   ;; TODO: What to do about ambiguity with the cases where fieldname
   ;; could be both string or symbol? Maybe generate string is it can't
@@ -108,14 +127,40 @@
   (define-syntax-class chaincall
     (pattern [fieldname:id ρ:expr ...]))
 
+  (define-syntax-class part
+    (pattern (~or cc:chaincall ci:id)))
+
   (syntax-parse stx
     [($> e:expr) #'e]
-    [($> e:expr cc0:chaincall cc:chaincall ...)
+    [($> e:expr ci:id cc:part ...)
+     #'($> ($ e 'ci) cc ...)]
+    [($> e:expr cc0:chaincall cc:part ...)
      #'($> (($ e 'cc0.fieldname) cc0.ρ ...) cc ...)]))
 
 (define (=>$ lam-expr)
   ;; FIXME: We are referring to the core module name directly!
   (($ ($ '$rjs_core) 'Marks 'wrapWithContext) lam-expr))
+
+(define-syntax ($/typeof stx)
+  (syntax-parse stx
+    [(_ e:expr) #'(#%js-ffi 'typeof e)]
+    [(_ e:expr (~and v:str
+                     (~or (~datum "undefined")
+                          (~datum "object")
+                          (~datum "boolean")
+                          (~datum "number")
+                          (~datum "string")
+                          (~datum "function"))))
+     #'(eqv? (#%js-ffi 'typeof e) v)]))
+
+(define-syntax ($/instanceof stx)
+  (syntax-parse stx
+    [(_ e:expr t:expr) #'(#%js-ffi 'instanceof e t)]))
+
+(define-syntax ($/binop stx)
+  (syntax-parse stx
+    [(_ oper:id operand0:expr operand1:expr)
+     #'(#%js-ffi 'operator 'oper operand0 operand1)]))
 
 (define (assoc->object pairs)
   (define result ($/obj))
@@ -182,6 +227,11 @@
 
   (check-interop #'($ window 'document "write")
                  #'(#%js-ffi 'index (#%js-ffi 'ref window 'document) "write"))
+
+  ;; Check '$>'
+
+  (check-interop #'($> foo bar (baz 'a 'b))
+                 #'((#%js-ffi 'ref (#%js-ffi 'ref foo 'bar) 'baz) 'a 'b))
 
   ;; Object
   (check-interop #'($/obj

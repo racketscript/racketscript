@@ -64,7 +64,7 @@
 (module+ test
   (require rackunit
            racketscript/interop)
-  
+
   (define-simple-check (check-reader str first-id? result)
     (equal? (syntax->datum
              (read-racketscript #f (open-input-string

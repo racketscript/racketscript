@@ -75,8 +75,10 @@
 
   (define imported-mod-path-list (set->list imports))
 
-  (: requires* (Listof ILRequire))
+  (: requires* (Listof (Option ILRequire)))
   (define requires*
+    ;; FIXME: We put #f so that we can match it exactly
+    ;;  later in mod-stms
     (for/list ([mod-path imported-mod-path-list]
                [counter (in-naturals)])
       (define mod-obj-name (string->symbol (~a "M" counter)))
@@ -86,11 +88,22 @@
            (jsruntime-import-path path
                                   (jsruntime-module-path mod-path))]
           [_ (module->relative-import (cast mod-path Path))]))
-      (ILRequire import-name mod-obj-name '*)))
+      ;; See expansion of identifier in `expand.rkt` for primitive
+      ;; modules
+      (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
+                   (equal? path (actual-module-path mod-path)))
+              (and (primitive-module-path? (actual-module-path path))
+                   (set-member? ignored-module-imports-in-boot mod-path)))
+          #f
+          (ILRequire import-name mod-obj-name '*))))
 
   ;; Append all JavaScript requires we find at GTL over here
   (: js-requires (Boxof (Listof ILRequire)))
   (define js-requires (box '()))
+
+  ;; Filter out #f requires*
+  (: racket-requires ILRequire*)
+  (define racket-requires (filter ILRequire? requires*))
 
   (define mod-stms
     (parameterize ([module-object-name-map
@@ -98,9 +111,11 @@
                     (for/fold ([acc (module-object-name-map)])
                               ([req requires*]
                                [mod-path imported-mod-path-list])
-                      (hash-set acc
-                                mod-path
-                                (ILRequire-name req)))])
+                      (if (ILRequire? req)
+                          (hash-set acc
+                                    mod-path
+                                    (ILRequire-name req))
+                          acc))])
       (append-map
        (λ ([form : ModuleLevelForm])
          (cond
@@ -108,7 +123,7 @@
             (set-box! js-requires
                       (cons (ILRequire (~a (JSRequire-path form))
                                        (JSRequire-alias form)
-                                       'default)
+                                       '*)
                             (unbox js-requires)))
             '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
@@ -146,7 +161,7 @@
 
   (ILModule path
             final-provides
-            (append requires* (unbox js-requires))
+            (append racket-requires (unbox js-requires))
             mod-stms))
 
 
@@ -347,6 +362,27 @@
                     (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
                                             v*))))))
         (values stms* (ILObject items*))]
+       [(list (Quote 'throw) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values (append1 stms (ILThrow val)) (ILValue (void)))]
+       [(list (Quote 'typeof) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values stms (ILTypeOf val))]
+       [(list (Quote 'instanceof) e t)
+        ;;TODO: Not ANF.
+        (define-values (stms val) (absyn-expr->il e #f))
+        (define-values (tstms tval) (absyn-expr->il t #f))
+        (values (append stms tstms) (ILInstanceOf val tval))]
+       [(list (Quote 'operator) (Quote oper) e0 e1)
+        ;;TODO: not ANF
+        (define-values (stms0 val0) (absyn-expr->il e0 #f))
+        (define-values (stms1 val1) (absyn-expr->il e1 #f))
+        (values (append stms0 stms1)
+                (ILBinaryOp (cast oper Symbol) (list val0 val1)))]
+       [(list (Quote 'null))
+        (values '() (ILNull))]
+       [(list (Quote 'undefined))
+        (values '() (ILUndefined))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)
@@ -438,8 +474,20 @@
      (when (symbol? src)
        ;; TODO: need to move this ident-use out of expand
        (register-ident-use! src id))
-     (define mod-obj-name (hash-ref (module-object-name-map) src))
-     (values '() (ILRef (assert mod-obj-name symbol?) id))]
+
+     ;; For compiling #%kernel (or primitive module) we may end
+     ;; up thinking that's id is imported as we are actually
+     ;; overriding the module. Don't make it happen.
+     ;; TODO: Look at this again.
+     (cond
+       [(and (or (symbol? (current-source-file))
+                 (path? (current-source-file)))
+             (equal? (actual-module-path (cast (current-source-file) ModuleName))
+                     (actual-module-path (cast src ModuleName))))
+        (absyn-expr->il (LocalIdent id) overwrite-mark-frame?)]
+       [else
+        (define mod-obj-name (hash-ref (module-object-name-map) src))
+        (values '() (ILRef (assert mod-obj-name symbol?) id))])]
 
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key
@@ -821,6 +869,20 @@
     (list (Quote 'new) (LocalIdent 'Array)))
    '()
    (ILNew 'Array))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'throw) (Quote "What")))
+   (list (ILThrow (ILValue "What")))
+   (ILValue (void)))
+
+  (check-ilexpr
+   (PlainApp
+    absyn-js-ffi
+    (list (Quote 'operator) (Quote '+) (Quote 1) (Quote 2)))
+   '()
+   (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
 
   ;; Top Level ------------------------------------------------------
 

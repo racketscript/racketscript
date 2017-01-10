@@ -1,549 +1,7 @@
 import * as Core from "./core.js";
-import {makeParameter} from "./paramz.js";
 
-/* --------------------------------------------------------------------------*/
-// Helpers
 
-function typeCheckOrRaise(type, what) {
-    if (!type.check(what)) {
-	throw Core.racketContractError("expected a {0}, but given {1}", type, what);
-    }
-}
-
-function isNumber(v) {
-    return typeof v === 'number';
-}
-
-/* --------------------------------------------------------------------------*/
-// All exports go in exports
-
-export const exports = {};
-
-/* --------------------------------------------------------------------------*/
-// Equality
-
-exports["equal?"] = Core.isEqual;
-exports["eqv?"] = Core.isEqv;
-exports["eq?"] = Core.isEq;
-
-/* --------------------------------------------------------------------------*/
-// Values
-
-exports["values"] = function (...vals) {
-    if (vals.length === 1) {
-	return vals[0];
-    } else {
-	return Core.Values.make(vals);
-    }
-}
-
-var callWithValues = exports["call-with-values"] = function (generator, receiver) {
-    let values = generator();
-    if (Core.Values.check(values)) {
-	return receiver.apply(this, generator().getAll());
-    } else if (values !== undefined && values !== null) {
-	return receiver.apply(this, [values]);
-    }
-}
-
-/* --------------------------------------------------------------------------*/
-// Void
-
-exports["void"] = function () {
-    return null;
-}
-
-exports["void?"] = function (v) {
-    return v === null || v === undefined;
-}
-
-/* --------------------------------------------------------------------------*/
-// Numbers
-
-exports["number?"] = Core.Number.check;
-
-exports["integer?"] = Number.isInteger;
-
-exports["real?"] = function (v) {
-    return Core.Number.check(v);
-}
-
-exports["exact-nonnegative-integer?"] = function (v) {
-    return Number.isInteger(v) && v >= 0;
-}
-
-exports["zero?"] = function (v) {
-    return v === 0;
-}
-
-exports["positive?"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return v > 0;
-}
-
-exports["negative?"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return v < 0;
-}
-
-exports["even?"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return (v % 2) === 0;
-}
-
-exports["odd?"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return (v % 2) !== 0;
-}
-    
-
-exports["add1"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return v + 1;
-}
-
-exports["sub1"] = function (v) {
-    typeCheckOrRaise(Core.Number, v);
-    return v - 1;
-}
-
-exports["quotient"] = function (dividend, divisor) {
-    return Math.floor(dividend / divisor);
-}
-
-exports["*"] = Core.Number.mul;
-exports["/"] = Core.Number.div;
-exports["+"] = Core.Number.add;
-exports["-"] = Core.Number.sub;
-exports["<"] = Core.Number.lt;
-exports[">"] = Core.Number.gt;
-exports["<="] = Core.Number.lte;
-exports[">="] = Core.Number.gte;
-exports["="] = Core.Number.equals;
-
-/* TODO: Support bignums */
-exports["exact->inexact"] = (v) => v;
-exports["expt"] = (w, z) => Math.pow(w, z);
-exports["sqrt"] = (v) => Math.sqrt(v);
-
-/* -------------------------------------------------------------------------*/
-// Boolean
-
-exports["not"] = function (v) {
-    return v === false || false;
-}
-
-/* --------------------------------------------------------------------------*/
-// Pairs
-
-exports["car"] = function (pair) {
-    typeCheckOrRaise(Core.Pair, pair);
-    return pair.car();
-}
-
-exports["cdr"] = function (pair) {
-    typeCheckOrRaise(Core.Pair, pair);
-    return pair.cdr();
-}
-
-exports["cons"] = function (hd, tl) {
-    return Core.Pair.make(hd, tl);
-}
-
-exports["cons?"] = function (v) {
-    return Core.Pair.check(v);
-}
-
-exports["pair?"] = exports["cons?"]
-
-// Lists
-
-exports["null"] = Core.Pair.Empty;
-
-var list = exports["list"] = Core.Pair.makeList;
-exports["first"] = exports["car"]; //TODO: Should be list
-exports["second"] = function (lst) {
-    return lst.cdr().car();
-}
-exports["rest"] = exports["cdr"];
-
-var isList = exports["list?"] = function (v) {
-    //TODO: Make this iterative
-    if (Core.Pair.isEmpty(v)) {
-	return true;
-    } else if (Core.Pair.check(v)) {
-	return isList(v.cdr());
-    } else {
-	return false;
-    }
-}
-
-exports["list*"] = function () {
-    return Core.argumentsToArray(arguments)
-	.reverse()
-	.reduce((acc, v) => Core.Pair.make(v, acc));
-}
-
-exports["empty?"] = Core.Pair.isEmpty;
-exports["null?"] = Core.Pair.isEmpty;
-
-var length = exports["length"] = function (lst) {
-    return Core.Pair.listLength(lst);
-}
-
-exports["for-each"] = function (lam, ...lsts) {
-    map.apply(null, [lam].concat(lsts));
-    return null;
-}
-
-/* --------------------------------------------------------------------------*/
-// Structs
-
-exports["make-struct-type"] = function (name,
-				  superType,
-				  initFieldCount,
-				  autoFieldCount,
-				  autoV,
-				  props,
-				  inspector,
-				  procSpec,
-				  immutables,
-				  guard,
-				  constructorName)
-{
-    return Core.Struct.makeStructType({
-	name: name.toString(),
-	superType: superType,
-	initFieldCount: initFieldCount,
-	autoFieldCount: autoFieldCount,
-	autoV: autoV,
-	props: props,
-	inspector: inspector,
-	procSpec: procSpec,
-	immutables: immutables,
-	guard: guard,
-	constructorName: constructorName
-    });
-}
-
-exports["make-struct-field-accessor"] = function (ref, index, fieldName) {
-    return function (s) {
-	return ref(s, index);
-    }
-}
-
-exports["make-struct-field-mutator"] = function (set, index, fieldName) {
-    return function (s, v) {
-	return set(s, index, v);
-    }
-}
-
-exports["struct-type?"] = function (v) {
-    return Core.Struct.isStructType(v);
-}
-
-exports["make-struct-type-property"] = function (name, guard, supers, canImpersonate) {
-    return Core.Struct.makeStructTypeProperty({
-	name: name,
-	guard: guard,
-	supers: supers,
-	canImpersonate: canImpersonate
-    });
-}
-
-exports["check-struct-type"] = function (name, what) {
-    // TODO: in define-struct.rkt. See struct/super.rkt
-    if (what) {
-	if (!Core.Struct.isStructType(what)) {
-	    throw Core.racketCoreError("not a struct-type");
-	}
-	return what;
-    }
-}
-
-
-/* --------------------------------------------------------------------------*/
-// Vectors
-
-exports["vector"] = function () {
-    var items = Core.argumentsToArray(arguments);
-    return Core.Vector.make(items, true);
-}
-
-// v is optional
-exports["make-vector"] = function (size, v) {
-    return Core.Vector.makeInit(size, v || 0);
-}
-
-exports["vector?"] = function(v) {
-    return Core.Vector.check(v);
-}
-
-exports["vector-length"] = function(v) {
-    return v.length(v);
-}
-
-exports["vector-ref"] = function (vec, i) {
-    Core.Vector.check(vec);
-    return vec.ref(i);
-}
-
-exports["vector-set!"] = function (vec, i, v) {
-    Core.Vector.check(vec);
-    vec.set(i, v);
-}
-
-exports["vector->list"] = function (v) {
-    return Core.Pair.listFromArray(v.items);
-}
-
-/* --------------------------------------------------------------------------*/
-// Hashes
-
-exports["make-immutable-hash"] = function (assocs) {
-    return Core.Hash.makeFromAssocs(assocs, "equal", false);
-}
-
-exports["hash"] = function (...vals) {
-    if (vals.length % 2 !== 0) {
-	throw new Error("invalid number of arguments");
-    }
-
-    let items = [];
-    for (let i = 0; i < vals.length; i += 2) {
-	items.push([vals[i], vals[i + 1]]);
-    }
-
-    return Core.Hash.makeEqual(items, false);
-}
-
-exports["hasheq"] = function (...vals) {
-    if (vals.length % 2 !== 0) {
-	throw new Error("invalid number of arguments");
-    }
-
-    let items = [];
-    for (let i = 0; i < vals.length; i += 2) {
-	items.push([vals[i], vals[i + 1]]);
-    }
-
-    return Core.Hash.makeEq(items, false);
-}
-exports["make-hasheq"] = function (assocs) {
-    return Core.Hash.makeFromAssocs(assocs, "eq", true);
-}
-
-exports["hash-ref"] = function (h, k, fail) {
-    return h.ref(k, fail);
-}
-
-exports["hash-set"] = function (h, k, v) {
-    return h.set(k, v);
-}
-
-/* --------------------------------------------------------------------------*/
-// Higher Order Functions
-
-exports["apply"] = function (lam, ...args) {
-    if (args.length === 0) {
-	throw Core.racketContractError("arity mismatch");
-    } else if (args.length === 1) {
-	if (args[0] !== Core.Pair.Empty) {
-	    typeCheckOrRaise(Core.Pair, args[0]);
-	}
-	var finalArgs = Core.Pair.listToArray(args[0]);
-    } else {
-	let lastArgs = Core.Pair.listToArray(args.pop());
-	var finalArgs = args.concat(lastArgs); ; /* TODO: Check. Must be a list */
-    }
-    return lam.apply(null, finalArgs);
-}
-
-var reverse = exports["reverse"] = function (lst) {
-    let result = Core.Pair.Empty;
-    if (!isList(lst)) {
-	throw Core.racketContractError("expected list");
-    }
-    while (Core.Pair.isEmpty(lst) === false) {
-	result = Core.Pair.make(lst.hd, result);
-	lst = lst.tl;
-    }
-    return result;
-}
-exports["alt-reverse"] = reverse; // used internally by for*/list
-
-var map = exports["map"] = function map(fn, ...lists) {
-    if (lists.length <= 0) {
-	error("map: needs at-least two arguments");
-    }
-
-    var lst_len = length(lists[0]);
-    for (let i = 0; i < lists.length; i++) {
-	if (length(lists[i]) != lst_len) {
-	    error("map: all input lists must have equal length");
-	}
-    }
-
-    var result = [];
-    for (let i = 0; i < lst_len; i++) {
-	let args = [];
-	for (var j = 0; j < lists.length; j++) {
-	    args.push(lists[j].car());
-	    lists[j] = lists[j].cdr();
-	}
-	result.push(fn.apply(null, args));
-    }
-
-    return Core.Pair.listFromArray(result);
-}
-
-var foldl = exports["foldl"] = function (fn, init, ...lists) {
-    if (typeof fn !== 'function') {
-	throw Core.racketContractError("first arg must be a procedure");
-    }
-    if (lists.length <= 0) {
-	error("foldl: foldl needs at-least one list");
-    }
-
-    var lst_len = length(lists[0]);
-    for (let i = 0; i < lists.length; i++) {
-	if (length(lists[i]) != lst_len) {
-	    error("foldl: all input lists must have equal length");
-	}
-    }
-
-    var result = init;
-    for (let i = 0; i < lst_len; i++) {
-	let args = [];
-	for (var j = 0; j < lists.length; j++) {
-	    args.push(lists[j].car());
-	    lists[j] = lists[j].cdr();
-	}
-	args.push(result);
-	result = fn.apply(null, args);
-    }
-
-    return result;
-}
-
-function _foldr(fn, init, lists) {
-    if (Core.Pair.isEmpty(lists[0])) {
-	return init;
-    } else {
-	let args = [];
-	for (var ii = 0; ii < lists.length; ii++) {
-	    args.push(lists[ii].car());
-	    lists[ii] = lists[ii].cdr();
-	}
-
-	args.push(_foldr(fn, init, lists));
-	return fn.apply(null, args)
-    }
-}
-
-var foldr = exports["foldr"] = function (fn, init, ...lists) {
-    if (lists.length <= 0) {
-	error("foldl: foldl needs at-least one list");
-    }
-
-    var lst_len = length(lists[0]);
-    for (let i = 0; i < lists.length; i++) {
-	if (length(lists[i]) != lst_len) {
-	    error("foldl: all input lists must have equal length");
-	}
-    }
-
-    return _foldr(fn, init, lists);
-}
-
-var range = exports["range"] = function (start, end, step) {
-    typeCheckOrRaise(Core.Number, start);
-    if (end === undefined) {
-	end = start;
-	start = 0;
-    }
-    if (step === undefined) {
-	step = 1;
-    }
-    typeCheckOrRaise(Core.Number, end);
-    typeCheckOrRaise(Core.Number, step);
-    var result = [];
-    if (step >= 0 && start < end) {
-	for (let last = start; last < end; last += step) {
-	    result.push(last);
-	}
-    } else if (step <= 0 && end < start) {
-	for (let last = start; last > end; last += step) {
-	    result.push(last);
-	}
-    }
-    return Core.Pair.listFromArray(result);
-}
-
-exports["remove"] = function (v, lst, proc = Core.isEqual) {
-    typeCheckOrRaise(Core.Pair, lst);
-
-    let result = Core.Pair.Empty;
-    while (Core.Pair.isEmpty(lst) == false) {
-	if (proc(v, lst.hd)) {
-	    return append(reverse(result), lst.tl);
-	}
-	result = Core.Pair.make(lst.hd, result);
-	lst = lst.tl;
-    }
-
-    return reverse(result);
-}
-
-
-/* --------------------------------------------------------------------------*/
-// Strings
-
-exports["~a"] = function () {
-    return [].reduce.call(arguments, function (x, r) {
-	return r + Core.toString(x);
-    }, "");
-}
-
-exports["string-append"] = function (...args) {
-    switch (args.length) {
-    case 1: return args[0];
-    case 2: return args[0] + args[1];
-    case 3: return args[0] + args[1] + args[2];
-    default: return args.join("");
-    }
-}
-
-exports["string"] = function () {
-    var result = "";
-    for (let [_, v] of arguments) {
-	result += v;
-    }
-    return result;
-}
-
-exports["string=?"] = function (sa, sb) {
-    return sa === sb;
-}
-
-exports["string<?"] = function (sa, sb) {
-    return sa < sb;
-}
-exports["string<=?"] = function (sa, sb) {
-    return sa <= sb;
-}
-exports["string>?"] = function (sa, sb) {
-    return sa > sb;
-}
-exports["string>=?"] = function (sa, sb) {
-    return sa >= sb;
-}
-
-exports["string?"] = function (v) {
-    return typeof(v) === 'string';
-}
-
-var format = exports["format"] = function (pattern, ...args) {
+export function format(pattern, ...args) {
     //TODO: Only ~a is supported
     var matched = 0;
     return pattern.replace(/~a/g, function(match) {
@@ -555,88 +13,12 @@ var format = exports["format"] = function (pattern, ...args) {
     });
 }
 
-exports["symbol->string"] = function (v) {
-    typeCheckOrRaise(Core.Symbol, v);
-    return v.toString();
-}
-
-exports["symbol?"] = function (v) {
-    return Core.Symbol.check(v);
-}
-
-exports["symbol=?"] = function (s, v) {
-    typeCheckOrRaise(Core.Symbol, s);
-    return s.equals(v);
-}
-
-exports["string-length"] = function (v) {
-    if (typeof v !== 'string') {
-	throw Core.racketContractError("expected a string");
-    }
-    return v.length;
-}
-
-exports["string-downcase"] = (v) => v.toLowerCase(v);
-exports["string-upcase"] = (v) => v.toUpperCase(v);
-
-exports["substring"] = function (str, start, end = false) {
-    if (typeof str !== 'string') {
-	throw Core.racketContractError("expected a string");
-    } else if (start < 0) {
-	throw Core.racketContractError("invalid start index");
-    } else if (end !== false && (end < 0 || end > str.length)) {
-	throw Core.racketContractError("invalid end index");
-    } else if (end === false) {
-	end = str.length;
-    }
-    return str.substring(start, end);
-}
-
-exports["string-split"] = function (str, sep) {
-    if (typeof str !== 'string') {
-	throw Core.racketContractError("expected a string");
-    }
-    return Core.Pair.listFromArray(str.split(sep));
-}
-
-
-/* --------------------------------------------------------------------------*/
-// Box
-
-exports["box"] = function (v) {
-    return Core.Box.make(v);
-}
-
-exports["unbox"] = function (v) {
-    return v.get();
-}
-
-exports["set-box!"] = function (b, v) {
-    b.set(v);
-}
-
-/* --------------------------------------------------------------------------*/
-// Properties
-
-const propertyEvt = Core.Struct.makeStructTypeProperty({
-    name: "prop:evt"
-});
-
-exports["prop:evt"] = propertyEvt.getAt(0);
-exports["evt?"] = propertyEvt.getAt(1);
-
-/* --------------------------------------------------------------------------*/
-// Ports
-
-exports["current-output-port"] = () => false;
-exports["output-port?"] = () => false;
-
 /* --------------------------------------------------------------------------*/
 // Printing to Console
 
 let __buffer = ""; //HACK
 
-var displayln = exports["displayln"] = function (v) {
+export function displayln(v) {
     /* TODO: Real thing takes port as well */
     if (v === true) {
 	console.log(__buffer + "#t");
@@ -652,7 +34,7 @@ var displayln = exports["displayln"] = function (v) {
     __buffer = "";
 }
 
-exports["display"] = function (v) {
+export function display(v) {
     /* TODO: this is still line */
     if (v === true) {
 	__buffer += "#t";
@@ -667,25 +49,10 @@ exports["display"] = function (v) {
     }
 }
 
-exports["newline"] = function () {
-    return exports["displayln"]("");
-}
-
-exports["print-values"] = function (v) {
-    if (v !== undefined && v !== null) {
-	if (typeof v == 'string') {
-	    //TODO: Hack. Special cases
-	    console.log('"' + v + '"');
-	} else {
-	    exports["displayln"](v);
-	}
-    }
-}
-
 /* --------------------------------------------------------------------------*/
 // Errors
 
-var error = exports["error"] = function (...args) {
+export function error(...args) {
     if (args.length === 1 && Core.Symbol.check(args[0])) {
 	throw Core.racketCoreError(args[0].toString());
     } else if (args.length > 0 && typeof args[0] === 'string') {
@@ -703,15 +70,7 @@ var error = exports["error"] = function (...args) {
 /* --------------------------------------------------------------------------*/
 // Not Implemented/Unorganized/Dummies
 
-exports["current-inspector"] = () => true;
-
-exports["raise-argument-error"] = function() {
-}
-
-exports["check-method"] = function() {
-}
-
-exports["random"] = function (...args) {
+export function random(...args) {
     switch (args.length) {
     case 0: return Math.random();
     case 1:
@@ -732,17 +91,8 @@ exports["random"] = function (...args) {
 }
 
 // TODO: add optional equal? pred
-exports["member"] = function (v, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
-	if (Core.isEqual(v, lst.hd)) {
-	    return lst;
-	}
-	lst = lst.tl;
-	continue;
-    }
-    return false;
-}
-exports["memv"] = function (v, lst) {
+
+export function memv(v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (Core.isEqv(v, lst.hd)) {
 	    return lst;
@@ -752,7 +102,8 @@ exports["memv"] = function (v, lst) {
     }
     return false;
 }
-exports["memq"] = function (v, lst) {
+
+export function memq(v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (Core.isEq(v, lst.hd)) {
 	    return lst;
@@ -762,7 +113,8 @@ exports["memq"] = function (v, lst) {
     }
     return false;
 }
-exports["memf"] = function (f, lst) {
+
+export function memf(f, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (f(lst.hd)) {
 	    return lst;
@@ -772,7 +124,8 @@ exports["memf"] = function (f, lst) {
     }
     return false;
 }
-exports["findf"] = function (f, lst) {
+
+export function findf(f, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
 	if (f(lst.hd)) {
 	    return list.hd;
@@ -783,37 +136,10 @@ exports["findf"] = function (f, lst) {
     return false;
 }
 
-exports["false"] = false;
-exports["true"] = true;
-exports["empty"] = Core.Pair.Empty;
-
-exports["number->string"] = function (n) {
-    typeCheckOrRaise(Core.Number, n);
-    return n.toString();
-}
-
-exports["ormap"] = function (fn, ...lists) {
-    return foldl.apply(this, [(...args) => fn.apply(null,args), false].concat(lists));
-}
-
-exports["andmap"] = function (fn, ...lists) {
-    return foldl.apply(this, [(...args) => fn.apply(null,args), true].concat(lists));
-}
-
-exports["filter"] = function (fn, lst) {
-    let result = Core.Pair.Empty;
-    while (Core.Pair.isEmpty(lst) == false) {
-	if (fn(lst.hd)) {
-	    result = Core.Pair.make(lst.hd, result);
-	}
-	lst = lst.tl;
-    }
-    return reverse(result);
-}
 
 // TODO: more faithfully reproduce Racket sort?
 // this implements raw-sort from #%kernel, see racket/private/list
-exports["sort9"] = function (lst, cmp) {
+export function sort9(lst, cmp) {
     var arr = Core.Pair.listToArray(lst);
     var x2i = new Map();
     arr.forEach(function (x,i) { x2i.set(x,i); });
@@ -829,64 +155,7 @@ exports["sort9"] = function (lst, cmp) {
     return Core.Pair.listFromArray(srted);
 }
 
-exports["abs"] = Math.abs;
-exports["floor"] = Math.floor;
-exports["sin"] = Math.sin;
-exports["cos"] = Math.cos;
-exports["tan"] = Math.tan;
-exports["ceiling"] = Math.ceil;
-exports["round"] = Math.round;
-exports["min"] = Math.min;
-exports["max"] = Math.max;
-exports["false?"] = (v) => v === false;
-
-exports["list-ref"] = function (lst, pos) {
-    let i = 0;
-    while (Core.Pair.isEmpty(lst) === false) {
-	if (i === pos) {
-	    return lst.hd;
-	}
-	lst = lst.tl;
-	i += 1;
-    }
-    error("list-ref?: insufficient elements");
-}
-
-
-var append = exports["append"] = function (...lists) {
-    let result = Core.Pair.Empty;
-    for (let list of lists) {
-	result = foldr(Core.Pair.make, list, result);
-    }
-    return result;
-}
-
-exports["build-list"] = function (n, proc) {
-    let result = Core.Pair.Empty;
-    for (let i = 0; i < n; ++i) {
-	result = Core.Pair.make(proc(i), result);
-    }
-    return reverse(result);
-}
-
-exports["make-list"] = function (n, v) {
-    let result = Core.Pair.Empty;
-    for (let i = 0; i < n; ++i) {
-	result = Core.Pair.make(v, result);
-    }
-    return result;
-}
-
-exports["assoc"] = function (k, lst) {
-    while (Core.Pair.isEmpty(lst) === false) {
-	if (Core.isEqual(k, lst.hd.hd)) {
-	    return lst.hd;
-	}
-	lst = lst.tl;
-    }
-    return false;
-}
-exports["assv"] = function (k, lst) {
+export function assv(k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
 	if (Core.isEqv(k, lst.hd.hd)) {
 	    return lst.hd;
@@ -895,7 +164,8 @@ exports["assv"] = function (k, lst) {
     }
     return false;
 }
-exports["assq"] = function (k, lst) {
+
+export function assq(k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
 	if (Core.isEq(k, lst.hd.hd)) {
 	    return lst.hd;
@@ -904,7 +174,8 @@ exports["assq"] = function (k, lst) {
     }
     return false;
 }
-exports["assf"] = function (f, lst) {
+
+export function assf(f, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
 	if (f(lst.hd.hd)) {
 	    return lst.hd;
@@ -914,193 +185,93 @@ exports["assf"] = function (f, lst) {
     return false;
 }
 
-var flatten = exports["flatten"] = function (lst) {
-    if (Core.Pair.isEmpty(lst)) {
-        return lst;
-    } else if (Core.Pair.check(lst)) {
-        return append(flatten(lst.hd), flatten(lst.tl));
-    } else {
-        return list(lst);
-    }
-};
+// Bytes (ported to kernel.rkt. Here for regexp stuff)
 
-exports["current-seconds"] = function() {
-    return Math.floor(Date.now() / 1000);
-}
-
-exports["sqr"] = function (v) {
-    return v * v;
-}
-
-exports["remainder"] = function (a, b) {
-    return a % b;
-}
-
-exports["compose"] = function (...procs) {
-    return function () {
-	let result = Core.argumentsToArray(arguments);
-	for (let p of procs.reverse()) {
-	    result = p.apply(null, result);
-	    if (Core.Values.check(result)) {
-		result = result.getAll();
-	    } else {
-		result = [result]
-	    }
-	}
-	if (result.length === 1) {
-	    return result[0];
-	} else {
-	    return Core.Values.make(result);
-	}
-    }
-}
-
-exports["compose1"] = function(...procs) {
-    return function (v) {
-	let result = v;
-	for (let p of procs.reverse()) {
-	    result = p(result);
-	}
-	return result;
-    }
-}
-
-// Continuation Marks
-
-exports["current-continuation-marks"] = function () {
-    return Core.Marks.getFrames();
-}
-
-exports["continuation-mark-set->list"] = function (markSet, key) {
-    return Core.Marks.getMarks(markSet, key);
-}
-
-exports["continuation-mark-set-first"] = function (markSet, keyV, noneV, promptTag) {
-    //TODO: implement promptTag
-    var markSet = markSet || Core.Marks.getFrames();
-    var marks = Core.Marks.getMarks(markSet, keyV);
-    if (Core.Pair.isEmpty(marks)) {
-	return noneV;
-    } else {
-	return marks.hd;
-    }
-}
-
-exports["make-parameter"] = makeParameter;
-
-// bytes
-
-var isBytes = exports["bytes?"] = function (bs) {
+function isBytes(bs) {
     return bs instanceof Uint8Array;
 }
 
-var utf8ToString = exports["bytes->string/utf-8"] = function (bs) {
-    if (!exports["bytes?"](bs)) {
+function utf8ToString(bs) {
+    if (!isBytes(bs)) {
     	throw Core.racketContractError("expected bytes");
     }
     return String.fromCharCode.apply(null,bs);
 }
 
-var stringToUtf8 = exports["string->bytes/utf-8"] = function (str) {
+function stringToUtf8(str) {
     if (!(typeof str) == 'string') {
     	throw Core.racketContractError("expected string");
     }
      return new Uint8Array(Array.prototype.map.call(str,(x)=>x.charCodeAt(0)));
  }
 
- // Regexp
+// Regexp
 
- // TODO: both regexps and pregexps currently compile to js regexps,
- //       but js doesnt support posix patterns
-var isRegExp =  exports["regexp?"] = function (x) {
-     return x instanceof RegExp;
- }
+// TODO: both regexps and pregexps currently compile to js regexps,
+//       but js doesnt support posix patterns
+export function isRegExp(x) {
+    return x instanceof RegExp;
+}
 
-exports["pregexp?"] = function (x) {
-     return x instanceof RegExp;
- }
+export function isPRegExp(x) {
+    return x instanceof RegExp;
+}
 
-exports["byte-regexp?"] = function (x) {
-     return x instanceof RegExp;
- }
+export function isByteRegExp(x) {
+    return x instanceof RegExp;
+}
 
-exports["byte-pregexp?"] = function (x) {
-     return x instanceof RegExp;
- }
+export function isBytePRegExpx(x) {
+    return x instanceof RegExp;
+}
 
- // TODO: support optional handler arg
-exports["regexp"] = function (str) {
+// TODO: support optional handler arg
+export function regexp(str) {
     if ((typeof str) !== 'string') {
     	throw Core.racketContractError("expected string");
     }
     return new RegExp(str);
 }
-exports["pregexp"] = function (str) {
+
+export function pregexp (str) {
     if ((typeof str) !== 'string') {
     	throw Core.racketContractError("expected string");
     }
     return new RegExp(str);
 }
-exports["byte-regexp"] = function (bs) {
-    if (isBytes(bs)) {
-    	throw Core.racketContractError("expected bytes");
-    }
-    return new RegExp(utf8ToString(bs));
-}
-exports["byte-pregexp"] = function (bs) {
+
+export function byteRegExp(bs) {
     if (isBytes(bs)) {
     	throw Core.racketContractError("expected bytes");
     }
     return new RegExp(utf8ToString(bs));
 }
 
- exports["regexp-match"] = function (p, i) {
-     var is_rx_p = isRegExp(p);
-     var is_bytes_p = isBytes(p);
-     var is_bytes_i = isBytes(i);
-     var is_str_p = (typeof p) === 'string';
-     var is_str_i = (typeof i) === 'string';
+export function bytePRegExp(bs) {
+    if (isBytes(bs)) {
+    	throw Core.racketContractError("expected bytes");
+    }
+    return new RegExp(utf8ToString(bs));
+}
 
-     if (!(is_rx_p || is_bytes_p || is_str_p) && !(is_bytes_i || is_str_i)) {
-	 throw Core.racketContractError("expected regexp, string or byte pat,"
+export function regexpMatch(p, i) {
+    var is_rx_p = isRegExp(p);
+    var is_bytes_p = isBytes(p);
+    var is_bytes_i = isBytes(i);
+    var is_str_p = (typeof p) === 'string';
+    var is_str_i = (typeof i) === 'string';
+
+    if (!(is_rx_p || is_bytes_p || is_str_p) && !(is_bytes_i || is_str_i)) {
+	throw Core.racketContractError("expected regexp, string or byte pat,"
 				       + " and string or byte input");
-     }
-     var str = is_str_i ? i : utf8ToString(i);
-     var pat = is_rx_p ? p : (is_str_p ? p : utf8ToString(p));
-     var res = str.match(pat);
-     if (res === null) return false;
-     else if ((is_str_p || is_rx_p) && is_str_i) { // result as list of strs
-	 return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : x));
-     } else { // result as list of bytes
-	 return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : stringToUtf8(x)));
-     }
-	
+    }
+    var str = is_str_i ? i : utf8ToString(i);
+    var pat = is_rx_p ? p : (is_str_p ? p : utf8ToString(p));
+    var res = str.match(pat);
+    if (res === null) return false;
+    else if ((is_str_p || is_rx_p) && is_str_i) { // result as list of strs
+	return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : x));
+    } else { // result as list of bytes
+	return Core.Pair.listFromArray(res.map((x)=>(x === undefined) ? false : stringToUtf8(x)));
+    }
 }
-
-/* --------------------------------------------------------------------------*/
-// procedure
-exports["procedure?"] = function (f) {
-    return typeof(f) === 'function';
-}
-exports["procedure-arity-includes?"] = function (f) {
-    return true;
-}
-exports["procedure-arity"] = function (f) {
-    return f.length;
-}
-exports["eval-jit-enabled"] = function (f) { return true; }
-
-// TODO: add other types of sequences
-// TODO: HO use of sequence fns, eg in-list, not supported yet
-exports["make-sequence"] = function (who, v) {
-    return Core.Values.make([exports["car"],   // pos -> vals
-		     // uncomment pre-pos-next arg if using Racket >= 6.7.0.4
-			     //false,            // pre-pos-next
-			     exports["cdr"],   // pos-next
-			     v,                // init
-			     exports["pair?"], // pos-cont?
-			     false,            // val-cont?
-			     false]);          //all-cont?
-}
-
-exports["variable-reference-constant?"] = function (x) { return false; }

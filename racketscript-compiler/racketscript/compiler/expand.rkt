@@ -173,7 +173,8 @@
     [(#%plain-lambda formals . body)
      (define fabsyn (formals->absyn #'formals))
      (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
-    [(define-values (name) (#%plain-app (~datum #%js-ffi) (~datum 'require) 'mod))
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote require) (quote mod:str)))
      ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod))]
     [(define-values (id ...) b)
@@ -338,7 +339,7 @@
   (read-syntax (object-name input) input))
 
 (define (open-read-module in-path)
-  (call-with-input-file in-path
+  (call-with-input-file (actual-module-path in-path)
     (λ (in)
       (read-module in))))
 
@@ -346,7 +347,7 @@
   (log-rjs-info "[expand] ~a" in-path)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  (define full-path (path->complete-path in-path))
+  (define full-path (path->complete-path (actual-module-path in-path)))
   (parameterize ([current-directory (path-only full-path)])
     (do-expand (open-read-module in-path) in-path)))
 

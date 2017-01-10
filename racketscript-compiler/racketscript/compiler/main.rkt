@@ -62,16 +62,6 @@
                         "closure-compiler"))
 (define js-target (make-parameter "traceur"))
 
-(define-runtime-path racketscript-main-module ".")
-
-;; Path
-;; Root directory of Racketscript project
-(define racketscript-dir
-  (~> racketscript-main-module
-      (path-only _)
-      (build-path _ "..")
-      (simplify-path _)))
-
 ;; Path-String -> Path
 ;; Return path of support file named f
 (define (support-file f)
@@ -216,33 +206,6 @@
                   (string->symbol _)))
             (regexp-match* #rx"exports\\[\"([^\"\\]|\\.)*\"\\]" in))))))
 
-(define (generate-stub-module mod)
-  (parameterize ([current-source-file mod])
-    (define js-mod-file (build-path (output-directory)
-                                "runtime"
-                                (substring (~a mod ".js") 2)))
-    (define idents (read-js-exports js-mod-file))
-    (define ilmod
-      (ILModule #f
-                (map ILSimpleProvide idents)
-                (list (ILRequire (build-path "./" (substring (~a mod ".js") 2))
-                                 '$$mod
-                                 '*))
-                (append
-                 (list
-                  (ILVarDec '$$ (ILRef '$$mod 'exports)))
-                 (for/list ([id idents])
-                   (ILVarDec id (ILIndex '$$ (ILValue (symbol->string id))))))))
-
-    (define output-fpath (build-path (output-directory)
-                                     "runtime"
-                                     (substring (~a mod ".rkt.js") 2)))
-
-    (call-with-output-file output-fpath
-      #:exists 'replace
-      (λ (out)
-        (assemble-module ilmod out)))))
-
 ;; -> Void
 ;; For given global parameters starts build process starting
 ;; with entry point module and all its dependencies
@@ -256,14 +219,14 @@
       (enqueue! pending mod)))
 
   (put-to-pending! (path->complete-path (main-source-file)))
+  (put-to-pending! '#%kernel)
+  (put-to-pending! '#%unsafe)
+  (put-to-pending! '#%paramz)
 
   (let loop ()
     (cond
       [(queue-empty? pending)
-       (log-rjs-info "Writing stub modules.")
-       (generate-stub-module '#%kernel)
-       (generate-stub-module '#%unsafe)
-       (generate-stub-module '#%paramz)
+       (log-rjs-info "Compiling ES6 to ES5.")
        (es6->es5)
        (log-rjs-info "Finished.")]
       [else
@@ -272,7 +235,7 @@
 
        (define expanded (quick-expand next))
        (define renamed (freshen expanded))
-       (define ast (convert renamed (build-path next)))
+       (define ast (convert renamed (override-module-path next)))
 
        ;; build directories to output build folder.
        ;; TODO: Making directories after expanding and converting is weird
@@ -388,9 +351,8 @@
        ;; need stdin from playground, its fine for now.
        ;; TODO: Figure out a way to compile this syntax to
        ;; module code bytecode
-       (global-export-graph (get-export-tree (build-path
-                                              (path-only racketscript-main-module)
-                                              "nothing.rkt")))
+       (global-export-graph (get-export-tree (build-path racketscript-compiler-dir
+                                                         "nothing.rkt")))
        (read-and-expand-module (current-input-port))]
       [else
        (quick-expand source)]))

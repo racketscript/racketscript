@@ -73,7 +73,6 @@
        (when (ILBinaryOp? arg) (emit ")"))
        (unless last?
          (emit (~a oper))))]
-    [(ILValue v) (assemble-value v out)]
     [(ILRef e s)
      (cond
        [(symbol? e) (emit (normalize-symbol e))]
@@ -109,10 +108,22 @@
                 (unless last?
                   (emit ",")))
      (emit "}")]
-    [(ILInstanceOf expr)
-     (emit "instanceof(")
+    [(ILInstanceOf expr type)
+     ;;TODO: Remove parens
+     (emit "(")
+     (assemble-expr expr out)
+     (emit ") instanceof (")
+     (assemble-expr type out)
+     (emit ")")]
+    [(ILTypeOf expr)
+     (emit "typeof(")
      (assemble-expr expr out)
      (emit ")")]
+    [(ILValue v) (assemble-value v out)]
+    [(ILNull)
+     (emit "null")]
+    [(ILUndefined)
+     (emit "undefined")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
@@ -459,6 +470,16 @@
                        (ILBinaryOp '+ (list 'i 'j)))
               "arr[i+1][i+j]"
               "successive indexing")
+  (check-expr (ILBinaryOp '+ '(a b))
+              "a+b"
+              "binary op")
+  (check-expr (ILBinaryOp '\|\| '(a b))
+              "a||b"
+              "binary op")
+  (check-expr (ILBinaryOp '\|\| (list (ILBinaryOp '&& '(a b))
+                                    (ILBinaryOp '&& '(c d))))
+              "(a&&b)||(c&&d)"
+              "nested binary ops")
 
     ;;; ILRef -------------------------------------------------------------------
 
@@ -505,8 +526,8 @@
               "[1,\"1\",{}]")
 
   ;; Instanceof
-  (check-expr (ILInstanceOf (ILValue 1))
-              "instanceof(1)")
+  (check-expr (ILInstanceOf (ILValue 1) (ILValue 2))
+              "(1) instanceof (2)")
 
   ;;; Statements --------------------------------------------------------------
 

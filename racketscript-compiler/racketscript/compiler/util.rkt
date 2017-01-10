@@ -1,13 +1,16 @@
 #lang typed/racket/base
 
-(require racket/match
-         racket/list
-         racket/format
-         racket/path
-         racket/string
+(require (for-syntax racket/base)
+         anaphoric
          racket/file
+         racket/format
+         racket/list
+         racket/match
+         racket/path
+         racket/sequence
+         racket/set
+         racket/string
          typed/rackunit
-         (for-syntax racket/base)
          "config.rkt"
          "util-untyped.rkt")
 
@@ -35,12 +38,16 @@
          collects-module?
          module-output-file
          module->relative-import
+         actual-module-path
          jsruntime-import-path
          path-parent
          length=?
          string-slice
          log
          converge
+         override-module-path
+         primitive-module?
+         primitive-module-path?
          ++)
 
 (: fresh-id-counter (Parameter Nonnegative-Integer))
@@ -237,14 +244,50 @@
 
 ;;; Module path renaming ------------------------------------------------------
 
+(: actual-module-path (-> (U Path Symbol) Path))
+(define (actual-module-path in-path)
+  (cond
+    [(path? in-path) in-path]
+    [(and (symbol? in-path) (primitive-module? in-path))
+     (build-path racketscript-runtime-dir
+                 (~a (substring (symbol->string in-path) 2) ".rkt"))]
+    [else (error 'actual-module-path "~a is not a primtive module" in-path)]))
+
+
+(: primitive-module? (-> (U Path Symbol) Boolean))
+(define (primitive-module? mod)
+  (set-member? primitive-modules mod))
+
+(: primitive-module-path? (-> Path (Option Symbol)))
+(define (primitive-module-path? mod-path)
+  (let* ([primitive-modules-paths : (Listof (Pairof Path Symbol))
+                                  (set-map primitive-modules
+                                           (λ ([m : Symbol])
+                                             (cons (actual-module-path m) m)))]
+         [result (assoc mod-path primitive-modules-paths)])
+    (if (pair? result)
+        (cdr result)
+        #f)))
+
+(: override-module-path (-> (U Path Symbol) Path))
+(define (override-module-path mod)
+  (if (symbol? mod)
+      (build-path racketscript-runtime-dir
+                  (~a (substring (symbol->string mod) 2) ".rkt"))
+      mod))
+
 (: module-output-file (-> (U Path Symbol) Path))
 (define (module-output-file mod)
   (match (module-kind mod)
     [(list 'primitive mod-path)
      ;; Eg. #%kernel, #%utils ...
-     (path->complete-path (build-path (output-directory)
-                                      "runtime"
-                                      (substring (symbol->string mod-path) 2)))]
+     (path->complete-path
+      (build-path (output-directory)
+                  "runtime"
+                  (~a (substring (symbol->string mod-path) 2) ".rkt.js")))]
+    [(list 'runtime rel-path)
+     (path->complete-path
+      (build-path (output-directory) "runtime" (~a rel-path ".js")))]
     [(list 'collects base rel-path)
      (path->complete-path
       (build-path (output-directory) "collects" (~a rel-path ".js")))]
@@ -272,11 +315,14 @@
     (if (string-prefix? p-str "..")
         p
         (build-path (~a "./" p-str))))
-  (let ([src (assert (current-source-file) path?)])
-    (fix-for-down
-     (cast (find-relative-path (path-parent (module-output-file src))
-                               (module-output-file mod-path))
-           Path))))
+
+  (let ([src (current-source-file)])
+    (if src
+        (fix-for-down
+         (cast (find-relative-path (path-parent (module-output-file src))
+                                   (module-output-file mod-path))
+               Path))
+         (error 'module->relative-import "current-source-file is #f"))))
 
 (: collects-module? (-> Path (Option Path)))
 (define (collects-module? mod-path)
@@ -288,27 +334,31 @@
            ch
            (loop ct))])))
 
+(: runtime-module? (-> Path (Option Path)))
+(define (runtime-module? mod-path)
+  (and (string-prefix? (~a mod-path) (~a racketscript-runtime-dir))
+       (cast (find-relative-path racketscript-runtime-dir mod-path) Path)))
 
 (: module-kind (-> (U Symbol Path)
                    (U (List 'collects  Path Path)
                       (List 'links     String Path Path)
                       (List 'primitive Symbol)
+                      (List 'runtime   Path)
                       (List 'general   Path))))
 (define (module-kind mod-path)
-  (if (symbol? mod-path)
-      (list 'primitive mod-path)
-      (let ([collects-base (collects-module? mod-path)])
-        (if collects-base
-            (list 'collects
-                  collects-base
-                  (cast (find-relative-path collects-base mod-path) Path))
-            (let ([links-result (links-module? mod-path)])
-              (if links-result
-                  (list 'links
-                        (car links-result)   ;; name
-                        (cadr links-result)  ;; root-path to links
-                        (cast (find-relative-path (cadr links-result) mod-path) Path))
-                  (list 'general mod-path)))))))
+  (acond
+    [(symbol? mod-path) (list 'primitive mod-path)]
+    [(runtime-module? mod-path) (list 'runtime it)]
+    [(collects-module? mod-path)
+     (list 'collects
+           it
+           (cast (find-relative-path it mod-path) Path))]
+    [(links-module? mod-path)
+     (list 'links
+           (car it)
+           (cadr it)
+           (cast (find-relative-path (cadr it) mod-path) Path))]
+    [else (list 'general mod-path)]))
 
 (: converge (∀ [X] (-> (-> X X) X X)))
 (define (converge fn init-val)
@@ -319,8 +369,6 @@
           (loop new-val)))))
 
 ;;; ---------------------------------------------------------------------------
-
-(require racket/sequence)
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()
