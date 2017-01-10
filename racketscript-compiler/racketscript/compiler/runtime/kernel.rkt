@@ -28,11 +28,11 @@
 (define-syntax *null*       (make-rename-transformer #'$/null))
 (define-syntax *undefined*  (make-rename-transformer #'$/undefined))
 
-(define-syntax (define-binop stx)
-  (syntax-parse stx
+(define-syntax define-binop
+  (syntax-parser
     [(_ name:id oper:id)
-     #`(define-syntax (name stx)
-         (syntax-parse stx
+     #`(define-syntax name
+         (syntax-parser
            [(op e0:expr e1:expr) #`(binop oper e0 e1)]
            [(op e0:expr e1:expr en:expr ...+)
             #'(op (binop oper e0 e1) en (... ...))]))]))
@@ -40,10 +40,10 @@
 (define-binop and &&)
 (define-binop or \|\|)
 
-(define-syntax (introduce-id stx)
-  (syntax-parse stx
-    [(_ id:id) #'(define-syntax (id stx)
-                   (syntax-parse stx
+(define-syntax introduce-id
+  (syntax-parser
+    [(_ id:id) #'(define-syntax id
+                   (syntax-parser
                      [(_ e0 (... ...)) #'(($ 'id) e0 (... ...))]
                      [_:id #'($ 'id)]))]))
 
