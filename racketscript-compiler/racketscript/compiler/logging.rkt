@@ -1,19 +1,34 @@
 #lang racket/base
 
 (require "config.rkt"
-         (for-syntax racket/base))
+         (for-syntax syntax/parse
+                     racket/base
+                     racket/syntax)
+         (for-meta 2 syntax/parse))
 
-(provide log-rjs-info)
+(provide log-rjs-info
+         log-rjs-debug
+         log-rjs-warning
+         log-rjs-error)
 
-(define-syntax (log-rjs-info stx)
-  (syntax-case stx ()
-    [(_ a0 a* ...)
-     #'(when (logging?)
-         (begin (printf "[info]")
-                (unless (equal? (string-ref a0 0) #\[)
-                  (printf " "))
-                (printf a0 a* ...)
-                (printf "\n")))]))
+(define-syntax log-rjs
+  (syntax-parser
+    [(_ kind:id)
+     #:with name (format-id #'kind "log-rjs-~a" (syntax-e #'kind) #:source #'kind)
+     #:with str (symbol->string (syntax-e #'kind))
+     (syntax (define-syntax name
+               (syntax-parser
+                 [(_ a0 a* (... ...))
+                  #'(when (logging?)
+                      (begin (printf "[~a]" 'str)
+                             (unless (equal? (string-ref a0 0) #\[)
+                               (printf " "))
+                             (printf a0 a* (... ...))
+                             (printf "\n")))])))]))
+(log-rjs info)
+(log-rjs error)
+(log-rjs warning)
+(log-rjs debug)
 
 ;; (define-logger rjs)
 ;; (define rjs-info (make-log-receiver rjs-logger 'info))
