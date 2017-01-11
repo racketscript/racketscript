@@ -75,6 +75,22 @@ export function format(pattern, ...args) {
 }
 
 /* --------------------------------------------------------------------------*/
+/* Arity */
+
+export function attachProcedureArity(fn, arity) {
+    if (arity === undefined || typeof arity === 'number' && arity >= 0) {
+	fn.__rjs_lambdaType = 'variadic';
+	fn.__rjs_arityValue = arity || fn.length;
+    } else if (Array.isArray(arity)) {
+	fn.__rjs_lambdaType = 'case-lambda';
+	fn.__rjs_arityValue = arity;
+    } else {
+	throw racketCoreError("invalid arity provided");
+    }
+    return fn;
+}
+
+/* --------------------------------------------------------------------------*/
 /* Errors */
 
 function makeError(name) {

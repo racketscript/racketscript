@@ -811,13 +811,24 @@
 ;; --------------------------------------------------------------------------
 ;; Procedures
 
+(provide (struct-out kernel:arity-at-least))
+(struct kernel:arity-at-least (value)
+  #:extra-constructor-name make-arity-at-least
+  #:transparent)
+
 (define+provide (procedure? f)
   (typeof f "function"))
 
 (define+provide (procedure-arity-includes? f) #t)
 
-(define+provide (procedure-arity f)
-  #js.f.length)
+(define+provide (procedure-arity fn)
+  (define lambda-type #js.fn.__rjs_lambdaType)
+  (cond
+    [(binop === lambda-type "variadic")
+     (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length))]
+    [(binop === lambda-type "case-lambda")
+     (error 'procedure-arity "unimplemented")]
+    [else #js.fn.length]))
 
 (define+provide (eval-jit-enabled) #t)
 

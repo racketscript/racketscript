@@ -42,6 +42,8 @@ export {
     argumentsToArray,
     argumentsSlice,
 
+    attachProcedureArity,
+
     racketCoreError,
     racketContractError
 } from "./core/lib.js";

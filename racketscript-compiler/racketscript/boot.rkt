@@ -10,10 +10,13 @@
              #%app
              #%top
              #%datum
+
              require
              provide
              for-syntax
              for-template
+             rename-out
+
              begin-for-syntax
              quote
              if
@@ -41,6 +44,10 @@
              or
              and
              not
+
+             struct
+             struct-out
+
              (for-syntax (all-from racket/base))
              (all-from "interop.rkt"))
   #;end)

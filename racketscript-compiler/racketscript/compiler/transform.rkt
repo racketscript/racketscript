@@ -232,19 +232,13 @@
           (define fi (car formals))
           (define fp (cdr formals))
           (define fi-len (length fi))
-          (values
-           '()
-           (append1
-            (map (λ ([i : Natural] [f : Symbol])
-                   (ILVarDec f (ILIndex 'arguments (ILValue i))))
-                 (range fi-len)
-                 fi)
-            (ILVarDec fp
-                      (->jslist
-                       (ILApp
-                        (name-in-module 'core 'argumentsSlice)
-                        (list arguments-array
-                              (ILValue fi-len)))))))]))
+          (values fi
+                  (list (ILVarDec fp
+                                  (->jslist
+                                   (ILApp
+                                    (name-in-module 'core 'argumentsSlice)
+                                    (list arguments-array
+                                          (ILValue fi-len)))))))]))
 
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
@@ -256,11 +250,16 @@
                           (values (append stms s) v)
                           (values (append stms s (list v)) v))))
 
+     (define variadic-lambda? (not (list? formals)))
+     (define lambda-expr (ILLambda il-formals
+                                   (append stms-formals-init
+                                           body-stms
+                                           (list (ILReturn body-value)))))
      (values '()
-             (ILLambda il-formals
-                       (append stms-formals-init
-                               body-stms
-                               (list (ILReturn body-value)))))]
+             (if variadic-lambda?
+                 (ILApp (name-in-module 'core 'attachProcedureArity)
+                        (list lambda-expr))
+                 lambda-expr))]
 
     [(CaseLambda clauses)
      (absyn-expr->il (expand-case-lambda expr) #f)]
@@ -678,17 +677,20 @@
                 (ILLambda '(x) (list (ILReturn 'x))))
   (check-ilexpr (PlainLambda 'x (LI* 'x))
                 '()
-                (ILLambda
-                 '()
+                (ILApp
+                 (name-in-module 'core 'attachProcedureArity)
                  (list
-                  (ILVarDec
-                   'x
-                   (ILApp
-                    (name-in-module 'core 'Pair.listFromArray)
-                    (list
-                     (ILApp (name-in-module 'core 'argumentsToArray)
-                            '(arguments)))))
-                  (ILReturn 'x))))
+                  (ILLambda
+                   '()
+                   (list
+                    (ILVarDec
+                     'x
+                     (ILApp
+                      (name-in-module 'core 'Pair.listFromArray)
+                      (list
+                       (ILApp (name-in-module 'core 'argumentsToArray)
+                              '(arguments)))))
+                    (ILReturn 'x))))))
   ;; If expressions
 
   (check-ilexpr (If (Quote #t) (Quote 'yes) (Quote 'no))
