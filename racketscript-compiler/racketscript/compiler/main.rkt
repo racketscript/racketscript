@@ -255,6 +255,12 @@
   (define added (mutable-set))
   (define pending (make-queue))
 
+  ;; build directories to output build folder.
+  (define default-module-name (string-slice (~a (last-path-element
+                                                 (main-source-file)))
+                                            0 -4))
+  (prepare-build-directory default-module-name)
+
   (define (put-to-pending! mod)
     (unless (set-member? added mod)
       (set-add! added mod)
@@ -275,17 +281,12 @@
        (loop)]
       [next
        (current-source-file next)
+       (make-directory* (path-only (module-output-file next)))
        (save-module-timestamp! timestamps next)
 
        (define expanded (quick-expand next))
        (define renamed (freshen expanded))
        (define ast (convert renamed (override-module-path next)))
-
-       ;; build directories to output build folder.
-       ;; TODO: Making directories after expanding and converting is weird
-       (when (equal? next (main-source-file))
-         (prepare-build-directory (~a (Module-id ast))))
-       (make-directory* (path-only (module-output-file next)))
 
        (assemble-module (absyn-module->il* ast) #f)
 
