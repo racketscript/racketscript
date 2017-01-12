@@ -827,7 +827,9 @@
     [(binop === lambda-type "variadic")
      (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length))]
     [(binop === lambda-type "case-lambda")
-     (error 'procedure-arity "unimplemented")]
+     (if (binop === #js.fn.__rjs_arityValue.length 1)
+         ($ #js.fn.__rjs_arityValue 0)
+         (#js.Core.Pair.listFromArray #js.fn.__rjs_arityValue))]
     [else #js.fn.length]))
 
 (define+provide (eval-jit-enabled) #t)

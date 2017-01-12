@@ -91,3 +91,12 @@
   [Formals      Symbol
                 (Listof Symbol)
                 (Pairof (Listof Symbol) Symbol)])
+
+
+(: lambda-arity (-> PlainLambda (U Natural arity-at-least)))
+(define (lambda-arity f)
+  (define frmls (PlainLambda-formals f))
+  (cond
+    [(symbol? frmls) (arity-at-least 0)]
+    [(list? frmls) (length frmls)]
+    [(pair? frmls) (arity-at-least (length (car frmls)))]))

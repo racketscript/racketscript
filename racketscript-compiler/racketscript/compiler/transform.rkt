@@ -11,6 +11,7 @@
          racket/set
          racket/syntax
          threading
+         anaphoric
          "config.rkt"
          "global.rkt"
          "logging.rkt"
@@ -262,7 +263,32 @@
                  lambda-expr))]
 
     [(CaseLambda clauses)
-     (absyn-expr->il (expand-case-lambda expr) #f)]
+     (define-values (fixed-lams rest-lams)
+       (if (case-lambda-has-dead-clause? expr)
+           (begin (log-rjs-warning "found a case-lambda with dead-clause")
+                  (values '() clauses))
+           (values (filter (λ ([l : PlainLambda])
+                             (number? (lambda-arity l)))
+                           clauses)
+                   (filter (λ ([l : PlainLambda])
+                             (not (number? (lambda-arity l))))
+                           clauses))))
+
+     (define-values (stms val) (expand-normal-case-lambda fixed-lams rest-lams))
+
+     (define arities
+       (ILArray
+        (for/list ([c (resolve-procedure-arities (map lambda-arity clauses))])
+          (match c
+            [(arity-at-least v)
+             (define-values (_ val)
+               (absyn-expr->il
+                (PlainApp (ImportedIdent 'make-arity-at-least '#%kernel) (list (Quote v)))
+                #f))
+             val]
+            [(? number? val) (ILValue val)]))))
+
+     (values stms (ILApp (name-in-module 'core 'attachProcedureArity) (list val arities)))]
 
     [(If pred-e t-branch f-branch)
      (define-values (ps pe) (absyn-expr->il pred-e #f))
@@ -571,21 +597,122 @@
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
 
-(: expand-case-lambda (-> CaseLambda PlainLambda))
-(define (expand-case-lambda clam)
-  (define args (fresh-id 'args))
-  (define apply-js-name (ImportedIdent 'apply '#%kernel))
-  (: body Expr)
-  (define body
-    (let loop : Expr ([clauses* (CaseLambda-clauses clam)])
-         (match clauses*
-           ['() (PlainApp (ImportedIdent 'error '#%kernel)
-                          (list (Quote "case-lambda: invalid case")))]
-           [(cons hd tl)
-            (If ((get-formals-predicate hd) (LocalIdent args))
-                (PlainApp apply-js-name (list hd (LocalIdent args)))
-                (loop tl))])))
-  (PlainLambda args (list body)))
+(: expand-normal-case-lambda (-> (Listof PlainLambda)
+                                 (Listof PlainLambda)
+                                 (Values ILStatement* ILExpr)))
+(define (expand-normal-case-lambda fixed-lams rest-lams)
+  (define fixed-lam-names : (Listof Symbol)
+    (build-list (length fixed-lams) (λ (_) (fresh-id 'cl))))
+  (define rest-lam-names : (Listof Symbol)
+    (build-list (length rest-lams) (λ (_) (fresh-id 'cl))))
+
+  (define fixed-lam-name (fresh-id 'fixed-lam))
+  (define fixed-lam-map
+    (ILObject (map (λ ([id : Symbol] [lam : PlainLambda])
+                     (let ([arity (lambda-arity lam)])
+                       (if (number? arity)
+                           (cons (string->symbol (~a arity)) id)
+                           (error 'expand-normal-case-lambda "assertion failed"))))
+                   fixed-lam-names fixed-lams)))
+
+  (define *null* (PlainApp (ImportedIdent '#%js-ffi '#%kernel) (list (Quote 'null))))
+
+  (define-values (var-lam-stms var-lam-val)
+    (absyn-expr->il
+     (let loop : Expr ([lams*   rest-lams]
+                       [names*  rest-lam-names])
+          (match (list lams* names*)
+            [(list '() '()) (PlainApp (ImportedIdent 'error '#%kernel)
+                                      (list (Quote "case-lambda: invalid case")))]
+            [(list (cons lh lt) (cons nh nt))
+             (define arguments-length (PlainApp (ImportedIdent '#%js-ffi '#%kernel)
+                                                (list (Quote 'ref)
+                                                      (LocalIdent nh)
+                                                      (Quote 'length))))
+             (If ((get-formals-predicate lh) arguments-length)
+                 (PlainApp (PlainApp (ImportedIdent '#%js-ffi '#%kernel)
+                                     (list (Quote 'ref)
+                                           (LocalIdent nh)
+                                           (Quote 'apply)))
+                           (list *null* (LocalIdent 'arguments)))
+                 (loop lt nt))]))
+     #f))
+
+  ;; TODO: We can avoid using apply here.
+  (define dispatch-stms
+    (list (ILVarDec fixed-lam-name (ILIndex fixed-lam-map (ILRef 'arguments 'length)))
+          (ILIf (ILBinaryOp '!== (list fixed-lam-name (ILUndefined)))
+                (list (ILReturn
+                       (ILApp (ILRef fixed-lam-name 'apply)
+                              (list (ILNull) 'arguments))))
+                (append1 var-lam-stms
+                         (ILReturn var-lam-val)))))
+
+  (let ([make-lam (λ ([id : Symbol] [lam : PlainLambda])
+                    (define-values (stms lam-expr) (absyn-expr->il lam #f))
+                    (assert stms empty?)
+                    (ILVarDec id lam-expr))])
+    (values (append (map make-lam fixed-lam-names fixed-lams)
+                    (map make-lam rest-lam-names rest-lams))
+            (ILLambda '() dispatch-stms))))
+
+(: case-lambda-has-dead-clause? (-> CaseLambda Boolean))
+;; Returns true if the given case-lambda has an unreachable clause.
+;; Eg. (case-lambda
+;;       [(a . b) "take at-least 1"]
+;;       [(a b) "take exactly 2"])
+(define (case-lambda-has-dead-clause? clam)
+  (define-values (result _)
+    (for/fold : (Values Boolean Number)
+              ([res : Boolean #f]
+               [least-var-arity : Real +inf.0])
+              ([lam (CaseLambda-clauses clam)])
+      (let ([arity (lambda-arity lam)])
+        (cond
+          [(and (number? arity) (< arity least-var-arity))
+           (values res least-var-arity)]
+          [(number? arity)
+           (values #t least-var-arity)]
+          [(and (arity-at-least? arity)
+                (< (arity-at-least-value arity) least-var-arity))
+           (values res (arity-at-least-value arity))]
+          [(arity-at-least? arity)
+           (values #t least-var-arity)]))))
+  result)
+(module+ test
+  (check-false (case-lambda-has-dead-clause?
+                (CaseLambda
+                 (list
+                  (PlainLambda '(a) '())
+                  (PlainLambda '(a b) '())
+                  (PlainLambda '((a) . c) '()))))
+               "all clauses are reachable")
+  (check-false (case-lambda-has-dead-clause?
+                (CaseLambda
+                 (list
+                  (PlainLambda '((a b c) . d) '())
+                  (PlainLambda '(a b) '()))))
+               "all clauses are reachable")
+  (check-true (case-lambda-has-dead-clause?
+               (CaseLambda
+                (list
+                 (PlainLambda '((a b c) . d) '())
+                 (PlainLambda '(a b c) '()))))
+              "last clauses is unreachable")
+  (check-true (case-lambda-has-dead-clause?
+               (CaseLambda
+                (list
+                 (PlainLambda '(() . a) '())
+                 (PlainLambda '((a) . c) '())
+                 (PlainLambda '(a b) '()))))
+              "second and third clause are unreachable")
+  (check-true (case-lambda-has-dead-clause?
+               (CaseLambda
+                (list
+                 (PlainLambda '(a) '())
+                 (PlainLambda '((a) . c) '())
+                 (PlainLambda '(a b) '()))))
+              "third clause is unreachable"))
 
 (: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
 (define (get-formals-predicate c)
@@ -598,17 +725,47 @@
      (λ ([v : Expr])
        (PlainApp (ImportedIdent 'equal? '#%kernel)
                  (list
-                  (PlainApp length-js-name (list v))
+                  v
                   (Quote (length frmls)))))]
     [(cons? frmls)
      (λ ([v : Expr])
        (PlainApp (ImportedIdent '>= '#%kernel)
                  (list
-                  (PlainApp length-js-name (list v))
+                  v
                   (Quote (sub1
                           (length
                            (improper->proper frmls)))))))]))
 
+(define-type ProcedureArity (U arity-at-least Exact-Nonnegative-Integer))
+(: resolve-procedure-arities (-> (Listof ProcedureArity)
+                                 (Listof ProcedureArity)))
+(define (resolve-procedure-arities arities)
+  (: arity< (-> ProcedureArity ProcedureArity Boolean))
+  (define (arity< a b)
+    (< (if (arity-at-least? a)
+           (arity-at-least-value a)
+           a)
+       (if (arity-at-least? b)
+           (arity-at-least-value b)
+           b)))
+
+  (: arity-equal? (-> ProcedureArity ProcedureArity Boolean))
+  (define (arity-equal? a b)
+    (and (not (arity< a b))
+         (not (arity< b a))))
+
+  (let loop ([arities* (sort arities arity<)]
+             [result : (Listof ProcedureArity) '()])
+    (match arities*
+      ['() (reverse result)]
+      [(cons (and (arity-at-least v) hd) tl)
+       (reverse (if (and (cons? result) (arity-equal? (car result) hd))
+                    (cons hd (cdr result))
+                    (cons hd result)))]
+      [(cons hd tl)
+       (loop tl (if (and (cons? result) (arity-equal? (car result) hd))
+                    result
+                    (cons hd result)))])))
 
 (module+ test
   (require typed/rackunit
@@ -761,7 +918,18 @@
 
   ;; Case Lambda
 
-  (check-ilexpr
+  (check-equal? (resolve-procedure-arities '(1 2 3 4))
+                '(1 2 3 4))
+  (check-equal? (resolve-procedure-arities '(1 3 2 6 4))
+                '(1 2 3 4 6))
+  (check-equal? (resolve-procedure-arities
+                 (list 1 2 3 (arity-at-least 3) (arity-at-least 6)))
+                (list 1 2 (arity-at-least 3)))
+  (check-equal? (resolve-procedure-arities
+                 (list 1 2 3 (arity-at-least 6) (arity-at-least 3)))
+                (list 1 2 (arity-at-least 3)))
+
+  #;(check-ilexpr
    (CaseLambda
     (list
      (PlainLambda '(a b) (list (PlainApp (kident 'add)
