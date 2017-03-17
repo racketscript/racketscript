@@ -127,6 +127,7 @@
 (introduce-id Uint8Array)
 (introduce-id Date)
 (introduce-id Array)
+(introduce-id RegExp)
 (introduce-id console)
 
 ;; ----------------------------------------------------------------------------
@@ -798,15 +799,63 @@
 ;; --------------------------------------------------------------------------
 ;; Regexp
 
-(define+provide regexp? #js.Kernel.isRegExp)
-(define+provide pregexp? #js.Kernel.isPRegExp)
-(define+provide byte-regexp? #js.Kernel.isByteRegExp)
-(define+provide byte-pregexp? #js.Kernel.isBytePRegExp)
-(define+provide regexp #js.Kernel.regexp)
-(define+provide pregexp #js.Kernel.pregexp)
-(define+provide byte-regexp #js.Kernel.byteRegExp)
-(define+provide byte-pregexp #js.Kernel.bytePRegExp)
-(define+provide regexp-match #js.Kernel.regexpMatch)
+;; TODO: both regexps and pregexps currently compile to js regexps,
+;;       but js doesnt support posix patterns
+
+(define+provide (regexp? v)
+  (instanceof v RegExp))
+
+(define+provide pregexp? regexp?)
+(define+provide byte-regexp? regexp?)
+(define+provide byte-pregexp? regexp?)
+
+(define+provide (regexp str)
+  (if (typeof str "string")
+      (throw (#js.Core.racketContractError "expected string"))
+      (new (RegExp str))))
+
+(define+provide pregexp regexp)
+
+(define+provide (byte-regexp bs)
+  (if (bytes? bs)
+      (throw (#js.Core.racketContractError "expected bytes"))
+      (new (RegExp (bytes->string/utf-8 bs)))))
+
+(define+provide byte-pregexp byte-regexp)
+
+(define+provide (regexp-match p i)
+  (define rx-p? (regexp? p))
+  (define bytes-p? (bytes? p))
+  (define bytes-i? (bytes? i))
+  (define str-p? (binop === (typeof p) "string"))
+  (define str-i? (binop === (typeof i) "string"))
+
+  (when (and (not (or rx-p? bytes-p? str-p?))
+             (not (or bytes-i? str-i?)))
+    (throw
+     (#js.Core.racketContractError
+      "expected regexp, string or byte pat, and string or byte input")))
+
+  (define str (if str-i? i (bytes->string/utf-8 i)))
+  (define pat (cond
+                [rx-p? p]
+                [str-p? p]
+                [else (bytes->string/utf-8 p)]))
+  (define res (#js.str.match pat))
+  (cond
+    [(binop === res *null*) #f]
+    [(and (or str-p? rx-p?) str-i?)
+     (#js.Core.Pair.listFromArray
+      (#js.res.map (λ (x)
+                     (if (binop === x *undefined*)
+                         #f
+                         x))))]
+    [else
+     (#js.Core.Pair.listFromArray
+      (#js.res.map (λ (x)
+                     (if (binop === x *undefined*)
+                         #f
+                         (string->bytes/utf-8 x)))))]))
 
 ;; --------------------------------------------------------------------------
 ;; Procedures
