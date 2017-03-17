@@ -2,7 +2,7 @@ language: node_js
 
 node_js:
   - "5"
-  #- "6"
+  - "6"
   #- "node"
 
 sudo: false
@@ -12,6 +12,7 @@ env:
     - RACKET_DIR=~/racket
   matrix:
     - RACKET_VERSION=HEAD
+    - RACKET_VERSION=6.8
     - RACKET_VERSION=6.7
     - RACKET_VERSION=6.4
 
@@ -19,6 +20,7 @@ matrix:
   allow_failures:
     - env: RACKET_VERSION=HEAD
     - env: RACKET_VERSION=RELEASE
+    - env: RACKET_VERSION=6.8
     - node_js: "node"
   fast_finish: true
 
