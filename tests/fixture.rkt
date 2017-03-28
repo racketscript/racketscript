@@ -288,5 +288,6 @@
                               "basic"
                               "struct"
                               "hash"
-                              "wcm")))
+                              "wcm"
+                              "modules")))
 
