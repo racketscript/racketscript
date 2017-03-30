@@ -13,9 +13,12 @@
 ;; - stx-id
 ;; - stx-list (xs:id ...)
 ;; - stx-pair (xs:id ...+ . xn)
- 
- (define (freshen* e)
-   (freshen e (make-immutable-free-id-table)))
+
+(define (freshen* e)
+  (parameterize ([current-namespace (make-base-namespace)])
+    ;; NOTE: Make sure current-directory is properly set for this
+    ;; module, otherwise relative imports will break.
+    (expand (freshen e (make-immutable-free-id-table)))))
 
 ;; formals-dict-set : immutable-dict? Formals Formals -> immutable-dict?
 ;; Updates `table` by mapping ids in `keys` formals to new ids `vals`.
@@ -27,14 +30,14 @@
      (dict-set (stx-foldl* dict-set table #'(x ...) #'(y ...)) #'xn #'yn)]))
 (module+ test
   (require rackunit)
-  
+
   (define SYMAP1 (formals-dict-set (make-immutable-free-id-table)
                                    #'(a b c)
                                    #'(a1 b1 c1)))
 
   (define-syntax-rule (check-symap table k v)
     (check-equal? (syntax-e (dict-ref table k #f)) (syntax-e v) ""))
-  
+
   (check-symap SYMAP1 #'a #'a1)
   (check-symap SYMAP1 #'b #'b1)
   (check-symap SYMAP1 #'c #'c1)
@@ -50,14 +53,14 @@
 
   (check-equal? (formals-dict-set SYMAP3 #'() #'()) SYMAP3
                 "return same table if there is nothing to add")
-  
+
   (check-symap (formals-dict-set SYMAP1 #'g #'g1) #'g #'g1)
 
   (define SYMAP4 (formals-dict-set SYMAP1 (list #'e #'f #'g) (list #'e2 #'f1 #'g2)))
   (check-symap SYMAP4 #'e #'e2)
   (check-symap SYMAP4 #'f #'f1)
   (check-symap SYMAP4 #'g #'g2))
-  
+
 ;; formals-freshen : Formals -> Formals
 ;; Replace ids in case-lambda/#%plain-lambda formals list with unique ids
 (define (formals-freshen ids)
@@ -78,7 +81,7 @@
 ;; freshen : stx-form immutable-free-id-table? -> stx-form
 ;; Renames bound ids in e to be unique
 (define (freshen e sym-map)
-  (syntax-parse e
+  (syntax-parse (syntax-disarm e #f)
     #:literal-sets ((kernel-literals))
     [x:id (dict-ref sym-map #'x #'x)]
     [(#%top . x) #`(#%top . #,(freshen #'x sym-map))]
@@ -138,7 +141,7 @@
     [(define-values (id ...) b)
      ;; TODO: Should we rename toplevels?
      ;; define-values in an internal-defintion context reduces
-     ;; to let-values. 
+     ;; to let-values.
      #`(define-values (id ...) #,(freshen #'b sym-map))]
     [_ e]))
 
@@ -187,7 +190,7 @@
   (run+print (freshen* #'(#%plain-lambda (x)
                                          ((#%plain-lambda (y) x)
                                           (#%plain-lambda (x) x)))))
-  
+
   (run+print (freshen* #'(case-lambda
                            [(x y) (+ x y)]
                            [(x y z) (* x y z)])))
