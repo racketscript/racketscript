@@ -769,20 +769,30 @@
 ;; --------------------------------------------------------------------------
 ;; Continuation Marks
 
-(define+provide current-continuation-marks #js.Core.Marks.getFrames)
-
-(define+provide (continuation-mark-set->list mark-set key)
-  (#js.Core.Marks.getMarks mark-set key))
+(define+provide current-continuation-marks   #js.Core.Marks.getContinuationMarks)
+(define+provide continuation-mark-set->list  #js.Core.Marks.getMarks)
 
 (define+provide (continuation-mark-set-first mark-set key-v none-v prompt-tag)
   ;; TODO: implement prompt tag
-  (define mark-set (or mark-set (#js.Core.Marks.getFrames)))
-  (define marks (#js.Core.Marks.getMarks mark-set key-v))
+  (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
+  (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
   (if (null? marks)
       none-v
       #js.marks.hd))
 
 (define+provide make-parameter #js.Paramz.makeParameter)
+
+(define+provide call-with-continuation-prompt
+  #js.Core.Marks.callWithContinuationPrompt)
+
+(define+provide abort-current-continuation
+  (v-λ (prompt-tag . args)
+       (throw (new (#js.Core.Marks.AbortCurrentContinuation prompt-tag args)))))
+
+(define+provide make-continuation-prompt-tag
+  #js.Core.Marks.makeContinuationPromptTag)
+(define+provide default-continuation-prompt-tag
+  #js.Core.Marks.defaultContinuationPromptTag)
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
