@@ -289,5 +289,7 @@
                               "struct"
                               "hash"
                               "wcm"
-                              "modules")))
+                              "modules"
+                              "optimize"
+                              "experimental")))
 

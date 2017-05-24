@@ -2,7 +2,8 @@
 
 (require syntax/moddep
          graph
-         threading)
+         threading
+         "util.rkt")
 
 (provide follow-symbol
          get-export-tree
@@ -80,11 +81,10 @@
 ;; identifier maps to #f, it is defined in mod-path itself.
 (define (get-exports/modpath mod-path)
   (define-values (exports exported-syntax)
-    (cond
-      [(symbol? mod-path) (values '() '())] ;; TODO
-      [else (~> (resolve-module-path mod-path #f)
-                (get-module-code _)
-                (module-compiled-exports _))]))
+    ;; If its a primitive module, use the RacketScript implementation instead.
+    (~> (resolve-module-path (actual-module-path mod-path) #f)
+        (get-module-code _)
+        (module-compiled-exports _)))
   (make-immutable-hash (parse-exports mod-path exports)))
 
 ;; ModulePath Exports -> ExportOriginMap

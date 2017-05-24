@@ -147,7 +147,8 @@ class StructTypeDescriptor extends Primitive {
 	// supers in struct-type-property are also added when
 	// attached. However propeties attached to super types of this
 	// struct are not added here and will have to be followed.
-	let props = options.props && Pair.listToArray(options.props);
+	//let props = options.props && Pair.listToArray(options.props);
+	let props = undefined;
 	this._options.props = {}
 	if (props) {
 	    // TODO: If prop is already added, then check associated
@@ -352,7 +353,6 @@ export function makeStructTypeProperty(options) {
 
 export function makeStructType(options) {
     let descriptor = new StructTypeDescriptor(options);
-
     return Values.make([
 	descriptor,
 	descriptor.getStructConstructor(),

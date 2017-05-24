@@ -274,10 +274,11 @@
 
   (define timestamps (load-cached-module-timestamps))
 
-  (put-to-pending! (path->complete-path (main-source-file)))
   (put-to-pending! '#%kernel)
   (put-to-pending! '#%unsafe)
   (put-to-pending! '#%paramz)
+  (put-to-pending! '#%flfxnum)
+  (put-to-pending! (path->complete-path (main-source-file)))
 
   (let loop ()
     (define next (and (non-empty-queue? pending) (dequeue! pending)))
@@ -303,7 +304,7 @@
        (for ([mod (in-set (Module-imports ast))])
          (match mod
            [(? symbol? _) (void)]
-           [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
+           [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
        (loop)]
       [(false? next)

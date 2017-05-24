@@ -187,7 +187,7 @@
        ;; Rename few modules for simpler compilation
        (cond
          [(symbol? mpath) (list #f mpath)]
-         [(collects-module? mpath) (list #t '#%kernel)]
+         #;[(collects-module? mpath) (list #t '#%kernel)]
          [else (list #f mpath)]))
      (define ident-sym (syntax-e #'i))
 
@@ -219,7 +219,7 @@
            ;; identifier, so that when we export this identifier from
            ;; its source module processed later.
            (define path-to-symbol (follow-symbol (global-export-graph)
-                                                 src-mod-path-orig
+                                                 nom-src-mod-path-orig
                                                  mod-src-id))
            (unless path-to-symbol
              (hash-update! global-unreachable-idents
@@ -227,6 +227,16 @@
                            (λ (s*)
                              (set-add s* mod-src-id))
                            (set mod-src-id)))
+
+           ;;HACK: See test/struct/import-struct.rkt. Somehow, the
+           ;;  struct contructor has different src-id returned by
+           ;;  identifier-binding than the actual identifier name used
+           ;;  at definition site.
+           (define src-id*
+             (if (and (equal? src-mod nom-src-mod)
+                      (not (equal? src-id mod-src-id)))
+                 mod-src-id
+                 src-id))
 
            ;; If the moduele is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
@@ -236,7 +246,8 @@
              (cond
                [module-renamed? (values mod-src-id src-mod-path)]
                [(false? path-to-symbol)
-                (values mod-src-id src-mod-path)]
+                (log-rjs-warning "Implementation of identifier ~a not found" #'i)
+                (values src-id* src-mod-path)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
                   (values id mod))]))

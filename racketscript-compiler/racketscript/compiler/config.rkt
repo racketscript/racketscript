@@ -102,4 +102,13 @@
   (set '#%kernel
        '#%utils
        '#%paramz
-       '#%unsafe))
+       '#%unsafe
+       '#%flfxnum
+       '#%futures
+       '#%extfl
+       '#%place-struct
+       '#%network
+       '#%builtin
+       '#%boot
+       '#%foreign
+       '#%place))

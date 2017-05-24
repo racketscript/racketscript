@@ -5,8 +5,8 @@
     a
     (sum (sub1 n) (+ a n))))
 
-(sum 100 0)
-(sum 1000 0)
-(sum 10000 0)
-(sum 15000 0)
+(displayln (sum 100 0))
+(displayln (sum 1000 0))
+(displayln (sum 10000 0))
+(displayln (sum 15000 0))
 

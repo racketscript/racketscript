@@ -176,7 +176,7 @@
 
 (define+provide number? #js.Core.Number.check)
 (define+provide real? #js.Core.Number.check)
-(define+provide integer? #js.Core.Number.isInteger)
+(define+provide integer? #js.Number.isInteger)
 
 (define+provide (zero? v)
   (binop === v 0))
@@ -205,8 +205,6 @@
 (define+provide (exact-nonnegative-integer? v)
   (and (#js.Number.isInteger v) (binop >= v 0)))
 
-(define+provide (exact->inexact v) v)
-
 (define+provide * #js.Core.Number.mul)
 (define+provide / #js.Core.Number.div)
 (define+provide + #js.Core.Number.add)
@@ -222,13 +220,21 @@
 (define+provide sin #js.Math.sin)
 (define+provide cos #js.Math.cos)
 (define+provide tan #js.Math.tan)
+(define+provide atan #js.Math.atan)
+
 (define+provide ceiling #js.Math.ceiling)
 (define+provide round #js.Math.round)
+
 (define+provide min #js.Math.min)
 (define+provide max #js.Math.max)
 
+(define+provide log  #js.Math.log)
+
 ;;TODO: Support bignums
+(define+provide (inexact->exact x) x)
+(define+provide (exact->inexact x) x)
 (define+provide (expt w z) (#js.Math.pow w z))
+
 (define+provide (sqrt v) (#js.Math.sqrt v))
 
 (define+provide (sqr v)
@@ -259,6 +265,8 @@
 (define+provide cons #js.Pair.make)
 (define+provide cons? #js.Pair.check)
 (define+provide pair? #js.Pair.check)
+
+(define+provide (cadr v) #js.v.tl.hd)
 
 (define+provide empty #js.Pair.Empty)
 (define+provide null #js.Pair.Empty)
@@ -307,6 +315,27 @@
   (v-λ (lam . lsts)
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
+
+;; ----------------------------------------------------------------------------
+;; Mutable Pairs
+
+(define+provide (mcons hd tl)
+  (#js.Core.MPair.make hd tl))
+
+(define+provide (mpair? v)
+  (#js.Core.MPair.check v))
+
+(define+provide (mcar p)
+  (#js.p.car))
+
+(define+provide (mcdr p)
+  (#js.p.cdr))
+
+(define+provide (set-mcar! p v)
+  (#js.p.setCar v))
+
+(define+provide (set-mcdr! p v)
+  (#js.p.setCdr v))
 
 ;; --------------------------------------------------------------------------
 ;; Structs
@@ -390,9 +419,6 @@
 ;; --------------------------------------------------------------------------
 ;; Hashes
 
-(define+provide (make-immutable-hash assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "equal" #f))
-
 (define-syntax-rule (make-hash-contructor make)
   (v-λ ()
     (define kv* arguments)
@@ -408,17 +434,36 @@
 (define+provide hasheq  (make-hash-contructor #js.Core.Hash.makeEq))
 
 (define+provide (make-hash assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "equal" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "equal" #t))
 (define+provide (make-hasheqv assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "eqv" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #t))
 (define+provide (make-hasheq assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "eq" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eq" #t))
+
+(define+provide (make-immutable-hash assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "equal" #f))
+(define+provide (make-immutable-hasheqv assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #f))
+(define+provide (make-immutable-hasheq assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eq" #f))
 
 (define+provide (hash-ref h k fail)
   (#js.h.ref k fail))
 
 (define+provide (hash-set h k v)
   (#js.h.set k v))
+
+(define+provide (hash-set! h k v)
+  (#js.h.set k v))
+
+(define+provide (hash-map h proc)
+  (#js.Core.Hash.map h proc))
 
 ;; --------------------------------------------------------------------------
 ;; Higher Order Functions
@@ -724,25 +769,33 @@
                                 {object [name "prop:evt"]}))
 
 ;; --------------------------------------------------------------------------
-;; Ports
+;; Ports + Writers
 
-(define+provide (current-output-port) #f)
-(define+provide (output-port?) #f)
+(define+provide (current-output-port)
+  #js.Core.Ports.standardOutputPort)
+
+(define+provide (current-print)
+  (λ (p)
+    (when (string? p)
+      (display "\""))
+    (display p)
+    (when (string? p)
+      (display "\""))
+    (newline)))
+
+(define+provide (input-port? p)
+  (#js.Core.Ports.checkInputPort p))
+
+(define+provide (output-port? p)
+  (#js.Core.Ports.checkOutputPort p))
 
 ;; --------------------------------------------------------------------------
 ;; Printing
 
-(define+provide (displayln v) (#js.Kernel.displayln v))
 (define+provide (display v) (#js.Kernel.display v))
 
 (define+provide (newline)
-  (displayln ""))
-
-(define+provide (print-values v)
-  (unless (void? v)
-    (if (typeof v "string")
-        (#js.console.log (string "\"" v "\"")) ;;HACK: special cases
-        (displayln v))))
+  (display "\n"))
 
 ;; --------------------------------------------------------------------------
 ;; Errors
@@ -828,8 +881,8 @@
 
 (define+provide (byte-regexp bs)
   (if (bytes? bs)
-      (throw (#js.Core.racketContractError "expected bytes"))
-      (new (RegExp (bytes->string/utf-8 bs)))))
+      (new (RegExp (bytes->string/utf-8 bs)))
+      (throw (#js.Core.racketContractError "expected bytes"))))
 
 (define+provide byte-pregexp byte-regexp)
 
@@ -870,6 +923,7 @@
 ;; --------------------------------------------------------------------------
 ;; Procedures
 
+;;TODO: Why was this prefixed with 'kernel:'???
 (provide (struct-out kernel:arity-at-least))
 (struct kernel:arity-at-least (value)
   #:extra-constructor-name make-arity-at-least
@@ -877,6 +931,14 @@
 
 (define+provide (procedure? f)
   (typeof f "function"))
+
+(define+provide arity-at-least make-arity-at-least)
+
+(define+provide (arity-at-least? p)
+  (kernel:arity-at-least? p))
+
+(define+provide (arity-at-least-value p)
+  (kernel:arity-at-least-value p))
 
 (define+provide (procedure-arity-includes? f) #t)
 
@@ -891,9 +953,46 @@
          (#js.Core.Pair.listFromArray #js.fn.__rjs_arityValue))]
     [else #js.fn.length]))
 
-(define+provide (eval-jit-enabled) #t)
+(define+provide (procedure-arity? v)
+  (or (exact-nonnegative-integer? v)
+      (kernel:arity-at-least? v)
+      (ormap (λ (v)
+               (or (exact-nonnegative-integer? v)
+                   (kernel:arity-at-least? v)))
+             v)))
 
-(define+provide (make-sequence who v)
+;; --------------------------------------------------------------------------
+;;
+
+(define+provide (gensym sym)
+  (let ([s (or (and sym #js.sym.v) "")])
+    (set! __count (binop + __count 1))
+    (#js.Core.Symbol.makeUninterned (binop + s __count))))
+
+(define+provide (eval-jit-enabled) #f)
+
+#;(define+provide (make-sequence who v)
   (#js.Core.Values.make [array car cdr v pair? #f #f]))
 
 (define+provide (variable-reference-constant? x) #f)
+
+(define+provide (inspector? p)
+  #t)
+
+(define+provide (make-thread-cell p) p)
+
+(define __count 1000)
+
+(define+provide (system-type mod)
+  #;(#js.console.log "asked for system-type: " mod)
+  'unix)
+
+(define+provide make-weak-hash make-hash)
+
+(define-values (prop:checked-procedure pkasjdlk kjsadlkjas)
+  (make-struct-type-property "prop:checked-procedure"))
+(define-values (prop:impersonator-of klasdlkj lkjasdkljasldk)
+  (make-struct-type-property "prop:impersonator-of"))
+
+(provide prop:checked-procedure prop:impersonator-of)
+

@@ -16,7 +16,11 @@ class Symbol extends Primitive {
     }
 
     equals(v) {
-	return check(v) && this.v === v.v;
+	// Symbols are interned by default, and two symbols
+	// with same name can't be unequal.
+	// Eg. (define x (gensym)) ;;=> 'g60
+	//     (equal? x 'g60)     ;;=> #f
+	return v === this;
     }
 }
 
@@ -24,6 +28,8 @@ class Symbol extends Primitive {
 export let make = internedMake(v => {
     return new Symbol(v);
 });
+
+export let makeUninterned = v => new Symbol(v);
 
 export function check(v) {
     return (v instanceof Symbol)
