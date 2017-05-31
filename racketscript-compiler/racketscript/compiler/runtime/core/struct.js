@@ -207,13 +207,15 @@ class StructTypeDescriptor extends Primitive {
 	    let proc;
 	    if (typeof(procSpec) === 'function') {
 		proc = procSpec;
+		// Structure object is sent only when procSpec is
+		// function, not when we get procedure from field.
+		args.unshift(structObject);
 	    } else if (Number.isInteger(procSpec)) {
 		proc = structObject.getField(procSpec);
 	    } else {
 		throw new Error("ValueError: invalid field at position "
 				+ procSpec);
 	    }
-	    args.unshift(structObject);
 	    return proc.apply(null, args);
 	}
 	structfn.__rjs_struct_object = structObject;
