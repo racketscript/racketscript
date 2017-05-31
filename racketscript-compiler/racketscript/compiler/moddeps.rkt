@@ -139,6 +139,7 @@
         (match (resolve-module-path-index mod path)
           [#f (void)]
           [`(submod ,path ,mod) (void)]
+          [`(submod ,path ,mod ,literal-sets) (void)]
           [(? symbol? b) (hash-set! graph b '())]
           [`,resolved-path (define new-mod (simplify-path resolved-path))
                            (hash-update! graph path (λ (v) (cons new-mod v)))
