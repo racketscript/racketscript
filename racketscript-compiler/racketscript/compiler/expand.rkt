@@ -213,14 +213,50 @@
            ;; compute this with moddeps information.
            (current-module-imports (set-add (current-module-imports) src-mod-path))
 
+           ;;HACK: See test/struct/import-struct.rkt. Somehow, the
+           ;;  struct contructor has different src-id returned by
+           ;;  identifier-binding than the actual identifier name used
+           ;;  at definition site. Implicit renaming due to macro
+           ;;  expansion?
+           ;;
+           ;;HACK: See tests/modules/rename-and-import.rkt and
+           ;;  tests/rename-from-primitive.rkt. When importing from a
+           ;;  module with a rename, identifier-binding's, mod-src-id
+           ;;  shows the renamed id, i.e. the one it is imported as
+           ;;  instead of what it is exported as. We handle this
+           ;;  special case where both src-mod and nom-src-mod are
+           ;;  equal. If both source module and normalized module are
+           ;;  same with different ids:
+           ;;  - Check if nom-src-id is exported and use that. Or,
+           ;;  - Check if src-id is exported and use that. Or,
+           ;;  - Fallback to module source id.
+           (define-values (id-to-follow path-to-symbol)
+             (cond
+               [(and (equal? src-mod nom-src-mod)
+                     (not (equal? src-id mod-src-id)))
+                (let ([path-to-symbol-src (follow-symbol (global-export-graph)
+                                                         nom-src-mod-path-orig
+                                                         mod-src-id)])
+                  (if path-to-symbol-src
+                      (values mod-src-id path-to-symbol-src)
+                      (let ([path-to-symbol-nom (follow-symbol (global-export-graph)
+                                                               nom-src-mod-path-orig
+                                                               src-id)])
+                        (if path-to-symbol-nom
+                            (values src-id path-to-symbol-nom)
+                            (values mod-src-id #f)))))]
+               [else (values mod-src-id
+                             (follow-symbol (global-export-graph)
+                                            nom-src-mod-path-orig
+                                            mod-src-id))]))
+
            ;; If we can't follow this symbol, we probably got this
            ;; because of some macro expansion. TODO: As we process
            ;; modules in topological order, we can save this
            ;; identifier, so that when we export this identifier from
            ;; its source module processed later.
-           (define path-to-symbol (follow-symbol (global-export-graph)
-                                                 nom-src-mod-path-orig
-                                                 mod-src-id))
+           ;; TODO: Check if src-mod and nom-src-mod are always same in
+           ;;  such cases?
            (unless path-to-symbol
              (hash-update! global-unreachable-idents
                            src-mod-path
@@ -228,16 +264,6 @@
                              (set-add s* mod-src-id))
                            (set mod-src-id)))
 
-           ;;HACK: See test/struct/import-struct.rkt. Somehow, the
-           ;;  struct contructor has different src-id returned by
-           ;;  identifier-binding than the actual identifier name used
-           ;;  at definition site.
-           ;; (displayln (list "Ok" #'i src-mod src-id nom-src-mod mod-src-id import-phase))
-           (define src-id*
-             (if (and (equal? src-mod nom-src-mod)
-                      (not (equal? src-id mod-src-id)))
-                 mod-src-id
-                 src-id))
 
            ;; If the moduele is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
@@ -249,7 +275,7 @@
                [(false? path-to-symbol)
                 (unless (ignored-undefined-identifier? #'i)
                   (log-rjs-warning "Implementation of identifier ~a not found" #'i))
-                (values src-id* src-mod-path)]
+                (values id-to-follow src-mod-path)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
                   (values id mod))]))
