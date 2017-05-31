@@ -266,7 +266,9 @@
 (define+provide cons? #js.Pair.check)
 (define+provide pair? #js.Pair.check)
 
+(define+provide (caar v) #js.v.hd.hd)
 (define+provide (cadr v) #js.v.tl.hd)
+(define+provide (cdar v) #js.v.hd.tl)
 
 (define+provide empty #js.Pair.Empty)
 (define+provide null #js.Pair.Empty)
