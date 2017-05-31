@@ -961,6 +961,17 @@
                    (kernel:arity-at-least? v)))
              v)))
 
+
+(define+provide (checked-procedure-check-and-extract type v proc v1 v2)
+  (cond
+    [(and (#js.Core.Struct.check v type)
+          (#js.type._findProperty prop:checked-procedure))
+     (let* ([fn (#js.v.getField 0)]
+            [r1 (fn v1 v2)])
+       (if r1
+           (#js.v.getField 1)
+           (proc v v1 v2)))]
+    [else (proc v v1 v2)]))
 ;; --------------------------------------------------------------------------
 ;;
 
