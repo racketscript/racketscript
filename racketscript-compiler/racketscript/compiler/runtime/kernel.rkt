@@ -222,7 +222,7 @@
 (define+provide tan #js.Math.tan)
 (define+provide atan #js.Math.atan)
 
-(define+provide ceiling #js.Math.ceiling)
+(define+provide ceiling #js.Math.ceil)
 (define+provide round #js.Math.round)
 
 (define+provide min #js.Math.min)

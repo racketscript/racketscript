@@ -19,7 +19,9 @@
          unsafe-mcar
          unsafe-mcdr
          unsafe-set-mcar!
-         unsafe-set-mcdr!)
+         unsafe-set-mcdr!
+         unsafe-fxrshift
+         unsafe-fxlshift)
 
 ;;-----------------------------------------------------------------------------
 ;; Structures
@@ -56,6 +58,8 @@
 (define unsafe-fx- #js.Core.Number.sub)
 (define unsafe-fx* #js.Core.Number.mul)
 (define unsafe-fx/ #js.Core.Number.div)
+(define (unsafe-fxrshift a b) ($/binop >> a b))
+(define (unsafe-fxlshift a b) ($/binop << a b))
 (define (unsafe-fxmin a b) (if ($/binop < a b) a b))
 (define (unsafe-fxmax a b) (if ($/binop > a b) b a))
 
