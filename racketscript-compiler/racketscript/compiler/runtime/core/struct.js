@@ -5,7 +5,10 @@ import {Primitive} from "./primitive.js";
 import * as Values from "./values.js";
 
 // This module implements Racket structs via three classes which
-// directly corresponds to their Racket counterparts
+// directly corresponds to their Racket counterparts. Structure
+// instances are either Struct or if its applicable structures, i.e.
+// with a proc-spec parametre, it is a function with Struct wrapped
+// inside.
 //
 // - Struct: This class represents a struct instance. This will
 //   keep a reference to its struct-type-description, to determine
@@ -27,7 +30,6 @@ import * as Values from "./values.js";
 // TODO:
 // - Structure Inspectors
 // - Prefab
-// - Struct's proc-spec, i.e. make structure object applicable
 
 class Struct extends Primitive {
     constructor(desc, fields, callerName=false) {
@@ -198,27 +200,68 @@ class StructTypeDescriptor extends Primitive {
 	return this._options.superType;
     }
 
+    getApplicableStructObject(structObject) {
+	let procSpec = this._options.procSpec;
+	let structfn = function (...args) {
+	    // Struct object is also a procedure
+	    let proc;
+	    if (typeof(procSpec) === 'function') {
+		proc = procSpec;
+	    } else if (Number.isInteger(procSpec)) {
+		proc = structObject.getField(procSpec);
+	    } else {
+		throw new Error("ValueError: invalid field at position "
+				+ procSpec);
+	    }
+	    args.unshift(structObject);
+	    return proc.apply(null, args);
+	}
+	structfn.__rjs_struct_object = structObject;
+	return structfn;
+    }
+
+    maybeStructObject(s) {
+	let structObject;
+	if (s instanceof Struct) {
+	    return s;
+	} else if (s instanceof Function &&
+		   (s.__rjs_struct_object instanceof Struct)) {
+	    return s.__rjs_struct_object;
+	} else {
+	    return false;
+	}
+    }
+
     getStructConstructor() {
 	return $.attachReadOnlyProperty((...args) => {
-	    return new Struct(this, args);
+	    let structObject = new Struct(this, args);
+	    if (this._options.procSpec === undefined ||
+		this._options.procSpec === false) {
+		return structObject;
+	    } else {
+		return this.getApplicableStructObject(structObject);
+	    }
 	}, "racketProcedureType", "struct-constructor");
     }
 
     getStructPredicate() {
 	return $.attachReadOnlyProperty((s) => {
-	    if(!(s instanceof Struct)) {
-		return false;
-	    }
-
-	    return s._maybeFindSuperInstance(this) && true;
+	    let structObject = this.maybeStructObject(s);
+	    return structObject &&
+		structObject._maybeFindSuperInstance(this) && true;
 	}, "racketProcedureType", "struct-predicate");
     }
 
     getStructAccessor() {
 	return $.attachReadOnlyProperty((s, pos) => {
-	    C.type(s, Struct);
+	    let structObject = this.maybeStructObject(s);
+	    if (!structObject) {
+		C.raise(TypeError,
+			"(" + s + " : " + typeof(s) + " != " +
+			this._options.name + " object)");
+	    }
 
-	    let sobj = s._maybeFindSuperInstance(this);
+	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise($.racketCoreError, "accessor applied to invalid type")
 	    }
@@ -229,9 +272,14 @@ class StructTypeDescriptor extends Primitive {
 
     getStructMutator() {
 	return $.attachReadOnlyProperty((s, pos, v) => {
-	    C.type(s, Struct);
+	    let structObject = this.maybeStructObject(s);
+	    if (!structObject) {
+		C.raise(TypeError,
+			"(" + s + " : " + typeof(s) + " != " +
+			this._options.name + " object)");
+	    }
 
-	    let sobj = s._maybeFindSuperInstance(this);
+	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise($.racketCoreError, "mutator applied to invalid type")
 	    }
@@ -367,7 +415,8 @@ export function isStructType(v) {
 }
 
 export function isStructInstance(v) {
-    return v instanceof Struct;
+    return (v instanceof Struct) ||
+	(v instanceof Function) && (v.__rjs_struct_object instanceof Struct);
 }
 
 export function check(v, desc) {
