@@ -232,6 +232,7 @@
            ;;  struct contructor has different src-id returned by
            ;;  identifier-binding than the actual identifier name used
            ;;  at definition site.
+           ;; (displayln (list "Ok" #'i src-mod src-id nom-src-mod mod-src-id import-phase))
            (define src-id*
              (if (and (equal? src-mod nom-src-mod)
                       (not (equal? src-id mod-src-id)))
@@ -246,7 +247,8 @@
              (cond
                [module-renamed? (values mod-src-id src-mod-path)]
                [(false? path-to-symbol)
-                (log-rjs-warning "Implementation of identifier ~a not found" #'i)
+                (unless (ignored-undefined-identifier? #'i)
+                  (log-rjs-warning "Implementation of identifier ~a not found" #'i))
                 (values src-id* src-mod-path)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])

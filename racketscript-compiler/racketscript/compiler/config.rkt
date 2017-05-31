@@ -1,10 +1,13 @@
 #lang typed/racket/base
 
 (require racket/match
+         racket/function
          racket/path
          racket/runtime-path
          racket/set
-         threading)
+         threading
+
+         "../private/interop.rkt")
 
 (provide output-directory
          logging?
@@ -22,7 +25,8 @@
          jsruntime-core-module
 
          primitive-modules
-         ignored-module-imports-in-boot)
+         ignored-module-imports-in-boot
+         ignored-undefined-identifier?)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -96,6 +100,14 @@
 (define ignored-module-imports-in-boot
   (set
    (build-path racketscript-dir "private" "interop.rkt")))
+
+(: ignored-undefined-identifiers (Listof Identifier))
+(define ignored-undefined-identifiers
+  (list #'#%js-ffi))
+
+(: ignored-undefined-identifier? (-> Identifier Boolean))
+(define (ignored-undefined-identifier? id)
+  (ormap (curry free-identifier=? id) ignored-undefined-identifiers))
 
 (: primitive-modules (Setof Symbol))
 (define primitive-modules
