@@ -849,6 +849,11 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
+(define+provide (raise e)
+  (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
+                                                #js.Paramz.ExceptionHandlerKey)])
+    (abort-ccp e)))
+
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
 
