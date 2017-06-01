@@ -275,11 +275,9 @@
 
   (define timestamps (load-cached-module-timestamps))
 
-  (put-to-pending! '#%kernel)
-  (put-to-pending! '#%unsafe)
-  (put-to-pending! '#%paramz)
-  (put-to-pending! '#%flfxnum)
   (put-to-pending! (path->complete-path (main-source-file)))
+  (for ([pm primitive-modules])
+    (put-to-pending! pm))
 
   (let loop ()
     (define next (and (non-empty-queue? pending) (dequeue! pending)))

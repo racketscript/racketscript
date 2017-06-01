@@ -311,7 +311,7 @@ class StructTypeDescriptor extends Primitive {
     // The first and third case can be handled together. See property
     // initialization in constructor.
     _findProperty(prop) {
-	for (let desc = this; desc !== false; desc = desc.getSuperType()) {
+	for (let desc = this; desc; desc = desc.getSuperType()) {
 	    let val = desc._options.props.get(prop);
 	    if (val !== undefined) {
 		return val;

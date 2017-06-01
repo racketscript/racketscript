@@ -75,13 +75,11 @@
 (: jsruntime-module-path (-> Symbol Path))
 (define (jsruntime-module-path mod)
   (let ([mod-name (match mod
-                    ['#%kernel "kernel.rkt.js"]
-                    ['#%utils "utils.rkt.js"]
-                    ['#%unsafe "unsafe.rkt.js"]
-                    ['#%paramz "paramz.rkt.js"]
-                    ['#%flfxnum "flfxnum.rkt.js"]
                     ['core "core.js"]
-                    [_ "rest.rkt.js"])])
+                    [_ #:when (set-member? primitive-modules mod)
+                       (string-append
+                        (substring (symbol->string mod) 2)
+                        ".rkt.js")])])
     (path->complete-path
      (build-path (output-directory)
                  "runtime"
@@ -115,6 +113,7 @@
        '#%utils
        '#%paramz
        '#%unsafe
+       '#%utils
        '#%flfxnum
        '#%futures
        '#%extfl

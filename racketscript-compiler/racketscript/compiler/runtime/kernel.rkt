@@ -796,6 +796,7 @@
 (define-property+provide prop:arity-string)
 (define-property+provide prop:incomplete-arity)
 (define-property+provide prop:method-arity-error)
+(define-property+provide prop:exn:srclocs)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 
