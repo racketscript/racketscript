@@ -39,7 +39,8 @@
          racketscript-dir
          skip-gulp-build
          skip-npm-install
-         enabled-optimizations)
+         enabled-optimizations
+         recompile-all-modules?)
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
