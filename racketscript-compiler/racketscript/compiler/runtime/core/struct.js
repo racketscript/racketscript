@@ -149,9 +149,8 @@ class StructTypeDescriptor extends Primitive {
 	// supers in struct-type-property are also added when
 	// attached. However propeties attached to super types of this
 	// struct are not added here and will have to be followed.
-	//let props = options.props && Pair.listToArray(options.props);
-	let props = undefined;
-	this._options.props = {}
+	let props = options.props && Pair.listToArray(options.props);
+	this._options.props = new Map();
 	if (props) {
 	    // TODO: If prop is already added, then check associated
 	    // values with eq?, else raise contract-errorx
@@ -159,6 +158,7 @@ class StructTypeDescriptor extends Primitive {
 		prop.hd.attachToStructTypeDescriptor(this, prop.tl)
 	    }
 	}
+	this._propProcedure = this._findProperty(propProcedure);
 
 	// Value for auto fields
 	this._options.autoV = this._options.autoV || false;
@@ -200,8 +200,7 @@ class StructTypeDescriptor extends Primitive {
 	return this._options.superType;
     }
 
-    getApplicableStructObject(structObject) {
-	let procSpec = this._options.procSpec;
+    getApplicableStructObject(structObject, procSpec) {
 	let structfn = function (...args) {
 	    // Struct object is also a procedure
 	    let proc;
@@ -237,11 +236,21 @@ class StructTypeDescriptor extends Primitive {
     getStructConstructor() {
 	return $.attachReadOnlyProperty((...args) => {
 	    let structObject = new Struct(this, args);
-	    if (this._options.procSpec === undefined ||
-		this._options.procSpec === false) {
+	    let hasPropProc = this._propProcedure !== undefined &&
+		this._propProcedure !== false;
+	    let hasProcSpec = this._options.procSpec !== undefined &&
+		this._options.procSpec !== false;
+
+	    if (!hasPropProc && !hasProcSpec) {
 		return structObject;
+	    } else if (hasPropProc) {
+		return this.getApplicableStructObject(
+		    structObject,
+		    this._propProcedure);
 	    } else {
-		return this.getApplicableStructObject(structObject);
+		return this.getApplicableStructObject(
+		    structObject,
+		    this._options.procSpec);
 	    }
 	}, "racketProcedureType", "struct-constructor");
     }
@@ -303,8 +312,8 @@ class StructTypeDescriptor extends Primitive {
     // initialization in constructor.
     _findProperty(prop) {
 	for (let desc = this; desc !== false; desc = desc.getSuperType()) {
-	    let val = desc._options.props[prop];
-	    if (val) {
+	    let val = desc._options.props.get(prop);
+	    if (val !== undefined) {
 		return val;
 	    }
 	}
@@ -351,7 +360,7 @@ class StructTypeProperty extends Primitive {
 		return false;
 	    }
 
-	    return (desc._findProperty(this) && true) || false;
+	    return desc._findProperty(this) !== undefined;
 	}
     }
 
@@ -377,8 +386,11 @@ class StructTypeProperty extends Primitive {
     // Lambda associated with each item in supers of this
     // property is called with the result of guard application
     attachToStructTypeDescriptor(desc, v) {
-	let newV = (this._guard && this._guard(v, false)) || v;
-	desc._options.props[this] = newV;
+	let newV = v;
+	if (this._guard) {
+	    newV = this._guard(v, Pair.listFromArray(structTypeInfo(desc)));
+	}
+	desc._options.props.set(this, newV);
 	this._supers.forEach((superEntry) => {
 	    let prop = superEntry.hd;
 	    let proc = superEntry.tl;
@@ -416,6 +428,19 @@ export function isStructType(v) {
     return v instanceof StructTypeDescriptor;
 }
 
+export function structTypeInfo(desc) {
+    return [
+	desc._options.name,
+	desc._options.initFieldCount,
+	desc._options.autoFieldCount,
+	desc.getStructAccessor(),
+	desc.getStructMutator(),
+	desc._options.immutables, //TODO: What about supers?
+	desc._options.superType || false,
+	false //TODO: Not sure what this field means?
+    ];
+}
+
 export function isStructInstance(v) {
     return (v instanceof Struct) ||
 	(v instanceof Function) && (v.__rjs_struct_object instanceof Struct);
@@ -424,3 +449,10 @@ export function isStructInstance(v) {
 export function check(v, desc) {
     return isStructInstance(v) && v._desc == desc;
 }
+
+/*****************************************************************************/
+// Properties
+
+export let propProcedure =  makeStructTypeProperty({
+    name: "prop:procedure"
+}).getAt(0);

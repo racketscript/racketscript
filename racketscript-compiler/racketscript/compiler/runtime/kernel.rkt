@@ -205,6 +205,9 @@
 (define+provide (exact-nonnegative-integer? v)
   (and (#js.Number.isInteger v) (binop >= v 0)))
 
+(define+provide (exact-integer? v)
+  (#js.Number.isInteger v))
+
 (define+provide * #js.Core.Number.mul)
 (define+provide / #js.Core.Number.div)
 (define+provide + #js.Core.Number.add)
@@ -269,6 +272,8 @@
 (define+provide (caar v) #js.v.hd.hd)
 (define+provide (cadr v) #js.v.tl.hd)
 (define+provide (cdar v) #js.v.hd.tl)
+(define+provide (cddr v) #js.v.tl.tl)
+(define+provide (caddr v) #js.v.tl.tl.hd)
 
 (define+provide empty #js.Pair.Empty)
 (define+provide null #js.Pair.Empty)
@@ -390,6 +395,9 @@
 (define+provide (struct-type? v)
   (#js.Core.Struct.isStructType v))
 
+(define+provide (struct-type-info desc)
+  (#js.Core.Values.make (#js.Core.Struct.structTypeInfo desc)))
+
 ;; --------------------------------------------------------------------------
 ;; Vectors
 
@@ -417,6 +425,9 @@
 
 (define+provide (vector->list vec)
   (#js.Core.Pair.listFromArray #js.vec.items))
+
+(define+provide (vector->immutable-vector vec)
+  (#js.Core.Vector.copy vec #f))
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
@@ -766,9 +777,27 @@
 ;; --------------------------------------------------------------------------
 ;; Properties
 
+(define-syntax (define-property+provide stx)
+  (syntax-parse stx
+    [(_ name:id)
+     #`(begin
+         (provide name)
+         (define+provide name
+           (($ (make-struct-type-property
+                #,(symbol->string (syntax-e #'name))) 'getAt)
+            0)))]))
+
 (provide prop:evt evt?)
 (define-values (prop:evt evt?) (#js.Core.Struct.makeStructTypeProperty
                                 {object [name "prop:evt"]}))
+
+(define-property+provide prop:checked-procedure)
+(define-property+provide prop:impersonator-of)
+(define-property+provide prop:arity-string)
+(define-property+provide prop:incomplete-arity)
+(define-property+provide prop:method-arity-error)
+
+(define+provide prop:procedure #js.Core.Struct.propProcedure)
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -1006,11 +1035,3 @@
   'unix)
 
 (define+provide make-weak-hash make-hash)
-
-(define-values (prop:checked-procedure pkasjdlk kjsadlkjas)
-  (make-struct-type-property "prop:checked-procedure"))
-(define-values (prop:impersonator-of klasdlkj lkjasdkljasldk)
-  (make-struct-type-property "prop:impersonator-of"))
-
-(provide prop:checked-procedure prop:impersonator-of)
-
