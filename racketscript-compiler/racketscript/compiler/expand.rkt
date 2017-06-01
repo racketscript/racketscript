@@ -273,8 +273,13 @@
              (cond
                [module-renamed? (values mod-src-id src-mod-path)]
                [(false? path-to-symbol)
-                (unless (ignored-undefined-identifier? #'i)
-                  (log-rjs-warning "Implementation of identifier ~a not found" #'i))
+                (when (and (not (ignored-undefined-identifier? #'i))
+                           (symbol? src-mod-path))
+                  ;; Since free id's are anyway caught by Racket, just
+                  ;; complain about the primitives.
+                  (log-rjs-warning
+                   "Implementation of identifier ~a not found in module ~a!"
+                   (syntax-e #'i) src-mod-path))
                 (values id-to-follow src-mod-path)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
