@@ -40,9 +40,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Numbers
 
-(define+provide number? #js.Core.Number.check)
-(define+provide real? #js.Core.Number.check)
-(define+provide integer? #js.Number.isInteger)
+(define+provide number?   #js.Core.Number.check)
+(define+provide real?     #js.Core.Number.check)
+(define+provide integer?  #js.Number.isInteger)
 
 (define+provide (zero? v)
   (binop === v 0))
@@ -74,25 +74,25 @@
 (define+provide (exact-integer? v)
   (#js.Number.isInteger v))
 
-(define+provide * #js.Core.Number.mul)
-(define+provide / #js.Core.Number.div)
-(define+provide + #js.Core.Number.add)
-(define+provide - #js.Core.Number.sub)
-(define+provide < #js.Core.Number.lt)
-(define+provide > #js.Core.Number.gt)
+(define+provide *  #js.Core.Number.mul)
+(define+provide /  #js.Core.Number.div)
+(define+provide +  #js.Core.Number.add)
+(define+provide -  #js.Core.Number.sub)
+(define+provide <  #js.Core.Number.lt)
+(define+provide >  #js.Core.Number.gt)
 (define+provide <= #js.Core.Number.lte)
 (define+provide >= #js.Core.Number.gte)
-(define+provide = #js.Core.Number.equals)
+(define+provide =  #js.Core.Number.equals)
 
 (define+provide floor #js.Math.floor)
-(define+provide abs #js.Math.abs)
-(define+provide sin #js.Math.sin)
-(define+provide cos #js.Math.cos)
-(define+provide tan #js.Math.tan)
-(define+provide atan #js.Math.atan)
+(define+provide abs   #js.Math.abs)
+(define+provide sin   #js.Math.sin)
+(define+provide cos   #js.Math.cos)
+(define+provide tan   #js.Math.tan)
+(define+provide atan  #js.Math.atan)
 
 (define+provide ceiling #js.Math.ceil)
-(define+provide round #js.Math.round)
+(define+provide round   #js.Math.round)
 
 (define+provide min #js.Math.min)
 (define+provide max #js.Math.max)
@@ -131,19 +131,19 @@
 
 (define+provide (car pair) #js.pair.hd)
 (define+provide (cdr pair) #js.pair.tl)
-(define+provide cons #js.Pair.make)
-(define+provide cons? #js.Pair.check)
-(define+provide pair? #js.Pair.check)
+(define+provide cons       #js.Pair.make)
+(define+provide cons?      #js.Pair.check)
+(define+provide pair?      #js.Pair.check)
 
-(define+provide (caar v) #js.v.hd.hd)
-(define+provide (cadr v) #js.v.tl.hd)
-(define+provide (cdar v) #js.v.hd.tl)
-(define+provide (cddr v) #js.v.tl.tl)
+(define+provide (caar v)  #js.v.hd.hd)
+(define+provide (cadr v)  #js.v.tl.hd)
+(define+provide (cdar v)  #js.v.hd.tl)
+(define+provide (cddr v)  #js.v.tl.tl)
 (define+provide (caddr v) #js.v.tl.tl.hd)
 
 (define+provide empty #js.Pair.Empty)
-(define+provide null #js.Pair.Empty)
-(define+provide list #js.Pair.makeList)
+(define+provide null  #js.Pair.Empty)
+(define+provide list  #js.Pair.makeList)
 (define+provide first car)
 (define+provide rest  cdr)
 
@@ -885,9 +885,6 @@
 
 (define+provide (eval-jit-enabled) #f)
 
-#;(define+provide (make-sequence who v)
-  (#js.Core.Values.make [array car cdr v pair? #f #f]))
-
 (define+provide (variable-reference-constant? x) #f)
 
 (define+provide (inspector? p)
@@ -898,7 +895,6 @@
 (define __count 1000)
 
 (define+provide (system-type mod)
-  #;(#js.console.log "asked for system-type: " mod)
-  'unix)
+  'javascript)
 
 (define+provide make-weak-hash make-hash)

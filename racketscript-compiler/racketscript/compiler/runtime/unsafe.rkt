@@ -1,9 +1,67 @@
 #lang racketscript/boot
 
 (require racketscript/interop
+         (for-syntax syntax/parse)
          "lib.rkt")
 
 (define Core   ($/require "./core.js"))
+
+
+;;-----------------------------------------------------------------------------
+;; Unsafe Numeric Operations
+
+(define-binop bitwise-or \|)
+
+(define-syntax (define-unsafe-fx-binop+provide stx)
+  (syntax-parse stx
+    [(_ opname:id op:id)
+     #'(begin
+         (provide opname)
+         (define+provide (opname a b)
+           (bitwise-or (binop op a b) 0)))]))
+
+(define-unsafe-fx-binop+provide unsafe-fx+         +)
+(define-unsafe-fx-binop+provide unsafe-fx-         -)
+(define-unsafe-fx-binop+provide unsafe-fx*         *)
+(define-unsafe-fx-binop+provide unsafe-fxquotient  /)
+(define-unsafe-fx-binop+provide unsafe-fxremainder %)
+
+(define+provide (unsafe-fxmodulo a b)
+  (define remainder (binop % a b))
+  (#js.Math.floor (if (binop >= remainder 0)
+                      remainder
+                      (binop + remainder b))))
+
+(define+provide (unsafe-fxabs a)
+  (#js.Math.abs a))
+
+
+(define+provide (unsafe-fx= a b)
+  (binop === a b))
+(define+provide (unsafe-fx< a b)
+  (binop < a b))
+(define+provide (unsafe-fx<= a b)
+  (binop <= a b))
+(define+provide (unsafe-fx> a b)
+  (binop > a b))
+(define+provide (unsafe-fx>= a b)
+  (binop >= a b))
+(define+provide (unsafe-fxmin a b)
+  (if ($/binop < a b) a b))
+(define+provide (unsafe-fxmax a b)
+  (if ($/binop > a b) b a))
+
+
+(define-unsafe-fx-binop+provide unsafe-fxrshift  >>)
+(define-unsafe-fx-binop+provide unsafe-fxlshift  <<)
+(define-unsafe-fx-binop+provide unsafe-fxand     &&)
+(define-unsafe-fx-binop+provide unsafe-fxior     \|\|)
+(define-unsafe-fx-binop+provide unsafe-fxxor     ^)
+(define+provide unsafe-fxnot                     #js.Core.bitwiseNot)
+
+;;-----------------------------------------------------------------------------
+;; UNSAFE DATA EXTRACTION
+;;-----------------------------------------------------------------------------
 
 ;;-----------------------------------------------------------------------------
 ;; Pairs
@@ -14,6 +72,8 @@
 (define+provide (unsafe-mcdr v) #js.v.tl)
 (define+provide (unsafe-set-mcar! p v) (#js.p.setCar v))
 (define+provide (unsafe-set-mcdr! p v) (#js.p.setCdr v))
+(define+provide (unsafe-cons-list v rest)
+  (#js.Core.Pair.make v rest))
 
 ;;-----------------------------------------------------------------------------
 ;; Structures
@@ -31,20 +91,3 @@
 
 (define+provide (unsafe-vector-length v)
   (#js.v.length))
-
-;;-----------------------------------------------------------------------------
-;; Numbers
-
-(define+provide unsafe-fx< #js.Core.Number.lt)
-(define+provide unsafe-fx<= #js.Core.Number.lte)
-(define+provide unsafe-fx> #js.Core.Number.gt)
-(define+provide unsafe-fx>= #js.Core.Number.gte)
-(define+provide unsafe-fx= #js.Core.Number.equals)
-(define+provide unsafe-fx+ #js.Core.Number.add)
-(define+provide unsafe-fx- #js.Core.Number.sub)
-(define+provide unsafe-fx* #js.Core.Number.mul)
-(define+provide unsafe-fx/ #js.Core.Number.div)
-(define+provide (unsafe-fxrshift a b) ($/binop >> a b))
-(define+provide (unsafe-fxlshift a b) ($/binop << a b))
-(define+provide (unsafe-fxmin a b) (if ($/binop < a b) a b))
-(define+provide (unsafe-fxmax a b) (if ($/binop > a b) b a))

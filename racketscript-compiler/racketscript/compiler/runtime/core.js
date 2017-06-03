@@ -51,3 +51,9 @@ export {
     racketCoreError,
     racketContractError
 } from "./core/lib.js";
+
+//;-----------------------------------------------------------------------------
+
+export function bitwiseNot(a) {
+    return ~a;
+}
