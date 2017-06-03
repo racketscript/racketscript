@@ -1,76 +1,50 @@
 #lang racketscript/boot
 
-(require racketscript/interop)
+(require racketscript/interop
+         "lib.rkt")
 
 (define Core   ($/require "./core.js"))
 
 ;;-----------------------------------------------------------------------------
 ;; Pairs
 
-(define (unsafe-car v) #js.v.hd)
-(define (unsafe-cdr v) #js.v.tl)
-(define (unsafe-mcar v) #js.v.hd)
-(define (unsafe-mcdr v) #js.v.tl)
-(define (unsafe-set-mcar! p v) (#js.p.setCar v))
-(define (unsafe-set-mcdr! p v) (#js.p.setCdr v))
-
-(provide unsafe-car
-         unsafe-cdr
-         unsafe-mcar
-         unsafe-mcdr
-         unsafe-set-mcar!
-         unsafe-set-mcdr!
-         unsafe-fxrshift
-         unsafe-fxlshift)
+(define+provide (unsafe-car v) #js.v.hd)
+(define+provide (unsafe-cdr v) #js.v.tl)
+(define+provide (unsafe-mcar v) #js.v.hd)
+(define+provide (unsafe-mcdr v) #js.v.tl)
+(define+provide (unsafe-set-mcar! p v) (#js.p.setCar v))
+(define+provide (unsafe-set-mcdr! p v) (#js.p.setCdr v))
 
 ;;-----------------------------------------------------------------------------
 ;; Structures
 
-(define (unsafe-struct-ref v k)
+(define+provide (unsafe-struct-ref v k)
   ($ #js.v._fields k))
-
-(provide unsafe-struct-ref)
 
 ;;-----------------------------------------------------------------------------
 ;; Vector
-(define (unsafe-vector-ref v k)
+(define+provide (unsafe-vector-ref v k)
   (#js.v.ref k))
 
-(define (unsafe-vector-set! v k val)
+(define+provide (unsafe-vector-set! v k val)
   (#js.v.set k val))
 
-(define (unsafe-vector-length v)
+(define+provide (unsafe-vector-length v)
   (#js.v.length))
-
-(provide unsafe-vector-ref
-         unsafe-vector-set!
-         unsafe-vector-length)
 
 ;;-----------------------------------------------------------------------------
 ;; Numbers
 
-(define unsafe-fx< #js.Core.Number.lt)
-(define unsafe-fx<= #js.Core.Number.lte)
-(define unsafe-fx> #js.Core.Number.gt)
-(define unsafe-fx>= #js.Core.Number.gte)
-(define unsafe-fx= #js.Core.Number.equals)
-(define unsafe-fx+ #js.Core.Number.add)
-(define unsafe-fx- #js.Core.Number.sub)
-(define unsafe-fx* #js.Core.Number.mul)
-(define unsafe-fx/ #js.Core.Number.div)
-(define (unsafe-fxrshift a b) ($/binop >> a b))
-(define (unsafe-fxlshift a b) ($/binop << a b))
-(define (unsafe-fxmin a b) (if ($/binop < a b) a b))
-(define (unsafe-fxmax a b) (if ($/binop > a b) b a))
-
-(provide unsafe-fx<
-         unsafe-fx>
-         unsafe-fx<=
-         unsafe-fx>=
-         unsafe-fx=
-         unsafe-fxmax
-         unsafe-fxmin
-         unsafe-fx+
-         unsafe-fx-
-         unsafe-fx*
-         unsafe-fx/)
+(define+provide unsafe-fx< #js.Core.Number.lt)
+(define+provide unsafe-fx<= #js.Core.Number.lte)
+(define+provide unsafe-fx> #js.Core.Number.gt)
+(define+provide unsafe-fx>= #js.Core.Number.gte)
+(define+provide unsafe-fx= #js.Core.Number.equals)
+(define+provide unsafe-fx+ #js.Core.Number.add)
+(define+provide unsafe-fx- #js.Core.Number.sub)
+(define+provide unsafe-fx* #js.Core.Number.mul)
+(define+provide unsafe-fx/ #js.Core.Number.div)
+(define+provide (unsafe-fxrshift a b) ($/binop >> a b))
+(define+provide (unsafe-fxlshift a b) ($/binop << a b))
+(define+provide (unsafe-fxmin a b) (if ($/binop < a b) a b))
+(define+provide (unsafe-fxmax a b) (if ($/binop > a b) b a))

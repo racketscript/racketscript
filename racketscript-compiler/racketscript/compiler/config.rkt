@@ -107,7 +107,7 @@
 (define (ignored-undefined-identifier? id)
   (ormap (curry free-identifier=? id) ignored-undefined-identifiers))
 
-(: primitive-modules (Setof Symbol))
+(: primitive-modules (Setof (U Symbol Path)))
 (define primitive-modules
   (set '#%kernel
        '#%utils
@@ -122,4 +122,5 @@
        '#%builtin
        '#%boot
        '#%foreign
-       '#%place))
+       '#%place
+       (build-path racketscript-runtime-dir "lib.rkt")))

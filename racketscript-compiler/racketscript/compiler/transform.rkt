@@ -67,8 +67,11 @@
   (: top-level-defines (Setof Symbol))
   (define top-level-defines
     (list->set
-     (append-map DefineValues-ids
-                 (filter DefineValues? forms))))
+     (append
+      (append-map DefineValues-ids
+                  (filter DefineValues? forms))
+      (map JSRequire-alias
+           (filter JSRequire? forms)))))
 
   (: add-provides! (-> ILProvide* Void))
   (define (add-provides! p*)
