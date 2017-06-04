@@ -20,6 +20,7 @@
          syntax/modresolve
          syntax/stx
          syntax/parse
+         syntax/id-table
          (only-in racket/list
                   append-map
                   last-pair
@@ -410,6 +411,38 @@
     (do-expand (read-syntax (object-name input) input) full-path)))
 
 ;;;----------------------------------------------------------------------------
+;;; Flatten Phases in Module
+
+(define (flatten-module-forms mod-stx)
+  (define phase-forms (make-hash))
+
+  (define (save-form! form)
+    (hash-update! phase-forms
+                  (current-phase)
+                  (λ (v)
+                    (append v (list form)))
+                  '()))
+
+  (define (walk stx)
+    (syntax-parse stx
+      #:literal-sets ((kernel-literals #:phase (current-phase)))
+      [((begin-for-syntax forms ...) . tl)
+       (parameterize ([current-phase (add1 (current-phase))])
+         (walk #'(forms ...)))
+       (walk #'tl)]
+      [(hd . tl)
+       (save-form! #'hd)
+       (walk #'tl)]
+      [() (void)]
+      [_ (save-form! stx)]))
+
+  (parameterize ([current-phase 0])
+    (walk mod-stx))
+
+  (for/hash ([(phase forms) phase-forms])
+    (values phase (datum->syntax mod-stx forms))))
+
+;;;----------------------------------------------------------------------------
 
 (module+ test
   (require rackunit)
@@ -658,4 +691,70 @@
                    (list (RenamedProvide 'foo 'f:foo)
                          (RenamedProvide 'bar 'f:bar))
                    (DefineValues '(foo) (Quote #f))
-                   (DefineValues '(bar) (Quote #f))))))
+                   (DefineValues '(bar) (Quote #f)))))
+
+;;; Check module flattening
+  (test-case "check flattening of module by splitting as per phases"
+    (define (flatten-module-forms->datum forms)
+      (for/hash ([(k v) (flatten-module-forms forms)])
+        (values k (syntax->datum v))))
+
+    (define (flatten-module->datum mod-stx)
+      (syntax-parse mod-stx
+        [(module name lang
+           (#%plain-module-begin forms ...))
+         (flatten-module-forms->datum #'(forms ...))]))
+
+    #;(check-equal? (flatten-module->datum
+                   #'((begin-for-syntax
+                        (begin-for-syntax
+                          "Phase 2.1"
+                          (begin-for-syntax "Phase 3.1")
+                          "Phase 2.2"
+                          (begin-for-syntax "Phaes 3.2"))
+                        "Phase 1.1"
+                        (begin-for-syntax "Phase 2.3"))))
+                  "")
+
+    (define test-mod-1
+      (expand
+       #'(module foo racket/base
+           (require (for-meta 1 racket/base)
+                    (for-meta 2 racket/base)
+                    (for-meta 3 racket/base))
+           (define-values (foo) "Foo")
+           (begin-for-syntax
+             (define-values (foo-1) (λ () (display "Foo Phase 1"))))
+           (define-values (bar) (λ () "Bar"))
+           (begin-for-syntax
+             (define-values (bar-1) (λ () (display "Bar Phase 1")))
+             (begin-for-syntax
+               (define-values (foo-2) (λ () "Foo Phase 2")))
+             (define-values (foobar-1) (λ () "FooBar Phase 1")))
+           (begin-for-syntax
+             (begin-for-syntax
+               (begin-for-syntax
+                 (define-values (foo-3) (λ () (displayln "Foo Phase 3")))))))))
+
+    (check-equal?
+     (flatten-module->datum test-mod-1)
+     '#hash((0
+             .
+             ((module configure-runtime '#%kernel
+                (#%module-begin
+                 (#%require racket/runtime-config)
+                 (#%app configure '#f)))
+              (#%require (for-meta 1 racket/base))
+              (#%require (for-meta 2 racket/base))
+              (#%require (for-meta 3 racket/base))
+              (define-values (foo) '"Foo")
+              (define-values (bar) (lambda () '"Bar"))))
+            (1
+             .
+             ((define-values (foo-1) (lambda () (#%app display '"Foo Phase 1")))
+              (define-values (bar-1) (lambda () (#%app display '"Bar Phase 1")))
+              (define-values (foobar-1) (lambda () '"FooBar Phase 1"))))
+            (2 . ((define-values (foo-2) (lambda () '"Foo Phase 2"))))
+            (3
+             .
+             ((define-values (foo-3) (lambda () (#%app displayln '"Foo Phase 3")))))))))
