@@ -44,28 +44,28 @@
 (define+provide real?     #js.Core.Number.check)
 (define+provide integer?  #js.Number.isInteger)
 
-(define+provide (zero? v)
+(define-checked+provide (zero? [v number?])
   (binop === v 0))
 
-(define+provide (positive? v)
+(define-checked+provide (positive? [v real?])
   (binop > v 0))
 
-(define+provide (negative? v)
+(define-checked+provide (negative? [v real?])
   (binop < v 0))
 
-(define+provide (add1 v)
+(define-checked+provide (add1 [v number?])
   (binop + v 1))
 
-(define+provide (sub1 v)
+(define-checked+provide (sub1 [v number?])
   (binop - v 1))
 
-(define+provide (quotient dividend divisor)
-  (floor (binop / dividend divisor)))
+(define-checked+provide (quotient [dividend integer?] [divisor integer?])
+  (binop \| (binop / dividend divisor) 0))
 
-(define+provide (even? v)
+(define-checked+provide (even? [v integer?])
   (binop === (binop % v 2) 0))
 
-(define+provide (odd? v)
+(define-checked+provide (odd? [v integer?])
   (not (binop === (binop % v 2) 0)))
 
 (define+provide (exact-nonnegative-integer? v)
@@ -84,36 +84,50 @@
 (define+provide >= #js.Core.Number.gte)
 (define+provide =  #js.Core.Number.equals)
 
-(define+provide floor #js.Math.floor)
-(define+provide abs   #js.Math.abs)
-(define+provide sin   #js.Math.sin)
-(define+provide cos   #js.Math.cos)
-(define+provide tan   #js.Math.tan)
-(define+provide atan  #js.Math.atan)
+(define-checked+provide (floor [v real?])
+  (#js.Math.floor v))
+(define-checked+provide (abs [v real?])
+  (#js.Math.abs v))
+(define-checked+provide (sin [v real?])
+  (#js.Math.sin v))
+(define-checked+provide (cos [v real?])
+  (#js.Math.cos v))
+(define-checked+provide (tan [v real?])
+  (#js.Math.tan v))
+(define-checked+provide (atan [v real?])
+  (#js.Math.atan v))
 
-(define+provide ceiling #js.Math.ceil)
-(define+provide round   #js.Math.round)
+(define-checked+provide (ceiling [v real?])
+  (#js.Math.ceil v))
+(define-checked+provide (round [v real?])
+  (#js.Math.round v))
 
-(define+provide min #js.Math.min)
-(define+provide max #js.Math.max)
+(define-checked+provide (min [a real?] [b real?])
+  (#js.Math.min a b))
+(define-checked+provide (max [a real?] [b real?])
+  (#js.Math.max a b))
 
-(define+provide log  #js.Math.log)
+(define-checked+provide (log [v real?])
+  (#js.Math.log v))
+
+(define-checked+provide (expt [w number?] [z number?])
+  (#js.Math.pow w z))
+
+(define-checked+provide (sqrt [v number?])
+  (#js.Math.sqrt v))
+
+(define-checked+provide (sqr [v number?])
+  (* v v))
+
+(define-checked+provide (remainder [a integer?] [b integer?])
+  (binop % a b))
+
+(define-checked+provide (number->string [n number?])
+  (#js.n.toString))
 
 ;;TODO: Support bignums
 (define+provide (inexact->exact x) x)
 (define+provide (exact->inexact x) x)
-(define+provide (expt w z) (#js.Math.pow w z))
-
-(define+provide (sqrt v) (#js.Math.sqrt v))
-
-(define+provide (sqr v)
-  (* v v))
-
-(define+provide (remainder a b)
-  (binop % a b))
-
-(define+provide (number->string n)
-  (#js.n.toString))
 
 ;; ----------------------------------------------------------------------------
 ;; Booleans
@@ -124,35 +138,34 @@
 (define+provide false #f)
 (define+provide true #t)
 
-(define+provide (false? v) (eq? v #f))
+(define+provide (false? v) (binop === v #f))
 
 ;; ----------------------------------------------------------------------------
 ;; Pairs
 
-(define+provide (car pair) #js.pair.hd)
-(define+provide (cdr pair) #js.pair.tl)
+(define-checked+provide (car [pair pair?]) #js.pair.hd)
+(define-checked+provide (cdr [pair pair?]) #js.pair.tl)
 (define+provide cons       #js.Pair.make)
 (define+provide cons?      #js.Pair.check)
 (define+provide pair?      #js.Pair.check)
 
-(define+provide (caar v)  #js.v.hd.hd)
-(define+provide (cadr v)  #js.v.tl.hd)
-(define+provide (cdar v)  #js.v.hd.tl)
-(define+provide (cddr v)  #js.v.tl.tl)
-(define+provide (caddr v) #js.v.tl.tl.hd)
+(define-checked+provide (caar [v (check/pair-of? pair? #t)])
+  #js.v.hd.hd)
+(define-checked+provide (cadr [v (check/pair-of? #t pair?)])
+  #js.v.tl.hd)
+(define-checked+provide (cdar [v (check/pair-of? pair? #t)])
+  #js.v.hd.tl)
+(define-checked+provide (cddr [v (check/pair-of? #t pair?)])
+  #js.v.tl.tl)
+(define-checked+provide (caddr [v (check/pair-of? (check/pair-of? #t pair?) #t)])
+  #js.v.tl.tl.hd)
 
-(define+provide empty #js.Pair.Empty)
 (define+provide null  #js.Pair.Empty)
 (define+provide list  #js.Pair.makeList)
-(define+provide first car)
-(define+provide rest  cdr)
 
 (define+provide null?  #js.Pair.isEmpty)
 (define+provide empty? #js.Pair.isEmpty)
 (define+provide length #js.Pair.listLength)
-
-(define+provide (second lst)
-  ($> lst (cdr) (car)))
 
 (define+provide (list? v)
   (cond
@@ -160,7 +173,7 @@
     [(cons? v) (list? ($> v (cdr)))]
     [else #f]))
 
-(define+provide (reverse lst)
+(define-checked+provide (reverse [lst list?])
   (let loop ([lst lst]
              [result '()])
     (if (null? lst)
@@ -186,6 +199,7 @@
 
 (define+provide for-each
   (v-λ (lam . lsts)
+    (check/raise procedure? lam 0)
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
 
@@ -198,16 +212,18 @@
 (define+provide (mpair? v)
   (#js.Core.MPair.check v))
 
-(define+provide (mcar p)
+(define-checked+provide (mcar [p mpair?])
   (#js.p.car))
 
-(define+provide (mcdr p)
+(define-checked+provide (mcdr [p mpair?])
   (#js.p.cdr))
 
 (define+provide (set-mcar! p v)
+  (check/raise mpair? p 0)
   (#js.p.setCar v))
 
 (define+provide (set-mcdr! p v)
+  (check/raise mpair? p 0)
   (#js.p.setCdr v))
 
 ;; --------------------------------------------------------------------------
@@ -272,27 +288,24 @@
      (#js.Core.Vector.make (#js.Core.argumentsToArray arguments) #t)))
 
 ;; v is optional
-(define+provide (make-vector size v)
+(define-checked+provide (make-vector [size integer?] [v #t])
   (#js.Core.Vector.makeInit size (or v 0)))
 
 (define+provide vector? #js.Core.Vector.check)
 
-(define+provide (vector-length v)
+(define-checked+provide (vector-length [v vector?])
   (#js.v.length))
 
-;; TODO: wrong checks
-(define+provide (vector-ref vec i)
-  (#js.Core.Vector.check vec)
+(define-checked+provide (vector-ref [vec vector?] [i integer?])
   (#js.vec.ref i))
 
-(define+provide (vector-set! vec i v)
-  (#js.Core.Vector.check vec)
+(define-checked+provide (vector-set! [vec vector] [i integer?] [v #t])
   (#js.vec.set i v))
 
-(define+provide (vector->list vec)
+(define-checked+provide (vector->list [vec vector?])
   (#js.Core.Pair.listFromArray #js.vec.items))
 
-(define+provide (vector->immutable-vector vec)
+(define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
 
 ;; --------------------------------------------------------------------------
@@ -349,6 +362,7 @@
 
 (define+provide apply
   (v-λ (lam . args)
+    (check/raise procedure? lam 0)
     (define final-args
       (cond
         [(zero? #js.args.length)
@@ -363,6 +377,7 @@
 
 (define+provide map
   (v-λ (fn . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'map "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))
@@ -382,6 +397,7 @@
 
 (define+provide foldl
   (v-λ (fn init . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'foldl "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))
@@ -413,6 +429,7 @@
 
 (define+provide foldr
   (v-λ (fn init . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'foldr "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))

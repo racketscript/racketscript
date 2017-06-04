@@ -2,7 +2,9 @@
 
 (require racketscript/interop
          racket/stxparam
-         (for-syntax syntax/parse))
+         (for-syntax racket/list
+                     racket/format
+                     syntax/parse))
 
 (provide throw
          new
@@ -31,7 +33,13 @@
          Array
          RegExp
          console
-         type-check/raise)
+         type-check/raise
+         check/raise
+         check/and
+         check/or
+         check/pair-of?
+         define-checked
+         define-checked+provide)
 
 ;; ----------------------------------------------------------------------------
 
@@ -165,8 +173,64 @@
 ;; ----------------------------------------------------------------------------
 ;; Errors
 
+(define default-check-message "Expected: {1}, Given: {0}, At: {2}")
+
 (define-syntax-rule (type-check/raise type what)
   (unless (#js.type.check what)
     (throw (#js.Core.racketContractError "expected a {0}, but given {1}"
                                          type
                                          what))))
+
+(define-syntax (check/raise stx)
+  (syntax-parse stx
+    [(_ (~datum #t) what at)
+     #`(begin)]
+    [(_ chkfn:id what at)
+     #`(check/raise chkfn what #,(symbol->string (syntax-e #'chkfn)) at)]
+    [(_ chkfn what at)
+     #`(check/raise chkfn what #,(~a (syntax->datum #'chkfn)) at)]
+    [(_ chkfn what expected at)
+     #'(unless (chkfn what)
+         (throw
+          (#js.Core.racketContractError default-check-message
+                                        expected
+                                        what
+                                        at)))]))
+
+(define-syntax-rule (check/or c1 ...)
+  (λ (v)
+    (and (c1 v) ...)))
+
+(define-syntax-rule (check/and c1 ...)
+  (λ (v)
+    (and (c1 v) ...)))
+
+(define-syntax (check/pair-of? stx)
+  (syntax-parse stx
+    [(_ (~datum #t) c2)
+     #'(λ (v)
+         (and (#js.Core.Pair.check v)
+              (c2 #js.v.tl)))]
+    [(_ c1 (~datum #t))
+     #'(λ (v)
+         (and (#js.Core.Pair.check v)
+              (c1 #js.v.hd)))]
+    [(_ c1 c2)
+     #'(λ (v)
+         (and (#js.Core.Pair.check v)
+              (c1 #js.v.hd)
+              (c1 #js.v.tl)))]))
+
+(define-syntax (define-checked stx)
+  (syntax-parse stx
+    [(_ (name:id [arg:id checkfn] ...) body ...)
+     #:with (n ...) #`#,(range (length (syntax-e #'(arg ...))))
+     #`(define (name arg ...)
+         (check/raise checkfn arg n) ...
+         body ...)]))
+
+(define-syntax (define-checked+provide stx)
+  (syntax-parse stx
+    [(_ (name:id e ...) body ...)
+     #`(begin (define-checked (name e ...) body ...)
+              (provide name))]))
