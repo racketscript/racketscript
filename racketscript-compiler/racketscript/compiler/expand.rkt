@@ -443,6 +443,41 @@
     (values phase (datum->syntax mod-stx forms))))
 
 ;;;----------------------------------------------------------------------------
+;;; Prepare binding dependency graph
+
+(define (get-quoted-bindings stx)
+  (syntax-parse stx
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [(quote-syntax e)
+     (parameterize ([quoted? #t]
+                    [current-phase (sub1 (current-phase))])
+       (get-quoted-bindings #'e))]
+    [(define-syntaxes _ b)
+     (parameterize ([current-phase (add1 (current-phase))])
+       (get-quoted-bindings #'b))]
+    [(begin-for-syntax forms ...)
+     (parameterize ([current-phase (add1 (current-phase))])
+       (get-quoted-bindings #'(forms ...)))]
+    [(hd . tl)
+     (append (get-quoted-bindings #'hd)
+             (get-quoted-bindings #'tl))]
+    [() '()]
+    [v:id #:when (quoted?)
+          (match (identifier-binding #'v (current-phase) #t)
+            [(list src-mod src-id _ _ src-phase _ _)
+             (define-values (v u) (module-path-index-split src-mod))
+             (cond
+               [(and (false? v) (false? u))
+                (unless (equal? src-phase (current-phase))
+                  (error 'get-quoted-binding
+                         "Identifier phase is ~a, expecte ~a."
+                         src-phase (current-phase)))
+                (list stx)]
+               [v '()])]
+            [_ '()])]
+    [_ '()]))
+
+;;;----------------------------------------------------------------------------
 
 (module+ test
   (require rackunit)
@@ -757,4 +792,16 @@
             (2 . ((define-values (foo-2) (lambda () '"Foo Phase 2"))))
             (3
              .
-             ((define-values (foo-3) (lambda () (#%app displayln '"Foo Phase 3")))))))))
+             ((define-values (foo-3) (lambda () (#%app displayln '"Foo Phase 3"))))))))
+
+  (test-case "get quoted bindings in module"
+    (define test-mod-1
+      (expand
+       #'(module foo racket
+           (define (internal-func)
+             (displayln "Hello World!"))
+           (define-syntax foo
+             (λ (stx) #'(internal-func))))))
+
+    (check-equal? (map syntax-e (get-quoted-bindings test-mod-1))
+                  '(internal-func))))
