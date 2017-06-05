@@ -43,8 +43,6 @@
          read-module
          to-absyn
          to-absyn/top
-         used-idents
-         register-ident-use!
          read-and-expand-module
          quick-expand)
 
@@ -57,16 +55,6 @@
 
 ;; (Setof (U ModulePath Symbol))
 (define current-module-imports (make-parameter (set)))
-
-;; A list of idents used so far while compiling current project
-(define used-idents (make-parameter (hash)))
-
-;; Updates `used-ident` by adding identifier `id` imported from `mod-path`.
-(define (register-ident-use! mod-path id)
-  (used-idents (hash-update (used-idents)
-                            mod-path
-                            (λ (i*) (set-add i* (list id (current-module))))
-                            (set (list id (current-module))))))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module paths
@@ -251,28 +239,13 @@
                                             nom-src-mod-path-orig
                                             mod-src-id))]))
 
-           ;; If we can't follow this symbol, we probably got this
-           ;; because of some macro expansion. TODO: As we process
-           ;; modules in topological order, we can save this
-           ;; identifier, so that when we export this identifier from
-           ;; its source module processed later.
-           ;; TODO: Check if src-mod and nom-src-mod are always same in
-           ;;  such cases?
-           (unless path-to-symbol
-             (hash-update! global-unreachable-idents
-                           src-mod-path
-                           (λ (s*)
-                             (set-add s* mod-src-id))
-                           (set mod-src-id)))
-
-
            ;; If the moduele is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
            ;; are #%kernel which we write ourselves in JS we prefer original name.
            ;; TODO: We potentially might have clashes, but its unlikely.
-           (define-values (effective-id effective-mod)
+           (define-values (effective-id effective-mod reachable?)
              (cond
-               [module-renamed? (values mod-src-id src-mod-path)]
+               [module-renamed? (values mod-src-id src-mod-path #t)]
                [(false? path-to-symbol)
                 (when (and (not (ignored-undefined-identifier? #'i))
                            (symbol? src-mod-path))
@@ -281,13 +254,12 @@
                   (log-rjs-warning
                    "Implementation of identifier ~a not found in module ~a!"
                    (syntax-e #'i) src-mod-path))
-                (values id-to-follow src-mod-path)]
+                (values id-to-follow src-mod-path #f)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
-                  (values id mod))]))
+                  (values id mod #t))]))
 
-           (register-ident-use! effective-mod effective-id)
-           (ImportedIdent effective-id effective-mod)])])]
+           (ImportedIdent effective-id effective-mod reachable?)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
@@ -350,11 +322,20 @@
        (define mod-id (syntax-e #'name))
        (log-rjs-info "[absyn] ~a" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
-              [imports (current-module-imports)])
+              [imports (current-module-imports)]
+              [quoted-bindings (list->set
+                                (map
+                                 syntax-e
+                                 (filter
+                                  (λ (x)
+                                    ;; We just compile phase 0 forms now
+                                    (zero? (list-ref (identifier-binding x) 4)))
+                                  (get-quoted-bindings #'(forms ...)))))])
          (Module mod-id
                  path
                  (syntax->datum #'lang)
                  imports
+                 quoted-bindings
                  ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))

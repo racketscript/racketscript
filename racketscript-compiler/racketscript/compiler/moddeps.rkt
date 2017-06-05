@@ -3,6 +3,7 @@
 (require syntax/moddep
          graph
          threading
+         "config.rkt"
          "util.rkt")
 
 (provide follow-symbol
@@ -71,8 +72,9 @@
 ;; Return whole tree of exports with its source starting
 ;; from mod-name (ModulePath)
 (define (get-export-tree mod-name)
-  (define modules (module-deps/tsort-inv (get-module-deps mod-name)))
-  (for/hash ([m modules])
+  (define modules (filter-not symbol? (module-deps/tsort-inv
+                                       (get-module-deps mod-name))))
+  (for/hash ([m (append (set->list primitive-modules) modules)])
     (values m (get-exports/modpath m))))
 
 ;; ModulePath -> ExportOriginMap
