@@ -104,7 +104,7 @@
   (parameterize ([main-source-file test-path]
                  [global-export-graph (get-cached-export-tree test-path)]
                  [current-source-file test-path]
-                 [recompile-all-modules? #t] ;;TODO: Remove to save time.
+                 [recompile-all-modules? #f]
                  [current-output-port (if (racketscript-stdout?)
                                           (current-output-port)
                                           (open-output-nowhere))])

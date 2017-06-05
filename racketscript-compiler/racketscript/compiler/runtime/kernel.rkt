@@ -157,7 +157,7 @@
   #js.v.hd.tl)
 (define-checked+provide (cddr [v (check/pair-of? #t pair?)])
   #js.v.tl.tl)
-(define-checked+provide (caddr [v (check/pair-of? (check/pair-of? #t pair?) #t)])
+(define-checked+provide (caddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
   #js.v.tl.tl.hd)
 
 (define+provide null  #js.Pair.Empty)

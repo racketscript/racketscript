@@ -46,7 +46,6 @@
 (define skip-npm-install (make-parameter #f))
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
-(define dump-debug-info (make-parameter #f))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
@@ -331,8 +330,6 @@
    [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
    [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
-   ["--dump-debug-info" "Dumps some debug information in output directory"
-    (dump-debug-info #t)]
    ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
     (input-from-stdin? #t)]
    ["--enable-self-tail" "Translate self tail calls to loops"
@@ -444,11 +441,5 @@
           (js-string-beautify (get-output-string output-string))
           (get-output-string output-string)))]
     ['complete (racket->js)])
-
-  ;; Dump debug information
-  (when (dump-debug-info)
-    (with-output-to-file (build-path (output-directory) "debug.txt") #:exists 'truncate
-      (λ ()
-        (pretty-print (used-idents)))))
 
   (void))
