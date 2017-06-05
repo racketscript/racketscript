@@ -132,6 +132,14 @@ export function makeFromAssocs(assocs, type, mutable) {
     return make(items, type, mutable);
 }
 
+export function map(hash, proc) {
+    let result = Pair.Empty;
+    hash._h.forEach((value, key) => {
+	result = Pair.make(proc(key, value), result)
+    });
+    return result;
+}
+
 export function check(v1) {
     return (v1 instanceof Hash);
 }

@@ -5,7 +5,10 @@ import {Primitive} from "./primitive.js";
 import * as Values from "./values.js";
 
 // This module implements Racket structs via three classes which
-// directly corresponds to their Racket counterparts
+// directly corresponds to their Racket counterparts. Structure
+// instances are either Struct or if its applicable structures, i.e.
+// with a proc-spec parametre, it is a function with Struct wrapped
+// inside.
 //
 // - Struct: This class represents a struct instance. This will
 //   keep a reference to its struct-type-description, to determine
@@ -27,7 +30,6 @@ import * as Values from "./values.js";
 // TODO:
 // - Structure Inspectors
 // - Prefab
-// - Struct's proc-spec, i.e. make structure object applicable
 
 class Struct extends Primitive {
     constructor(desc, fields, callerName=false) {
@@ -148,7 +150,7 @@ class StructTypeDescriptor extends Primitive {
 	// attached. However propeties attached to super types of this
 	// struct are not added here and will have to be followed.
 	let props = options.props && Pair.listToArray(options.props);
-	this._options.props = {}
+	this._options.props = new Map();
 	if (props) {
 	    // TODO: If prop is already added, then check associated
 	    // values with eq?, else raise contract-errorx
@@ -156,6 +158,7 @@ class StructTypeDescriptor extends Primitive {
 		prop.hd.attachToStructTypeDescriptor(this, prop.tl)
 	    }
 	}
+	this._propProcedure = this._findProperty(propProcedure);
 
 	// Value for auto fields
 	this._options.autoV = this._options.autoV || false;
@@ -197,27 +200,79 @@ class StructTypeDescriptor extends Primitive {
 	return this._options.superType;
     }
 
+    getApplicableStructObject(structObject, procSpec) {
+	let structfn = function (...args) {
+	    // Struct object is also a procedure
+	    let proc;
+	    if (typeof(procSpec) === 'function') {
+		proc = procSpec;
+		// Structure object is sent only when procSpec is
+		// function, not when we get procedure from field.
+		args.unshift(structObject);
+	    } else if (Number.isInteger(procSpec)) {
+		proc = structObject.getField(procSpec);
+	    } else {
+		throw new Error("ValueError: invalid field at position "
+				+ procSpec);
+	    }
+	    return proc.apply(null, args);
+	}
+	structfn.__rjs_struct_object = structObject;
+	return structfn;
+    }
+
+    maybeStructObject(s) {
+	let structObject;
+	if (s instanceof Struct) {
+	    return s;
+	} else if (s instanceof Function &&
+		   (s.__rjs_struct_object instanceof Struct)) {
+	    return s.__rjs_struct_object;
+	} else {
+	    return false;
+	}
+    }
+
     getStructConstructor() {
 	return $.attachReadOnlyProperty((...args) => {
-	    return new Struct(this, args);
+	    let structObject = new Struct(this, args);
+	    let hasPropProc = this._propProcedure !== undefined &&
+		this._propProcedure !== false;
+	    let hasProcSpec = this._options.procSpec !== undefined &&
+		this._options.procSpec !== false;
+
+	    if (!hasPropProc && !hasProcSpec) {
+		return structObject;
+	    } else if (hasPropProc) {
+		return this.getApplicableStructObject(
+		    structObject,
+		    this._propProcedure);
+	    } else {
+		return this.getApplicableStructObject(
+		    structObject,
+		    this._options.procSpec);
+	    }
 	}, "racketProcedureType", "struct-constructor");
     }
 
     getStructPredicate() {
 	return $.attachReadOnlyProperty((s) => {
-	    if(!(s instanceof Struct)) {
-		return false;
-	    }
-
-	    return s._maybeFindSuperInstance(this) && true;
+	    let structObject = this.maybeStructObject(s);
+	    return structObject &&
+		structObject._maybeFindSuperInstance(this) && true;
 	}, "racketProcedureType", "struct-predicate");
     }
 
     getStructAccessor() {
 	return $.attachReadOnlyProperty((s, pos) => {
-	    C.type(s, Struct);
+	    let structObject = this.maybeStructObject(s);
+	    if (!structObject) {
+		C.raise(TypeError,
+			"(" + s + " : " + typeof(s) + " != " +
+			this._options.name + " object)");
+	    }
 
-	    let sobj = s._maybeFindSuperInstance(this);
+	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise($.racketCoreError, "accessor applied to invalid type")
 	    }
@@ -228,9 +283,14 @@ class StructTypeDescriptor extends Primitive {
 
     getStructMutator() {
 	return $.attachReadOnlyProperty((s, pos, v) => {
-	    C.type(s, Struct);
+	    let structObject = this.maybeStructObject(s);
+	    if (!structObject) {
+		C.raise(TypeError,
+			"(" + s + " : " + typeof(s) + " != " +
+			this._options.name + " object)");
+	    }
 
-	    let sobj = s._maybeFindSuperInstance(this);
+	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
 		C.raise($.racketCoreError, "mutator applied to invalid type")
 	    }
@@ -251,9 +311,9 @@ class StructTypeDescriptor extends Primitive {
     // The first and third case can be handled together. See property
     // initialization in constructor.
     _findProperty(prop) {
-	for (let desc = this; desc !== false; desc = desc.getSuperType()) {
-	    let val = desc._options.props[prop];
-	    if (val) {
+	for (let desc = this; desc; desc = desc.getSuperType()) {
+	    let val = desc._options.props.get(prop);
+	    if (val !== undefined) {
 		return val;
 	    }
 	}
@@ -300,7 +360,7 @@ class StructTypeProperty extends Primitive {
 		return false;
 	    }
 
-	    return (desc._findProperty(this) && true) || false;
+	    return desc._findProperty(this) !== undefined;
 	}
     }
 
@@ -326,8 +386,11 @@ class StructTypeProperty extends Primitive {
     // Lambda associated with each item in supers of this
     // property is called with the result of guard application
     attachToStructTypeDescriptor(desc, v) {
-	let newV = (this._guard && this._guard(v, false)) || v;
-	desc._options.props[this] = newV;
+	let newV = v;
+	if (this._guard) {
+	    newV = this._guard(v, Pair.listFromArray(structTypeInfo(desc)));
+	}
+	desc._options.props.set(this, newV);
 	this._supers.forEach((superEntry) => {
 	    let prop = superEntry.hd;
 	    let proc = superEntry.tl;
@@ -352,7 +415,6 @@ export function makeStructTypeProperty(options) {
 
 export function makeStructType(options) {
     let descriptor = new StructTypeDescriptor(options);
-
     return Values.make([
 	descriptor,
 	descriptor.getStructConstructor(),
@@ -366,10 +428,31 @@ export function isStructType(v) {
     return v instanceof StructTypeDescriptor;
 }
 
+export function structTypeInfo(desc) {
+    return [
+	desc._options.name,
+	desc._options.initFieldCount,
+	desc._options.autoFieldCount,
+	desc.getStructAccessor(),
+	desc.getStructMutator(),
+	desc._options.immutables, //TODO: What about supers?
+	desc._options.superType || false,
+	false //TODO: Not sure what this field means?
+    ];
+}
+
 export function isStructInstance(v) {
-    return v instanceof Struct;
+    return (v instanceof Struct) ||
+	(v instanceof Function) && (v.__rjs_struct_object instanceof Struct);
 }
 
 export function check(v, desc) {
     return isStructInstance(v) && v._desc == desc;
 }
+
+/*****************************************************************************/
+// Properties
+
+export let propProcedure =  makeStructTypeProperty({
+    name: "prop:procedure"
+}).getAt(0);

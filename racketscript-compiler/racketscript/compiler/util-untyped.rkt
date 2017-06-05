@@ -1,5 +1,7 @@
 #lang racket
 
+(require "logging.rkt")
+
 (provide links-module?
          improper->proper
          *jsident-pattern*
@@ -25,6 +27,12 @@
 (define (links-module? mod-path)
   (define (match-link? dir link)
     (match link
+      [(list 'root path) #:when (absolute-path? path)
+       ;; Links.rktd may have point to root package which is not at current
+       ;; subdir. Eg. /usr/local/.../links.rktl may point to a package in
+       ;; home directory.
+       (subpath? (~a (simplify-path path))
+                 (~a mod-path))]
       [(list name path)
        (subpath? (~a (simplify-path (build-path dir path)))
                  (~a mod-path))]
@@ -41,6 +49,9 @@
           (~a (let-values ([(base last dir?) (split-path p)]) last))
           p))
     (match link
+      [(list 'root path) #:when (absolute-path? path)
+       (list (~a (let-values ([(base last dir?) (split-path path)]) last))
+             (string->path path))]
       [(list name path)
        (list (if (symbol? name)
                  (fix-relative-path path)
@@ -53,15 +64,21 @@
   ;; Iterate through each entry in links.rktd file pointed
   ;; by link-fpath and find the entry with module mod-path
   (define (find-link link-fpath)
+    (log-rjs-debug "Processing library collection links at: ~a" link-fpath)
     (define links-dir (path-only link-fpath))
-    (call-with-input-file link-fpath
-      (λ (p-links-in)
-        (let loop ([links (read p-links-in)])
-          (match links
-            ['() #f]
-            [(cons hd tl) (if (match-link? links-dir hd)
-                              (link->result link-fpath hd)
-                              (loop tl))])))))
+    (cond
+      [(file-exists? link-fpath)
+       (call-with-input-file link-fpath
+         (λ (p-links-in)
+           (let loop ([links (read p-links-in)])
+             (match links
+               ['() #f]
+               [(cons hd tl) (if (match-link? links-dir hd)
+                                 (link->result link-fpath hd)
+                                 (loop tl))]))))]
+      [else
+       (log-rjs-warning "Library collection link file ~a does not exist!" link-fpath)
+       #f]))
 
   ;; Iterate through each links.rktd file, to find
   ;; the out

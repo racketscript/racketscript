@@ -1,10 +1,13 @@
 #lang typed/racket/base
 
 (require racket/match
+         racket/function
          racket/path
          racket/runtime-path
          racket/set
-         threading)
+         threading
+
+         "../private/interop.rkt")
 
 (provide output-directory
          logging?
@@ -22,7 +25,8 @@
          jsruntime-core-module
 
          primitive-modules
-         ignored-module-imports-in-boot)
+         ignored-module-imports-in-boot
+         ignored-undefined-identifier?)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -71,13 +75,11 @@
 (: jsruntime-module-path (-> Symbol Path))
 (define (jsruntime-module-path mod)
   (let ([mod-name (match mod
-                    ['#%kernel "kernel.rkt.js"]
-                    ['#%utils "utils.rkt.js"]
-                    ['#%unsafe "unsafe.rkt.js"]
-                    ['#%paramz "paramz.rkt.js"]
-                    ['#%flfxnum "flfxnum.rkt.js"]
                     ['core "core.js"]
-                    [_ "rest.rkt.js"])])
+                    [_ #:when (set-member? primitive-modules mod)
+                       (string-append
+                        (substring (symbol->string mod) 2)
+                        ".rkt.js")])])
     (path->complete-path
      (build-path (output-directory)
                  "runtime"
@@ -97,9 +99,28 @@
   (set
    (build-path racketscript-dir "private" "interop.rkt")))
 
-(: primitive-modules (Setof Symbol))
+(: ignored-undefined-identifiers (Listof Identifier))
+(define ignored-undefined-identifiers
+  (list #'#%js-ffi))
+
+(: ignored-undefined-identifier? (-> Identifier Boolean))
+(define (ignored-undefined-identifier? id)
+  (ormap (curry free-identifier=? id) ignored-undefined-identifiers))
+
+(: primitive-modules (Setof (U Symbol Path)))
 (define primitive-modules
   (set '#%kernel
        '#%utils
        '#%paramz
-       '#%unsafe))
+       '#%unsafe
+       '#%utils
+       '#%flfxnum
+       '#%futures
+       '#%extfl
+       '#%place-struct
+       '#%network
+       '#%builtin
+       '#%boot
+       '#%foreign
+       '#%place
+       (build-path racketscript-runtime-dir "lib.rkt")))

@@ -2,142 +2,8 @@
 
 (require racketscript/interop
          racket/stxparam
-         (for-syntax syntax/parse))
-
-;; ----------------------------------------------------------------------------
-;; JS imports
-
-(define Kernel ($/require "./kernel.js")) ;; old stuff
-(define Core   ($/require "./core.js"))
-(define Paramz ($/require "./paramz.js"))
-(define Values #js.Core.Values)
-(define Pair   #js.Core.Pair)
-
-;; ----------------------------------------------------------------------------
-;; Helpers
-
-(define-syntax throw   (make-rename-transformer #'$/throw))
-(define-syntax new     (make-rename-transformer #'$/new))
-(define-syntax array   (make-rename-transformer #'$/array))
-(define-syntax object  (make-rename-transformer #'$/obj))
-(define-syntax :=      (make-rename-transformer #'$/:=))
-(define-syntax binop   (make-rename-transformer #'$/binop))
-(define-syntax typeof  (make-rename-transformer #'$/typeof))
-(define-syntax instanceof  (make-rename-transformer #'$/instanceof))
-
-(define-syntax *null*       (make-rename-transformer #'$/null))
-(define-syntax *undefined*  (make-rename-transformer #'$/undefined))
-
-(define-syntax define-binop
-  (syntax-parser
-    [(_ name:id oper:id)
-     #`(define-syntax name
-         (syntax-parser
-           [(op e0:expr e1:expr) #`(binop oper e0 e1)]
-           [(op e0:expr e1:expr en:expr ...+)
-            #'(op (binop oper e0 e1) en (... ...))]))]))
-
-(define-binop and &&)
-(define-binop or \|\|)
-
-(define-syntax introduce-id
-  (syntax-parser
-    [(_ id:id) #'(define-syntax id
-                   (syntax-parser
-                     [(_ e0 (... ...)) #'(($ 'id) e0 (... ...))]
-                     [_:id #'($ 'id)]))]))
-
-(define-syntax (define+provide stx)
-  (syntax-parse stx
-    [(_ name:id val:expr)
-     #'(begin (provide name)
-              (define name val))]
-    [(_ (~and formals (name:id . args)) body ...)
-     #'(begin (provide name)
-              (define formals body ...))]))
-
-(define-syntax-parameter arguments
-  (lambda (stx)
-    (raise-syntax-error (syntax-e stx) "can only be used in JS vararg lambda")))
-
-;; v-λ is a lambda with JS semantics. More specifically, for rest
-;; parameters are plain arrays instead of Racket lists. For sake of
-;; performance, v-λ is preferred for writing variadic functions in
-;; this file. `arguments` is syntax parameter to get the native JS
-;; arguments object.
-;;
-;; NOTE: Use `arguments` directly with extreme care! Loops are
-;; lambdas, therefore, rebind this variable with different name.
-(define-syntax (v-λ stx)
-  (define (-arguments stx)
-    (syntax-parse stx
-      [(_ i:expr) #'($ 'arguments i)]
-      [(_ i:expr j:expr) #'($ 'arguments i)]
-      [arguments #'($ 'arguments)]))
-  (syntax-parse stx
-    [(_ args:id body ...+)
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ ()
-           (define args (#js.Core.argumentsToArray arguments))
-           body ...))]
-    [(_ (a0:id ...) body ...+)
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ (a0 ...)
-           body ...))]
-    [(_ (a0:id ...+ . as:id) body ...+)
-     (define fixed-args (length (syntax-e #'(a0 ...))))
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ (a0 ...)
-           (define as (#js.Array.prototype.slice.call arguments #,fixed-args))
-           body ...))]))
-
-(define-syntax (loop+ stx)
-  (syntax-parse stx
-    [(_ [index:id start:expr end:expr step:expr] body ...+)
-     #`(let loop ([index start])
-         (when (binop < index end)
-           body ...
-           (loop (binop + index step))))]
-    [(_ [index:id start:expr end:expr] body ...+)
-     #'(loop+ [index start end 1] body ...)]
-    [(_ [index:id end:expr] body ...+)
-     #'(loop+ [index 0 end 1] body ...)]))
-
-(define-syntax (for/array stx)
-  (syntax-parse stx
-    [(_ [(index:id item:id) arr:expr start:expr end:expr] body ...+)
-     ;; TODO: save the arr than than copying it everywhere
-     #'(loop+ [index start end 1]
-         (define item ($ arr index))
-          body ...)]
-    [(_ [(index:id item:id) arr:expr] body ...+)
-     #'(for/array [(index item) arr 0 ($ arr 'length)] body ...)]
-    [(_ [item:id arr:expr start:expr end:expr] body ...+)
-     #'(for/array [(i item) arr start end] body ...)]
-    [(_ [item:id arr:expr start:expr] body ...+)
-     #'(for/array [item arr start ($ arr 'length)] body ...)]
-    [(_ [item:id arr:expr] body ...+)
-     #'(for/array [item arr 0 ($ arr 'length)] body ...)]))
-
-;; Use some Native JS libs
-
-(introduce-id Math)
-(introduce-id Number)
-(introduce-id String)
-(introduce-id Uint8Array)
-(introduce-id Date)
-(introduce-id Array)
-(introduce-id RegExp)
-(introduce-id console)
-
-;; ----------------------------------------------------------------------------
-;; Errors
-
-(define-syntax-rule (type-check/raise type what)
-  (unless (#js.type.check what)
-    (throw (#js.Core.racketContractError "expected a {0}, but given {1}"
-                                         type
-                                         what))))
+         (for-syntax syntax/parse)
+         "lib.rkt")
 
 ;; ----------------------------------------------------------------------------
 ;; Equality
@@ -174,71 +40,94 @@
 ;; ----------------------------------------------------------------------------
 ;; Numbers
 
-(define+provide number? #js.Core.Number.check)
-(define+provide real? #js.Core.Number.check)
-(define+provide integer? #js.Core.Number.isInteger)
+(define+provide number?   #js.Core.Number.check)
+(define+provide real?     #js.Core.Number.check)
+(define+provide integer?  #js.Number.isInteger)
 
-(define+provide (zero? v)
+(define-checked+provide (zero? [v number?])
   (binop === v 0))
 
-(define+provide (positive? v)
+(define-checked+provide (positive? [v real?])
   (binop > v 0))
 
-(define+provide (negative? v)
+(define-checked+provide (negative? [v real?])
   (binop < v 0))
 
-(define+provide (add1 v)
+(define-checked+provide (add1 [v number?])
   (binop + v 1))
 
-(define+provide (sub1 v)
+(define-checked+provide (sub1 [v number?])
   (binop - v 1))
 
-(define+provide (quotient dividend divisor)
-  (floor (binop / dividend divisor)))
+(define-checked+provide (quotient [dividend integer?] [divisor integer?])
+  (binop \| (binop / dividend divisor) 0))
 
-(define+provide (even? v)
+(define-checked+provide (even? [v integer?])
   (binop === (binop % v 2) 0))
 
-(define+provide (odd? v)
+(define-checked+provide (odd? [v integer?])
   (not (binop === (binop % v 2) 0)))
 
 (define+provide (exact-nonnegative-integer? v)
   (and (#js.Number.isInteger v) (binop >= v 0)))
 
-(define+provide (exact->inexact v) v)
+(define+provide (exact-integer? v)
+  (#js.Number.isInteger v))
 
-(define+provide * #js.Core.Number.mul)
-(define+provide / #js.Core.Number.div)
-(define+provide + #js.Core.Number.add)
-(define+provide - #js.Core.Number.sub)
-(define+provide < #js.Core.Number.lt)
-(define+provide > #js.Core.Number.gt)
+(define+provide *  #js.Core.Number.mul)
+(define+provide /  #js.Core.Number.div)
+(define+provide +  #js.Core.Number.add)
+(define+provide -  #js.Core.Number.sub)
+(define+provide <  #js.Core.Number.lt)
+(define+provide >  #js.Core.Number.gt)
 (define+provide <= #js.Core.Number.lte)
 (define+provide >= #js.Core.Number.gte)
-(define+provide = #js.Core.Number.equals)
+(define+provide =  #js.Core.Number.equals)
 
-(define+provide floor #js.Math.floor)
-(define+provide abs #js.Math.abs)
-(define+provide sin #js.Math.sin)
-(define+provide cos #js.Math.cos)
-(define+provide tan #js.Math.tan)
-(define+provide ceiling #js.Math.ceiling)
-(define+provide round #js.Math.round)
-(define+provide min #js.Math.min)
-(define+provide max #js.Math.max)
+(define-checked+provide (floor [v real?])
+  (#js.Math.floor v))
+(define-checked+provide (abs [v real?])
+  (#js.Math.abs v))
+(define-checked+provide (sin [v real?])
+  (#js.Math.sin v))
+(define-checked+provide (cos [v real?])
+  (#js.Math.cos v))
+(define-checked+provide (tan [v real?])
+  (#js.Math.tan v))
+(define-checked+provide (atan [v real?])
+  (#js.Math.atan v))
 
-;;TODO: Support bignums
-(define+provide (expt w z) (#js.Math.pow w z))
-(define+provide (sqrt v) (#js.Math.sqrt v))
+(define-checked+provide (ceiling [v real?])
+  (#js.Math.ceil v))
+(define-checked+provide (round [v real?])
+  (#js.Math.round v))
 
-(define+provide (sqr v)
+(define-checked+provide (min [a real?] [b real?])
+  (#js.Math.min a b))
+(define-checked+provide (max [a real?] [b real?])
+  (#js.Math.max a b))
+
+(define-checked+provide (log [v real?])
+  (#js.Math.log v))
+
+(define-checked+provide (expt [w number?] [z number?])
+  (#js.Math.pow w z))
+
+(define-checked+provide (sqrt [v number?])
+  (#js.Math.sqrt v))
+
+(define-checked+provide (sqr [v number?])
   (* v v))
 
-(define+provide (remainder a b)
+(define-checked+provide (remainder [a integer?] [b integer?])
   (binop % a b))
 
-(define+provide (number->string n)
+(define-checked+provide (number->string [n number?])
   (#js.n.toString))
+
+;;TODO: Support bignums
+(define+provide (inexact->exact x) x)
+(define+provide (exact->inexact x) x)
 
 ;; ----------------------------------------------------------------------------
 ;; Booleans
@@ -249,29 +138,34 @@
 (define+provide false #f)
 (define+provide true #t)
 
-(define+provide (false? v) (eq? v #f))
+(define+provide (false? v) (binop === v #f))
 
 ;; ----------------------------------------------------------------------------
 ;; Pairs
 
-(define+provide (car pair) #js.pair.hd)
-(define+provide (cdr pair) #js.pair.tl)
-(define+provide cons #js.Pair.make)
-(define+provide cons? #js.Pair.check)
-(define+provide pair? #js.Pair.check)
+(define-checked+provide (car [pair pair?]) #js.pair.hd)
+(define-checked+provide (cdr [pair pair?]) #js.pair.tl)
+(define+provide cons       #js.Pair.make)
+(define+provide cons?      #js.Pair.check)
+(define+provide pair?      #js.Pair.check)
 
-(define+provide empty #js.Pair.Empty)
-(define+provide null #js.Pair.Empty)
-(define+provide list #js.Pair.makeList)
-(define+provide first car)
-(define+provide rest  cdr)
+(define-checked+provide (caar [v (check/pair-of? pair? #t)])
+  #js.v.hd.hd)
+(define-checked+provide (cadr [v (check/pair-of? #t pair?)])
+  #js.v.tl.hd)
+(define-checked+provide (cdar [v (check/pair-of? pair? #t)])
+  #js.v.hd.tl)
+(define-checked+provide (cddr [v (check/pair-of? #t pair?)])
+  #js.v.tl.tl)
+(define-checked+provide (caddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
+  #js.v.tl.tl.hd)
+
+(define+provide null  #js.Pair.Empty)
+(define+provide list  #js.Pair.makeList)
 
 (define+provide null?  #js.Pair.isEmpty)
 (define+provide empty? #js.Pair.isEmpty)
 (define+provide length #js.Pair.listLength)
-
-(define+provide (second lst)
-  ($> lst (cdr) (car)))
 
 (define+provide (list? v)
   (cond
@@ -279,7 +173,7 @@
     [(cons? v) (list? ($> v (cdr)))]
     [else #f]))
 
-(define+provide (reverse lst)
+(define-checked+provide (reverse [lst list?])
   (let loop ([lst lst]
              [result '()])
     (if (null? lst)
@@ -305,8 +199,32 @@
 
 (define+provide for-each
   (v-λ (lam . lsts)
+    (check/raise procedure? lam 0)
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
+
+;; ----------------------------------------------------------------------------
+;; Mutable Pairs
+
+(define+provide (mcons hd tl)
+  (#js.Core.MPair.make hd tl))
+
+(define+provide (mpair? v)
+  (#js.Core.MPair.check v))
+
+(define-checked+provide (mcar [p mpair?])
+  (#js.p.car))
+
+(define-checked+provide (mcdr [p mpair?])
+  (#js.p.cdr))
+
+(define+provide (set-mcar! p v)
+  (check/raise mpair? p 0)
+  (#js.p.setCar v))
+
+(define+provide (set-mcdr! p v)
+  (check/raise mpair? p 0)
+  (#js.p.setCdr v))
 
 ;; --------------------------------------------------------------------------
 ;; Structs
@@ -359,6 +277,9 @@
 (define+provide (struct-type? v)
   (#js.Core.Struct.isStructType v))
 
+(define+provide (struct-type-info desc)
+  (#js.Core.Values.make (#js.Core.Struct.structTypeInfo desc)))
+
 ;; --------------------------------------------------------------------------
 ;; Vectors
 
@@ -367,31 +288,28 @@
      (#js.Core.Vector.make (#js.Core.argumentsToArray arguments) #t)))
 
 ;; v is optional
-(define+provide (make-vector size v)
+(define-checked+provide (make-vector [size integer?] [v #t])
   (#js.Core.Vector.makeInit size (or v 0)))
 
 (define+provide vector? #js.Core.Vector.check)
 
-(define+provide (vector-length v)
+(define-checked+provide (vector-length [v vector?])
   (#js.v.length))
 
-;; TODO: wrong checks
-(define+provide (vector-ref vec i)
-  (#js.Core.Vector.check vec)
+(define-checked+provide (vector-ref [vec vector?] [i integer?])
   (#js.vec.ref i))
 
-(define+provide (vector-set! vec i v)
-  (#js.Core.Vector.check vec)
+(define-checked+provide (vector-set! [vec vector] [i integer?] [v #t])
   (#js.vec.set i v))
 
-(define+provide (vector->list vec)
+(define-checked+provide (vector->list [vec vector?])
   (#js.Core.Pair.listFromArray #js.vec.items))
+
+(define-checked+provide (vector->immutable-vector [vec vector?])
+  (#js.Core.Vector.copy vec #f))
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
-
-(define+provide (make-immutable-hash assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "equal" #f))
 
 (define-syntax-rule (make-hash-contructor make)
   (v-λ ()
@@ -408,11 +326,24 @@
 (define+provide hasheq  (make-hash-contructor #js.Core.Hash.makeEq))
 
 (define+provide (make-hash assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "equal" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "equal" #t))
 (define+provide (make-hasheqv assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "eqv" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #t))
 (define+provide (make-hasheq assocs)
-  (#js.Core.Hash.makeFromAssocs assocs "eq" #t))
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eq" #t))
+
+(define+provide (make-immutable-hash assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "equal" #f))
+(define+provide (make-immutable-hasheqv assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #f))
+(define+provide (make-immutable-hasheq assocs)
+  (define assocs* (or assocs '()))
+  (#js.Core.Hash.makeFromAssocs assocs* "eq" #f))
 
 (define+provide (hash-ref h k fail)
   (#js.h.ref k fail))
@@ -420,11 +351,18 @@
 (define+provide (hash-set h k v)
   (#js.h.set k v))
 
+(define+provide (hash-set! h k v)
+  (#js.h.set k v))
+
+(define+provide (hash-map h proc)
+  (#js.Core.Hash.map h proc))
+
 ;; --------------------------------------------------------------------------
 ;; Higher Order Functions
 
 (define+provide apply
   (v-λ (lam . args)
+    (check/raise procedure? lam 0)
     (define final-args
       (cond
         [(zero? #js.args.length)
@@ -439,6 +377,7 @@
 
 (define+provide map
   (v-λ (fn . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'map "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))
@@ -458,6 +397,7 @@
 
 (define+provide foldl
   (v-λ (fn init . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'foldl "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))
@@ -489,6 +429,7 @@
 
 (define+provide foldr
   (v-λ (fn init . lists)
+    (check/raise procedure? fn 0)
     (when (<= #js.lists.length 0)
       (error 'foldr "need at-least two arguments"))
     (define lst-len (length ($ lists 0)))
@@ -719,30 +660,57 @@
 ;; --------------------------------------------------------------------------
 ;; Properties
 
+(define-syntax (define-property+provide stx)
+  (syntax-parse stx
+    [(_ name:id)
+     #`(begin
+         (provide name)
+         (define+provide name
+           (($ (make-struct-type-property
+                #,(symbol->string (syntax-e #'name))) 'getAt)
+            0)))]))
+
 (provide prop:evt evt?)
 (define-values (prop:evt evt?) (#js.Core.Struct.makeStructTypeProperty
                                 {object [name "prop:evt"]}))
 
-;; --------------------------------------------------------------------------
-;; Ports
+(define-property+provide prop:checked-procedure)
+(define-property+provide prop:impersonator-of)
+(define-property+provide prop:arity-string)
+(define-property+provide prop:incomplete-arity)
+(define-property+provide prop:method-arity-error)
+(define-property+provide prop:exn:srclocs)
 
-(define+provide (current-output-port) #f)
-(define+provide (output-port?) #f)
+(define+provide prop:procedure #js.Core.Struct.propProcedure)
+
+;; --------------------------------------------------------------------------
+;; Ports + Writers
+
+(define+provide (current-output-port)
+  #js.Core.Ports.standardOutputPort)
+
+(define+provide (current-print)
+  (λ (p)
+    (when (string? p)
+      (display "\""))
+    (display p)
+    (when (string? p)
+      (display "\""))
+    (newline)))
+
+(define+provide (input-port? p)
+  (#js.Core.Ports.checkInputPort p))
+
+(define+provide (output-port? p)
+  (#js.Core.Ports.checkOutputPort p))
 
 ;; --------------------------------------------------------------------------
 ;; Printing
 
-(define+provide (displayln v) (#js.Kernel.displayln v))
 (define+provide (display v) (#js.Kernel.display v))
 
 (define+provide (newline)
-  (displayln ""))
-
-(define+provide (print-values v)
-  (unless (void? v)
-    (if (typeof v "string")
-        (#js.console.log (string "\"" v "\"")) ;;HACK: special cases
-        (displayln v))))
+  (display "\n"))
 
 ;; --------------------------------------------------------------------------
 ;; Errors
@@ -794,6 +762,11 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
+(define+provide (raise e)
+  (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
+                                                #js.Paramz.ExceptionHandlerKey)])
+    (abort-ccp e)))
+
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
 
@@ -828,8 +801,8 @@
 
 (define+provide (byte-regexp bs)
   (if (bytes? bs)
-      (throw (#js.Core.racketContractError "expected bytes"))
-      (new (RegExp (bytes->string/utf-8 bs)))))
+      (new (RegExp (bytes->string/utf-8 bs)))
+      (throw (#js.Core.racketContractError "expected bytes"))))
 
 (define+provide byte-pregexp byte-regexp)
 
@@ -870,6 +843,7 @@
 ;; --------------------------------------------------------------------------
 ;; Procedures
 
+;;TODO: Why was this prefixed with 'kernel:'???
 (provide (struct-out kernel:arity-at-least))
 (struct kernel:arity-at-least (value)
   #:extra-constructor-name make-arity-at-least
@@ -877,6 +851,14 @@
 
 (define+provide (procedure? f)
   (typeof f "function"))
+
+(define+provide arity-at-least make-arity-at-least)
+
+(define+provide (arity-at-least? p)
+  (kernel:arity-at-least? p))
+
+(define+provide (arity-at-least-value p)
+  (kernel:arity-at-least-value p))
 
 (define+provide (procedure-arity-includes? f) #t)
 
@@ -891,9 +873,45 @@
          (#js.Core.Pair.listFromArray #js.fn.__rjs_arityValue))]
     [else #js.fn.length]))
 
-(define+provide (eval-jit-enabled) #t)
+(define+provide (procedure-arity? v)
+  (or (exact-nonnegative-integer? v)
+      (kernel:arity-at-least? v)
+      (ormap (λ (v)
+               (or (exact-nonnegative-integer? v)
+                   (kernel:arity-at-least? v)))
+             v)))
 
-(define+provide (make-sequence who v)
-  (#js.Core.Values.make [array car cdr v pair? #f #f]))
+
+(define+provide (checked-procedure-check-and-extract type v proc v1 v2)
+  (cond
+    [(and (#js.Core.Struct.check v type)
+          (#js.type._findProperty prop:checked-procedure))
+     (let* ([fn (#js.v.getField 0)]
+            [r1 (fn v1 v2)])
+       (if r1
+           (#js.v.getField 1)
+           (proc v v1 v2)))]
+    [else (proc v v1 v2)]))
+;; --------------------------------------------------------------------------
+;;
+
+(define+provide (gensym sym)
+  (let ([s (or (and sym #js.sym.v) "")])
+    (set! __count (binop + __count 1))
+    (#js.Core.Symbol.makeUninterned (binop + s __count))))
+
+(define+provide (eval-jit-enabled) #f)
 
 (define+provide (variable-reference-constant? x) #f)
+
+(define+provide (inspector? p)
+  #t)
+
+(define+provide (make-thread-cell p) p)
+
+(define __count 1000)
+
+(define+provide (system-type mod)
+  'javascript)
+
+(define+provide make-weak-hash make-hash)

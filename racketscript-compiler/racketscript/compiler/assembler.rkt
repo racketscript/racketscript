@@ -302,6 +302,7 @@
        [-inf.0 (emit "-Infinity")]
        [+nan.0 (emit "NaN")]
        [+nan.f  (emit "NaN")]
+       [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
     [(empty? v) (emit (~a (name-in-module 'core 'Pair.Empty)))]

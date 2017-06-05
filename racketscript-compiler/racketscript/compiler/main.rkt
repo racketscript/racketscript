@@ -39,13 +39,13 @@
          racketscript-dir
          skip-gulp-build
          skip-npm-install
-         enabled-optimizations)
+         enabled-optimizations
+         recompile-all-modules?)
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
 (define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
-(define dump-debug-info (make-parameter #f))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
@@ -275,9 +275,8 @@
   (define timestamps (load-cached-module-timestamps))
 
   (put-to-pending! (path->complete-path (main-source-file)))
-  (put-to-pending! '#%kernel)
-  (put-to-pending! '#%unsafe)
-  (put-to-pending! '#%paramz)
+  (for ([pm primitive-modules])
+    (put-to-pending! pm))
 
   (let loop ()
     (define next (and (non-empty-queue? pending) (dequeue! pending)))
@@ -303,7 +302,7 @@
        (for ([mod (in-set (Module-imports ast))])
          (match mod
            [(? symbol? _) (void)]
-           [_ #:when (collects-module? mod) (void) #;(put-to-pending! mod)]
+           [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
        (loop)]
       [(false? next)
@@ -331,8 +330,6 @@
    [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
    [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
-   ["--dump-debug-info" "Dumps some debug information in output directory"
-    (dump-debug-info #t)]
    ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
     (input-from-stdin? #t)]
    ["--enable-self-tail" "Translate self tail calls to loops"
@@ -444,11 +441,5 @@
           (js-string-beautify (get-output-string output-string))
           (get-output-string output-string)))]
     ['complete (racket->js)])
-
-  ;; Dump debug information
-  (when (dump-debug-info)
-    (with-output-to-file (build-path (output-directory) "debug.txt") #:exists 'truncate
-      (λ ()
-        (pretty-print (used-idents)))))
 
   (void))

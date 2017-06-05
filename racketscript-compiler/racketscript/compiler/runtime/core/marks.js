@@ -54,7 +54,8 @@ export function AbortCurrentContinuation(promptTag, handlerArgs) {
         this.stack = (new Error()).stack;
     }
 }
-AbortCurrentContinuation.prototype = new Error();
+AbortCurrentContinuation.prototype = Object.create(Error.prototype);
+AbortCurrentContinuation.prototype.constructor = AbortCurrentContinuation;
 
 function savePrompt(promptTag) {
     let promptVal = __prompts.get(promptTag);

@@ -258,11 +258,11 @@
 (define (primitive-module? mod)
   (set-member? primitive-modules mod))
 
-(: primitive-module-path? (-> Path (Option Symbol)))
+(: primitive-module-path? (-> Path (Option (U Symbol Path))))
 (define (primitive-module-path? mod-path)
-  (let* ([primitive-modules-paths : (Listof (Pairof Path Symbol))
+  (let* ([primitive-modules-paths : (Listof (Pairof Path (U Symbol Path)))
                                   (set-map primitive-modules
-                                           (λ ([m : Symbol])
+                                           (λ ([m : (U Symbol Path)])
                                              (cons (actual-module-path m) m)))]
          [result (assoc mod-path primitive-modules-paths)])
     (if (pair? result)

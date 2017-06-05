@@ -8,5 +8,5 @@
                   (cons (fn (car lst)) acc))]))
   (loop lst '()))
 
-(x-map (lambda (x) (* x x)) '(1 2 3 4 5))
-(x-map (lambda (x) x) '(1 2 3 4 5))
+(displayln (x-map (lambda (x) (* x x)) '(1 2 3 4 5)))
+(displayln (x-map (lambda (x) x) '(1 2 3 4 5)))

@@ -104,6 +104,7 @@
   (parameterize ([main-source-file test-path]
                  [global-export-graph (get-cached-export-tree test-path)]
                  [current-source-file test-path]
+                 [recompile-all-modules? #f]
                  [current-output-port (if (racketscript-stdout?)
                                           (current-output-port)
                                           (open-output-nowhere))])
@@ -162,12 +163,20 @@
       (when (directory-exists? p)
         (delete-directory/files p))))
 
+  (define skipped-tests (mutable-set))
+
   (define testcases
-    (append-map (λ (pattern)
-                  (if (string-suffix? pattern ".rkt")
-                      (glob pattern)
-                      (glob (~a pattern "/*.rkt"))))
-                tc-search-patterns))
+    (filter-not
+     (λ (t)
+       ;; Filter tests whose names start with "__"
+       (let ([skip? (string-prefix? (last (string-split t "/")) "__")])
+         (when skip? (set-add! skipped-tests t))
+         skip?))
+     (append-map (λ (pattern)
+                   (if (string-suffix? pattern ".rkt")
+                       (glob pattern)
+                       (glob (~a pattern "/*.rkt"))))
+                 tc-search-patterns)))
 
   (define failed-tests '())
 
@@ -213,7 +222,12 @@
                        (length failed-tests)
                        (length testcases)))
     (for ([t failed-tests])
-      (displayln (format "  ✘ ~a" t)))))
+      (displayln (format "  ✘ ~a" t))))
+
+  (unless (set-empty? skipped-tests)
+    (displayln (format "\nSkipped tests [~a] => " (set-count skipped-tests)))
+    (for ([t (sort (set->list skipped-tests) string<?)])
+      (displayln (format "  □ ~a" t)))))
 
 ;; Runs tests with each kind of option
 (define (run tc-search-patterns)
@@ -289,5 +303,7 @@
                               "struct"
                               "hash"
                               "wcm"
-                              "modules")))
+                              "modules"
+                              "optimize"
+                              "experimental")))
 

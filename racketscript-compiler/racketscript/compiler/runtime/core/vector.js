@@ -74,6 +74,10 @@ export function make(items, mutable) {
     return new Vector(items, mutable);
 }
 
+export function copy(vec, mutable) {
+    return new Vector(vec.items, mutable);
+}
+
 
 export function makeInit(size, init) {
     let r = new Array(size);

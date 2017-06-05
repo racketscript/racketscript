@@ -20,6 +20,7 @@
          syntax/modresolve
          syntax/stx
          syntax/parse
+         syntax/id-table
          (only-in racket/list
                   append-map
                   last-pair
@@ -42,8 +43,6 @@
          read-module
          to-absyn
          to-absyn/top
-         used-idents
-         register-ident-use!
          read-and-expand-module
          quick-expand)
 
@@ -56,16 +55,6 @@
 
 ;; (Setof (U ModulePath Symbol))
 (define current-module-imports (make-parameter (set)))
-
-;; A list of idents used so far while compiling current project
-(define used-idents (make-parameter (hash)))
-
-;; Updates `used-ident` by adding identifier `id` imported from `mod-path`.
-(define (register-ident-use! mod-path id)
-  (used-idents (hash-update (used-idents)
-                            mod-path
-                            (λ (i*) (set-add i* (list id (current-module))))
-                            (set (list id (current-module))))))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module paths
@@ -187,7 +176,7 @@
        ;; Rename few modules for simpler compilation
        (cond
          [(symbol? mpath) (list #f mpath)]
-         [(collects-module? mpath) (list #t '#%kernel)]
+         #;[(collects-module? mpath) (list #t '#%kernel)]
          [else (list #f mpath)]))
      (define ident-sym (syntax-e #'i))
 
@@ -213,36 +202,64 @@
            ;; compute this with moddeps information.
            (current-module-imports (set-add (current-module-imports) src-mod-path))
 
-           ;; If we can't follow this symbol, we probably got this
-           ;; because of some macro expansion. TODO: As we process
-           ;; modules in topological order, we can save this
-           ;; identifier, so that when we export this identifier from
-           ;; its source module processed later.
-           (define path-to-symbol (follow-symbol (global-export-graph)
-                                                 src-mod-path-orig
-                                                 mod-src-id))
-           (unless path-to-symbol
-             (hash-update! global-unreachable-idents
-                           src-mod-path
-                           (λ (s*)
-                             (set-add s* mod-src-id))
-                           (set mod-src-id)))
+           ;;HACK: See test/struct/import-struct.rkt. Somehow, the
+           ;;  struct contructor has different src-id returned by
+           ;;  identifier-binding than the actual identifier name used
+           ;;  at definition site. Implicit renaming due to macro
+           ;;  expansion?
+           ;;
+           ;;HACK: See tests/modules/rename-and-import.rkt and
+           ;;  tests/rename-from-primitive.rkt. When importing from a
+           ;;  module with a rename, identifier-binding's, mod-src-id
+           ;;  shows the renamed id, i.e. the one it is imported as
+           ;;  instead of what it is exported as. We handle this
+           ;;  special case where both src-mod and nom-src-mod are
+           ;;  equal. If both source module and normalized module are
+           ;;  same with different ids:
+           ;;  - Check if nom-src-id is exported and use that. Or,
+           ;;  - Check if src-id is exported and use that. Or,
+           ;;  - Fallback to module source id.
+           (define-values (id-to-follow path-to-symbol)
+             (cond
+               [(and (equal? src-mod nom-src-mod)
+                     (not (equal? src-id mod-src-id)))
+                (let ([path-to-symbol-src (follow-symbol (global-export-graph)
+                                                         nom-src-mod-path-orig
+                                                         mod-src-id)])
+                  (if path-to-symbol-src
+                      (values mod-src-id path-to-symbol-src)
+                      (let ([path-to-symbol-nom (follow-symbol (global-export-graph)
+                                                               nom-src-mod-path-orig
+                                                               src-id)])
+                        (if path-to-symbol-nom
+                            (values src-id path-to-symbol-nom)
+                            (values mod-src-id #f)))))]
+               [else (values mod-src-id
+                             (follow-symbol (global-export-graph)
+                                            nom-src-mod-path-orig
+                                            mod-src-id))]))
 
            ;; If the moduele is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
            ;; are #%kernel which we write ourselves in JS we prefer original name.
            ;; TODO: We potentially might have clashes, but its unlikely.
-           (define-values (effective-id effective-mod)
+           (define-values (effective-id effective-mod reachable?)
              (cond
-               [module-renamed? (values mod-src-id src-mod-path)]
+               [module-renamed? (values mod-src-id src-mod-path #t)]
                [(false? path-to-symbol)
-                (values mod-src-id src-mod-path)]
+                (when (and (not (ignored-undefined-identifier? #'i))
+                           (symbol? src-mod-path))
+                  ;; Since free id's are anyway caught by Racket, just
+                  ;; complain about the primitives.
+                  (log-rjs-warning
+                   "Implementation of identifier ~a not found in module ~a!"
+                   (syntax-e #'i) src-mod-path))
+                (values id-to-follow src-mod-path #f)]
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
-                  (values id mod))]))
+                  (values id mod #t))]))
 
-           (register-ident-use! effective-mod effective-id)
-           (ImportedIdent effective-id effective-mod)])])]
+           (ImportedIdent effective-id effective-mod reachable?)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
      (Set! (syntax-e #'s) (to-absyn #'e))]
@@ -305,11 +322,20 @@
        (define mod-id (syntax-e #'name))
        (log-rjs-info "[absyn] ~a" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
-              [imports (current-module-imports)])
+              [imports (current-module-imports)]
+              [quoted-bindings (list->set
+                                (map
+                                 syntax-e
+                                 (filter
+                                  (λ (x)
+                                    ;; We just compile phase 0 forms now
+                                    (zero? (list-ref (identifier-binding x) 4)))
+                                  (get-quoted-bindings #'(forms ...)))))])
          (Module mod-id
                  path
                  (syntax->datum #'lang)
                  imports
+                 quoted-bindings
                  ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
@@ -366,9 +392,78 @@
     (do-expand (read-syntax (object-name input) input) full-path)))
 
 ;;;----------------------------------------------------------------------------
+;;; Flatten Phases in Module
+
+(define (flatten-module-forms mod-stx)
+  (define phase-forms (make-hash))
+
+  (define (save-form! form)
+    (hash-update! phase-forms
+                  (current-phase)
+                  (λ (v)
+                    (append v (list form)))
+                  '()))
+
+  (define (walk stx)
+    (syntax-parse stx
+      #:literal-sets ((kernel-literals #:phase (current-phase)))
+      [((begin-for-syntax forms ...) . tl)
+       (parameterize ([current-phase (add1 (current-phase))])
+         (walk #'(forms ...)))
+       (walk #'tl)]
+      [(hd . tl)
+       (save-form! #'hd)
+       (walk #'tl)]
+      [() (void)]
+      [_ (save-form! stx)]))
+
+  (parameterize ([current-phase 0])
+    (walk mod-stx))
+
+  (for/hash ([(phase forms) phase-forms])
+    (values phase (datum->syntax mod-stx forms))))
+
+;;;----------------------------------------------------------------------------
+;;; Prepare binding dependency graph
+
+(define (get-quoted-bindings stx)
+  (syntax-parse stx
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [(quote-syntax e)
+     (parameterize ([quoted? #t]
+                    [current-phase (sub1 (current-phase))])
+       (get-quoted-bindings #'e))]
+    [(define-syntaxes _ b)
+     (parameterize ([current-phase (add1 (current-phase))])
+       (get-quoted-bindings #'b))]
+    [(begin-for-syntax forms ...)
+     (parameterize ([current-phase (add1 (current-phase))])
+       (get-quoted-bindings #'(forms ...)))]
+    [(hd . tl)
+     (append (get-quoted-bindings #'hd)
+             (get-quoted-bindings #'tl))]
+    [() '()]
+    [v:id #:when (quoted?)
+          (match (identifier-binding #'v (current-phase))
+            [(list src-mod src-id _ _ src-phase _ _)
+             (define-values (v u) (module-path-index-split src-mod))
+             (cond
+               [(and (false? v) (false? u))
+                (unless (equal? src-phase (current-phase))
+                  (error 'get-quoted-binding
+                         "Identifier phase is ~a, expecte ~a."
+                         src-phase (current-phase)))
+                (list stx)]
+               [v '()])]
+            [_ '()])]
+    [_ '()]))
+
+;;;----------------------------------------------------------------------------
 
 (module+ test
-  (require rackunit)
+  (require rackunit
+           "util.rkt"
+           "moddeps.rkt")
   (define-syntax-rule (to-absyn/expand stx)
     (parameterize ([global-export-graph (hash)])
       (to-absyn/top (expand stx))))
@@ -378,7 +473,8 @@
       [#f (TopLevelIdent (syntax-e i))]
       [(list mod-path mod-id _ _ _ _ _)
        (match-define (list mod-path* _) (index->path mod-path))
-       (ImportedIdent mod-id mod-path*)]))
+       ;;TODO: Just considering unreachable idents for tests here.
+       (ImportedIdent mod-id mod-path* #f)]))
 
 ;;; Check values
 
@@ -421,8 +517,8 @@
                                             (list (ident #'+) (LocalIdent 'c))))))))
   ;; Check application
 
-  (check-equal? (to-absyn/expand #`(write "hello"))
-                (PlainApp (ident #'write) (list (Quote "hello"))))
+  (check-equal? (to-absyn/expand #`(print "hello"))
+                (PlainApp (ident #'print) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
                 (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
                           (list (Quote 42))))
@@ -575,7 +671,7 @@
                   #'(module foo racket/base
                       (provide foo)
                       (define (foo name)
-                        (write "Hello"))))
+                        (print "Hello"))))
                  (build-path "/tmp/" "racketscript-test-expand.rkt"))))
     (check-equal? (Module-id module-output) 'foo)
     (check-equal? (Module-path module-output) (string->path "/tmp/racketscript-test-expand.rkt"))
@@ -586,7 +682,7 @@
                      '(foo)
                      (PlainLambda '(name)
                                   (list
-                                   (PlainApp (ident #'write)
+                                   (PlainApp (ident #'print)
                                              (list (Quote "Hello")))))))))
 
   (check-equal? (parse-provide #'foo) (list (SimpleProvide 'foo)))
@@ -614,4 +710,82 @@
                    (list (RenamedProvide 'foo 'f:foo)
                          (RenamedProvide 'bar 'f:bar))
                    (DefineValues '(foo) (Quote #f))
-                   (DefineValues '(bar) (Quote #f))))))
+                   (DefineValues '(bar) (Quote #f)))))
+
+;;; Check module flattening
+  (test-case "check flattening of module by splitting as per phases"
+    (define (flatten-module-forms->datum forms)
+      (for/hash ([(k v) (flatten-module-forms forms)])
+        (values k (syntax->datum v))))
+
+    (define (flatten-module->datum mod-stx)
+      (syntax-parse mod-stx
+        [(module name lang
+           (#%plain-module-begin forms ...))
+         (flatten-module-forms->datum #'(forms ...))]))
+
+    #;(check-equal? (flatten-module->datum
+                   #'((begin-for-syntax
+                        (begin-for-syntax
+                          "Phase 2.1"
+                          (begin-for-syntax "Phase 3.1")
+                          "Phase 2.2"
+                          (begin-for-syntax "Phaes 3.2"))
+                        "Phase 1.1"
+                        (begin-for-syntax "Phase 2.3"))))
+                  "")
+
+    (define test-mod-1
+      (expand
+       #'(module foo racket/base
+           (require (for-meta 1 racket/base)
+                    (for-meta 2 racket/base)
+                    (for-meta 3 racket/base))
+           (define-values (foo) "Foo")
+           (begin-for-syntax
+             (define-values (foo-1) (λ () (display "Foo Phase 1"))))
+           (define-values (bar) (λ () "Bar"))
+           (begin-for-syntax
+             (define-values (bar-1) (λ () (display "Bar Phase 1")))
+             (begin-for-syntax
+               (define-values (foo-2) (λ () "Foo Phase 2")))
+             (define-values (foobar-1) (λ () "FooBar Phase 1")))
+           (begin-for-syntax
+             (begin-for-syntax
+               (begin-for-syntax
+                 (define-values (foo-3) (λ () (displayln "Foo Phase 3")))))))))
+
+    (check-equal?
+     (flatten-module->datum test-mod-1)
+     '#hash((0
+             .
+             ((module configure-runtime '#%kernel
+                (#%module-begin
+                 (#%require racket/runtime-config)
+                 (#%app configure '#f)))
+              (#%require (for-meta 1 racket/base))
+              (#%require (for-meta 2 racket/base))
+              (#%require (for-meta 3 racket/base))
+              (define-values (foo) '"Foo")
+              (define-values (bar) (lambda () '"Bar"))))
+            (1
+             .
+             ((define-values (foo-1) (lambda () (#%app display '"Foo Phase 1")))
+              (define-values (bar-1) (lambda () (#%app display '"Bar Phase 1")))
+              (define-values (foobar-1) (lambda () '"FooBar Phase 1"))))
+            (2 . ((define-values (foo-2) (lambda () '"Foo Phase 2"))))
+            (3
+             .
+             ((define-values (foo-3) (lambda () (#%app displayln '"Foo Phase 3"))))))))
+
+  (test-case "get quoted bindings in module"
+    (define test-mod-1
+      (expand
+       #'(module foo racket
+           (define (internal-func)
+             (displayln "Hello World!"))
+           (define-syntax foo
+             (λ (stx) #'(internal-func))))))
+
+    (check-equal? (map syntax-e (get-quoted-bindings test-mod-1))
+                  '(internal-func))))

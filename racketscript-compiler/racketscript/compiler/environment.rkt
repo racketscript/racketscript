@@ -5,7 +5,10 @@
          "config.rkt"
          "util.rkt")
 
-(provide name-in-module)
+(provide name-in-module
+         *quoted-binding-ident-name*)
+
+(define *quoted-binding-ident-name* '__rjs_quoted__)
 
 (: name-in-module (-> Symbol Symbol Symbol))
 (define (name-in-module mod name)

@@ -8,6 +8,7 @@
                  [path    : Path]
                  [lang    : (U Symbol String (Listof Symbol))]
                  [imports : (Setof (U Path Symbol))]
+                 [quoted-bindings : (Setof Symbol)]
                  [forms   : (Listof ModuleLevelForm)])
   #:transparent)
 
@@ -77,7 +78,7 @@
                                    [result : Expr])]
 
   [Ident  (LocalIdent         [id : Symbol])
-          (ImportedIdent      [id : Symbol] [src-mod : Module-Path])
+          (ImportedIdent      [id : Symbol] [src-mod : Module-Path] [reachable? : Boolean])
           (TopLevelIdent      [id : Symbol])]
 
   [Begin   (Listof TopLevelForm)]

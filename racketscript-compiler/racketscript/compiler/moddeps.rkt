@@ -2,7 +2,9 @@
 
 (require syntax/moddep
          graph
-         threading)
+         threading
+         "config.rkt"
+         "util.rkt")
 
 (provide follow-symbol
          get-export-tree
@@ -70,8 +72,9 @@
 ;; Return whole tree of exports with its source starting
 ;; from mod-name (ModulePath)
 (define (get-export-tree mod-name)
-  (define modules (module-deps/tsort-inv (get-module-deps mod-name)))
-  (for/hash ([m modules])
+  (define modules (filter-not symbol? (module-deps/tsort-inv
+                                       (get-module-deps mod-name))))
+  (for/hash ([m (append (set->list primitive-modules) modules)])
     (values m (get-exports/modpath m))))
 
 ;; ModulePath -> ExportOriginMap
@@ -80,11 +83,10 @@
 ;; identifier maps to #f, it is defined in mod-path itself.
 (define (get-exports/modpath mod-path)
   (define-values (exports exported-syntax)
-    (cond
-      [(symbol? mod-path) (values '() '())] ;; TODO
-      [else (~> (resolve-module-path mod-path #f)
-                (get-module-code _)
-                (module-compiled-exports _))]))
+    ;; If its a primitive module, use the RacketScript implementation instead.
+    (~> (resolve-module-path (actual-module-path mod-path) #f)
+        (get-module-code _)
+        (module-compiled-exports _)))
   (make-immutable-hash (parse-exports mod-path exports)))
 
 ;; ModulePath Exports -> ExportOriginMap
@@ -139,6 +141,7 @@
         (match (resolve-module-path-index mod path)
           [#f (void)]
           [`(submod ,path ,mod) (void)]
+          [`(submod ,path ,mod ,literal-sets) (void)]
           [(? symbol? b) (hash-set! graph b '())]
           [`,resolved-path (define new-mod (simplify-path resolved-path))
                            (hash-update! graph path (λ (v) (cons new-mod v)))

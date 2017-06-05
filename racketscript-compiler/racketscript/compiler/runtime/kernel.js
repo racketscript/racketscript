@@ -1,6 +1,5 @@
 import * as Core from "./core.js";
 
-
 export function format(pattern, ...args) {
     //TODO: Only ~a is supported
     var matched = 0;
@@ -16,38 +15,39 @@ export function format(pattern, ...args) {
 /* --------------------------------------------------------------------------*/
 // Printing to Console
 
-let __buffer = ""; //HACK
-
-export function displayln(v) {
-    /* TODO: Real thing takes port as well */
-    if (v === true) {
-	console.log(__buffer + "#t");
-    } else if (v === false) {
-	console.log(__buffer + "#f");
-    } else if (v === undefined || v === null) {
-	console.log(__buffer + "#<void>");
-    } else if (isBytes(v)) {
-	console.log(__buffer + utf8ToString(v));
-    } else {
-	console.log(__buffer + Core.toString(v));
-    }
-    __buffer = "";
-}
-
-export function display(v) {
+export function display(v, out) {
     /* TODO: this is still line */
+    out = out || Core.Ports.standardOutputPort;
     if (v === true) {
-	__buffer += "#t";
+	out.write("#t");
     } else if (v === false) {
-	__buffer += "#f";
+	out.write("#f");
     } else if (v === undefined || v === null) {
-	__buffer += "#<void>";
+	out.write("#<void>");
     } else if (isBytes(v)) {
-	__buffer = __buffer + utf8ToString(v);
+	out.write(utf8ToString(v));
     } else {
-	__buffer += Core.toString(v);
+	out.write(Core.toString(v));
     }
 }
+
+export function print(v, out) {
+    /* TODO: this is still line */
+    out = out || Core.Ports.standardOutputPort;
+    if (v === true) {
+	out.write("#t");
+    } else if (v === false) {
+	out.write("#f");
+    } else if (v === undefined || v === null) {
+	out.write("#<void>");
+    } else if (isBytes(v)) {
+	out.write(utf8ToString(v));
+    } else {
+	out.write(Core.toString(v));
+    }
+}
+
+
 
 /* --------------------------------------------------------------------------*/
 // Errors
