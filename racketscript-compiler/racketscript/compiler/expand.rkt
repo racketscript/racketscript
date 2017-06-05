@@ -461,7 +461,9 @@
 ;;;----------------------------------------------------------------------------
 
 (module+ test
-  (require rackunit)
+  (require rackunit
+           "util.rkt"
+           "moddeps.rkt")
   (define-syntax-rule (to-absyn/expand stx)
     (parameterize ([global-export-graph (hash)])
       (to-absyn/top (expand stx))))
@@ -471,7 +473,8 @@
       [#f (TopLevelIdent (syntax-e i))]
       [(list mod-path mod-id _ _ _ _ _)
        (match-define (list mod-path* _) (index->path mod-path))
-       (ImportedIdent mod-id mod-path*)]))
+       ;;TODO: Just considering unreachable idents for tests here.
+       (ImportedIdent mod-id mod-path* #f)]))
 
 ;;; Check values
 
@@ -514,8 +517,8 @@
                                             (list (ident #'+) (LocalIdent 'c))))))))
   ;; Check application
 
-  (check-equal? (to-absyn/expand #`(write "hello"))
-                (PlainApp (ident #'write) (list (Quote "hello"))))
+  (check-equal? (to-absyn/expand #`(print "hello"))
+                (PlainApp (ident #'print) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
                 (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
                           (list (Quote 42))))
@@ -668,7 +671,7 @@
                   #'(module foo racket/base
                       (provide foo)
                       (define (foo name)
-                        (write "Hello"))))
+                        (print "Hello"))))
                  (build-path "/tmp/" "racketscript-test-expand.rkt"))))
     (check-equal? (Module-id module-output) 'foo)
     (check-equal? (Module-path module-output) (string->path "/tmp/racketscript-test-expand.rkt"))
@@ -679,7 +682,7 @@
                      '(foo)
                      (PlainLambda '(name)
                                   (list
-                                   (PlainApp (ident #'write)
+                                   (PlainApp (ident #'print)
                                              (list (Quote "Hello")))))))))
 
   (check-equal? (parse-provide #'foo) (list (SimpleProvide 'foo)))
