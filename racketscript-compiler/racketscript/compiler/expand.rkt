@@ -444,7 +444,7 @@
              (get-quoted-bindings #'tl))]
     [() '()]
     [v:id #:when (quoted?)
-          (match (identifier-binding #'v (current-phase) #t)
+          (match (identifier-binding #'v (current-phase))
             [(list src-mod src-id _ _ src-phase _ _)
              (define-values (v u) (module-path-index-split src-mod))
              (cond
