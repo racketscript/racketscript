@@ -42,9 +42,9 @@ script:
 after_success:
   - if [ ${RACKET_RUN_COVERAGE} = ${RACKET_VERSION} ]; then
       COVERAGE_MODE=1 raco cover -bf codecov -d $TRAVIS_BUILD_DIR/coverage
-        racketscript-compiler/racketscript/ tests/fixture.rkt
+        racketscript-compiler/racketscript/ tests/fixture.rkt;
     else
-      echo "Skipping coverage."
+      echo "Skipping coverage.";
     fi
 
 after_script:
