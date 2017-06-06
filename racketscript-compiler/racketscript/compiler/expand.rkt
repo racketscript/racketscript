@@ -329,7 +329,9 @@
                                  (filter
                                   (λ (x)
                                     ;; We just compile phase 0 forms now
-                                    (zero? (list-ref (identifier-binding x) 4)))
+                                    (let ([r (identifier-binding x)])
+                                      (and (list? r)
+                                           (zero? (list-ref (identifier-binding x) 4)))))
                                   (get-quoted-bindings #'(forms ...)))))])
          (Module mod-id
                  path
