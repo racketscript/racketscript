@@ -3,7 +3,7 @@
 (require racketscript/interop
          "lib.rkt")
 
-(define Paramz ($/require "./paramz.js"))
+(define Paramz ($/require/* "./paramz.js"))
 
 (define+provide parameterization-key #js.Paramz.ParameterizationKey)
 (define+provide extend-parameterization #js.Paramz.extendParameterization)

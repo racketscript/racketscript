@@ -4,7 +4,7 @@
          (for-syntax syntax/parse)
          "lib.rkt")
 
-(define Core   ($/require "./core.js"))
+(define Core   ($/require/* "./core.js"))
 
 
 ;;-----------------------------------------------------------------------------

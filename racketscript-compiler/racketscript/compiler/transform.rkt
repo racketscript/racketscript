@@ -125,7 +125,7 @@
             (set-box! js-requires
                       (cons (ILRequire (~a (JSRequire-path form))
                                        (JSRequire-alias form)
-                                       '*)
+                                       (JSRequire-mode form))
                             (unbox js-requires)))
             '()]
            [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]

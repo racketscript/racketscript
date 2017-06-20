@@ -28,8 +28,12 @@
   [GeneralTopLevelForm      Expr
                             (DefineValues [ids : Args] [expr : Expr])
                             ;; DefineSyntaxes
+
+                            ;; Same as ILRequire, but can't use to
+                            ;; avoid cyclic depnedency.
                             (JSRequire [alias : Symbol]
-                                       [path : (U Symbol Path-String)])
+                                       [path : (U Symbol Path-String)]
+                                       [mode : (U 'default '*)])
                             #;Require*]
 
   ;; Module Level Forms

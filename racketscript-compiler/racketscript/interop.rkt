@@ -6,6 +6,7 @@
          $/obj
          $/array
          $/require
+         $/require/*
          $$
          $>
          $/:=
@@ -121,7 +122,14 @@
 (define-syntax ($/require stx)
   (syntax-parse stx
     [(_ mod:str)
-     #`(#%js-ffi 'require mod)]))
+     #`(#%js-ffi 'require mod)]
+    [(_ mod:str (~datum *))
+     #`(#%js-ffi 'require '* mod)]))
+
+(define-syntax ($/require/* stx)
+  (syntax-parse stx
+    [(_ mod:str)
+     #`(#%js-ffi 'require '* mod)]))
 
 (define-syntax ($> stx)
   (define-syntax-class chaincall

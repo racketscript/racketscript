@@ -165,7 +165,11 @@
     [(define-values (name)
        (#%plain-app (~datum #%js-ffi) (quote require) (quote mod:str)))
      ;; HACK: Special case for JSRequire
-     (JSRequire (syntax-e #'name) (syntax-e #'mod))]
+     (JSRequire (syntax-e #'name) (syntax-e #'mod) 'default)]
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote require) (quote *) (quote mod:str)))
+     ;; HACK: Special case for JSRequire
+     (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]

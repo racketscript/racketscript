@@ -62,9 +62,9 @@
 ;; ----------------------------------------------------------------------------
 ;; JS imports
 
-(define+provide Kernel ($/require "./kernel.js")) ;; old stuff
-(define+provide Core   ($/require "./core.js"))
-(define+provide Paramz ($/require "./paramz.js"))
+(define+provide Kernel ($/require/* "./kernel.js")) ;; old stuff
+(define+provide Core   ($/require/* "./core.js"))
+(define+provide Paramz ($/require/* "./paramz.js"))
 (define+provide Values #js.Core.Values)
 (define+provide Pair   #js.Core.Pair)
 
