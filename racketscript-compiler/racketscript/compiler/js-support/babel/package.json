@@ -21,11 +21,7 @@
 	"gulp-babel",
         "gulp-uglify",
 	"hamt_plus",
-	"babel-core",
-	"babel-cli",
-	"babel-preset-es2015",
-	"babel-deps",
-	"babel-polyfill",
-	"babel-plugin-transform-helper"
+	"babel-preset-env",
+	"babel-plugin-transform-runtime"
     ]
 }

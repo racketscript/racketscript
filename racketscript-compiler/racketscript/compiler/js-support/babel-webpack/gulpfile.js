@@ -2,7 +2,6 @@ const gulp = require('gulp');
 const babel = require('gulp-babel');
 const replace = require('gulp-replace');
 const uglify = require('gulp-uglify');
-const babelDeps = require("babel-deps");
 const webpackStream = require('webpack-stream');
 const webpack = require('webpack');
 //const BabiliPlugin = require("babili-webpack-plugin");
@@ -29,8 +28,7 @@ gulp.task('transform', ['copy-hamt'], function() {
 			exclude: /(node_modules|bower_components)/,
 			loader: 'babel-loader',
 			query: {
-			    presets: ["es2015",
-				      "babel-polyfill"],
+			    presets: ["env"],
 			}
 		    }
 		]
@@ -45,10 +43,6 @@ gulp.task('transform', ['copy-hamt'], function() {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build', ['transform'], function () {
-    return gulp.src(['./runtime/babel-helper.js'])
-        .pipe(uglify())
-        .pipe(gulp.dest('dist/runtime/'));
-});
+gulp.task('build', ['transform'], function () {});
 
 gulp.task('default', ['build']);
