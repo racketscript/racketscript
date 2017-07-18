@@ -46,10 +46,11 @@ class Struct extends Primitive {
 	// called in its constructor, hence maintaining the required
 	// order
 	let guardLambda = this._desc._options.guard;
+	let finalCallerName = callerName ||
+	    this._desc._options.constructorName ||
+	    this._desc._options.name;
 	if (guardLambda) {
-	    let guardFields = fields.concat(callerName ||
-					    this._desc._options.constructorName ||
-					    this._desc._options.name);
+	    let guardFields = fields.concat(finalCallerName);
 	    fields = guardLambda.apply(null, guardFields).getAll()
 	}
 
@@ -59,7 +60,8 @@ class Struct extends Primitive {
 	if (superType !== false) {
 	    let superInitFields = fields.slice(0, superType._totalInitFields);
 	    this._fields = fields.slice(superType._totalInitFields);
-	    this._superStructInstance = superType.getStructConstructor()
+	    this._superStructInstance = superType
+		.getStructConstructor(finalCallerName)
 		.apply(null, superInitFields);
 	} else {
 	    this._fields = fields;
@@ -233,9 +235,11 @@ class StructTypeDescriptor extends Primitive {
 	}
     }
 
-    getStructConstructor() {
+    getStructConstructor(subtype=false) {
+	// subtype: Name of subtype which is used to call the constructor
+	//   returned here.
 	return $.attachReadOnlyProperty((...args) => {
-	    let structObject = new Struct(this, args);
+	    let structObject = new Struct(this, args, subtype);
 	    let hasPropProc = this._propProcedure !== undefined &&
 		this._propProcedure !== false;
 	    let hasProcSpec = this._options.procSpec !== undefined &&
