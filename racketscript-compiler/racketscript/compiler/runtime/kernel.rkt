@@ -613,8 +613,19 @@
 (define+provide format #js.Kernel.format)
 (define+provide symbol? #js.Core.Symbol.check)
 
-(define+provide (symbol->string v)
+(define-checked+provide (symbol->string [v symbol?])
   (#js.v.toString))
+
+(define-checked+provide (string->symbol [s string?])
+  (#js.Core.Symbol.make s))
+
+(define-checked+provide (string->uninterned-symbol [s string?])
+  (#js.Core.Symbol.makeUninterned s))
+
+(define-checked+provide (symbol-interned? [sym symbol?])
+  ;;NOTE: We simply check if given symbol is equal to an
+  ;; interned symbol.
+  (binop === sym (#js.Core.Symbol.make #js.sym.v)))
 
 (define+provide (symbol=? s v)
   (#js.s.equals v))
