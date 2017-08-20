@@ -61,6 +61,7 @@
             (ILNull)
             (ILUndefined)
             (ILArguments)
+            (ILThis)
             Symbol]
 
   [ILStatement   ILExpr

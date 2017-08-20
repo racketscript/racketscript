@@ -123,6 +123,8 @@
      (emit "undefined")]
     [(ILArguments)
      (emit "arguments")]
+    [(ILThis)
+     (emit "this")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))

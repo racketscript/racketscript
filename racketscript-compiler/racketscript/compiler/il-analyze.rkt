@@ -101,6 +101,8 @@
        (ILNew (cast (handle-expr v) (U Symbol ILRef ILIndex ILApp)))]
       [(ILValue v) e]
       [(ILUndefined) e]
+      [(ILArguments) e]
+      [(ILThis) e]
       [(ILNull) e]
       [(? symbol? v) v]))
 
@@ -550,6 +552,8 @@
        (ILTypeOf (handle-expr/general expr))]
       [(ILValue v) e]
       [(ILUndefined) e]
+      [(ILArguments) e]
+      [(ILThis) e]
       [(ILNull) e]
       [(ILNew v) e]
       [(? symbol? v) e]))
@@ -978,6 +982,8 @@
      (list (set-union e-used f-used) (set))]
     [(ILValue v) (list (set) (set))]
     [(ILUndefined) (list (set) (set))]
+    [(ILArguments) (list (set) (set))]
+    [(ILThis) (list (set) (set))]
     [(ILNull) (list (set) (set))]
     [(ILNew e) (used+defined/statement e)]
     [(? symbol? v)
@@ -1087,6 +1093,8 @@
                                              (flatten-if-else/expr type))]
     [(ILTypeOf expr) (ILTypeOf (flatten-if-else/expr expr))]
     [(? ILUndefined? v) v]
+    [(? ILArguments? v) v]
+    [(? ILThis? v) v]
     [(? ILNull? v) v]
     [(? ILValue? v) v]
     [(? symbol? s) s]))

@@ -12,6 +12,7 @@
          racket/string
          typed/rackunit
          "config.rkt"
+         "ident.rkt"
          "util-untyped.rkt")
 
 (require/typed racket/string
@@ -24,9 +25,6 @@
 
 (provide hash-set-pair*
          improper->proper
-         fresh-id
-         fresh-id-counter
-         normalize-symbol
          flatten1
          append1
          split-before-last
@@ -49,11 +47,9 @@
          simple-module-path
          primitive-module?
          primitive-module-path?
-         ++)
+         ++
+         (all-from-out "ident.rkt"))
 
-(: fresh-id-counter (Parameter Nonnegative-Integer))
-;; Used when test-environment? is true.
-(define fresh-id-counter (make-parameter 0))
 
 (define ++ string-append)
 
@@ -147,79 +143,6 @@
          'b '(c)
          'c '(f d))))
 
-;;; Identifier renaming -------------------------------------------------------
-
-(: normalize-symbol (->* (Symbol) ((Listof String)) String))
-;;; NOTE: Just normalizing is still not a safe way to translate to JS.
-;;;
-(define (normalize-symbol s [ignores '()])
-  ;; TODO: handle every weird character in symbol
-  ;; Since every identifier is suffixed with fresh symbol
-  ;; we don't have to worry about name clashes after this
-  ;; naive renaming
-  (: should-rename? (-> String Boolean))
-  (define (should-rename? s)
-    (not (string-prefix? s (jsruntime-core-module))))
-  (: char-map (HashTable String String))
-  (define char-map
-    #hash(("$" . "$")
-          ("-" . "_")
-          ("?" . "_p")
-          ("+" . "_plus_")
-          ("'" . "_prime_")
-          ("*" . "_times_")
-          ("/" . "_by_")
-          ("=" . "_eq_")
-          ("<" . "_lt_")
-          (">" . "_gt_")
-          ("!" . "_bang_")
-          ("." . "_dot_")
-          ("&" . "_and_")))
-  (match (symbol->string s)
-    ["null" "rnull"]
-    ["void" "rvoid"]
-    ["false" "rfalse"]
-    ["true" "rtrue"]
-    [str #:when (should-rename? str)
-         (: char-list (Listof Char))
-         (define char-list (string->list str))
-         (string-join
-          (map (λ ([ch : Char])
-                 (define sch (string ch))
-                 (cond
-                   [(member (string ch) ignores) sch]
-                   [(or (char-numeric? ch) (char-alphabetic? ch))
-                    sch]
-                   [(hash-has-key? char-map sch)
-                    (hash-ref char-map sch)]
-                   [else "_"]))
-               char-list)
-          "")]
-    [str str]))
-(module+ test
-  (check-equal? (normalize-symbol 'foobar) "foobar")
-  (check-equal? (normalize-symbol '+) "_plus_")
-  (check-equal? (normalize-symbol 'hello-world) "hello_world")
-  (check-equal? (normalize-symbol 'document.write+print (list "." "+")) "document.write+print"
-                "characters in ignores parameter is not replaced")
-  (check-equal? (normalize-symbol 'document.write (list ".")) "document.write"
-                "characters in ignores parameter is not replaced"))
-
-(: fresh-id (-> Symbol Symbol))
-(define fresh-id
-  (if (test-environment?)
-      gensym
-      (λ (id)
-        (fresh-id-counter (add1 (fresh-id-counter)))
-        (string->symbol (~a id (fresh-id-counter))))))
-(module+ test
-  (check-equal?
-   (parameterize ([test-environment? #t]
-                  [fresh-id-counter 0])
-     (list (fresh-id 'foo)
-           (fresh-id-counter)))
-   (list 'foo1 1)
-   "fresh-id counter should get incremented"))
 
 ;;; Paths that we use every now and then --------------------------------------
 

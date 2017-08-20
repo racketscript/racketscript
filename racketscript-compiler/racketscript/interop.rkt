@@ -18,6 +18,7 @@
          $/arguments
          $/binop
          $/str
+         $/this
          =>$
          js-string
          racket-string
@@ -98,6 +99,10 @@
 (define-syntax ($/null stx)
   (syntax-parse stx
     [_ #`(#%js-ffi 'null)]))
+
+(define-syntax ($/this stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'this)]))
 
 (define-syntax ($/arguments stx)
   (syntax-parse stx

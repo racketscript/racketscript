@@ -4,6 +4,9 @@
                      syntax/parse))
 
 (provide :=
+         *this*
+         *null*
+         *undefined*
          new
          define-proto
          set-object!
@@ -28,6 +31,9 @@
 
 (define-syntax  :=        (make-rename-transformer #'$/:=))
 (define-syntax  new       (make-rename-transformer #'$/new))
+(define-syntax *this*     (make-rename-transformer #'$/this))
+(define-syntax *null*       (make-rename-transformer #'$/null))
+(define-syntax *undefined*  (make-rename-transformer #'$/undefined))
 
 (begin-for-syntax
   (define-syntax-class field

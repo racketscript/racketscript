@@ -25,9 +25,9 @@
   (let ([vals (generator)])
     (cond
       [(#js.Values.check vals)
-       (#js.receiver.apply #js*.this (#js.vals.getAll))]
-      [(not (or (binop === vals *undefined*) (binop === vals *null*)))
-       (#js.receiver.apply #js*.this (array vals))])))
+       (#js.receiver.apply *this* (#js.vals.getAll))]
+      [(not (or (eq? vals *undefined*) (eq? vals *null*)))
+       (#js.receiver.apply *this* (array vals))])))
 
 ;; ----------------------------------------------------------------------------
 ;; Immutable
@@ -485,7 +485,7 @@
 
 (define+provide ormap
   (v-λ (fn . lists)
-    (#js.foldl.apply #js*.this
+    (#js.foldl.apply *this*
                      ($> (array (v-λ args
                                   (define final-arg (#js.args.pop))
                                   (and (or final-arg
@@ -496,7 +496,7 @@
 
 (define+provide andmap
   (v-λ (fn . lists)
-    (#js.foldl.apply #js*.this
+    (#js.foldl.apply *this*
                      ($> (array (v-λ args
                                   (define final-arg (#js.args.pop))
                                   (and final-arg
