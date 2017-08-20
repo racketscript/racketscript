@@ -121,6 +121,8 @@
      (emit "null")]
     [(ILUndefined)
      (emit "undefined")]
+    [(ILArguments)
+     (emit "arguments")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))

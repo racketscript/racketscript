@@ -15,6 +15,7 @@
          $/null
          $/typeof
          $/instanceof
+         $/arguments
          $/binop
          $/str
          =>$
@@ -97,6 +98,10 @@
 (define-syntax ($/null stx)
   (syntax-parse stx
     [_ #`(#%js-ffi 'null)]))
+
+(define-syntax ($/arguments stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'arguments)]))
 
 (define-syntax ($/obj stx)
   ;; TODO: What to do about ambiguity with the cases where fieldname

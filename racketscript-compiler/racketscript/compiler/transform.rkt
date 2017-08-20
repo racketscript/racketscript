@@ -410,6 +410,8 @@
         (values '() (ILNull))]
        [(list (Quote 'undefined))
         (values '() (ILUndefined))]
+       [(list (Quote 'arguments))
+        (values '() (ILArguments))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)

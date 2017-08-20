@@ -122,9 +122,9 @@
 (define-syntax (v-λ stx)
   (define (-arguments stx)
     (syntax-parse stx
-      [(_ i:expr) #'($ 'arguments i)]
-      [(_ i:expr j:expr) #'($ 'arguments i)]
-      [arguments #'($ 'arguments)]))
+      [(_ i:expr) #'($ $/arguments i)]
+      [(_ i:expr j:expr) #'($ $/arguments i)]
+      [arguments #'$/arguments]))
   (syntax-parse stx
     [(_ args:id body ...+)
      #`(syntax-parameterize ([arguments #,-arguments])
