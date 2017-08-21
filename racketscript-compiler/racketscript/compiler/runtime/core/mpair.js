@@ -1,5 +1,6 @@
 import {Primitive} from "./primitive.js";
 import * as $ from "./lib.js";
+import {Empty, isEmpty, isList} from "./pair.js";
 
 class MPair extends Primitive {
     constructor(hd, tl) {
