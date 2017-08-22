@@ -25,6 +25,14 @@ expensive, for example proper tail calls and continuations.
 You can try RacketScript in your browser
 at [RacketScript Playground](http://rapture.twistedplane.com:8080/).
 
+## Disclaimer
+
+RacketScript is **work-in-progress** and is not mature and stable.
+Several Racket features and libraries are not yet implemeted
+(eg. number pyramid, contracts, tail calls, primitives). That said,
+we encourage experimentation, user feedback, discussions, bug reports
+and pull requests.
+
 ## Installation
 
 Following system packages are required -
