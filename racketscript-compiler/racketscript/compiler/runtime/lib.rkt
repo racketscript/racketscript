@@ -173,7 +173,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Errors
 
-(define default-check-message "Given: {0}, Expected: {1}, At: {2}")
+(define default-check-message "Expected: {0}, Given: {1}, At: {2}")
 
 (define-syntax-rule (type-check/raise type what)
   (unless (#js.type.check what)

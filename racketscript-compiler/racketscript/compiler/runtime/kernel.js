@@ -1,15 +1,25 @@
 import * as Core from "./core.js";
 
+/* --------------------------------------------------------------------------*/
+// String construction and manipulation
+
 export function format(pattern, ...args) {
-    //TODO: Only ~a is supported
+    //TODO: Only ~a and ~x are supported
     var matched = 0;
-    return pattern.replace(/~a/g, function(match) {
-	if (args[matched] == 'undefined') {
-	    throw Core.racketContractError("insufficient pattern arguments");
-        } else {
-            return args[matched++];
+    return pattern.replace(/~[ax]/g, function (match) {
+        if (matched >= args.length) {
+            throw Core.racketContractError("insufficient pattern arguments");
+        }
+        switch (match[1]) {
+            case 'a': return args[matched++];
+            case 'x': return args[matched++].toString(16);
         }
     });
+}
+
+
+export function listToString(lst) {
+	return Core.Pair.listToArray(lst).join('');
 }
 
 /* --------------------------------------------------------------------------*/
@@ -17,7 +27,6 @@ export function format(pattern, ...args) {
 
 export function display(v, out) {
     /* TODO: this is still line */
-    out = out || Core.Ports.standardOutputPort;
     if (v === true) {
 	out.write("#t");
     } else if (v === false) {
@@ -33,7 +42,6 @@ export function display(v, out) {
 
 export function print(v, out) {
     /* TODO: this is still line */
-    out = out || Core.Ports.standardOutputPort;
     if (v === true) {
 	out.write("#t");
     } else if (v === false) {
@@ -54,16 +62,14 @@ export function print(v, out) {
 
 export function error(...args) {
     if (args.length === 1 && Core.Symbol.check(args[0])) {
-	throw Core.racketCoreError(args[0].toString());
+        throw Core.racketCoreError(args[0].toString());
     } else if (args.length > 0 && typeof args[0] === 'string') {
-	throw Core.racketCoreError(args.map((v) => v.toString()).join(" "));
+        throw Core.racketCoreError(args.map((v) => v.toString()).join(" "));
     } else if (args.length > 0 && Core.Symbol.check(args[0])) {
-	let pattern = args.shift().toString()
-	    .concat(" ")
-	    .concat(args.shift());
-	throw Core.racketCoreError(pattern, args);
+        throw Core.racketCoreError(
+            format(`${args[0].toString()}: ${args[1]}`, ...args.slice(2)));
     } else {
-	throw Core.racketContractError("error: invalid arguments");
+        throw Core.racketContractError("error: invalid arguments");
     }
 }
 
@@ -151,7 +157,7 @@ export function sort9(lst, cmp) {
 	} else { // x = y, simulate stable sort by comparing indices
 	    return x2i.get(x) - x2i.get(y);
 	}});
- 
+
     return Core.Pair.listFromArray(srted);
 }
 
