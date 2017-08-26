@@ -63,9 +63,9 @@ export function toString(v) {
 }
 
 export function format1(pattern, args) {
-    return pattern.replace(/{(\d+)}/g, function(match, number) { 
+    return pattern.replace(/{(\d+)}/g, function(match, number) {
 	return typeof args[number] != 'undefined'
-	    ? args[number] 
+	    ? args[number]
 	    : match;
     });
 }

@@ -592,6 +592,9 @@
 
 (define+provide string-append string)
 
+(define+provide (string-ref s i)
+  (#js.s.charAt i))
+
 (define+provide (string=? sa sb)
   (binop === sa sb))
 
@@ -612,6 +615,14 @@
 
 (define+provide format #js.Kernel.format)
 (define+provide symbol? #js.Core.Symbol.check)
+
+; TODO: This should return a mutable string
+(define+provide (make-string k [c #\nul])
+  (#js.c.repeat k))
+
+; TODO: This should return a mutable string
+(define+provide (list->string lst)
+  (#js.Kernel.listToString lst))
 
 (define-checked+provide (symbol->string [v symbol?])
   (#js.v.toString))
@@ -639,9 +650,7 @@
 (define+provide (string-upcase v)
   (#js.v.toUpperCase v))
 
-;; end is optional
-(define+provide (substring str start end)
-  (define end (or end #f))
+(define+provide (substring str start [end #f])
   (cond
     [(not (typeof str "string"))
      (throw (#js.Core.racketContractError "expected a string"))]
@@ -656,6 +665,30 @@
 
 (define+provide (string-split str sep)
   (#js.Core.Pair.listFromArray (#js.str.split sep)))
+
+;; --------------------------------------------------------------------------
+;; Characters
+
+(define+provide (char? c)
+  (typeof #js.c "string"))
+
+(define+provide (char<? a b)
+  (binop < (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+
+(define+provide (char<=? a b)
+  (binop <= (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+
+(define+provide (char>? a b)
+  (binop > (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+
+(define+provide (char>=? a b)
+  (binop >= (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+
+(define+provide (char=? a b)
+  (binop === a b))
+
+(define+provide (char->integer c)
+  (#js.c.codePointAt 0))
 
 ;; --------------------------------------------------------------------------
 ;; Box
@@ -698,7 +731,10 @@
 ;; Ports + Writers
 
 (define+provide (current-output-port)
-  #js.Core.Ports.standardOutputPort)
+  #js.Core.Ports.currentOutputPort)
+
+(define+provide (current-error-port)
+  #js.Core.Ports.currentErrorPort)
 
 (define+provide (current-print)
   (λ (p)
@@ -709,19 +745,32 @@
       (display "\""))
     (newline)))
 
+(define+provide (port? p)
+  (#js.Core.Ports.isPort p))
+
 (define+provide (input-port? p)
-  (#js.Core.Ports.checkInputPort p))
+  (#js.Core.Ports.isInputPort p))
 
 (define+provide (output-port? p)
-  (#js.Core.Ports.checkOutputPort p))
+  (#js.Core.Ports.isOutputPort p))
+
+(define+provide (string-port? p)
+  (#js.Core.Ports.isStringPort p))
+
+(define+provide (open-output-string)
+  (#js.Core.Ports.openOutputString))
+
+(define+provide (get-output-string p)
+  (#js.Core.Ports.getOutputString p))
 
 ;; --------------------------------------------------------------------------
 ;; Printing
 
-(define+provide (display v) (#js.Kernel.display v))
+(define+provide (display v [out (current-output-port)]) (#js.Kernel.display v out))
+(define+provide (print v [out (current-output-port)]) (#js.Kernel.print v out))
 
-(define+provide (newline)
-  (display "\n"))
+(define+provide (newline [out (current-output-port)])
+  (display "\n" out))
 
 ;; --------------------------------------------------------------------------
 ;; Errors
