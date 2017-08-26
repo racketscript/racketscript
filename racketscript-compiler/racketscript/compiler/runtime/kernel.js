@@ -1,25 +1,52 @@
 import * as Core from "./core.js";
 
+// This is only here temporary until we fix $/typeof.
+export function isProcedure(f) {
+    return typeof f === 'function';
+}
+
+/* --------------------------------------------------------------------------*/
+// Immutable
+
+export function isImmutable(v) {
+    if (Core.Primitive.check(v)) {
+        return v.isImmutable();
+    } else if (Core.Bytes.check(v)) {
+        return true;
+    } else {
+        $.racketCoreError(`isImmutable not implemented for ${v}`);
+    }
+}
+
 /* --------------------------------------------------------------------------*/
 // String construction and manipulation
 
 export function format(pattern, ...args) {
     //TODO: Only ~a and ~x are supported
     var matched = 0;
-    return pattern.replace(/~[ax]/g, function (match) {
-        if (matched >= args.length) {
-            throw Core.racketContractError("insufficient pattern arguments");
-        }
-        switch (match[1]) {
-            case 'a': return args[matched++];
-            case 'x': return args[matched++].toString(16);
-        }
-    });
+    return Core.UString.makeMutable(
+        pattern.toString().replace(/~[axs]/g, function (match) {
+            if (matched >= args.length) {
+                throw Core.racketContractError("insufficient pattern arguments");
+            }
+            switch (match[1]) {
+                case 'a': return args[matched++];
+                case 'x': return args[matched++].toString(16);
+                case 's': return ((v) => {
+                    // TODO: This is very broken, fix it (likely needs a new Primitive method).
+                    if (typeof v === 'number') {
+                        return v.toString();
+                    } else {
+                        return JSON.stringify(v.toString());
+                    }
+                })(args[matched++]);
+            }
+        }));
 }
 
-
 export function listToString(lst) {
-	return Core.Pair.listToArray(lst).join('');
+	return Core.UString.makeMutableFromChars(
+        Core.Pair.listToArray(lst));
 }
 
 /* --------------------------------------------------------------------------*/
@@ -27,32 +54,12 @@ export function listToString(lst) {
 
 export function display(v, out) {
     /* TODO: this is still line */
-    if (v === true) {
-	out.write("#t");
-    } else if (v === false) {
-	out.write("#f");
-    } else if (v === undefined || v === null) {
-	out.write("#<void>");
-    } else if (isBytes(v)) {
-	out.write(utf8ToString(v));
-    } else {
-	out.write(Core.toString(v));
-    }
+    out.write(v);
 }
 
 export function print(v, out) {
     /* TODO: this is still line */
-    if (v === true) {
-	out.write("#t");
-    } else if (v === false) {
-	out.write("#f");
-    } else if (v === undefined || v === null) {
-	out.write("#<void>");
-    } else if (isBytes(v)) {
-	out.write(utf8ToString(v));
-    } else {
-	out.write(Core.toString(v));
-    }
+    out.write(v);
 }
 
 
@@ -190,23 +197,3 @@ export function assf(f, lst) {
     }
     return false;
 }
-
-// Bytes (ported to kernel.rkt. Here for regexp stuff)
-
-function isBytes(bs) {
-    return bs instanceof Uint8Array;
-}
-
-function utf8ToString(bs) {
-    if (!isBytes(bs)) {
-    	throw Core.racketContractError("expected bytes");
-    }
-    return String.fromCharCode.apply(null,bs);
-}
-
-function stringToUtf8(str) {
-    if (!(typeof str) == 'string') {
-    	throw Core.racketContractError("expected string");
-    }
-     return new Uint8Array(Array.prototype.map.call(str,(x)=>x.charCodeAt(0)));
- }

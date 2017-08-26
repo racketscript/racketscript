@@ -1,5 +1,6 @@
 import {Primitive} from "./primitive.js";
 import * as $ from "./lib.js";
+import * as UString from "./unicode_string.js";
 
 class AbstractPort extends Primitive {
     isOutputPort() {
@@ -40,6 +41,7 @@ export function isOutputPort(v) {
 
 // Only writes output via the given `writeFn` when encountering a newline,
 // othewise buffers the output.
+// Writes *native* strings to the output.
 class NewlineFlushingOutputPort extends AbstractOutputPort {
     constructor(writeFn) {
         super();
@@ -47,18 +49,19 @@ class NewlineFlushingOutputPort extends AbstractOutputPort {
         this._writeFn = writeFn;
     }
 
-    write(chars) {
-        const lastNewlineIndex = chars.lastIndexOf("\n");
+    write(datum) {
+        const nativeString = $.toString(datum);
+        const lastNewlineIndex = nativeString.lastIndexOf('\n');
         if (lastNewlineIndex >= 0) {
-            let flushchars = this._buffer.join("") + chars.slice(0, lastNewlineIndex);
-            let restChars = chars.slice(lastNewlineIndex + 1);
+            this._buffer.push(nativeString.slice(0, lastNewlineIndex));
+            this._writeFn(this._buffer.join(''));
+            const restChars = nativeString.slice(lastNewlineIndex + 1);
             this._buffer = [];
-            if (restChars !== "") {
+            if (restChars !== '') {
                 this._buffer.push(restChars);
             }
-            this._writeFn(flushchars);
         } else {
-            this._buffer.push(chars);
+            this._buffer.push(nativeString);
         }
     }
 }
@@ -74,19 +77,24 @@ class OutputStringPort extends AbstractOutputPort {
     constructor() {
         super();
         this.__buffer = [];
-        this.__cachedString = null;
     }
 
-    write(chars) {
-        this.__buffer.push(chars);
-        this.__cachedString = null;
+    write(datum) {
+        this.__buffer.push(UString.toUString(datum));
     }
 
+    /**
+     * @return {!UString.UString}
+     */
     getOutputString() {
-        if (this.__buffer.length > 1) {
-            this.__buffer = [this.__buffer.join('')];
+        if (this.__buffer.length === 0) {
+            return UString.makeMutable('');
         }
-        return this.__buffer[0];
+        if (this.__buffer.length > 1) {
+
+            this.__buffer = [UString.stringAppend(...this.__buffer)];
+        }
+        return UString.copyAsMutable(this.__buffer[0]);
     }
 }
 

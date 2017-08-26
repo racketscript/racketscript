@@ -101,9 +101,9 @@
      (emit "{")
      (for/last? ([i last? items])
                 (if (string? (car i))
-                    (begin (assemble-value (car i) out)
+                    (begin (emit "~s" (car i))
                            (emit ":"))
-                    (emit (format "'~a':" (car i))))
+                    (emit "'~a':" (car i)))
                 (assemble-expr (cdr i) out)
                 (unless last?
                   (emit ",")))
@@ -248,9 +248,9 @@
     (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
                            (jsruntime-module-path 'core)))
 
-  (emit (format "import * as ~a from '~a';"
-                (jsruntime-core-module)
-                core-import-path))
+  (emit "import * as ~a from '~a';"
+        (jsruntime-core-module)
+        core-import-path)
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name import-sym) req)
     (define import-string
@@ -276,9 +276,9 @@
                  [(ILSimpleProvide id)
                   (emit (~a (normalize-symbol id)))]
                  [(ILRenamedProvide local-id exported-id)
-                  (emit (format "~a as ~a"
-                                (normalize-symbol local-id)
-                                (normalize-symbol exported-id)))])
+                  (emit "~a as ~a"
+                        (normalize-symbol local-id)
+                        (normalize-symbol exported-id))])
                (unless last?
                  (emit ",")))
 
@@ -291,11 +291,12 @@
   (cond
     [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
     [(symbol? v)
-     (emit (~a (name-in-module 'core 'Symbol.make) "("))
-     (write (symbol->string v) out)
-     (emit ")")]
-    [(keyword? v) (emit (~a (name-in-module 'core 'Keyword.make) "('" v "')"))]
-    [(string? v) (write v out)]
+     (emit "~a(~s)" (name-in-module 'core 'Symbol.make) (symbol->string v))]
+    [(keyword? v)
+     (emit "~a('~a')" (name-in-module 'core 'Keyword.make) v)]
+    ;; TODO: Consider optimizing this to generate Char[] at compile-time.
+    [(string? v)
+     (emit "~a(~s)" (name-in-module 'core 'UString.makeInternedImmutable) v)]
     [(number? v)
      (match v
        [+inf.0 (emit "Infinity")]
@@ -354,11 +355,13 @@
      (assemble-value (unbox v) out)
      (emit ")")]
     [(char? v)
-     (write (~a v) out)]
+     (emit "~a(~a)"
+            (name-in-module 'core 'Char.charFromCodepoint)
+            (char->integer v))]
     [(bytes? v)
-     (define byte-vals
-       (string-join (map number->string (bytes->list v)) ","))
-     (emit (format "new Uint8Array([~a])" byte-vals))]
+     (emit "~a([~a])"
+           (name-in-module 'core 'Bytes.fromIntArray)
+           (string-join (map number->string (bytes->list v)) ","))]
     [(regexp? v)
      (define s (string-replace (cast (object-name v) String) "/" "\\/"))
      (write (format "/~a/" s) out)]
@@ -407,7 +410,9 @@
   (check-value 12 "12")
 
   ;; Strings
-  (check-value "Hello World!" "\"Hello World!\"")
+  (check-value "Hello World!"
+               (format "~a(\"Hello World!\")"
+                       (name-in-module 'core 'UString.makeInternedImmutable)))
   (check-value 'hello (format "~a(\"hello\")" (name-in-module 'core 'Symbol.make)))
 
   ;; Booleans
@@ -440,7 +445,9 @@
   ;;; Expressions -------------------------------------------------------------
 
   ;; Values most should be covered above
-  (check-expr (ILValue "Hello World!") "\"Hello World!\"")
+  (check-expr (ILValue "Hello World!")
+              (format "~a(\"Hello World!\")"
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
   (check-expr (ILValue 12) "12")
 
   ;; Lambda
@@ -457,9 +464,13 @@
 
   ;; Application
   (check-expr (ILApp 'add (list 'a 'b)) "add(a,b)")
-  (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar"))) "add(\"foo\",\"bar\")")
+  (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar")))
+              (format "add(~a(\"foo\"),~a(\"bar\"))"
+                      (name-in-module 'core 'UString.makeInternedImmutable)
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
   (check-expr (ILApp (ILLambda '(x) (list (ILReturn 'x))) (list (ILValue "Hello")))
-              "(function(x) {return x;})(\"Hello\")")
+              (format "(function(x) {return x;})(~a(\"Hello\"))"
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
 
   ;; Rest
   (check-expr 'foobar "foobar"  "assemble an identifier")
@@ -509,22 +520,28 @@
   (check-expr (ILRef (ILObject '()) 'valueOf)
               "({}).valueOf")
   (check-expr (ILRef (ILNew (ILApp 'String (list (ILValue "Hello!")))) 'valueOf)
-              "(new String(\"Hello!\")).valueOf")
+              (format "(new String(~a(\"Hello!\"))).valueOf"
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
 
   ;; Objects
 
   (check-expr (ILObject (list (cons 'name (ILValue "Vishesh"))
                               (cons 'location (ILValue "Boston"))))
-              "{'name':\"Vishesh\",'location':\"Boston\"}")
+              (format "{'name':~a(\"Vishesh\"),'location':~a(\"Boston\")}"
+                      (name-in-module 'core 'UString.makeInternedImmutable)
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
 
   (check-expr (ILObject (list (cons 'full-name (ILValue "Vishesh"))
                               (cons 'location (ILValue "Boston"))))
-              "{'full-name':\"Vishesh\",'location':\"Boston\"}")
+              (format "{'full-name':~a(\"Vishesh\"),'location':~a(\"Boston\")}"
+                      (name-in-module 'core 'UString.makeInternedImmutable)
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
 
   ;; Arrays
 
   (check-expr (ILArray (list (ILValue 1) (ILValue "1") (ILObject '())))
-              "[1,\"1\",{}]")
+              (format "[1,~a(\"1\"),{}]"
+                      (name-in-module 'core 'UString.makeInternedImmutable)))
 
   ;; Instanceof
   (check-expr (ILInstanceOf (ILValue 1) (ILValue 2))

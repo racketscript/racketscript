@@ -159,6 +159,7 @@
                           (~datum "number")
                           (~datum "string")
                           (~datum "function"))))
+     ;; TODO: This doesn't work! v should be a native string, not UString.
      #'(eqv? (#%js-ffi 'typeof e) v)]))
 
 (define-syntax ($/instanceof stx)

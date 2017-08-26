@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (displayln "unequal numbers")
 (equal? 1 2)
@@ -10,6 +10,12 @@
 (eqv? 1 1)
 (eq? 1 1)
 
+(displayln "equal chars")
+(equal? #\🎂 #\🎂)
+(eqv? #\🎂 #\🎂)
+;; eq? is only guaranteed for codepoints < 256.
+(eq? #\a #\a)
+
 (displayln "unequal string")
 (equal? "v" "a")
 (eqv? "v" "a")
@@ -17,6 +23,7 @@
 
 (displayln "equal string")
 (equal? "v" "v")
+(equal? "v" (string-append "v"))
 (eqv? "v" "v")
 (eq? "v" "v")
 

@@ -26,8 +26,14 @@
     (cond
       [(#js.Values.check vals)
        (#js.receiver.apply #js*.this (#js.vals.getAll))]
-      [(not (or (eq? vals *undefined*) (eq? vals *null*)))
+      [(not (or (binop === vals *undefined*) (binop === vals *null*)))
        (#js.receiver.apply #js*.this (array vals))])))
+
+;; ----------------------------------------------------------------------------
+;; Immutable
+
+(define+provide (immutable? v)
+  (#js.Kernel.isImmutable v))
 
 ;; ----------------------------------------------------------------------------
 ;; Void
@@ -123,7 +129,7 @@
   (binop % a b))
 
 (define-checked+provide (number->string [n number?])
-  (#js.n.toString))
+  (#js.Core.UString.makeMutable (#js.n.toString)))
 
 ;;TODO: Support bignums
 (define+provide (inexact->exact x) x)
@@ -327,23 +333,23 @@
 
 (define+provide (make-hash assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "equal" #t))
+  (#js.Core.Hash.makeEqualFromAssocs assocs* #t))
 (define+provide (make-hasheqv assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #t))
+  (#js.Core.Hash.makeEqvFromAssocs assocs* #t))
 (define+provide (make-hasheq assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "eq" #t))
+  (#js.Core.Hash.makeEqFromAssocs assocs* #t))
 
 (define+provide (make-immutable-hash assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "equal" #f))
+  (#js.Core.Hash.makeEqualFromAssocs assocs* #f))
 (define+provide (make-immutable-hasheqv assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "eqv" #f))
+  (#js.Core.Hash.makeEqvFromAssocs assocs* #f))
 (define+provide (make-immutable-hasheq assocs)
   (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeFromAssocs assocs* "eq" #f))
+  (#js.Core.Hash.makeEqFromAssocs assocs* #f))
 
 (define+provide (hash-ref h k fail)
   (#js.h.ref k fail))
@@ -577,10 +583,9 @@
 ;; --------------------------------------------------------------------------
 ;; Strings
 
-;; TODO: support both mutable/immutable strings
+(define+provide string #js.Core.UString.makeMutableFromCharsVarArgs)
 
-(define+provide string (#js.String.prototype.concat.bind ""))
-
+; TODO: This should return a UString and its behaviour should match Racket.
 (define+provide ~a
   (v-λ args
     ($> (array)
@@ -590,42 +595,44 @@
                 (binop + r (#js.Core.toString x)))
               ""))))
 
-(define+provide string-append string)
+(define+provide string-append
+    #js.Core.UString.stringAppend)
 
-(define+provide (string-ref s i)
+(define-checked+provide (string-ref [s string?] [i exact-nonnegative-integer?])
   (#js.s.charAt i))
 
-(define+provide (string=? sa sb)
-  (binop === sa sb))
+(define-checked+provide (string=? [sa string?] [sb string?])
+  (#js.Core.UString.eq sa sb))
 
-(define+provide (string<? sa sb)
-  (binop < sa sb))
+(define-checked+provide (string<? [sa string?] [sb string?])
+  (#js.Core.UString.lt sa sb))
 
-(define+provide (string<=? sa sb)
-  (binop <= sa sb))
+(define-checked+provide (string<=? [sa string?] [sb string?])
+  (#js.Core.UString.lte sa sb))
 
-(define+provide (string>? sa sb)
-  (binop > sa sb))
+(define-checked+provide (string>? [sa string?] [sb string?])
+  (#js.Core.UString.gt sa sb))
 
-(define+provide (string>=? sa sb)
-  (binop >= sa sb))
+(define-checked+provide (string>=? [sa string?] [sb string?])
+  (#js.Core.UString.gte sa sb))
 
 (define+provide (string? v)
-  (typeof v "string"))
+  (#js.Core.UString.check v))
 
 (define+provide format #js.Kernel.format)
 (define+provide symbol? #js.Core.Symbol.check)
 
-; TODO: This should return a mutable string
 (define+provide (make-string k [c #\nul])
-  (#js.c.repeat k))
+  (#js.Core.UString.repeatChar k c))
 
-; TODO: This should return a mutable string
 (define+provide (list->string lst)
   (#js.Kernel.listToString lst))
 
+(define+provide (string->immutable-string [s string?])
+  (#js.Core.UString.stringToImmutableString s))
+
 (define-checked+provide (symbol->string [v symbol?])
-  (#js.v.toString))
+  (#js.Core.UString.makeMutable (#js.v.toString)))
 
 (define-checked+provide (string->symbol [s string?])
   (#js.Core.Symbol.make s))
@@ -641,54 +648,73 @@
 (define+provide (symbol=? s v)
   (#js.s.equals v))
 
-(define+provide (string-length v)
-  #js.v.length)
+(define-checked+provide (string-length [s string?])
+  #js.s.length)
 
-(define+provide (string-downcase v)
-  (#js.v.toLowerCase v))
+(define-checked+provide (string-downcase [s string?])
+  (#js.s.toLowerCase))
 
-(define+provide (string-upcase v)
-  (#js.v.toUpperCase v))
+(define-checked+provide (string-upcase [s string?])
+  (#js.s.toUpperCase))
 
 (define+provide (substring str start [end #f])
   (cond
-    [(not (typeof str "string"))
+    [(not (#js.Core.UString.check str))
      (throw (#js.Core.racketContractError "expected a string"))]
     [(binop < start 0)
      (throw (#js.Core.racketContractError "invalid start index"))]
     [(and (binop !== end #f)
-               (or (binop < end 0) (binop > end #js.str.length)))
+               (or (binop < end 0)
+                   (binop > end #js.str.length)
+                   (binop < end start)))
      (throw (#js.Core.racketContractError "invalid end index"))]
     [(binop === end #f)
      (set! end #js.str.length)])
   (#js.str.substring start end))
 
-(define+provide (string-split str sep)
+;; TODO: Should this be in the Kernel? It's not in the Racket kernel.
+(define-checked+provide (string-split [str string?] [sep (check/or string? regexp?)])
   (#js.Core.Pair.listFromArray (#js.str.split sep)))
+
+;; Mutable string methods
+
+(define-checked+provide (string-set!
+                         [str (check/and string? (check/not immutable?))]
+                         [k exact-nonnegative-integer?]
+                         [char char?])
+  (#js.str.setCharAt k char))
 
 ;; --------------------------------------------------------------------------
 ;; Characters
 
 (define+provide (char? c)
-  (typeof #js.c "string"))
+  (#js.Core.Char.check c))
 
-(define+provide (char<? a b)
-  (binop < (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+(define-checked+provide (char->integer [c char?])
+  (#js.Core.Char.charToInteger c))
 
-(define+provide (char<=? a b)
-  (binop <= (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+(define-checked+provide (integer->char [k exact-nonnegative-integer?])
+  (#js.Core.Char.integerToChar k))
 
-(define+provide (char>? a b)
-  (binop > (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+(define-checked+provide (char-utf-8-length [c char?])
+  (#js.Core.Char.charUtf8Length c))
 
-(define+provide (char>=? a b)
-  (binop >= (#js.a.codePointAt 0) (#js.b.codePointAt 0)))
+; TODO: Add varargs support for the comparison methods below.
 
-(define+provide (char=? a b)
-  (binop === a b))
+(define-checked+provide (char<? [a char?] [b char?])
+  (binop < a b))
 
-(define+provide (char->integer c)
-  (#js.c.codePointAt 0))
+(define-checked+provide (char<=? [a char?] [b char?])
+  (binop <= a b))
+
+(define-checked+provide (char>? [a char?] [b char?])
+  (binop > a b))
+
+(define-checked+provide (char>=? [a char?] [b char?])
+  (binop >= a b))
+
+(define-checked+provide (char=? [a char?] [b char?])
+  (#js.Core.Char.eq a b))
 
 ;; --------------------------------------------------------------------------
 ;; Box
@@ -781,18 +807,16 @@
 ;; Bytes
 
 (define+provide (bytes? bs)
-  (instanceof bs Uint8Array))
+  (#js.Core.Bytes.check bs))
 
-(define+provide (bytes->string/utf-8 bs)
-  (if (bytes? bs)
-      (#js.String.fromCharCode.apply *null* bs)
-      (throw (#js.Core.racketContractError "expected bytes"))))
+(define-checked+provide (bytes->string/utf-8 [bs bytes?])
+  (#js.Core.UString.fromBytesUtf8 bs))
 
-(define+provide (string->bytes/utf-8 str)
-  (if (typeof str "string")
-      (new (Uint8Array (#js.Array.prototype.map.call str
-                                                     (λ (x) (#js.x.charCodeAt 0)))))
-      (throw (#js.Core.racketContractError "expected string"))))
+(define-checked+provide (string->bytes/utf-8 [str string?])
+  (#js.Core.UString.toBytesUtf8 str))
+
+(define-checked+provide (bytes=? [bstr1 bytes?] [bstr2 bytes?])
+  (#js.Core.Bytes.eq bstr1 bstr2))
 
 ;; --------------------------------------------------------------------------
 ;; Continuation Marks
@@ -846,71 +870,37 @@
 ;;       but js doesnt support posix patterns
 
 (define+provide (regexp? v)
-  (instanceof v RegExp))
+  (#js.Core.Regexp.check v))
 
 (define+provide pregexp? regexp?)
 (define+provide byte-regexp? regexp?)
 (define+provide byte-pregexp? regexp?)
 
-(define+provide (regexp str)
-  (if (typeof str "string")
-      (throw (#js.Core.racketContractError "expected string"))
-      (new (RegExp str))))
+(define-checked+provide (regexp [str string?])
+  (#js.Core.Regexp.fromString str))
 
 (define+provide pregexp regexp)
 
-(define+provide (byte-regexp bs)
-  (if (bytes? bs)
-      (new (RegExp (bytes->string/utf-8 bs)))
-      (throw (#js.Core.racketContractError "expected bytes"))))
+(define-checked+provide (byte-regexp [bs bytes?])
+  (#js.Core.Regexp.fromString (bytes->string/utf-8 bs)))
 
 (define+provide byte-pregexp byte-regexp)
 
-(define+provide (regexp-match p i)
-  (define rx-p? (regexp? p))
-  (define bytes-p? (bytes? p))
-  (define bytes-i? (bytes? i))
-  (define str-p? (binop === (typeof p) "string"))
-  (define str-i? (binop === (typeof i) "string"))
-
-  (when (and (not (or rx-p? bytes-p? str-p?))
-             (not (or bytes-i? str-i?)))
-    (throw
-     (#js.Core.racketContractError
-      "expected regexp, string or byte pat, and string or byte input")))
-
-  (define str (if str-i? i (bytes->string/utf-8 i)))
-  (define pat (cond
-                [rx-p? p]
-                [str-p? p]
-                [else (bytes->string/utf-8 p)]))
-  (define res (#js.str.match pat))
-  (cond
-    [(binop === res *null*) #f]
-    [(and (or str-p? rx-p?) str-i?)
-     (#js.Core.Pair.listFromArray
-      (#js.res.map (λ (x)
-                     (if (binop === x *undefined*)
-                         #f
-                         x))))]
-    [else
-     (#js.Core.Pair.listFromArray
-      (#js.res.map (λ (x)
-                     (if (binop === x *undefined*)
-                         #f
-                         (string->bytes/utf-8 x)))))]))
+(define+provide (regexp-match pattern input)
+  (#js.Core.Regexp.match pattern input))
 
 ;; --------------------------------------------------------------------------
 ;; Procedures
 
-;;TODO: Why was this prefixed with 'kernel:'???
+;; This is prefixed with `kernel` because otherwise
+;; it would clash with Racket's built-in.
 (provide (struct-out kernel:arity-at-least))
 (struct kernel:arity-at-least (value)
   #:extra-constructor-name make-arity-at-least
   #:transparent)
 
 (define+provide (procedure? f)
-  (typeof f "function"))
+  (#js.Kernel.isProcedure f))
 
 (define+provide arity-at-least make-arity-at-least)
 
@@ -923,15 +913,13 @@
 (define+provide (procedure-arity-includes? f) #t)
 
 (define+provide (procedure-arity fn)
-  (define lambda-type #js.fn.__rjs_lambdaType)
-  (cond
-    [(binop === lambda-type "variadic")
-     (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length))]
-    [(binop === lambda-type "case-lambda")
-     (if (binop === #js.fn.__rjs_arityValue.length 1)
-         ($ #js.fn.__rjs_arityValue 0)
-         (#js.Core.Pair.listFromArray #js.fn.__rjs_arityValue))]
-    [else #js.fn.length]))
+  (if (#js.Array.isArray #js.fn.__rjs_arityValue)
+      (if (binop === #js.fn.__rjs_arityValue.length 1)
+          ($ #js.fn.__rjs_arityValue 0)
+          (#js.Core.Pair.listFromArray #js.fn.__rjs_arityValue))
+      (if (binop === #js.fn.__rjs_arityValue *undefined*)
+          #js.fn.length
+          (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length)))))
 
 (define+provide (procedure-arity? v)
   (or (exact-nonnegative-integer? v)

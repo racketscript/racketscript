@@ -7,8 +7,7 @@
 (displayln (char? 1))
 (displayln (char? '(#\a)))
 
-; TODO: This test fails because we do not yet have a separate type for Char.
-; (displayln (char? "x"))
+(displayln (char? "x"))
 
 (displayln (char<? #\a #\b))
 (displayln (char<? #\a #\a))
@@ -32,6 +31,12 @@
 
 (displayln (char=? #\a #\a))
 (displayln (char=? #\b #\a))
+(displayln (char=? #\u10 #\newline))
 
 (displayln (char->integer #\a))
 (displayln (char->integer #\☺))
+
+(displayln (integer->char 127874))
+
+(displayln (char-utf-8-length #\a))
+(displayln (char-utf-8-length #\🎂))

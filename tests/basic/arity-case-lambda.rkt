@@ -4,7 +4,7 @@
   (case-lambda
     [(a b c) (* a b c)]
     [(a b) (+ a b)]))
-(equal? (procedure-arity lam1) '(2 3))
+(displayln (procedure-arity lam1))
 
 (define lam2
   (case-lambda

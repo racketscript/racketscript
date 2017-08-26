@@ -2,14 +2,13 @@
 import * as Pair from "./pair.js"
 import * as Symbol from "./symbol.js"
 import * as $ from "./lib.js";
+import {hashForEq as HASH} from "./hash_code.js";
 
 let __frames = false;
 let __prompts = new Map();
 let __async_callback_wrappers = [];
 let __defaultContinuationPromptTag
     = makeContinuationPromptTag(Symbol.make("default"));
-
-let HASH = $.hashEq;
 
 /* --------------------------------------------------------------------------*/
 
@@ -176,7 +175,7 @@ export function getMarks(framesArr, key, promptTag) {
 }
 
 //TODO: Used by parameterization. Add test cases around promptTag
-// and parameterization and check if that if this needs 
+// and parameterization and check if that if this needs
 export function getFirstMark(frames, key, noneV) {
     let keyHash = HASH(key);
     return Pair.listFind(frames, (fr) => {

@@ -1,5 +1,5 @@
 import {Primitive} from "./primitive.js";
-import * as $ from "./lib.js";
+import {isEqual} from "./equality.js";
 
 class Box extends Primitive {
     constructor(v) {
@@ -16,7 +16,7 @@ class Box extends Primitive {
     }
 
     equals(v) {
-	return $.isEqual(v.value, this.value);
+	return isEqual(v.value, this.value);
     }
 
     set(v) {
