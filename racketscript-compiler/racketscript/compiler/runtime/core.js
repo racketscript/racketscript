@@ -57,3 +57,7 @@ export {
 export function bitwiseNot(a) {
     return ~a;
 }
+
+export function BOOL(v) {
+    return v !== false && v !== null && v !== undefined;
+}

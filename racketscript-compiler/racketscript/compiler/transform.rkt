@@ -297,7 +297,7 @@
      (define result-id (fresh-id 'if_res))
      (values (append ps
                      (list
-                      (ILIf pe
+                      (ILIf (ILApp (name-in-module 'core 'BOOL) (list pe))
                             (append1 ts (ILVarDec result-id te))
                             (append1 fs (ILVarDec result-id fe)))))
              result-id)]
@@ -857,10 +857,9 @@
 
   (check-ilexpr (If (Quote #t) (Quote 'yes) (Quote 'no))
                 (list
-                 (ILIf
-                  (ILValue #t)
-                  (list (ILVarDec 'if_res1 (ILValue 'yes)))
-                  (list (ILVarDec 'if_res1 (ILValue 'no)))))
+                 (ILIf (ILApp (name-in-module 'core 'BOOL) (list (ILValue #t)))
+                       (list (ILVarDec 'if_res1 (ILValue 'yes)))
+                       (list (ILVarDec 'if_res1 (ILValue 'no)))))
                 'if_res1)
 
   ;; Lambdas
@@ -900,10 +899,9 @@
                            (list (PlainApp (LocalIdent 'list)
                                            (LI* 'a 'b))))
                 (list
-                 (ILIf
-                  (ILValue #t)
-                  (list (ILVarDec 'if_res1 (ILValue 'yes)))
-                  (list (ILVarDec 'if_res1 (ILValue 'false))))
+                 (ILIf (ILApp (name-in-module 'core 'BOOL) (list (ILValue #t)))
+                       (list (ILVarDec 'if_res1 (ILValue 'yes)))
+                       (list (ILVarDec 'if_res1 (ILValue 'false))))
                  (ILVarDec 'a 'if_res1)
                  (ILVarDec 'b (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
                 (ILApp 'list '(a b)))
