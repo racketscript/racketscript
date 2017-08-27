@@ -24,3 +24,7 @@
 (displayln (if '()
              'true
              'false))
+
+(displayln (if (void)
+               'true
+               'false))
