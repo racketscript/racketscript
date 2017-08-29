@@ -1,4 +1,5 @@
 import {Primitive} from "./primitive.js";
+import {isEqual} from "./equality.js";
 import * as $ from "./lib.js";
 
 class Vector extends Primitive {
@@ -23,8 +24,8 @@ class Vector extends Primitive {
 	return "'" + this.toString();
     }
 
-    mutable() {
-	return this.mutable;
+    isImmutable() {
+	    return !this.mutable;
     }
 
     ref(n) {
@@ -61,11 +62,11 @@ class Vector extends Primitive {
 	}
 
 	for (let i = 0; i < items1.length; i++) {
-	    if (!$.isEqual(items1[i], items2[i])) {
+	    if (!isEqual(items1[i], items2[i])) {
 		return false;
 	    }
 	}
-	
+
 	return true;
     }
 }

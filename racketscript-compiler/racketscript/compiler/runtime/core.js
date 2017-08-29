@@ -1,6 +1,10 @@
 // Exports classes for creating basic data types and operation on them
 
 import * as Box from "./core/box.js";
+import * as Bytes from "./core/bytes.js";
+import * as Char from "./core/char.js";
+import * as UString from "./core/unicode_string.js";
+import * as Regexp from "./core/regexp.js";
 import * as Hash from "./core/hash.js";
 import * as Keyword from "./core/keyword.js";
 import * as Number from "./core/numbers.js";
@@ -16,7 +20,9 @@ import * as MPair from "./core/mpair.js";
 
 
 export {
+    Bytes,
     Number,
+    Char,
     Pair,
     Primitive,
     Struct,
@@ -28,20 +34,14 @@ export {
     Box,
     Marks,
     Ports,
+    UString,
+    Regexp,
     MPair
 }
 
 export {
     toString,
     format,
-
-    isEq,
-    isEqv,
-    isEqual,
-
-    hashEqual,
-    hashEq,
-    hashEqv,
 
     argumentsToArray,
     argumentsSlice,
@@ -51,6 +51,18 @@ export {
     racketCoreError,
     racketContractError
 } from "./core/lib.js";
+
+export {
+    isEq,
+    isEqv,
+    isEqual,
+} from "./core/equality.js";
+
+export {
+    hashForEq,
+    hashForEqv,
+    hashForEqual,
+} from "./core/hash_code.js";
 
 //;-----------------------------------------------------------------------------
 

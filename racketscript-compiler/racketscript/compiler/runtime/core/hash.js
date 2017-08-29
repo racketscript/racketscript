@@ -1,19 +1,21 @@
 import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
 import {Primitive} from "./primitive.js";
+import {isEqual, isEqv, isEq} from "./equality.js";
+import {hashForEqual, hashForEqv, hashForEq} from "./hash_code.js";
 
 const hashConfigs = {
     eq: {
-	hash: $.hashEq,
-	keyEq: $.isEq
+        hash: hashForEq,
+        keyEq: isEq
     },
     eqv: {
-	hash: $.hashEqv,
-	keyEq: $.isEqv
+        hash: hashForEqv,
+        keyEq: isEqv
     },
     equal: {
-	hash: $.hashEqual,
-	keyEq: $.isEqual
+        hash: hashForEqual,
+        keyEq: isEqual
     }
 }
 
@@ -26,43 +28,35 @@ class Hash extends Primitive {
     }
 
     toString() {
-	let items = "";
-	let i = 0;
-	for (let [k, v] of this._h) {
-	    items += "(";
-	    items += $.toString(k);
-	    items += " . ";
-	    items += $.toString(v);
-	    items += ")";
-	    if (++i != this._h.size) {
-		items += " ";
-	    }
-	}
-
-	let typeSuffix = "";
-	if (this._type === "eq" || this._type === "eqv") {
-	    typeSuffix = this._type;
-	}
-	return "#hash" + typeSuffix + "(" + items + ")";
+        const items = [];
+        for (let [k, v] of this._h) {
+            items.push(`(${$.toString(k)} . ${$.toString(v)})`);
+        }
+        let typeSuffix = '';
+        if (this._type === 'eq' || this._type === 'eqv') {
+            typeSuffix = this._type;
+        }
+        return `#hash${typeSuffix}(${items.join(' ')})`;
     }
 
     toRawString() {
 	return "'" + this.toString();
     }
 
-    mutable() {
-	return this._mutable;
+    isImmutable() {
+        return !this._mutable;
     }
 
     ref(k, fail) {
-	let result = this._h.get(k);
-	if (result !== undefined) {
-	    return result;
-	} else if (fail !== undefined) {
-	    return fail;
-	} else {
-	    throw $.racketCoreError("hash-ref", "key not found");
-	}
+        let result = this._h.get(k);
+        if (result !== undefined) {
+            return result;
+        } else if (fail !== undefined) {
+            return fail;
+        } else {
+            throw $.racketCoreError(
+                `hash-ref: no value found for key\n  key: ${$.toString(k)}`);
+        }
     }
 
     set(k, v) {
@@ -84,27 +78,23 @@ class Hash extends Primitive {
 	    return false;
 	}
 
-	if (this._h.size !== v._h.size || this._type !== v._type || 
+	if (this._h.size !== v._h.size || this._type !== v._type ||
 	    this._mutable !== v._mutable) {
 	    return false;
 	}
 
 	for (let [key, val] of this._h) {
-	    let vv = v._h.get(key);
-	    if (vv === undefined || !$.isEqual(val, vv)) {
+        let vv = v._h.get(key);
+	    if (vv === undefined || !isEqual(val, vv)) {
 		return false;
 	    }
 	}
 
 	return true;
     }
-
-    type() {
-	return this._type;
-    }
 }
 
-export function make(items, type, mutable) {
+function make(items, type, mutable) {
     let h = items.reduce((acc, item) => {
 	let [k, v] = item;
 	return acc.set(k, v);
@@ -124,12 +114,24 @@ export function makeEqual(items, mutable) {
     return make(items, "equal", mutable);
 }
 
-export function makeFromAssocs(assocs, type, mutable) {
+function makeFromAssocs(assocs, type, mutable) {
     let items = []
     Pair.listForEach(assocs, (item) => {
 	items.push([item.hd, item.tl]);
     });
     return make(items, type, mutable);
+}
+
+export function makeEqFromAssocs(assocs, mutable) {
+    return makeFromAssocs(assocs, 'eq', mutable);
+}
+
+export function makeEqvFromAssocs(assocs, mutable) {
+    return makeFromAssocs(assocs, 'eqv', mutable);
+}
+
+export function makeEqualFromAssocs(assocs, mutable) {
+    return makeFromAssocs(assocs, 'equal', mutable);
 }
 
 export function map(hash, proc) {

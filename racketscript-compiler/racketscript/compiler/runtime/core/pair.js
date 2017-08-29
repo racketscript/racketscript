@@ -1,42 +1,45 @@
 import {Primitive} from "./primitive.js";
+import {isEqual} from "./equality.js";
 import * as $ from "./lib.js";
 
+// TODO: This should be a Primitive, not an Array.
 export const Empty = [];
 
 export function isEmpty(v) {
     return (v instanceof Array) && v.length === 0;
 }
 
-class Pair extends Primitive {
+export class Pair extends Primitive {
+    /** @private */
     constructor(hd, tl) {
-	super();
-	this.hd = hd;
-	this.tl = tl;
-	this._listLength = (tl === Empty)
-	    ? 1
-	    : isList(tl) && tl._listLength + 1;
+        super();
+        this.hd = hd;
+        this.tl = tl;
+        this._listLength = (tl === Empty)
+            ? 1
+            : isList(tl) && tl._listLength + 1;
+        this._cachedHashCode = null;
     }
 
     toString() {
-	let result = "(";
-	let rest = this;
-	while (true) {
-	    if (check(rest)) {
-		let hd = rest.hd;
-		result += $.toString(hd);
-	    } else {
-		result += ". " + $.toString(rest);
-		break;
-	    }
-	    rest = rest.tl;
-	    if (isEmpty(rest)) {
-		break;
-	    } else {
-		result += " ";
-	    }
-	}
-	result += ")";
-	return result;
+        const result = ['('];
+        let rest = this;
+        while (true) {
+            if (check(rest)) {
+                result.push($.toString(rest.hd));
+            } else {
+                result.push('. ', $.toString(rest));
+                break;
+            }
+            rest = rest.tl;
+            if (isEmpty(rest)) {
+                break;
+            } else {
+                result.push(' ');
+            }
+        }
+        result.push(')');
+        return result.join('');
     }
 
     toRawString() {
@@ -44,34 +47,49 @@ class Pair extends Primitive {
     }
 
     equals(v) {
-	if (!check(v)) {
-	    return false;
-	} else if (this._listLength !== v._listLength) {
-	    return false;
-	}
+        if (!check(v) || this.length !== v.length) {
+            return false;
+        }
 
-	let hd1 = this.hd;
-	let tl1 = this.tl;
-	let hd2 = v.hd;
-	let tl2 = v.tl;
+        let hd1 = this.hd;
+        let tl1 = this.tl;
+        let hd2 = v.hd;
+        let tl2 = v.tl;
 
-	while (true) {
-	    if ($.isEqual(hd1, hd2)) {
-		return $.isEqual(tl1, tl2);
-	    } else {
-		return false;
-	    }
-	}
+        while (true) {
+            if (!isEqual(hd1, hd2)) {
+                return false;
+            }
+            if (!check(tl1) || isEmpty(tl1)) {
+                return isEqual(tl1, tl2);
+            }
+            hd1 = tl1.hd;
+            tl1 = tl1.tl;
+            hd2 = tl2.hd;
+            tl2 = tl2.tl;
+        }
+    }
 
-	return true;
+	/**
+     * @return {!number}
+     */
+    hashForEqual() {
+        if (this._cachedHashCode === null) {
+            this._cachedHashCode = super.hashForEqual();
+        }
+        return this._cachedHashCode;
     }
 
     car() {
-	return this.hd;
+        return this.hd;
     }
 
     cdr() {
-	return this.tl;
+        return this.tl;
+    }
+
+    get length() {
+        return this._listLength;
     }
 }
 

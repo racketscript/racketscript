@@ -2,6 +2,7 @@ import * as C from "./check.js";
 import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
 import {Primitive} from "./primitive.js";
+import {isEqual} from "./equality.js";
 import * as Values from "./values.js";
 
 // This module implements Racket structs via three classes which
@@ -102,7 +103,7 @@ class Struct extends Primitive {
 	}
 
 	for (let i = 0; i < this._fields.length; i++) {
-	    if (!$.isEqual(this._fields[i], v._fields[i])) {
+	    if (!isEqual(this._fields[i], v._fields[i])) {
 		return false;
 	    }
 	}

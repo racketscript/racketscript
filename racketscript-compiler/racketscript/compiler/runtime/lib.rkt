@@ -37,6 +37,7 @@
          check/raise
          check/and
          check/or
+         check/not
          check/pair-of?
          define-checked
          define-checked+provide)
@@ -199,11 +200,15 @@
 
 (define-syntax-rule (check/or c1 ...)
   (λ (v)
-    (and (c1 v) ...)))
+    (or (c1 v) ...)))
 
 (define-syntax-rule (check/and c1 ...)
   (λ (v)
     (and (c1 v) ...)))
+
+(define-syntax-rule (check/not c)
+  (λ (v)
+    (not (c v))))
 
 (define-syntax (check/pair-of? stx)
   (syntax-parse stx
