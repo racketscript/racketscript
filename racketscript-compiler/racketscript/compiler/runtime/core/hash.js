@@ -2,7 +2,7 @@ import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
 import {Primitive} from "./primitive.js";
 import {isEqual, isEqv, isEq} from "./equality.js";
-import {hashForEqual, hashForEqv, hashForEq} from "./hash_code.js";
+import {hashForEqual, hashForEqv, hashForEq} from "./hashing.js";
 
 const hashConfigs = {
     eq: {

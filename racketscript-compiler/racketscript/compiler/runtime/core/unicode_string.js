@@ -5,7 +5,7 @@ import * as Pair from "./pair.js";
 import * as $ from "./lib.js";
 import {internedMake} from "./lib.js";
 import {Encoder as TextEncoder} from "./text_transcoder.js";
-import {hashString} from "../third-party/hash.js";
+import {hashIntArray} from "./raw_hashing.js";
 
 /**
  * A sequence of {Char.Char}s.
@@ -125,11 +125,11 @@ export class UString extends Primitive {
     }
 
     /**
-     * @return {!number}
+     * @return {!number} a 32-bit integer
      */
     hashForEqual() {
         if (this._cachedHashCode === null) {
-            this._cachedHashCode = hashString(this.toString());
+            this._cachedHashCode = hashIntArray(this.chars);
         }
         return this._cachedHashCode;
     }

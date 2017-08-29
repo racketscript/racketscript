@@ -2,7 +2,7 @@
 import * as Pair from "./pair.js"
 import * as Symbol from "./symbol.js"
 import * as $ from "./lib.js";
-import {hashForEq as HASH} from "./hash_code.js";
+import {hashForEq as HASH} from "./hashing.js";
 
 let __frames = false;
 let __prompts = new Map();

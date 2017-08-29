@@ -62,7 +62,7 @@ export {
     hashForEq,
     hashForEqv,
     hashForEqual,
-} from "./core/hash_code.js";
+} from "./core/hashing.js";
 
 //;-----------------------------------------------------------------------------
 
