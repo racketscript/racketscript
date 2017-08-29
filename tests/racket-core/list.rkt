@@ -1,5 +1,5 @@
 #lang racket/base
-(require "testing.rkt" "racket-list.rkt")
+(require "testing.rkt" racket/list)
 
 (test (list 1 2 3 4) foldl cons '() (list 4 3 2 1))
 (test (list 1 2 3 4) foldr cons '() (list 1 2 3 4))
