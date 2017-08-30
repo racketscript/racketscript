@@ -1,5 +1,5 @@
 import * as $ from "./lib.js";
-import {hashString} from "../third-party/hash.js";
+import {hashString} from "./raw_hashing.js";
 
 /**
  * Base class for various compound data types
@@ -48,10 +48,10 @@ export class Primitive {
     }
 
     /**
-     * @return {!number}
+     * @return {!number} a 32-bit integer
      */
     hashForEqual() {
-        return hashString(this.toRawString())
+        return hashString(this.toRawString());
     }
 
     /**

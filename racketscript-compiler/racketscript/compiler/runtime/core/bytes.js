@@ -1,4 +1,5 @@
 import {Decoder as TextDecoder} from "./text_transcoder.js";
+import {hashIntArray} from "./raw_hashing.js";
 
 /**
  * @param {*} bs
@@ -39,4 +40,12 @@ const utf8Decoder = new TextDecoder('utf-8');
  */
 export function toString(bytes) {
     return utf8Decoder.decode(bytes);
+}
+
+/**
+ * @param {!Uint8Array} bytes
+ * @return {!number} a 32-bit integer
+ */
+export function hashForEqual(bytes) {
+    return hashIntArray(bytes);
 }
