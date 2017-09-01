@@ -46,6 +46,7 @@
          log
          converge
          override-module-path
+         simple-module-path
          primitive-module?
          primitive-module-path?
          ++)
@@ -55,6 +56,12 @@
 (define fresh-id-counter (make-parameter 0))
 
 (define ++ string-append)
+
+(: simple-module-path (-> (U Symbol Path) (U Symbol Path)))
+(define (simple-module-path mod)
+  (if (symbol? mod)
+      mod
+      (simple-form-path mod)))
 
 (: string-slice (->* (String Integer) ((Option Integer)) String))
 (define (string-slice str start [end #f])

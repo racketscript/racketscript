@@ -63,7 +63,7 @@
             (result (cons next-module src*)
                     (cons next-id id*))]
            [(cons next-module next-id)
-            (loop (cons next-module src*)
+            (loop (cons (simple-module-path next-module) src*)
                   (cons next-id id*))]
            [#f (result src* id*)]
            ['() #f]))))

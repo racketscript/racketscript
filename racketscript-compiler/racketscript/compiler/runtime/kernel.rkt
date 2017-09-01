@@ -53,6 +53,9 @@
 (define-checked+provide (zero? [v number?])
   (binop === v 0))
 
+(define+provide (raise-mismatch-error e)
+  (error 'boo))
+
 (define-checked+provide (positive? [v real?])
   (binop > v 0))
 
