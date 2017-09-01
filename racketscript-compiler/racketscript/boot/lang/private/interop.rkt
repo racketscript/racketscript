@@ -59,6 +59,10 @@
           (peek-char=? 2 #\.)
           (read-string 2 in))
      (parts->ffi (get-id-parts in) #f)]
+    [(and (peek-char=? 0 #\s)
+          (peek-char=? 1 #\")
+          (read-string 1 in))
+     (datum->syntax #f `(#%js-ffi 'string ,(read-syntax (object-name in) in)))]
     [else #f]))
 
 (module+ test

@@ -327,6 +327,8 @@
      (match args
        [(list (Quote 'var) (Quote var))
         (values '() (cast var Symbol))]
+       [(list (Quote 'string) (Quote str))
+        (values '() (ILValue str))]
        [(list (Quote 'ref) b xs ...)
         (define-values (stms il) (absyn-expr->il b #f))
         (values stms
@@ -586,8 +588,12 @@
 (: absyn-value->il (-> Any ILValue))
 (define (absyn-value->il d)
   (cond
+    [(string? d)
+     (ILValue
+      (ILApp (name-in-module 'core 'UString.makeInternedImmutable)
+             (list (ILValue d))))]
+    ;;TODO: Move compound values here as ILApp.
     [(or (symbol? d)
-         (string? d)
          (bytes? d)
          (integer? d)
          (list? d)

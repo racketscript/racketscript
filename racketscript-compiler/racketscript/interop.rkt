@@ -16,10 +16,14 @@
          $/typeof
          $/instanceof
          $/binop
+         $/str
          =>$
+         js-string
+         racket-string
          assoc->object)
 
-(require (for-syntax syntax/parse
+(require syntax/parse/define
+         (for-syntax syntax/parse
                      racket/string
                      racket/base
                      racket/sequence
@@ -159,8 +163,7 @@
                           (~datum "number")
                           (~datum "string")
                           (~datum "function"))))
-     ;; TODO: This doesn't work! v should be a native string, not UString.
-     #'(eqv? (#%js-ffi 'typeof e) v)]))
+     #'(eqv? (#%js-ffi 'typeof e) ($/str v))]))
 
 (define-syntax ($/instanceof stx)
   (syntax-parse stx
@@ -170,6 +173,16 @@
   (syntax-parse stx
     [(_ oper:id operand0:expr operand1:expr)
      #'(#%js-ffi 'operator 'oper operand0 operand1)]))
+
+(define (js-string e)
+  ($$ e.toString))
+
+(define (racket-string e)
+  (($ ($ '$rjs_core) 'UString 'makeImmutable) e))
+
+(define-syntax-parser $/str
+  [(_ v:str) #'(#%js-ffi 'string v)]
+  [(_ e:expr) #'(js-string e)])
 
 (define (assoc->object pairs)
   (define result ($/obj))

@@ -296,7 +296,7 @@
      (emit "~a('~a')" (name-in-module 'core 'Keyword.make) v)]
     ;; TODO: Consider optimizing this to generate Char[] at compile-time.
     [(string? v)
-     (emit "~a(~s)" (name-in-module 'core 'UString.makeInternedImmutable) v)]
+     (emit "~s" v)]
     [(number? v)
      (match v
        [+inf.0 (emit "Infinity")]
@@ -372,6 +372,11 @@
      (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
+    [(ILApp? v)
+     ;; TODO: Some values are created by runtime. Eventually this will
+     ;;  just contain js values and this will go into expr code
+     ;;  implicitely.
+     (assemble-expr v out)]
     [else (displayln v) (error "TODO: Check how this thing actually works!")]))
 
 [module+ test
