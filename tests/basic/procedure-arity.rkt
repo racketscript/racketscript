@@ -14,3 +14,7 @@
 ; (displayln (procedure-arity foo))
 ; (displayln (procedure-arity bar))
 ; (displayln (procedure-arity baz))
+
+(displayln (equal? (procedure-arity foo) (arity-at-least 2)))
+(displayln (equal? (procedure-arity bar) (arity-at-least 0)))
+(displayln (equal? (procedure-arity baz) 3))
