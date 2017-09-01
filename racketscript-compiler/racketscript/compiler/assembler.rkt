@@ -75,7 +75,6 @@
          (emit (~a oper))))]
     [(ILRef e s)
      (cond
-       [(symbol? e) (emit (normalize-symbol e))]
        [(wrap-e? e)
         (emit "(")
         (assemble-expr e out)
@@ -84,9 +83,7 @@
         (assemble-expr e out)])
      (emit (~a "." (normalize-symbol s)))]
     [(ILIndex e e0)
-     (if (symbol? e)
-         (emit (normalize-symbol e))
-         (assemble-expr e out))
+     (assemble-expr e out)
      (emit "[")
      (assemble-expr e0 out)
      (emit "]")]
@@ -289,12 +286,6 @@
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
   (cond
-    [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
-    [(symbol? v)
-     (emit "~a(~s)" (name-in-module 'core 'Symbol.make) (symbol->string v))]
-    [(keyword? v)
-     (emit "~a('~a')" (name-in-module 'core 'Keyword.make) v)]
-    ;; TODO: Consider optimizing this to generate Char[] at compile-time.
     [(string? v)
      (emit "~s" v)]
     [(number? v)
@@ -306,62 +297,6 @@
        [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
-    [(empty? v) (emit (~a (name-in-module 'core 'Pair.Empty)))]
-    [(list? v)
-     (emit (~a (name-in-module 'core 'Pair.makeList) "("))
-     (for/last? ([item last? v])
-                (match item
-                  [(Quote v) (assemble-value v out)]
-                  [_ (assemble-value item out)])
-                (unless last?
-                  (emit ", ")))
-     (emit ")")]
-    [(vector? v)
-     (emit (~a (name-in-module 'core 'Vector.make) "(["))
-     (for/last? ([item last? (vector->list (cast v (Vectorof Any)))]) ;; HACK
-                (match item
-                  [(Quote v) (assemble-value v out)]
-                  [_ (assemble-value item out)])
-                (unless last?
-                  (emit ", ")))
-     (emit "], true)")]
-    [(hash? v)
-     (: maker Symbol)
-     (define maker (cond
-                     [(hash-eq? v) 'Hash.makeEq]
-                     [(hash-eqv? v) 'Hash.makeEqv]
-                     [(hash-equal? v) 'Hash.makeEqual]
-                     [else (error 'assemble-value "unknown hash type")]))
-     (define mutable (not (immutable? v)))
-     (emit (~a (name-in-module 'core maker) "(["))
-     (for/last? ([key last? (hash-keys v)]
-                 [val _ (hash-values v)])
-       (emit "[")
-       (assemble-value key out)
-       (emit ",")
-       (assemble-value val out)
-       (emit "]")
-       (unless last?
-         (emit ", ")))
-     (emit "], false)")]
-    [(cons? v)
-     (emit (~a (name-in-module 'core 'Pair.make) "("))
-     (assemble-value (car v) out)
-     (emit ", ")
-     (assemble-value (cdr v) out)
-     (emit ")")]
-    [(box? v)
-     (emit (~a (name-in-module 'core 'Box.make) "("))
-     (assemble-value (unbox v) out)
-     (emit ")")]
-    [(char? v)
-     (emit "~a(~a)"
-            (name-in-module 'core 'Char.charFromCodepoint)
-            (char->integer v))]
-    [(bytes? v)
-     (emit "~a([~a])"
-           (name-in-module 'core 'Bytes.fromIntArray)
-           (string-join (map number->string (bytes->list v)) ","))]
     [(regexp? v)
      (define s (string-replace (cast (object-name v) String) "/" "\\/"))
      (write (format "/~a/" s) out)]
@@ -372,12 +307,7 @@
      (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
-    [(ILApp? v)
-     ;; TODO: Some values are created by runtime. Eventually this will
-     ;;  just contain js values and this will go into expr code
-     ;;  implicitely.
-     (assemble-expr v out)]
-    [else (displayln v) (error "TODO: Check how this thing actually works!")]))
+    [else (error "Unexpected value: " v)]))
 
 [module+ test
   (require typed/rackunit
@@ -415,44 +345,18 @@
   (check-value 12 "12")
 
   ;; Strings
-  (check-value "Hello World!"
-               (format "~a(\"Hello World!\")"
-                       (name-in-module 'core 'UString.makeInternedImmutable)))
-  (check-value 'hello (format "~a(\"hello\")" (name-in-module 'core 'Symbol.make)))
+  (check-value "Hello World!" "\"Hello World!\"")
 
   ;; Booleans
   (check-value #t "true")
   (check-value #f "false")
-
-  ;; Lists and pairs
-  (check-value '() (~a (name-in-module 'core 'Pair.Empty)))
-  (check-value '(1) (~a (name-in-module 'core 'Pair.makeList) "(1)"))
-  (check-value '(1 2) (~a (name-in-module 'core 'Pair.makeList) "(1, 2)"))
-  (check-value '(1 2 (3 4) 5) (format "~a(1, 2, ~a(3, 4), 5)"
-                                      (name-in-module 'core 'Pair.makeList)
-                                      (name-in-module 'core 'Pair.makeList)))
-  (check-value '(1 . 2) (format "~a(1, 2)" (name-in-module 'core 'Pair.make)))
-  (check-value '(1 2 . 3) (format "~a(1, ~a(2, 3))"
-                                  (name-in-module 'core 'Pair.make)
-                                  (name-in-module 'core 'Pair.make)))
-
   (check-value (void) "null")
-
-  ;; Vectors
-  (check-value #(1 2 3) (format "~a([1, 2, 3], true)"
-                                (name-in-module 'core 'Vector.make))
-               "immutable vector")
-  (check-value #(1 2 3 (4 5)) (format "~a([1, 2, 3, ~a(4, 5)], true)"
-                                       (name-in-module 'core 'Vector.make)
-                                       (name-in-module 'core 'Pair.makeList))
-               "immutable vector with nested list")
 
   ;;; Expressions -------------------------------------------------------------
 
   ;; Values most should be covered above
   (check-expr (ILValue "Hello World!")
-              (format "~a(\"Hello World!\")"
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              (format "\"Hello World!\""))
   (check-expr (ILValue 12) "12")
 
   ;; Lambda
@@ -470,12 +374,9 @@
   ;; Application
   (check-expr (ILApp 'add (list 'a 'b)) "add(a,b)")
   (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar")))
-              (format "add(~a(\"foo\"),~a(\"bar\"))"
-                      (name-in-module 'core 'UString.makeInternedImmutable)
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              "add(\"foo\",\"bar\")")
   (check-expr (ILApp (ILLambda '(x) (list (ILReturn 'x))) (list (ILValue "Hello")))
-              (format "(function(x) {return x;})(~a(\"Hello\"))"
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              "(function(x) {return x;})(\"Hello\")")
 
   ;; Rest
   (check-expr 'foobar "foobar"  "assemble an identifier")
@@ -525,28 +426,22 @@
   (check-expr (ILRef (ILObject '()) 'valueOf)
               "({}).valueOf")
   (check-expr (ILRef (ILNew (ILApp 'String (list (ILValue "Hello!")))) 'valueOf)
-              (format "(new String(~a(\"Hello!\"))).valueOf"
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              (format "(new String(\"Hello!\")).valueOf"))
 
   ;; Objects
 
   (check-expr (ILObject (list (cons 'name (ILValue "Vishesh"))
                               (cons 'location (ILValue "Boston"))))
-              (format "{'name':~a(\"Vishesh\"),'location':~a(\"Boston\")}"
-                      (name-in-module 'core 'UString.makeInternedImmutable)
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              "{'name':\"Vishesh\",'location':\"Boston\"}")
 
   (check-expr (ILObject (list (cons 'full-name (ILValue "Vishesh"))
                               (cons 'location (ILValue "Boston"))))
-              (format "{'full-name':~a(\"Vishesh\"),'location':~a(\"Boston\")}"
-                      (name-in-module 'core 'UString.makeInternedImmutable)
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              "{'full-name':\"Vishesh\",'location':\"Boston\"}")
 
   ;; Arrays
 
   (check-expr (ILArray (list (ILValue 1) (ILValue "1") (ILObject '())))
-              (format "[1,~a(\"1\"),{}]"
-                      (name-in-module 'core 'UString.makeInternedImmutable)))
+              (format "[1,\"1\",{}]"))
 
   ;; Instanceof
   (check-expr (ILInstanceOf (ILValue 1) (ILValue 2))
