@@ -163,7 +163,7 @@
                           (~datum "number")
                           (~datum "string")
                           (~datum "function"))))
-     #'(eqv? (#%js-ffi 'typeof e) ($/str v))]))
+     #'($/binop === (#%js-ffi 'typeof e) ($/str v))]))
 
 (define-syntax ($/instanceof stx)
   (syntax-parse stx

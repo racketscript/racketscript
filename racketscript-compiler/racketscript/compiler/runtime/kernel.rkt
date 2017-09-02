@@ -903,7 +903,7 @@
   #:transparent)
 
 (define+provide (procedure? f)
-  (#js.Kernel.isProcedure f))
+  (typeof f "function"))
 
 (define+provide arity-at-least make-arity-at-least)
 

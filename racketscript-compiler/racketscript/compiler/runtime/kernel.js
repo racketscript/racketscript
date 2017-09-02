@@ -1,10 +1,5 @@
 import * as Core from "./core.js";
 
-// This is only here temporary until we fix $/typeof.
-export function isProcedure(f) {
-    return typeof f === 'function';
-}
-
 /* --------------------------------------------------------------------------*/
 // Immutable
 
