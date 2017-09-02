@@ -10,18 +10,18 @@ sudo: false
 env:
   global:
     - RACKET_DIR=~/racket
-    - RACKET_RUN_COVERAGE=6.8
+    - RACKET_RUN_COVERAGE=6.10
   matrix:
     - RACKET_VERSION=HEAD
-    - RACKET_VERSION=6.9
-    - RACKET_VERSION=6.8
+    - RACKET_VERSION=RELEASE
+    - RACKET_VERSION=6.10
+    - RACKET_VERSION=6.7
     - RACKET_VERSION=6.4
 
 matrix:
   allow_failures:
     - env: RACKET_VERSION=HEAD
     - env: RACKET_VERSION=RELEASE
-    - env: RACKET_VERSION=6.9
     - node_js: "node"
   fast_finish: true
 

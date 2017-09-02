@@ -163,11 +163,11 @@
      (define fabsyn (formals->absyn #'formals))
      (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
     [(define-values (name)
-       (#%plain-app (~datum #%js-ffi) (~datum 'require) (quote mod:str)))
+       (#%plain-app (~datum #%js-ffi) (quote require) (quote mod:str)))
      ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod) 'default)]
     [(define-values (name)
-       (#%plain-app (~datum #%js-ffi) (~datum 'require) (quote *) (quote mod:str)))
+       (#%plain-app (~datum #%js-ffi) (quote require) (quote *) (quote mod:str)))
      ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
     [(define-values (id ...) b)
