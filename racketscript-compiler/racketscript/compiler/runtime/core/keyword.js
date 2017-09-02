@@ -1,5 +1,6 @@
 import {Primitive} from "./primitive.js";
 import {internedMake} from "./lib.js";
+import * as Ports from './ports.js';
 
 class Keyword extends Primitive {
     constructor(v) {
@@ -7,12 +8,12 @@ class Keyword extends Primitive {
 	this.v = v;
     }
 
-    toString() {
-	return this.v;
-    }
-
-    toRawString() {
-	return "'" + this.v;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#:');
+        out.consume(this.v);
     }
 
     equals(v) {

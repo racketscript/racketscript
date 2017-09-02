@@ -602,7 +602,7 @@
      (ILApp (name-in-module 'core 'Pair.makeList)
             (map absyn-value->il d))]
     [(empty? d)
-     (name-in-module 'core 'Pair.Empty)]
+     (name-in-module 'core 'Pair.EMPTY)]
     [(cons? d)
      (ILApp (name-in-module 'core 'Pair.make)
             (list (absyn-value->il (car d))

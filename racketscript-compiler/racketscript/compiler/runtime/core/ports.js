@@ -1,8 +1,9 @@
 import {Primitive} from "./primitive.js";
-import * as $ from "./lib.js";
-import * as UString from "./unicode_string.js";
 
-class AbstractPort extends Primitive {
+/**
+ * @abstract
+ */
+class Port extends Primitive {
     isOutputPort() {
         return false;
     }
@@ -12,49 +13,74 @@ class AbstractPort extends Primitive {
     }
 }
 
-class AbstractOutputPort extends AbstractPort {
-    write() {
-        throw new Error(`Expected ${this.constructor.name} to implement write(chars)`)
-    }
-
+/**
+ * @abstract
+ * @api private
+ */
+export class OutputPort extends Port {
     isOutputPort() {
         return true;
     }
+
+    /**
+     * @param {function(String)} out
+     */
+    display(out) {
+        out(`#<output-port:${this.name}>`);
+    }
 }
 
-export function isPort(v) {
-    // When compiling with traceur, the `instanceof` check would fail,
-    // due to a limitation of traceur.
-    // TODO: Replace with `v instanceof AbstractPort` once this is fixed.
-    return v && (
-        v.constructor === NewlineFlushingOutputPort ||
-        v.constructor === OutputStringPort);
+export function check(v) {
+    return v instanceof Port;
 }
 
 export function isInputPort(v) {
-    return isPort(v) && v.isInputPort();
+    return check(v) && v.isInputPort();
 }
 
 export function isOutputPort(v) {
-    return isPort(v) && v.isOutputPort();
+    return check(v) && v.isOutputPort();
 }
 
-// Only writes output via the given `writeFn` when encountering a newline,
-// othewise buffers the output.
-// Writes *native* strings to the output.
-class NewlineFlushingOutputPort extends AbstractOutputPort {
-    constructor(writeFn) {
-        super();
-        this._buffer = [];
-        this._writeFn = writeFn;
+/**
+ * @abstract
+ */
+export class NativeStringOutputPort extends OutputPort {
+    /**
+     * @abstract
+     */
+    consume(nativeString) {
+        throw new Error('Unimplemented');
     }
 
-    write(datum) {
-        const nativeString = $.toString(datum);
+    isUStringPort() {
+        return false;
+    }
+}
+
+// Only consumes output via the given `consumeFn` when encountering a newline,
+// othewise buffers the output.
+// Writes *native* strings to the output.
+class NewlineFlushingOutputPort extends NativeStringOutputPort {
+    /**
+     * @param {function(String)} consumeFn
+     * @param {!String} name
+     */
+    constructor(consumeFn, name) {
+        super();
+        this._buffer = [];
+        this._consumeFn = consumeFn;
+        this.name = name;
+    }
+
+    /**
+     * @param {!String} nativeString
+     */
+    consume(nativeString) {
         const lastNewlineIndex = nativeString.lastIndexOf('\n');
         if (lastNewlineIndex >= 0) {
             this._buffer.push(nativeString.slice(0, lastNewlineIndex));
-            this._writeFn(this._buffer.join(''));
+            this._consumeFn(this._buffer.join(''));
             const restChars = nativeString.slice(lastNewlineIndex + 1);
             this._buffer = [];
             if (restChars !== '') {
@@ -64,44 +90,53 @@ class NewlineFlushingOutputPort extends AbstractOutputPort {
             this._buffer.push(nativeString);
         }
     }
+
+    /**
+     * @param {function(String)} out
+     */
+    display(out) {
+        out(`#<output-port:${this.name}>`);
+    }
 }
 
-export const standardOutputPort = new NewlineFlushingOutputPort((str) => console.log(str));
+export const standardOutputPort = new NewlineFlushingOutputPort((str) => console.log(str), 'stdout');
 export let currentOutputPort = standardOutputPort;
 
-export const standardErrorPort = new NewlineFlushingOutputPort((str) => console.log(str));
+export const standardErrorPort = new NewlineFlushingOutputPort((str) => console.log(str), 'stderr');
 export let currentErrorPort = standardErrorPort;
 
-
-class OutputStringPort extends AbstractOutputPort {
+/**
+ * Like {OutputStringPort}, but returns native Strings instead of UStrings.
+ */
+export class NativeOutputStringPort extends OutputPort {
     constructor() {
         super();
-        this.__buffer = [];
-    }
-
-    write(datum) {
-        this.__buffer.push(UString.toUString(datum));
+        this._buffer = [];
     }
 
     /**
-     * @return {!UString.UString}
+     * @param {!String} s
+     */
+    consume(s) {
+        this._buffer.push(s);
+    }
+
+    /**
+     * @return {!String}
      */
     getOutputString() {
-        if (this.__buffer.length === 0) {
-            return UString.makeMutable('');
+        if (this._buffer.length === 0) {
+            return "";
         }
-        if (this.__buffer.length > 1) {
-
-            this.__buffer = [UString.stringAppend(...this.__buffer)];
+        if (this._buffer.length > 1) {
+            // Concat vs Array#join:
+            // https://jsperf.com/arr-join-vs-string-prototype-concat-apply-arr
+            this._buffer = ["".concat(...this._buffer)];
         }
-        return UString.copyAsMutable(this.__buffer[0]);
+        return this._buffer[0];
     }
-}
 
-export function openOutputString() {
-    return new OutputStringPort();
-}
-
-export function getOutputString(outputStringPort) {
-    return outputStringPort.getOutputString();
+    get name() {
+        return 'js-string';
+    }
 }

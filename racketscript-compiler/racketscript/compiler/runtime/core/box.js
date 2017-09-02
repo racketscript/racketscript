@@ -1,33 +1,74 @@
-import {Primitive} from "./primitive.js";
-import {isEqual} from "./equality.js";
+import {Primitive} from './primitive.js';
+import {isEqual} from './equality.js';
+import {hashForEqual} from './hashing.js';
+import {displayNativeString, writeNativeString} from './print_native_string.js';
+import {displayUString, writeUString} from './print_ustring.js';
+import * as Ports from './ports.js';
+import * as UString from './unicode_string.js';
+
+const BOX_PREFIX_USTRING = UString.makeInternedImmutable('#&');
 
 class Box extends Primitive {
     constructor(v) {
-	super();
-	this.value = v;
-    }
-
-    toString() {
-	return this.value;
-    }
-
-    toRawString() {
-	return this.toString();
-    }
-
-    equals(v) {
-	return isEqual(v.value, this.value);
+        super();
+        this.value = v;
     }
 
     set(v) {
-	this.value = v;
+        this.value = v;
     }
 
     get() {
-	return this.value;
+        return this.value;
+    }
+
+    /**
+     * @param {*} v
+     * @return {!boolean}
+     */
+    equals(v) {
+        return isEqual(v.value, this.value);
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return hashForEqual(this.value);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#&');
+        displayNativeString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    displayUString(out) {
+        out.consume(BOX_PREFIX_USTRING);
+        displayUString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        out.consume('#&');
+        writeNativeString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    writeUString(out) {
+        out.consume(BOX_PREFIX_USTRING);
+        writeUString(out, this.value);
     }
 }
-
 
 export function make(v) {
     return new Box(v);

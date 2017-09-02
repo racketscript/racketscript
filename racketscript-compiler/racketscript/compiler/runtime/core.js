@@ -1,5 +1,10 @@
 // Exports classes for creating basic data types and operation on them
 
+import './core/polyfills/string.js';
+
+import * as Primitive from './core/primitive.js';
+import './core/primitive_print.js';
+
 import * as Box from "./core/box.js";
 import * as Bytes from "./core/bytes.js";
 import * as Char from "./core/char.js";
@@ -10,14 +15,12 @@ import * as Keyword from "./core/keyword.js";
 import * as Number from "./core/numbers.js";
 import * as Pair from "./core/pair.js";
 import * as Ports from "./core/ports.js";
-import * as Primitive from "./core/primitive.js";
 import * as Struct from "./core/struct.js";
 import * as Symbol from "./core/symbol.js";
 import * as Values from "./core/values.js";
 import * as Vector from "./core/vector.js";
 import * as Marks from "./core/marks.js";
 import * as MPair from "./core/mpair.js";
-
 
 export {
     Bytes,
@@ -40,17 +43,23 @@ export {
 }
 
 export {
-    toString,
-    format,
+    openOutputString,
+    getOutputString,
+} from './core/ports_ustring.js';
 
+export {
     argumentsToArray,
     argumentsSlice,
-
-    attachProcedureArity,
-
-    racketCoreError,
-    racketContractError
 } from "./core/lib.js";
+
+export {
+    racketCoreError,
+    racketContractError,
+} from "./core/errors.js";
+
+export {
+    attachProcedureArity,
+} from "./core/procedure.js";
 
 export {
     isEq,
@@ -63,6 +72,14 @@ export {
     hashForEqv,
     hashForEqual,
 } from "./core/hashing.js";
+
+export {
+    display,
+    write,
+    print,
+    isPrintAsExpression,
+    setPrintAsExpression,
+} from "./core/print.js";
 
 //;-----------------------------------------------------------------------------
 

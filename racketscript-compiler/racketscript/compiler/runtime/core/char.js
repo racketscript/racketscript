@@ -1,4 +1,5 @@
 import {Primitive} from "./primitive.js";
+import * as Ports from './ports.js';
 
 /**
  * A single Unicode character.
@@ -60,26 +61,87 @@ export class Char extends Primitive {
     }
 
     /**
-     * @return {!String}
-     * @override
-     */
-    toRawString() {
-        return `#\\u${this.codepoint}`;
-    }
-
-    /**
      * @return {!number} a non-negative integer.
      * @override
      */
     hashForEqual() {
         return this.codepoint;
     }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume(this.toString());
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        const c = this.codepoint;
+        switch (c) {
+            // Reference implementation:
+            // https://github.com/racket/racket/blob/cbfcc904ab621a338627e77d8f5a34f930ead0ab/racket/src/racket/src/print.c#L4089
+            case 0:
+                out.consume('#\\nul');
+                break;
+            case 8:
+                out.consume('#\\backspace');
+                break;
+            case 9:
+                out.consume('#\\tab');
+                break;
+            case 10:
+                out.consume('#\\newline');
+                break;
+            case 11:
+                out.consume('#\\vtab');
+                break;
+            case 12:
+                out.consume('#\\page');
+                break;
+            case 13:
+                out.consume('#\\return');
+                break;
+            case 32:
+                out.consume('#\\space');
+                break;
+            case 127:
+                out.consume('#\\rubout');
+                break;
+            default:
+                if (isGraphicCodepoint(c)) {
+                    out.consume(`#\\${this.toString()}`);
+                } else {
+                    out.consume(c > 0xFFFF
+                        ? `#\\U${c.toString(16).toUpperCase().padStart(8, '0')}`
+                        : `#\\u${c.toString(16).toUpperCase().padStart(4, '0')}`);
+                }
+        }
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.writeNativeString(out);
+    }
+
+    // displayUstring is defined in unicode_string.js to avoid circular dependency.
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    printUString(out) {
+        this.writeUString(out);
+    }
 }
 
 const INTERN_CACHE_SIZE = 256;
 
 /**
- * @type {!Array<(!Char|undefined)>} A cache for chars with small codepoints.
+ * @type {!Array<Char|undefined>} A cache for chars with small codepoints.
  */
 const internedCache = new Array(INTERN_CACHE_SIZE);
 
@@ -118,7 +180,8 @@ export function charFromNativeString(s) {
 export function check(char) {
     // Because Char is final, we can compare the constructor directly
     // instead of using the much slower `instanceof` operator.
-    return char.constructor === Char;
+    return typeof char === 'object' && char !== null &&
+        char.constructor === Char;
 }
 
 /**
@@ -165,4 +228,59 @@ export function charUtf8Length(c) {
     } else {
         return 6;
     }
+}
+
+// The Unicode property testing methods below were generated with:
+// https://gist.github.com/glebm/2749c75b4fc4fed4dc5911925bb8f8b9
+
+/**
+ * WARNING: This currently always returns `false` for codepoints >= 2048,
+ * even if they are graphic.
+ *
+ * A graphic codepoint in Racket is in one the following General Categories:
+ *
+ *   Letter, Mark, Number, Punctuation, Symbol.
+ *
+ * @param {!number} c a Unicode codepoint
+ * @return {!boolean} Whether the codepoint is graphic
+ * @api private
+ */
+export function isGraphicCodepoint(c) {
+    // This is just a quick hack to have sensible output in European locales.
+    // TODO: If we implement Unicode property testing, use it here instead.
+    return (
+        c > 32 && c < 127 ||
+        (c > 160 && c < 896 && !(c === 173 || c > 887 && c < 890)) ||
+        (c > 899 && c < 1480 && !(c === 1328 || c > 1366 && c < 1369 ||
+            c === 1376 || c === 1416 || c > 1418 && c < 1421 || c === 1424 ||
+            (c > 906 && c < 910 && c !== 908) || c === 930)) ||
+        c > 1487 && c < 1515 || c > 1519 && c < 1525 ||
+        (c > 1541 && c < 1970 && !(c > 1563 && c < 1566 || c === 1757 ||
+            c > 1805 && c < 1808 || c > 1866 && c < 1869)) ||
+        c > 1983 && c < 2043);
+}
+
+/**
+ * @param {!number} c a Unicode codepoint
+ * @return {!boolean} Whether the codepoint's Unicode general category
+ * is "Zs" ("Space_Separator") or if char is #\tab.
+ * @api private
+ */
+export function isBlankCodepoint(c) {
+    return (
+        c === 9 || c === 32 || c === 160 || c === 5760 ||
+        c > 8191 && c < 8203 || c === 8239 || c === 8287 || c === 12288);
+}
+
+/**
+ * @param {!number} c a Unicode codepoint
+ * @return {!boolean} Whether the codepoint has the Unicode "White_Space" property.
+ * @api private
+ */
+export function isWhitespaceCodepoint(c) {
+    return (
+        c > 8 && c < 14 || c === 32 || c === 133 || c === 160 || c === 5760 ||
+        c > 8191 && c < 8203 || c > 8231 && c < 8234 || c === 8239 ||
+        c === 8287 || c === 12288);
+
 }

@@ -1,6 +1,10 @@
 import {Primitive} from "./primitive.js";
 import {isEqual} from "./equality.js";
-import * as $ from "./lib.js";
+import {racketCoreError} from './errors.js';
+import {displayNativeString, writeNativeString} from './print_native_string.js';
+import {hashArray} from './raw_hashing.js';
+import {hashForEqual} from './hashing.js';
+import * as Ports from './ports.js';
 
 class Vector extends Primitive {
     constructor(items, mutable) {
@@ -9,19 +13,32 @@ class Vector extends Primitive {
 	this.items = items;
     }
 
-    toString() {
-	let items = "";
-	for (let i = 0; i < this.items.length; i++) {
-	    items += this.items[i].toString();
-	    if (i != this.items.length - 1) {
-		items += " ";
-	    }
-	}
-	return "#(" + items + ")";
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    dumpToPort(out, itemFn) {
+        const n = this.items.length;
+        out.consume('#(');
+        for (let i = 0; i < n; i++) {
+            itemFn(out, this.items[i]);
+            if (i !== n - 1) out.consume(' ');
+        }
+        out.consume(')');
     }
 
-    toRawString() {
-	return "'" + this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.dumpToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.dumpToPort(out, writeNativeString);
     }
 
     isImmutable() {
@@ -30,7 +47,7 @@ class Vector extends Primitive {
 
     ref(n) {
 	if (n < 0 || n > this.items.length) {
-	    throw $.racketCoreError("vector-ref", "index out of range");
+	    throw racketCoreError(`vector-ref: index out of range\n  index: ${n}`);
 	}
 
 	return this.items[n];
@@ -38,9 +55,9 @@ class Vector extends Primitive {
 
     set(n, v) {
 	if (n < 0 || n > this.items.length) {
-	    throw  $.racketCoreError("vector-set", "index out of range");
+	    throw  racketCoreError(`vector-set: index out of range\n  index: ${n}`);
 	} else if (!this.mutable) {
-	    throw $.racketCoreError("vector-set", "immutable vector");
+	    throw racketCoreError(`vector-set: immutable vector\n `, this);
 	}
 	this.items[n] = v;
     }
@@ -68,6 +85,13 @@ class Vector extends Primitive {
 	}
 
 	return true;
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return hashArray(this.items, hashForEqual);
     }
 }
 
