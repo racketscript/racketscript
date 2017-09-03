@@ -3,3 +3,4 @@
 (displayln (string->bytes/utf-8 "Hello World"))
 (displayln (bytes=? #"abc" #"abc"))
 (displayln (bytes=? #"abc" #"abd"))
+(bytes? (void))

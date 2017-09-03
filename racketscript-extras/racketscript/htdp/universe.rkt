@@ -39,11 +39,11 @@
   [setup
    (λ ()
      ;; Create canvas DOM element and add to screen
-     (define canvas  (#js.document.createElement "canvas"))
-     (define ctx     (#js.canvas.getContext "2d"))
+     (define canvas  (#js.document.createElement #js"canvas"))
+     (define ctx     (#js.canvas.getContext #js"2d"))
 
-     (#js.canvas.setAttribute "tabindex" 1)
-     (#js.canvas.setAttribute "style" "outline: none")
+     (#js.canvas.setAttribute #js"tabindex" 1)
+     (#js.canvas.setAttribute #js"style" #js"outline: none")
 
      (:= #js*.this.-canvas    canvas)
      (:= #js*.this.-context   ctx)
@@ -54,7 +54,7 @@
      (#js*.this.register-handlers)
 
      ;; Set canvas size as the size of first world
-     (define draw-handler ($ #js*.this.-active-handlers "to-draw"))
+     (define draw-handler ($ #js*.this.-active-handlers #js"to-draw"))
      (unless draw-handler
        (error 'big-bang "to-draw handle not provided"))
      (define img ($$ draw-handler.callback #js*.this.world))
@@ -140,22 +140,22 @@
           (define changed?
             (cond
               [handler (#js.handler.invoke #js.self.world evt)]
-              [(equal? #js.evt.type "raw")
+              [(equal? #js.evt.type #js"raw")
                (#js.evt.invoke #js.self.world evt)]
               [else
                (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
           (loop (or world-changed? changed?))]
          [(and world-changed? (not #js.self.-stopped))
-          (#js.self.queue-event ($/obj [type "to-draw"]))
+          (#js.self.queue-event ($/obj [type #js"to-draw"]))
           (loop #f)]))
 
      (:= #js*.this.-idle #t))])
 
 (define (to-draw cb)
   (λ (bb)
-    (define on-tick-evt ($/obj [type "to-draw"]))
+    (define on-tick-evt ($/obj [type #js"to-draw"]))
     ($/obj
-     [name        "to-draw"]
+     [name        #js"to-draw"]
      [register    (λ () (void))]
      [deregister  (λ () (void))]
      [callback    cb]
@@ -172,9 +172,9 @@
 
 (define (on-tick cb rate)
   (λ (bb)
-    (define on-tick-evt ($/obj [type "on-tick"]))
+    (define on-tick-evt ($/obj [type #js"on-tick"]))
     ($/obj
-     [name         "on-tick"]
+     [name         #js"on-tick"]
      [register     (λ ()
                      (#js.bb.queue-event on-tick-evt)
                      (if rate
@@ -198,7 +198,7 @@
 (define (on-mouse cb)
   (λ (bb)
     ($/obj
-     [name          "on-mouse"]
+     [name          #js"on-mouse"]
      [listeners     ($/obj)]
      [register
       (λ ()
@@ -206,7 +206,7 @@
         (define (make-listener r-evt-name)
           (λ (evt)
             (define posn (canvas-posn-δ canvas evt))
-            (#js.bb.queue-event ($/obj [type "on-mouse"]
+            (#js.bb.queue-event ($/obj [type #js"on-mouse"]
                                        [evt  r-evt-name]
                                        [x    ($ posn 'x)]
                                        [y    ($ posn 'y)]))))
@@ -217,24 +217,24 @@
           (#js.canvas.addEventListener evt-name cb)
           (:= ($ #js.self.listeners evt-name) cb))
 
-        (register-listener "mousemove"  "move")
-        (register-listener "mousedown"  "button-down")
-        (register-listener "mouseup"    "button-up")
-        (register-listener "mouseout"   "leave")
-        (register-listener "mouseover"  "enter")
-        (register-listener "drag"       "drag"))]
+        (register-listener #js"mousemove"  #js"move")
+        (register-listener #js"mousedown"  #js"button-down")
+        (register-listener #js"mouseup"    #js"button-up")
+        (register-listener #js"mouseout"   #js"leave")
+        (register-listener #js"mouseover"  #js"enter")
+        (register-listener #js"drag"       #js"drag"))]
      [deregister
       (λ ()
         (define self #js*.this)
         (define (remove-listener evt-name)
           (define cb ($ #js.self.listeners evt-name))
           (#js.bb.-canvas.removeEventListener evt-name cb))
-        (remove-listener "mousemove")
-        (remove-listener "mousedown")
-        (remove-listener "mouseup")
-        (remove-listener "mouseout")
-        (remove-listener "mouseover")
-        (remove-listener "drag"))]
+        (remove-listener #js"mousemove")
+        (remove-listener #js"mousedown")
+        (remove-listener #js"mouseup")
+        (remove-listener #js"mouseout")
+        (remove-listener #js"mouseover")
+        (remove-listener #js"drag"))]
      [invoke
       (λ (world evt)
         (define new-world (cb world #js.evt.x #js.evt.y #js.evt.evt))
@@ -266,13 +266,13 @@
           (#js.bb.change-world new-world)
           #t)]))))
 
-(define on-key     (-on-key-* "on-key" "keydown"))
-(define on-release (-on-key-* "on-release" "keyup"))
+(define on-key     (-on-key-* #js"on-key" #js"keydown"))
+(define on-release (-on-key-* #js"on-release" #js"keyup"))
 
 (define (stop-when last-world? [last-picture #f])
   (λ (bb)
     ($/obj
-     [name         "stop-when"]
+     [name         #js"stop-when"]
      [predicate    last-world?]
      [lastpicture  last-picture]
      [register
@@ -288,45 +288,43 @@
           (when last-picture
             (define handler ((to-draw last-picture) bb))
             (#js.bb.queue-event
-             ($/obj [type       "raw"]
+             ($/obj [type       #js"raw"]
                     [invoke     #js.handler.invoke])))))])))
 
-
-;; TODO: A JS object would be faster.
 ;; maps JS KeyboardEvent.key to big-bang KeyEvent
-(define *key-table*
-  (hasheq "Backspace" "\b"
-          "Enter"     "\r"
-          "Tab"       "\t"
-          "ArrowLeft"  "left"
-          "ArrowRight" "right"
-          "ArrowDown"  "down"
-          "ArrowUp"    "up"
-          "Shift"        "shift"
-          "Control"      "control"
-          "ControlRight" "rcontrol"
-          "ControlLeft"  "control"
-          "ShiftRight"   "rshift"
-          "ShiftLeft"    "shift"
-          "Escape"  "escape"
-          "Home"    "home"
-          "End"     "end"
-          "Insert"  "insert" ; no pageup/down in big-bang?
-          "Delete"  "\u007F" ; rubout
-          "Pause"   "pause"
-          "NumLock" "numlock"
-          "F1" "f1"
-          "F2" "f2"
-          "F3" "f3"
-          "F4" "f4"
-          "F5" "f5"
-          "F6" "f6"
-          "F7" "f7"
-          "F8" "f8"
-          "F9" "f9"
-          "F10" "f10"
-          "F11" "f11"
-          "F12" "f12"
+(define key-table
+  ($/obj  [Backspace "\b"]
+          [Enter "\r"]
+          [Tab "\t"]
+          [ArrowLeft "left"]
+          [ArrowRight "right"]
+          [ArrowDown "down"]
+          [ArrowUp "up"]
+          [Shift "shift"]
+          [Control "control"]
+          [ControlRight "rcontrol"]
+          [ControlLeft "control"]
+          [ShiftRight "rshift"]
+          [ShiftLeft "shift"]
+          [Escape "escape"]
+          [Home "home"]
+          [End "end"]
+          [Insert "insert"] ; no pageup/down in big-bang?
+          [Delete "\u007F"] ; rubout
+          [Pause "pause"]
+          [NumLock "numlock"]
+          [F1 "f1"]
+          [F2 "f2"]
+          [F3 "f3"]
+          [F4 "f4"]
+          [F5 "f5"]
+          [F6 "f6"]
+          [F7 "f7"]
+          [F8 "f8"]
+          [F9 "f9"]
+          [F10 "f10"]
+          [F11 "f11"]
+          [F12 "f12"]
           ; unsure about these big bang KeyEvents:
           ;; "start"
           ;; "cancel"
@@ -346,10 +344,13 @@
 (define (key-event->key-name e)
   (define k #js.e.key)
   (define code ; use .code to differentiate left/right shift, ctrl, alt
-    (if (or (equal? k "Shift") (equal? k "Control") (equal? k "Alt"))
+    (if (or ($/binop === k #js"Shift") ($/binop === k #js"Control") ($/binop === k #js"Alt"))
         #js.e.code
         k))
-  (hash-ref *key-table* code code))
+  (let ([key-table-code ($ key-table code)])
+       (if (void? key-table-code)
+           (racket-string code)
+           key-table-code)))
 
 (define (canvas-posn-δ canvas evt)
   (define rect (#js.canvas.getBoundingClientRect))

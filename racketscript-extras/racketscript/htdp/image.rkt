@@ -82,10 +82,10 @@
               #,(when (syntax-e #'pen)
                   #`(cond
                       [(or (equal? mode 'outline) (equal? mode "outline"))
-                       (:= #js.ctx.strokeStyle (->web-color pen))
+                       (:= #js.ctx.strokeStyle (js-string (->web-color pen)))
                        (#js.ctx.stroke)]
                       [(or (equal? mode 'solid) (equal? mode "solid"))
-                       (:= #js.ctx.fillStyle (->web-color pen))
+                       (:= #js.ctx.fillStyle (js-string (->web-color pen)))
                        (#js.ctx.fill)]))
               (#js.ctx.closePath))]))
 
@@ -93,11 +93,11 @@
 ;; Display images on browser
 
 (define (print-image d)
-  (define canvas (#js.document.createElement "canvas"))
-  (define ctx (#js.canvas.getContext "2d"))
+  (define canvas (#js.document.createElement #js"canvas"))
+  (define ctx (#js.canvas.getContext #js"2d"))
 
   (#js.document.body.appendChild canvas)
-  (#js.document.body.appendChild (#js.document.createElement "br"))
+  (#js.document.body.appendChild (#js.document.createElement #js"br"))
 
   (:= #js.canvas.width #js.d.width)
   (:= #js.canvas.height #js.d.height)
@@ -106,8 +106,8 @@
     (#js.d.render ctx 0 0)))
 
 (define *invisible-canvas-context*
-  (let ([canvas (#js.document.createElement "canvas")])
-    (#js.canvas.getContext "2d")))
+  (let ([canvas (#js.document.createElement #js"canvas")])
+    (#js.canvas.getContext #js"2d")))
 
 ;;-----------------------------------------------------------------------------
 ;; Some common shapes
@@ -148,15 +148,16 @@
     (#js*.this._updateMetrics))
   [_updateMetrics
    (λ ()
-     (define font (++ #js*.this.weight " "
-                      #js*.this.style " "
-                      #js*.this.size "px "
-                      #js*.this.face " "
-                      #js*.this.family))
+     (define font (string-append
+                     #js*.this.weight " "
+                     #js*.this.style " "
+                     (number->string #js*.this.size) "px "
+                     #js*.this.face " "
+                     #js*.this.family))
 
-     (:= ($ *invisible-canvas-context* 'font) font)
+     (:= ($ *invisible-canvas-context* 'font) (js-string font))
      (define metrics ($> *invisible-canvas-context*
-                         (measureText #js*.this.text)))
+                         (measureText (js-string #js*.this.text))))
 
      (set-object! #js*.this
                   [font    font]
@@ -166,11 +167,11 @@
    (λ (ctx x y)
      (with-origin ctx [x y]
        (set-object! ctx
-                    [font          #js*.this.font]
-                    [textAlign     "center"]
-                    [textBaseline  "middle"]
-                    [fillStyle     #js*.this.color])
-       (#js.ctx.fillText #js*.this.text 0 0)))])
+                    [font          (js-string #js*.this.font)]
+                    [textAlign     #js"center"]
+                    [textBaseline  #js"middle"]
+                    [fillStyle     (js-string #js*.this.color)])
+       (#js.ctx.fillText (js-string #js*.this.text) 0 0)))])
 
 (define-proto Line
   (λ (x y pen-or-color)
@@ -444,7 +445,7 @@
   (λ (data)
     (define self #js*.this)
     (define image (new #js*.Image))
-    (:= #js.image.src data)
+    (:= #js.image.src (js-string data))
     (set-object! self
                  [image  image]
                  [width  #js.image.width]
@@ -460,8 +461,8 @@
 
 (define-proto Freeze
   (λ (img)
-    (define canvas (#js.document.createElement "canvas"))
-    (define ctx (#js.canvas.getContext "2d"))
+    (define canvas (#js.document.createElement #js"canvas"))
+    (define ctx (#js.canvas.getContext #js"2d"))
 
     (define width #js.img.width)
     (define height #js.img.height)
