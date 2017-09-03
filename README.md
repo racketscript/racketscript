@@ -224,6 +224,18 @@ make coverage # Consider coverage of all tests
 make coverage-unit-test # Just consider unit-test coverage
 ```
 
+### Other Tips
+
+If you develop with mutiple versions of Racket and don't have
+the current Racket bin dir in your path, you may find the following
+`racks` shim useful (place it in your bin path):
+
+```bash
+#!/bin/bash
+
+"$(racket -e "(require setup/dirs) (display (find-user-console-bin-dir))")/racks" "$@"
+```
+
 ### Submitting Patches
 
 Create a *pull request* against `develop` branch.
