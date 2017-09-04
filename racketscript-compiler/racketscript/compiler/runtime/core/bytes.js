@@ -6,7 +6,8 @@ import {hashIntArray} from "./raw_hashing.js";
  * @return {!boolean}
  */
 export function check(bs) {
-    return bs.constructor === Uint8Array;
+    return typeof bs === 'object' && bs !== null &&
+        bs.constructor === Uint8Array;
 }
 
 /**

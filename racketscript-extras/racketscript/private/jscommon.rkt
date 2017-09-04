@@ -9,7 +9,6 @@
          set-object!
          schedule-method
          schedule-animation-frame
-         ++
          document
          console
          Math
@@ -64,7 +63,6 @@
 ;;-----------------------------------------------------------------------------
 ;; Helper functions
 
-(define ++        string-append)
 (define document  #js*.window.document)
 (define console   #js*.window.console)
 (define Math      #js*.window.Math)
