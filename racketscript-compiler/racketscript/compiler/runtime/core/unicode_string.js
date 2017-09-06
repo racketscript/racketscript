@@ -1,11 +1,11 @@
-import {Primitive} from "./primitive.js";
+import { Primitive } from "./primitive.js";
 import * as Bytes from "./bytes.js";
 import * as Char from "./char.js";
 import * as Pair from "./pair.js";
 import * as $ from "./lib.js";
-import {internedMake} from "./lib.js";
-import {Encoder as TextEncoder} from "./text_transcoder.js";
-import {hashIntArray} from "./raw_hashing.js";
+import { internedMake } from "./lib.js";
+import { Encoder as TextEncoder } from "./text_transcoder.js";
+import { hashIntArray } from "./raw_hashing.js";
 
 /**
  * A sequence of {Char.Char}s.
@@ -190,9 +190,9 @@ class MutableUString extends UString {
     setCharAt(i, char) {
         this.checkIndexLtLength(i);
         if (!Char.eq(char, this.chars[i])) {
-          this.chars[i] = char;
-          this._nativeString = null;
-          this._cachedHashCode = null;
+            this.chars[i] = char;
+            this._nativeString = null;
+            this._cachedHashCode = null;
         }
     }
 }

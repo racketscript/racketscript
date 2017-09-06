@@ -1,8 +1,8 @@
 import * as $ from "./lib.js";
 import * as Pair from "./pair.js";
-import {Primitive} from "./primitive.js";
-import {isEqual, isEqv, isEq} from "./equality.js";
-import {hashForEqual, hashForEqv, hashForEq} from "./hashing.js";
+import { Primitive } from "./primitive.js";
+import { isEqual, isEqv, isEq } from "./equality.js";
+import { hashForEqual, hashForEqv, hashForEq } from "./hashing.js";
 
 const hashConfigs = {
     eq: {
@@ -21,10 +21,10 @@ const hashConfigs = {
 
 class Hash extends Primitive {
     constructor(hash, type, mutable) {
-	super();
-	this._h = hash;
-	this._mutable = mutable;
-	this._type = type;
+        super();
+        this._h = hash;
+        this._mutable = mutable;
+        this._type = type;
     }
 
     toString() {
@@ -40,7 +40,7 @@ class Hash extends Primitive {
     }
 
     toRawString() {
-	return "'" + this.toString();
+        return "'" + this.toString();
     }
 
     isImmutable() {
@@ -60,44 +60,44 @@ class Hash extends Primitive {
     }
 
     set(k, v) {
-	let newH = this._h.set(k, v);
+        let newH = this._h.set(k, v);
 
-	if (this._mutable) {
-	    this._h = newH;
-	} else {
-	    return new Hash(newH, this._type, false);
-	}
+        if (this._mutable) {
+            this._h = newH;
+        } else {
+            return new Hash(newH, this._type, false);
+        }
     }
 
     size() {
-	return this._h.size;
+        return this._h.size;
     }
 
     equals(v) {
-	if (!check(v)) {
-	    return false;
-	}
+        if (!check(v)) {
+            return false;
+        }
 
-	if (this._h.size !== v._h.size || this._type !== v._type ||
-	    this._mutable !== v._mutable) {
-	    return false;
-	}
+        if (this._h.size !== v._h.size || this._type !== v._type ||
+            this._mutable !== v._mutable) {
+            return false;
+        }
 
-	for (let [key, val] of this._h) {
-        let vv = v._h.get(key);
-	    if (vv === undefined || !isEqual(val, vv)) {
-		return false;
-	    }
-	}
+        for (let [key, val] of this._h) {
+            let vv = v._h.get(key);
+            if (vv === undefined || !isEqual(val, vv)) {
+                return false;
+            }
+        }
 
-	return true;
+        return true;
     }
 }
 
 function make(items, type, mutable) {
     let h = items.reduce((acc, item) => {
-	let [k, v] = item;
-	return acc.set(k, v);
+        let [k, v] = item;
+        return acc.set(k, v);
     }, $.hamt.make(hashConfigs[type]));
     return new Hash(h, type, mutable);
 }
@@ -117,7 +117,7 @@ export function makeEqual(items, mutable) {
 function makeFromAssocs(assocs, type, mutable) {
     let items = []
     Pair.listForEach(assocs, (item) => {
-	items.push([item.hd, item.tl]);
+        items.push([item.hd, item.tl]);
     });
     return make(items, type, mutable);
 }
@@ -137,7 +137,7 @@ export function makeEqualFromAssocs(assocs, mutable) {
 export function map(hash, proc) {
     let result = Pair.EMPTY;
     hash._h.forEach((value, key) => {
-	result = Pair.make(proc(key, value), result)
+        result = Pair.make(proc(key, value), result)
     });
     return result;
 }

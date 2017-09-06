@@ -1,5 +1,5 @@
 import * as Core from "./core.js";
-import {hamt} from "./core/lib.js";
+import { hamt } from "./core/lib.js";
 
 /* --------------------------------------------------------------------------*/
 // All exports go in exports
@@ -35,21 +35,21 @@ export function getCurrentParameterization() {
 
 export function makeParameter(initValue) {
     let param = function (maybeSetVal) {
-	// Get current value box from parameterization. The function
-	// `param` that we result is the key.
-	let pv = getCurrentParameterization().get(param, false) ||
-	    __top.get(param, false);
-	// Create entry in __top if its a mutation.
-	if (!pv && maybeSetVal !== undefined) {
-	    pv = Box.make(initValue);
-	    __top.set(param, pv);
-	}
-	// Get/Set
-	if (maybeSetVal === undefined) {
-	    return (pv && pv.get()) || initValue;
-	} else {
-	    pv.set(maybeSetVal);
-	}
+        // Get current value box from parameterization. The function
+        // `param` that we result is the key.
+        let pv = getCurrentParameterization().get(param, false) ||
+            __top.get(param, false);
+        // Create entry in __top if its a mutation.
+        if (!pv && maybeSetVal !== undefined) {
+            pv = Box.make(initValue);
+            __top.set(param, pv);
+        }
+        // Get/Set
+        if (maybeSetVal === undefined) {
+            return (pv && pv.get()) || initValue;
+        } else {
+            pv.set(maybeSetVal);
+        }
     }
     return param;
 }
@@ -57,7 +57,7 @@ export function makeParameter(initValue) {
 export function extendParameterization(parameterization, ...args) {
     let result = parameterization;
     for (let i = 0; i < args.length; i += 2) {
-	result = result.set(args[i], Box.make(args[i + 1]));
+        result = result.set(args[i], Box.make(args[i + 1]));
     }
     return result;
 }
@@ -65,7 +65,7 @@ export function extendParameterization(parameterization, ...args) {
 export function copyParameterization(parameterization) {
     let result = hamt.make();
     for (let [key, val] of parameterization) {
-	result = result.set(key, Box.make(val.get()));
+        result = result.set(key, Box.make(val.get()));
     }
     return result;
 }
@@ -76,27 +76,27 @@ export function copyParameterization(parameterization) {
 (function () {
     let p = getCurrentParameterization();
     if (p !== false) {
-	return;
+        return;
     } else {
-	Marks.setMark(ParameterizationKey, hamt.make());
+        Marks.setMark(ParameterizationKey, hamt.make());
     }
     __top = new Map();
 
     Marks.registerAsynCallbackWrapper({
-	onCreate: function (state) {
-	    let paramz = {};
-	    paramz.top = new Map();
-	    for (let [key, val] of __top) {
-		paramz.top.set(key, Box.make(val.get()));
-	    }
+        onCreate: function (state) {
+            let paramz = {};
+            paramz.top = new Map();
+            for (let [key, val] of __top) {
+                paramz.top.set(key, Box.make(val.get()));
+            }
 
-	    paramz.bottom = copyParameterization(
-		Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false));
-	    state.paramz = paramz;
-	},
-	onInvoke: function (state) {
-	    __top = state.paramz.top;
-	    Marks.setMark(ParameterizationKey, state.paramz.bottom);
-	}
+            paramz.bottom = copyParameterization(
+                Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false));
+            state.paramz = paramz;
+        },
+        onInvoke: function (state) {
+            __top = state.paramz.top;
+            Marks.setMark(ParameterizationKey, state.paramz.bottom);
+        }
     });
 })();

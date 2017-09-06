@@ -2,7 +2,7 @@
 import * as Pair from "./pair.js"
 import * as Symbol from "./symbol.js"
 import * as $ from "./lib.js";
-import {hashForEq as HASH} from "./hashing.js";
+import { hashForEq as HASH } from "./hashing.js";
 
 let __frames;
 let __prompts = new Map();
@@ -59,8 +59,8 @@ AbortCurrentContinuation.prototype.constructor = AbortCurrentContinuation;
 function savePrompt(promptTag) {
     let promptVal = __prompts.get(promptTag);
     if (promptVal === undefined) {
-	promptVal = []
-	__prompts.set(promptTag, promptVal);
+        promptVal = []
+        __prompts.set(promptTag, promptVal);
     }
     // Most recent prompt is at the end of array.
     promptVal.push(__frames.hd)
@@ -69,21 +69,21 @@ function savePrompt(promptTag) {
 function deleteCurrentPrompt(promptTag) {
     let promptVal = __prompts.get(promptTag);
     if (promptVal === undefined) {
-	throw $.racketCoreError("No corresponding tag in continuation!");
+        throw $.racketCoreError("No corresponding tag in continuation!");
     }
     promptVal.pop()
     if (promptVal.length === 0) {
-	__prompts.delete(promptTag);
+        __prompts.delete(promptTag);
     }
 }
 
 function getPromptFrame(promptTag) {
     if (promptTag === undefined) {
-	return promptTag;
+        return promptTag;
     } else {
-	let result = __prompts.get(promptTag);
-	return (result && result[result.length-1])
-	    || undefined;
+        let result = __prompts.get(promptTag);
+        return (result && result[result.length - 1])
+            || undefined;
     }
 }
 
@@ -98,17 +98,17 @@ export function isContinuationPromptTag(tag) {
 export function callWithContinuationPrompt(proc, promptTag, handler, ...args) {
     promptTag = promptTag || __defaultContinuationPromptTag;
     try {
-	savePrompt(promptTag);
-	return proc.apply(null, args);
+        savePrompt(promptTag);
+        return proc.apply(null, args);
     } catch (e) {
-	if (e instanceof AbortCurrentContinuation &&
-	    e.promptTag === promptTag) {
-	    return handler.apply(null, e.handlerArgs);
-	} else {
-	    throw e;
-	}
+        if (e instanceof AbortCurrentContinuation &&
+            e.promptTag === promptTag) {
+            return handler.apply(null, e.handlerArgs);
+        } else {
+            throw e;
+        }
     } finally {
-	deleteCurrentPrompt(promptTag);
+        deleteCurrentPrompt(promptTag);
     }
 }
 
@@ -120,7 +120,7 @@ export function getFrames() {
 
 export function updateFrame(newFrames, oldFrames) {
     if (__frames !== oldFrames) {
-	throw new Error("current frame doesn't match with old frame");
+        throw new Error("current frame doesn't match with old frame");
     }
     return __frames = newFrames;
 }
@@ -140,17 +140,17 @@ export function getContinuationMarks(promptTag) {
     let frames = __frames;
     let promptFrame = getPromptFrame(promptTag);
     if (promptFrame === undefined &&
-	promptTag !== __defaultContinuationPromptTag) {
-	throw $.racketCoreError("No corresponding tag in continuation!");
+        promptTag !== __defaultContinuationPromptTag) {
+        throw $.racketCoreError("No corresponding tag in continuation!");
     }
 
     let result = [];
     while (!Pair.isEmpty(frames)) {
-	if (frames.hd === promptFrame) {
-	    break;
-	}
-	result.push(frames.hd);
-	frames = frames.tl;
+        if (frames.hd === promptFrame) {
+            break;
+        }
+        result.push(frames.hd);
+        frames = frames.tl;
     }
     return result;
 }
@@ -162,14 +162,14 @@ export function getMarks(framesArr, key, promptTag) {
 
     let result = []
     for (let ii = 0; ii < framesArr.length; ++ii) {
-	//FIXME: for-of requires polyfill
-	let fr = framesArr[ii];
-	if (keyHash in fr) {
-	    if (fr === promptFrame) {
-		break;
-	    }
-	    result.push(fr[keyHash]);
-	}
+        //FIXME: for-of requires polyfill
+        let fr = framesArr[ii];
+        if (keyHash in fr) {
+            if (fr === promptFrame) {
+                break;
+            }
+            result.push(fr[keyHash]);
+        }
     }
     return Pair.listFromArray(result);
 }
@@ -179,25 +179,25 @@ export function getMarks(framesArr, key, promptTag) {
 export function getFirstMark(frames, key, noneV) {
     let keyHash = HASH(key);
     return Pair.listFind(frames, (fr) => {
-	if (keyHash in fr) {
-	    return fr[keyHash];
-	}
+        if (keyHash in fr) {
+            return fr[keyHash];
+        }
     }) || noneV;
 }
 
 export function wrapWithContext(fn) {
     return (function (currentFrames) {
-	let state = {};
-	__async_callback_wrappers.forEach((w) => w.onCreate(state));
-	return function (...args) {
-	    init();
-	    __async_callback_wrappers.forEach((w) => w.onInvoke(state));
-	    try {
-		return fn.apply(null, args);
-	    } finally {
-		/* This callback/coroutine is finished */
-		__frames = undefined;
-	    }
-	}
+        let state = {};
+        __async_callback_wrappers.forEach((w) => w.onCreate(state));
+        return function (...args) {
+            init();
+            __async_callback_wrappers.forEach((w) => w.onInvoke(state));
+            try {
+                return fn.apply(null, args);
+            } finally {
+                /* This callback/coroutine is finished */
+                __frames = undefined;
+            }
+        }
     })(__frames);
 }

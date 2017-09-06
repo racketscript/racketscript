@@ -1,4 +1,4 @@
-import {Primitive} from "./primitive.js";
+import { Primitive } from "./primitive.js";
 import * as $ from "./lib.js";
 import * as UString from "./unicode_string.js";
 

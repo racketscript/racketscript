@@ -1,5 +1,5 @@
 import * as $ from "./lib.js";
-import {hashString} from "./raw_hashing.js";
+import { hashString } from "./raw_hashing.js";
 
 /**
  * Base class for various compound data types
