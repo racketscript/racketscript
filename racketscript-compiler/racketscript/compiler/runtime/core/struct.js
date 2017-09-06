@@ -1,9 +1,15 @@
 import * as C from "./check.js";
-import * as $ from "./lib.js";
+import {racketCoreError} from './errors.js';
 import * as Pair from "./pair.js";
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
 import * as Values from "./values.js";
+import * as $ from './lib.js';
+import {displayNativeString, writeNativeString, printNativeString} from './print_native_string.js';
+import {hashArray} from './raw_hashing.js';
+import {hashForEqual} from './hashing.js';
+import * as Ports from './ports.js';
+import * as Print from './print.js';
 
 // This module implements Racket structs via three classes which
 // directly corresponds to their Racket counterparts. Structure
@@ -32,14 +38,14 @@ import * as Values from "./values.js";
 // - Structure Inspectors
 // - Prefab
 
-class Struct extends Primitive {
+class Struct extends PrintablePrimitive {
     constructor(desc, fields, callerName=false) {
 	super();
 	this._desc = desc; /* struct-type-descriptor */
 
 	C.eq(fields.length,
 	     this._desc._totalInitFields,
-	     $.racketCoreError,
+	     racketCoreError,
 	     "arity mismatch");
 
 	// Guard's are applied starting from subtype to supertype
@@ -75,40 +81,87 @@ class Struct extends Primitive {
 	}
     }
 
-    toString() {
-	let fields = "";
-	for (let i = 0; i < this._fields.length; i++) {
-	    fields += this._fields[i].toString();
-	    if (i !== this._fields.length - 1) {
-		fields += " ";
-	    }
-	}
-	return "#(struct:" + this._desc.getName() + " " + fields + ")";
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    writeToPort(out, itemFn) {
+        if (this._desc._options.inspector) {
+            // Not a transparent inspector
+            // TODO: support prefab
+            out.consume('#<');
+            out.consume(this._desc.getName());
+            out.consume('>');
+        } else {
+            out.consume('#(struct:');
+            out.consume(this._desc.getName());
+            for (const field of this._fields) {
+                out.consume(' ');
+                itemFn(out, field);
+            }
+            out.consume(')');
+        }
     }
 
-    toRawString() {
-	return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.writeToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.writeToPort(out, writeNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        if (this._desc._options.inspector) {
+            // Not a transparent inspector
+            // TODO: support prefab
+            this.displayNativeString(out);
+        } else {
+            out.consume('(');
+            out.consume(this._desc.getName());
+            for (const field of this._fields) {
+                out.consume(' ');
+                printNativeString(out, field, Print.isPrintAsExpression(), 1);
+            }
+            out.consume(')');
+        }
     }
 
     equals(v) {
-	if (!check(v, this._desc)) {
-	    return false;
-	}
+        if (!check(v, this._desc)) {
+            return false;
+        }
 
-	// TODO: Support equal+hash property
+        // TODO: Support equal+hash property
 
-	if (this._desc._options.inspector) {
-	    // Not a transparent inspector
-	    return this === v;
-	}
+        if (this._desc._options.inspector) {
+            // Not a transparent inspector
+            return this === v;
+        }
 
-	for (let i = 0; i < this._fields.length; i++) {
-	    if (!isEqual(this._fields[i], v._fields[i])) {
-		return false;
-	    }
-	}
+        for (let i = 0; i < this._fields.length; i++) {
+            if (!isEqual(this._fields[i], v._fields[i])) {
+                return false;
+            }
+        }
 
-	return true;
+        return true;
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return hashArray(this._fields, hashForEqual);
     }
 
     getField(n) {
@@ -119,9 +172,9 @@ class Struct extends Primitive {
     }
 
     setField(n, v) {
-	C.truthy(n < this._fields.length, $.racketCoreError,
+	C.truthy(n < this._fields.length, racketCoreError,
 		 "invalid field at position");
-	C.falsy(this._desc.isFieldImmutable(n), $.racketCoreError,
+	C.falsy(this._desc.isFieldImmutable(n), racketCoreError,
 		 "field is immutable");
 	this._fields[n] = v;
     }
@@ -141,7 +194,7 @@ class Struct extends Primitive {
 
 /*****************************************************************************/
 
-class StructTypeDescriptor extends Primitive {
+class StructTypeDescriptor extends PrintablePrimitive {
     constructor(options) {
 	super();
 	// Visit makeStructType (or make-struct-type in Racket docs)
@@ -151,7 +204,7 @@ class StructTypeDescriptor extends Primitive {
 	// Initialize properties
 	// supers in struct-type-property are also added when
 	// attached. However propeties attached to super types of this
-	// struct are not added here and will have to be followed.
+    // struct are not added here and will have to be followed.
 	let props = options.props && Pair.listToArray(options.props);
 	this._options.props = new Map();
 	if (props) {
@@ -174,7 +227,7 @@ class StructTypeDescriptor extends Primitive {
 	}
 
 	// Immutables
-	let immutables = options.immutables || [];
+	let immutables = options.immutables || Pair.EMPTY;
 	this._options.immutables = new Set(Pair.listToArray(immutables));
 	this._options.immutables.forEach((e) => {
 	    if (e < 0 || e >= options.initFieldCount) {
@@ -187,12 +240,21 @@ class StructTypeDescriptor extends Primitive {
 	return Object.freeze(new StructTypeDescriptor(options));
     }
 
-    toString() {
-	return "#<struct-type:" + this._options.name + ">";
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#<struct-type:');
+        out.consume(this._options.name);
+        out.consume('>');
     }
 
-    toRawString() {
-	return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.displayNativeString(out);
     }
 
     getName() {
@@ -279,7 +341,7 @@ class StructTypeDescriptor extends Primitive {
 
 	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise($.racketCoreError, "accessor applied to invalid type")
+		C.raise(racketCoreError, "accessor applied to invalid type")
 	    }
 
 	    return sobj.getField(pos);
@@ -297,7 +359,7 @@ class StructTypeDescriptor extends Primitive {
 
 	    let sobj = structObject._maybeFindSuperInstance(this);
 	    if (sobj === false) {
-		C.raise($.racketCoreError, "mutator applied to invalid type")
+		C.raise(racketCoreError, "mutator applied to invalid type")
 	    }
 
 	    return sobj.setField(pos, v);
@@ -333,7 +395,7 @@ class StructTypeDescriptor extends Primitive {
 
 /*****************************************************************************/
 
-class StructTypeProperty extends Primitive {
+class StructTypeProperty extends PrintablePrimitive {
     constructor(args) {
 	super();
 
@@ -347,12 +409,20 @@ class StructTypeProperty extends Primitive {
 	return Object.freeze(new StructTypeProperty(args));
     }
 
-    toString() {
-	return "#<struct-type-property:" + this._name + ">";
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#<struct-type-property:');
+        out.consume(this._name);
+        out.consume('>');
     }
 
-    toRawString() {
-	return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.displayNativeString(out);
     }
 
     getPropertyPredicate() {
@@ -376,11 +446,11 @@ class StructTypeProperty extends Primitive {
 	    } else if (v instanceof Struct) {
 		var desc = v._desc;
 	    } else {
-		C.raise($.racketCoreError, "invalid argument to accessor");
+		C.raise(racketCoreError, "invalid argument to accessor");
 	    }
 
 	    return desc._findProperty(this) ||
-		C.raise($.racketCoreError, "property not in struct");
+		C.raise(racketCoreError, "property not in struct");
 	}
     }
 
@@ -452,7 +522,7 @@ export function isStructInstance(v) {
 }
 
 export function check(v, desc) {
-    return isStructInstance(v) && v._desc == desc;
+    return isStructInstance(v) && v._desc === desc;
 }
 
 /*****************************************************************************/

@@ -40,3 +40,6 @@
 
 (displayln (char-utf-8-length #\a))
 (displayln (char-utf-8-length #\🎂))
+
+(println #\a)
+(println #\tab)

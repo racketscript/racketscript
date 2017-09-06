@@ -154,9 +154,8 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons       #js.Pair.make)
-(define+provide cons?      #js.Pair.check)
-(define+provide pair?      #js.Pair.check)
+(define+provide cons       #js.Core.Pair.make)
+(define+provide pair?      #js.Core.Pair.check)
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
   #js.v.hd.hd)
@@ -169,17 +168,18 @@
 (define-checked+provide (caddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
   #js.v.tl.tl.hd)
 
-(define+provide null  #js.Pair.Empty)
-(define+provide list  #js.Pair.makeList)
+(define+provide null  #js.Core.Pair.EMPTY)
+(define+provide list  #js.Core.Pair.makeList)
 
-(define+provide null?  #js.Pair.isEmpty)
-(define+provide empty? #js.Pair.isEmpty)
-(define+provide length #js.Pair.listLength)
+(define+provide (null? v)
+  (#js.Core.Pair.isEmpty v))
+(define+provide (length v) #js.v.length)
 
+; TODO: Optimize, the pair should know whether it's a list or not.
 (define+provide (list? v)
   (cond
     [(null? v) #t]
-    [(cons? v) (list? ($> v (cdr)))]
+    [(pair? v) (list? ($> v (cdr)))]
     [else #f]))
 
 (define-checked+provide (reverse [lst list?])
@@ -627,6 +627,7 @@
 (define+provide (string? v)
   (#js.Core.UString.check v))
 
+(define+provide fprintf #js.Kernel.fprintf)
 (define+provide format #js.Kernel.format)
 (define+provide symbol? #js.Core.Symbol.check)
 
@@ -772,12 +773,9 @@
 
 (define+provide (current-print)
   (λ (p)
-    (when (string? p)
-      (display "\""))
-    (display p)
-    (when (string? p)
-      (display "\""))
-    (newline)))
+    (when (not (void? p))
+      (print p)  ; can't use println here yet (it's defined by private/misc.rkt)
+      (newline))))
 
 (define+provide (port? p)
   (#js.Core.Ports.isPort p))
@@ -800,8 +798,18 @@
 ;; --------------------------------------------------------------------------
 ;; Printing
 
-(define+provide (display v [out (current-output-port)]) (#js.Kernel.display v out))
-(define+provide (print v [out (current-output-port)]) (#js.Kernel.print v out))
+(define+provide (display datum [out (current-output-port)])
+  (#js.Core.display out datum))
+(define+provide (write datum [out (current-output-port)])
+  (#js.Core.write out datum))
+(define+provide (print datum [out (current-output-port)] [quote-depth 0])
+  (#js.Core.print out datum (#js.Core.isPrintAsExpression) quote-depth))
+
+; TODO: This should be a parameter, not a case-lambda.
+(define+provide print-as-expression
+  (case-lambda
+    [() (#js.Core.isPrintAsExpression)]
+    [(v) (#js.Core.setPrintAsExpression v)]))
 
 (define+provide (newline [out (current-output-port)])
   (display "\n" out))

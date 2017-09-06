@@ -80,3 +80,4 @@
 (equal? (hash-set h1 (posn 2 4) (list (posn 0 0) 'origin))
         (hash-set h1 (posn 2 4) (list (posn 0 0) 'not-origin)))
 
+(hash-ref #hash(((posn 1 2) . #t)) (posn 1 2) #f)

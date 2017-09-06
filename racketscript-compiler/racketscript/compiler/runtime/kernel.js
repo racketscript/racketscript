@@ -9,69 +9,114 @@ export function isImmutable(v) {
     } else if (Core.Bytes.check(v)) {
         return true;
     } else {
-        $.racketCoreError(`isImmutable not implemented for ${v}`);
+        racketCoreError(`isImmutable not implemented for ${v}`);
     }
 }
 
 /* --------------------------------------------------------------------------*/
 // String construction and manipulation
 
-export function format(pattern, ...args) {
-    //TODO: Only ~a and ~x are supported
-    var matched = 0;
-    return Core.UString.makeMutable(
-        pattern.toString().replace(/~[axs]/g, function (match) {
-            if (matched >= args.length) {
-                throw Core.racketContractError("insufficient pattern arguments");
-            }
-            switch (match[1]) {
-                case 'a': return args[matched++];
-                case 'x': return args[matched++].toString(16);
-                case 's': return ((v) => {
-                    // TODO: This is very broken, fix it (likely needs a new Primitive method).
-                    if (typeof v === 'number') {
-                        return v.toString();
-                    } else {
-                        return JSON.stringify(v.toString());
-                    }
-                })(args[matched++]);
-            }
-        }));
+export function fprintf(out, form, ...args) {
+    // TODO: Missing forms: ~.[asv], ~e, ~c.
+    // TODO: The ~whitespace form should match Unicode whitespace.
+    const regex = /~(?:[aAsSvVbBoOxX~n%]|\s+)/g;
+    const formStr = form.toString();
+    let reExecResult;
+    let currentMatchIndex = 0;
+    let prevIndex = 0;
+    let lastMatch = '';
+    while ((reExecResult = regex.exec(formStr)) !== null) {
+        if (currentMatchIndex >= args.length) {
+            throw Core.racketContractError('insufficient pattern arguments');
+        }
+        Core.display(out, formStr.slice(prevIndex + lastMatch.length, reExecResult.index));
+        prevIndex = reExecResult.index;
+        lastMatch = reExecResult[0];
+        if (/^~\s/.test(lastMatch)) continue;
+        switch (lastMatch.charAt[1]) {
+            case '~':
+                Core.display(out, '~');
+                continue;
+            case 'n':
+            case '%':
+                Core.display(out, '\n');
+                continue;
+        }
+        const v = args[currentMatchIndex++];
+        switch (lastMatch.charAt(1)) {
+            case 'a':
+            case 'A':
+                Core.display(out, v);
+                break;
+            case 's':
+            case 'S':
+                Core.write(out, v);
+                break;
+            case 'v':
+            case 'V':
+                Core.print(out, v, Core.isPrintAsExpression(), 0);
+                break;
+            case 'b':
+            case 'B':
+                // TODO: raise exn:fail:contract if the number is not exact.
+                Core.display(out, v.toString(2));
+                break;
+            case 'o':
+            case 'O':
+                // TODO: raise exn:fail:contract if the number is not exact.
+                Core.display(out, v.toString(8));
+                break;
+            case 'x':
+            case 'X':
+                // TODO: raise exn:fail:contract if the number is not exact.
+                Core.display(out, v.toString(16));
+                break;
+            default:
+                throw racketContractError('Unsupported format:', lastMatch);
+        }
+    }
+    if (lastMatch.length + prevIndex < form.length) {
+        Core.display(out, formStr.slice(lastMatch.length + prevIndex));
+    }
 }
 
-export function listToString(lst) {
+/**
+ * @return {!Core.UString.UString}
+ */
+export function format(form, ...args) {
+    const strOut = Core.Ports.openOutputString();
+    fprintf(strOut, form, ...args);
+    return Core.Ports.getOutputString(strOut);
+}
+
+/**
+ * @param {!Core.Pair.Pair} charsList a list of chars
+ * @return {!Core.UString.MutableUString}
+ */
+export function listToString(charsList) {
 	return Core.UString.makeMutableFromChars(
-        Core.Pair.listToArray(lst));
+        Core.Pair.listToArray(charsList));
 }
-
-/* --------------------------------------------------------------------------*/
-// Printing to Console
-
-export function display(v, out) {
-    /* TODO: this is still line */
-    out.write(v);
-}
-
-export function print(v, out) {
-    /* TODO: this is still line */
-    out.write(v);
-}
-
-
 
 /* --------------------------------------------------------------------------*/
 // Errors
 
-export function error(...args) {
-    if (args.length === 1 && Core.Symbol.check(args[0])) {
-        throw Core.racketCoreError(args[0].toString());
-    } else if (args.length > 0 && typeof args[0] === 'string') {
-        throw Core.racketCoreError(args.map((v) => v.toString()).join(" "));
-    } else if (args.length > 0 && Core.Symbol.check(args[0])) {
-        throw Core.racketCoreError(
-            format(`${args[0].toString()}: ${args[1]}`, ...args.slice(2)));
+/**
+ * @param {Core.Symbol|Core.UString|String} firstArg
+ * @param {*[]} rest
+ */
+export function error(firstArg, ...rest) {
+    if (Core.Symbol.check(firstArg)) {
+        if (rest.length === 0) {
+            throw Core.racketCoreError(firstArg.toString());
+        } else {
+            throw Core.racketCoreError(
+                `${firstArg.toString()}:`, ...rest);
+        }
+    } else if (Core.UString.check(firstArg) || typeof firstArg === 'string') {
+        throw Core.racketCoreError(firstArg.toString(), ...rest);
     } else {
-        throw Core.racketContractError("error: invalid arguments");
+        throw Core.racketContractError('error: invalid arguments');
     }
 }
 
@@ -101,7 +146,7 @@ export function random(...args) {
 // TODO: add optional equal? pred
 
 export function memv(v, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (!Core.Pair.isEmpty(lst)) {
 	if (Core.isEqv(v, lst.hd)) {
 	    return lst;
 	}
@@ -112,7 +157,7 @@ export function memv(v, lst) {
 }
 
 export function memq(v, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (!Core.Pair.isEmpty(lst)) {
 	if (Core.isEq(v, lst.hd)) {
 	    return lst;
 	}
@@ -123,8 +168,8 @@ export function memq(v, lst) {
 }
 
 export function memf(f, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
-	if (f(lst.hd)) {
+    while (!Core.Pair.isEmpty(lst)) {
+	if (f(lst.hd) !== false) {
 	    return lst;
 	}
 	lst = lst.tl;
@@ -134,9 +179,9 @@ export function memf(f, lst) {
 }
 
 export function findf(f, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
-	if (f(lst.hd)) {
-	    return list.hd;
+    while (!Core.Pair.isEmpty(lst)) {
+	if (f(lst.hd) !== false) {
+	    return lst.hd;
 	}
 	lst = lst.tl;
 	continue;
@@ -164,7 +209,7 @@ export function sort9(lst, cmp) {
 }
 
 export function assv(k, lst) {
-    while (Core.Pair.isEmpty(lst) === false) {
+    while (!Core.Pair.isEmpty(lst)) {
 	if (Core.isEqv(k, lst.hd.hd)) {
 	    return lst.hd;
 	}
@@ -174,7 +219,7 @@ export function assv(k, lst) {
 }
 
 export function assq(k, lst) {
-    while (Core.Pair.isEmpty(lst) === false) {
+    while (!Core.Pair.isEmpty(lst)) {
 	if (Core.isEq(k, lst.hd.hd)) {
 	    return lst.hd;
 	}
@@ -184,8 +229,8 @@ export function assq(k, lst) {
 }
 
 export function assf(f, lst) {
-    while (Core.Pair.isEmpty(lst) === false) {
-	if (f(lst.hd.hd)) {
+    while (!Core.Pair.isEmpty(lst)) {
+	if (f(lst.hd.hd) !== false) {
 	    return lst.hd;
 	}
 	lst = lst.tl;

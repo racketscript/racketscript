@@ -1,7 +1,7 @@
 import * as Bytes from "./bytes.js";
 import * as UString from "./unicode_string.js";
 import * as Pair from "./pair.js";
-import * as $ from "./lib.js";
+import {racketContractError} from './errors.js';
 
 /**
  * @param {*} v
@@ -35,7 +35,7 @@ export function match(pattern, input) {
 
     if (!(isRegexpPattern || isBytesPattern || isStringPattern)
         || !(isBytesInput || isStringInput)) {
-        throw $.racketContractError("expected regexp, string or byte pat, and string or byte input");
+        throw racketContractError('expected regexp, string or byte pat, and string or byte input');
     }
 
     /** @type {!UString.UString} */

@@ -13,3 +13,5 @@
 (define pb (posn0 1 2))
 (equal? (posn0 1 2) pb)
 (displayln pb)
+(writeln pb)
+(println pb)

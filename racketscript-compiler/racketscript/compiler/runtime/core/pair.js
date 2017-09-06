@@ -1,49 +1,85 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
-import * as $ from "./lib.js";
+import {displayNativeString, writeNativeString} from './print_native_string.js';
+import * as Ports from './ports.js';
 
-// TODO: This should be a Primitive, not an Array.
-export const Empty = [];
+/** @singleton */
+class EmptyPair extends PrintablePrimitive {
+    /**
+    * @param {!Ports.NativeStringOutputPort} out
+    */
+    displayNativeString(out) {
+        out.consume('()');
+    }
 
-export function isEmpty(v) {
-    return (v instanceof Array) && v.length === 0;
+    equals(v) {
+        return this === v;
+    }
+
+    get length() {
+        return 0;
+    }
+
+    /**
+     * @return {false}
+     */
+    isImmutable() {
+        // As per racket reference, this is always false for Pairs and Lists.
+        // https://docs.racket-lang.org/reference/booleans.html#%28def._%28%28quote._~23~25kernel%29._immutable~3f%29%29
+        return false;
+    }
 }
 
-export class Pair extends Primitive {
+export const EMPTY = new EmptyPair();
+
+export class Pair extends PrintablePrimitive {
     /** @private */
     constructor(hd, tl) {
         super();
         this.hd = hd;
         this.tl = tl;
-        this._listLength = (tl === Empty)
-            ? 1
-            : isList(tl) && tl._listLength + 1;
+        this._listLength = tl === EMPTY ?
+            1 : (check(tl) ? tl.length + 1 : 2);
         this._cachedHashCode = null;
     }
 
-    toString() {
-        const result = ['('];
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    writeToPort(out, itemFn) {
+        out.consume('(');
         let rest = this;
         while (true) {
             if (check(rest)) {
-                result.push($.toString(rest.hd));
+                itemFn(out, rest.hd);
             } else {
-                result.push('. ', $.toString(rest));
+                out.consume('. ');
+                itemFn(out, rest)
                 break;
             }
             rest = rest.tl;
             if (isEmpty(rest)) {
                 break;
             } else {
-                result.push(' ');
+                out.consume(' ');
             }
         }
-        result.push(')');
-        return result.join('');
+        out.consume(')');
     }
 
-    toRawString() {
-	return "'" + this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.writeToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.writeToPort(out, writeNativeString);
     }
 
     equals(v) {
@@ -91,10 +127,31 @@ export class Pair extends Primitive {
     get length() {
         return this._listLength;
     }
+
+    /**
+     * @return {false}
+     */
+    isImmutable() {
+        // As per racket reference, this is always false for Pairs and Lists.
+        // https://docs.racket-lang.org/reference/booleans.html#%28def._%28%28quote._~23~25kernel%29._immutable~3f%29%29
+        return false;
+    }
 }
 
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is a non-empty list or pair.
+ */
 export function check(v) {
-    return (v instanceof Pair);
+    return typeof v === 'object' && v !== null && v.constructor === Pair;
+}
+
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is the empty list.
+ */
+export function isEmpty(v) {
+    return EMPTY === v;
 }
 
 export function make(hd, tl) {
@@ -102,12 +159,9 @@ export function make(hd, tl) {
 }
 
 export function makeList(...items) {
-    let len = items.length - 1;
-    let result = Empty; /* TODO: wrap this? */
-    while (len >= 0) {
-	result = make(items[len--], result);
-    }
-    return result;
+    return items.reduceRight((result, item) => {
+        return make(item, result);
+    }, EMPTY);
 }
 
 export function listToArray(lst) {
@@ -117,23 +171,23 @@ export function listToArray(lst) {
 }
 
 export function listFromArray(lst) {
-    return makeList.apply(null, lst);
+    return makeList(...lst);
 }
 
 export function listForEach(lst, fn) {
     while (!isEmpty(lst)) {
-	fn(lst.hd);
-	lst = lst.tl;
+        fn(lst.hd);
+        lst = lst.tl;
     }
 }
 
 export function listFind(lst, fn) {
     while (!isEmpty(lst)) {
-	let result = fn(lst.hd);
-	if (result) {
-	    return result;
-	}
-	lst = lst.tl;
+        let result = fn(lst.hd);
+        if (result !== false) {
+            return result;
+        }
+        lst = lst.tl;
     }
     return false;
 }
@@ -143,26 +197,4 @@ export function listMap(lst, fn) {
     let mapper = (x) => result.push(result, fn(x));
     listForEach(lst, mapper);
     return listFromArray(result);
-}
-
-export function _listLength(lst) {
-    var len = 0;
-    while (true) {
-	if (isEmpty(lst)) {
-            return len;
-	}
-	len += 1;
-	lst = lst.cdr();
-    }
-    return len;
-}
-
-export function listLength(lst) {
-    return (lst === Empty)
-	? 0
-	: lst._listLength;
-}
-
-export function isList(v) {
-    return v === Empty || (check(v) && v._listLength !== false);
 }

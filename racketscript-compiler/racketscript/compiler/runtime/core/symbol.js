@@ -1,19 +1,19 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {internedMake} from "./lib.js";
+import * as Ports from './ports.js';
 
-class Symbol extends Primitive {
+class Symbol extends PrintablePrimitive {
     constructor(v) {
         super();
         this.v = v;
         this._cachedHashCode = null;
     }
 
-    toString() {
-	return this.v;
-    }
-
-    toRawString() {
-	return "'" + this.v;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume(this.v);
     }
 
     equals(v) {
@@ -37,7 +37,7 @@ class Symbol extends Primitive {
 
 
 export let make = internedMake(v => {
-    return new Symbol(v.toString());
+    return new Symbol(v);
 });
 
 export let makeUninterned = v => new Symbol(v);

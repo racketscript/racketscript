@@ -1,8 +1,11 @@
-import * as $ from "./lib.js";
-import * as Pair from "./pair.js";
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual, isEqv, isEq} from "./equality.js";
 import {hashForEqual, hashForEqv, hashForEq} from "./hashing.js";
+import {displayNativeString, writeNativeString} from './print_native_string.js';
+import {racketCoreError} from './errors.js';
+import {hamt} from './lib.js';
+import * as Pair from "./pair.js";
+import * as Ports from './ports.js';
 
 const hashConfigs = {
     eq: {
@@ -19,7 +22,7 @@ const hashConfigs = {
     }
 }
 
-class Hash extends Primitive {
+class Hash extends PrintablePrimitive {
     constructor(hash, type, mutable) {
 	super();
 	this._h = hash;
@@ -27,20 +30,41 @@ class Hash extends Primitive {
 	this._type = type;
     }
 
-    toString() {
-        const items = [];
-        for (let [k, v] of this._h) {
-            items.push(`(${$.toString(k)} . ${$.toString(v)})`);
-        }
-        let typeSuffix = '';
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    writeToPort(out, itemFn) {
+        out.consume('#hash');
         if (this._type === 'eq' || this._type === 'eqv') {
-            typeSuffix = this._type;
+            out.consume(this._type);
         }
-        return `#hash${typeSuffix}(${items.join(' ')})`;
+        out.consume('(');
+        const n = this._h.size;
+        let i = 0;
+        for (let [k, v] of this._h) {
+            out.consume('(');
+            itemFn(out, k);
+            out.consume(' . ');
+            itemFn(out, v);
+            out.consume(')');
+            if (++i !== n) out.consume(' ');
+        }
+        out.consume(')');
     }
 
-    toRawString() {
-	return "'" + this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.writeToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.writeToPort(out, writeNativeString);
     }
 
     isImmutable() {
@@ -54,8 +78,8 @@ class Hash extends Primitive {
         } else if (fail !== undefined) {
             return fail;
         } else {
-            throw $.racketCoreError(
-                `hash-ref: no value found for key\n  key: ${$.toString(k)}`);
+            throw racketCoreError(
+                'hash-ref: no value found for key\n  key:', k);
         }
     }
 
@@ -98,7 +122,7 @@ function make(items, type, mutable) {
     let h = items.reduce((acc, item) => {
 	let [k, v] = item;
 	return acc.set(k, v);
-    }, $.hamt.make(hashConfigs[type]));
+    }, hamt.make(hashConfigs[type]));
     return new Hash(h, type, mutable);
 }
 
@@ -135,9 +159,9 @@ export function makeEqualFromAssocs(assocs, mutable) {
 }
 
 export function map(hash, proc) {
-    let result = Pair.Empty;
+    let result = Pair.EMPTY;
     hash._h.forEach((value, key) => {
-	result = Pair.make(proc(key, value), result)
+        result = Pair.make(proc(key, value), result)
     });
     return result;
 }

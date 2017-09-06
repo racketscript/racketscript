@@ -37,15 +37,5 @@ export function isEqual(v1, v2) {
     // Bytes are not a Primitive.
     if (Bytes.check(v1) && Bytes.check(v2)) return Bytes.eq(v1, v2);
 
-    // TODO: We should not pass arrays to this function,
-    //   but currently we sometimes do, e.g. the empty list.
-    if (Array.isArray(v1) && Array.isArray(v2) && v1.length === v2.length) {
-        const n = a.length;
-        for (let i = 0; i < n; i++) {
-            if (!isEqual(a[i], b[i])) return false;
-        }
-        return true;
-    }
-
     return false;
 }

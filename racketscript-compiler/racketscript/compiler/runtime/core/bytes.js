@@ -44,6 +44,16 @@ export function toString(bytes) {
 }
 
 /**
+ * Writes a string representation similar to Racket's `display` to the given port.
+ *
+ * @param {!Ports.NativeStringOutputPort} out
+ * @param {!Uint8Array} bytes
+ */
+export function displayNativeString(out, bytes) {
+    out.consume(toString(bytes));
+}
+
+/**
  * @param {!Uint8Array} bytes
  * @return {!number} a 32-bit integer
  */
