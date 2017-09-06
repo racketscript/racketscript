@@ -40,7 +40,7 @@ export function format(pattern, ...args) {
 }
 
 export function listToString(lst) {
-	return Core.UString.makeMutableFromChars(
+    return Core.UString.makeMutableFromChars(
         Core.Pair.listToArray(lst));
 }
 
@@ -80,21 +80,21 @@ export function error(...args) {
 
 export function random(...args) {
     switch (args.length) {
-    case 0: return Math.random();
-    case 1:
-	if (args[0] > 0) {
-	    return Math.floor(Math.random() * args[0]);
-        } else {
-	    error("random: argument should be positive");
-        }
-    case 2:
-	if (args[0] > 0 && args[1] > args[0]) {
-	    return Math.floor(args[0] + Math.random() * (args[1] - args[0]));
-	} else {
-	    error("random: invalid arguments");
-	}
-    default:
-	error("random: invalid number of arguments")
+        case 0: return Math.random();
+        case 1:
+            if (args[0] > 0) {
+                return Math.floor(Math.random() * args[0]);
+            } else {
+                error("random: argument should be positive");
+            }
+        case 2:
+            if (args[0] > 0 && args[1] > args[0]) {
+                return Math.floor(args[0] + Math.random() * (args[1] - args[0]));
+            } else {
+                error("random: invalid arguments");
+            }
+        default:
+            error("random: invalid number of arguments")
     }
 }
 
@@ -102,44 +102,44 @@ export function random(...args) {
 
 export function memv(v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
-	if (Core.isEqv(v, lst.hd)) {
-	    return lst;
-	}
-	lst = lst.tl;
-	continue;
+        if (Core.isEqv(v, lst.hd)) {
+            return lst;
+        }
+        lst = lst.tl;
+        continue;
     }
     return false;
 }
 
 export function memq(v, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
-	if (Core.isEq(v, lst.hd)) {
-	    return lst;
-	}
-	lst = lst.tl;
-	continue;
+        if (Core.isEq(v, lst.hd)) {
+            return lst;
+        }
+        lst = lst.tl;
+        continue;
     }
     return false;
 }
 
 export function memf(f, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
-	if (f(lst.hd)) {
-	    return lst;
-	}
-	lst = lst.tl;
-	continue;
+        if (f(lst.hd)) {
+            return lst;
+        }
+        lst = lst.tl;
+        continue;
     }
     return false;
 }
 
 export function findf(f, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
-	if (f(lst.hd)) {
-	    return list.hd;
-	}
-	lst = lst.tl;
-	continue;
+        if (f(lst.hd)) {
+            return list.hd;
+        }
+        lst = lst.tl;
+        continue;
     }
     return false;
 }
@@ -150,45 +150,46 @@ export function findf(f, lst) {
 export function sort9(lst, cmp) {
     var arr = Core.Pair.listToArray(lst);
     var x2i = new Map();
-    arr.forEach(function (x,i) { x2i.set(x,i); });
-    var srted = arr.sort(function (x,y) {
-	if (cmp(x,y)) {
-	    return -1;
-	} else if (cmp(y,x)) {
-	    return 1;
-	} else { // x = y, simulate stable sort by comparing indices
-	    return x2i.get(x) - x2i.get(y);
-	}});
+    arr.forEach(function (x, i) { x2i.set(x, i); });
+    var srted = arr.sort(function (x, y) {
+        if (cmp(x, y)) {
+            return -1;
+        } else if (cmp(y, x)) {
+            return 1;
+        } else { // x = y, simulate stable sort by comparing indices
+            return x2i.get(x) - x2i.get(y);
+        }
+    });
 
     return Core.Pair.listFromArray(srted);
 }
 
 export function assv(k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
-	if (Core.isEqv(k, lst.hd.hd)) {
-	    return lst.hd;
-	}
-	lst = lst.tl;
+        if (Core.isEqv(k, lst.hd.hd)) {
+            return lst.hd;
+        }
+        lst = lst.tl;
     }
     return false;
 }
 
 export function assq(k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
-	if (Core.isEq(k, lst.hd.hd)) {
-	    return lst.hd;
-	}
-	lst = lst.tl;
+        if (Core.isEq(k, lst.hd.hd)) {
+            return lst.hd;
+        }
+        lst = lst.tl;
     }
     return false;
 }
 
 export function assf(f, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
-	if (f(lst.hd.hd)) {
-	    return lst.hd;
-	}
-	lst = lst.tl;
+        if (f(lst.hd.hd)) {
+            return lst.hd;
+        }
+        lst = lst.tl;
     }
     return false;
 }

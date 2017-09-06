@@ -1,5 +1,5 @@
-import {Primitive} from "./primitive.js";
-import {isEqual} from "./equality.js";
+import { Primitive } from "./primitive.js";
+import { isEqual } from "./equality.js";
 import * as $ from "./lib.js";
 
 /** @singleton */
@@ -64,7 +64,7 @@ export class Pair extends Primitive {
     }
 
     toRawString() {
-	return "'" + this.toString();
+        return "'" + this.toString();
     }
 
     equals(v) {

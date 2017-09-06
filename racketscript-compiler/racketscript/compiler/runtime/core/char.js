@@ -1,4 +1,4 @@
-import {Primitive} from "./primitive.js";
+import { Primitive } from "./primitive.js";
 
 /**
  * A single Unicode character.

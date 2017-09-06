@@ -1,5 +1,5 @@
-import {Decoder as TextDecoder} from "./text_transcoder.js";
-import {hashIntArray} from "./raw_hashing.js";
+import { Decoder as TextDecoder } from "./text_transcoder.js";
+import { hashIntArray } from "./raw_hashing.js";
 
 /**
  * @param {*} bs

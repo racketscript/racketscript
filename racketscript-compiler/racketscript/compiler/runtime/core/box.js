@@ -1,30 +1,30 @@
-import {Primitive} from "./primitive.js";
-import {isEqual} from "./equality.js";
+import { Primitive } from "./primitive.js";
+import { isEqual } from "./equality.js";
 
 class Box extends Primitive {
     constructor(v) {
-	super();
-	this.value = v;
+        super();
+        this.value = v;
     }
 
     toString() {
-	return this.value;
+        return this.value;
     }
 
     toRawString() {
-	return this.toString();
+        return this.toString();
     }
 
     equals(v) {
-	return isEqual(v.value, this.value);
+        return isEqual(v.value, this.value);
     }
 
     set(v) {
-	this.value = v;
+        this.value = v;
     }
 
     get() {
-	return this.value;
+        return this.value;
     }
 }
 

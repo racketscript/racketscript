@@ -1,7 +1,7 @@
-import {Primitive} from "./primitive.js";
-import {isEqual} from "./equality.js";
+import { Primitive } from "./primitive.js";
+import { isEqual } from "./equality.js";
 import * as $ from "./lib.js";
-import {EMPTY, isEmpty, isList} from "./pair.js";
+import { EMPTY, isEmpty, isList } from "./pair.js";
 
 class MPair extends Primitive {
     /** @private */
@@ -35,7 +35,7 @@ class MPair extends Primitive {
     }
 
     toRawString() {
-	return "'" + this.toString();
+        return "'" + this.toString();
     }
 
     equals(v) {
@@ -73,11 +73,11 @@ class MPair extends Primitive {
     }
 
     car() {
-	return this.hd;
+        return this.hd;
     }
 
     cdr() {
-	return this.tl;
+        return this.tl;
     }
 
     setCar(v) {

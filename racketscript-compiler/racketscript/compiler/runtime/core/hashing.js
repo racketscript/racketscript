@@ -1,4 +1,4 @@
-import {hash} from "./raw_hashing.js";
+import { hash } from "./raw_hashing.js";
 import * as Primitive from "./primitive.js";
 import * as Char from "./char.js";
 import * as Bytes from "./bytes.js";
