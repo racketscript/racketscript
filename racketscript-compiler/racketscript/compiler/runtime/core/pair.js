@@ -2,11 +2,34 @@ import {Primitive} from "./primitive.js";
 import {isEqual} from "./equality.js";
 import * as $ from "./lib.js";
 
-// TODO: This should be a Primitive, not an Array.
-export const Empty = [];
+/** @singleton */
+class EmptyPair extends Primitive {
+    equals(v) {
+        return this === v;
+    }
 
+    get length() {
+        return 0;
+    }
+
+    /**
+     * @return {false}
+     */
+    isImmutable() {
+        // As per racket reference, this is always false for Pairs and Lists.
+        // https://docs.racket-lang.org/reference/booleans.html#%28def._%28%28quote._~23~25kernel%29._immutable~3f%29%29
+        return false;
+    }
+}
+
+export const EMPTY = new EmptyPair();
+
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is the empty list.
+ */
 export function isEmpty(v) {
-    return (v instanceof Array) && v.length === 0;
+    return v === EMPTY;
 }
 
 export class Pair extends Primitive {
@@ -15,9 +38,7 @@ export class Pair extends Primitive {
         super();
         this.hd = hd;
         this.tl = tl;
-        this._listLength = (tl === Empty)
-            ? 1
-            : isList(tl) && tl._listLength + 1;
+        this._listLength = isList(tl) ? tl.length + 1 : -1;
         this._cachedHashCode = null;
     }
 
@@ -91,10 +112,23 @@ export class Pair extends Primitive {
     get length() {
         return this._listLength;
     }
+
+    /**
+     * @return {false}
+     */
+    isImmutable() {
+        // As per racket reference, this is always false for Pairs and Lists.
+        // https://docs.racket-lang.org/reference/booleans.html#%28def._%28%28quote._~23~25kernel%29._immutable~3f%29%29
+        return false;
+    }
 }
 
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is a non-empty list or pair.
+ */
 export function check(v) {
-    return (v instanceof Pair);
+    return typeof v === 'object' && v !== null && v.constructor === Pair;
 }
 
 export function make(hd, tl) {
@@ -102,12 +136,9 @@ export function make(hd, tl) {
 }
 
 export function makeList(...items) {
-    let len = items.length - 1;
-    let result = Empty; /* TODO: wrap this? */
-    while (len >= 0) {
-	result = make(items[len--], result);
-    }
-    return result;
+    return items.reduceRight((result, item) => {
+        return make(item, result);
+    }, EMPTY);
 }
 
 export function listToArray(lst) {
@@ -117,23 +148,23 @@ export function listToArray(lst) {
 }
 
 export function listFromArray(lst) {
-    return makeList.apply(null, lst);
+    return makeList(...lst);
 }
 
 export function listForEach(lst, fn) {
     while (!isEmpty(lst)) {
-	fn(lst.hd);
-	lst = lst.tl;
+        fn(lst.hd);
+        lst = lst.tl;
     }
 }
 
 export function listFind(lst, fn) {
     while (!isEmpty(lst)) {
-	let result = fn(lst.hd);
-	if (result) {
-	    return result;
-	}
-	lst = lst.tl;
+        let result = fn(lst.hd);
+        if (result !== false) {
+            return result;
+        }
+        lst = lst.tl;
     }
     return false;
 }
@@ -145,24 +176,10 @@ export function listMap(lst, fn) {
     return listFromArray(result);
 }
 
-export function _listLength(lst) {
-    var len = 0;
-    while (true) {
-	if (isEmpty(lst)) {
-            return len;
-	}
-	len += 1;
-	lst = lst.cdr();
-    }
-    return len;
-}
-
-export function listLength(lst) {
-    return (lst === Empty)
-	? 0
-	: lst._listLength;
-}
-
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is a list.
+ */
 export function isList(v) {
-    return v === Empty || (check(v) && v._listLength !== false);
+    return v === EMPTY || (check(v) && v._listLength !== -1);
 }

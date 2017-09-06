@@ -1,4 +1,4 @@
-import {hash, hashArray} from "./raw_hashing.js";
+import {hash} from "./raw_hashing.js";
 import * as Primitive from "./primitive.js";
 import * as Char from "./char.js";
 import * as Bytes from "./bytes.js";
@@ -29,12 +29,6 @@ export function hashForEqv(o) {
 export function hashForEqual(o) {
     if (Primitive.check(o)) return o.hashForEqual();
     if (Bytes.check(o)) return Bytes.hashForEqual(o);
-
-    // TODO: We should not pass arrays to this function,
-    //   but currently we sometimes do, e.g. the empty list.
-    if (Array.isArray(o)) {
-        hashArray(o, hashForEqual);
-    }
 
     return hash(o);
 }

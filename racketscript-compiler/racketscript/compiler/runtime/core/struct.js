@@ -174,7 +174,7 @@ class StructTypeDescriptor extends Primitive {
 	}
 
 	// Immutables
-	let immutables = options.immutables || [];
+	let immutables = options.immutables || Pair.EMPTY;
 	this._options.immutables = new Set(Pair.listToArray(immutables));
 	this._options.immutables.forEach((e) => {
 	    if (e < 0 || e >= options.initFieldCount) {

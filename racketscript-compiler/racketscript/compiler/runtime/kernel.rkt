@@ -154,9 +154,8 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons       #js.Pair.make)
-(define+provide cons?      #js.Pair.check)
-(define+provide pair?      #js.Pair.check)
+(define+provide cons       #js.Core.Pair.make)
+(define+provide pair?      #js.Core.Pair.check)
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
   #js.v.hd.hd)
@@ -169,18 +168,13 @@
 (define-checked+provide (caddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
   #js.v.tl.tl.hd)
 
-(define+provide null  #js.Pair.Empty)
-(define+provide list  #js.Pair.makeList)
+(define+provide null #js.Core.Pair.EMPTY)
+(define+provide list #js.Core.Pair.makeList)
 
-(define+provide null?  #js.Pair.isEmpty)
-(define+provide empty? #js.Pair.isEmpty)
-(define+provide length #js.Pair.listLength)
+(define+provide null? #js.Core.Pair.isEmpty)
+(define+provide list? #js.Core.Pair.isList)
 
-(define+provide (list? v)
-  (cond
-    [(null? v) #t]
-    [(cons? v) (list? ($> v (cdr)))]
-    [else #f]))
+(define-checked+provide (length [v list?]) #js.v.length)
 
 (define-checked+provide (reverse [lst list?])
   (let loop ([lst lst]
