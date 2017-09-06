@@ -4,7 +4,7 @@ import * as Symbol from "./symbol.js"
 import * as $ from "./lib.js";
 import {hashForEq as HASH} from "./hashing.js";
 
-let __frames = false;
+let __frames;
 let __prompts = new Map();
 let __async_callback_wrappers = [];
 let __defaultContinuationPromptTag
@@ -13,7 +13,7 @@ let __defaultContinuationPromptTag
 /* --------------------------------------------------------------------------*/
 
 export function init() {
-    __frames = Pair.Empty;
+    __frames = Pair.EMPTY;
     savePrompt(__defaultContinuationPromptTag);
     enterFrame();
 }

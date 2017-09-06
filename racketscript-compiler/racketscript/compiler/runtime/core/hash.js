@@ -135,7 +135,7 @@ export function makeEqualFromAssocs(assocs, mutable) {
 }
 
 export function map(hash, proc) {
-    let result = Pair.Empty;
+    let result = Pair.EMPTY;
     hash._h.forEach((value, key) => {
 	result = Pair.make(proc(key, value), result)
     });

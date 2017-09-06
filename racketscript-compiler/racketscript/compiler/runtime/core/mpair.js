@@ -1,16 +1,16 @@
 import {Primitive} from "./primitive.js";
 import {isEqual} from "./equality.js";
 import * as $ from "./lib.js";
-import {Empty, isEmpty, isList} from "./pair.js";
+import {EMPTY, isEmpty, isList} from "./pair.js";
 
 class MPair extends Primitive {
+    /** @private */
     constructor(hd, tl) {
-	super();
-	this.hd = hd;
-	this.tl = tl;
-	this._listLength = (tl === Empty)
-	    ? 1
-	    : isList(tl) && tl._listLength + 1;
+        super();
+        this.hd = hd;
+        this.tl = tl;
+        this._listLength = isList(tl) ? tl.length + 1 : -1;
+        this._cachedHashCode = null;
     }
 
     toString() {
@@ -62,6 +62,16 @@ class MPair extends Primitive {
         }
     }
 
+    /**
+     * @return {!number}
+     */
+    hashForEqual() {
+        if (this._cachedHashCode === null) {
+            this._cachedHashCode = super.hashForEqual();
+        }
+        return this._cachedHashCode;
+    }
+
     car() {
 	return this.hd;
     }
@@ -71,20 +81,38 @@ class MPair extends Primitive {
     }
 
     setCar(v) {
-	this.hd = v;
+        if (this.hd !== v) {
+            this.hd = v;
+            this._cachedHashCode = null;
+        }
     }
 
     setCdr(v) {
-	this.tl = v;
+        if (this.tl !== v) {
+            this.tl = v;
+            this._listLength = isList(tl) ? tl.length + 1 : -1;
+            this._cachedHashCode = null;
+        }
     }
 
     get length() {
         return this._listLength;
     }
+
+    /**
+     * @return {false}
+     */
+    isImmutable() {
+        return false;
+    }
 }
 
+/**
+ * @param {*} v
+ * @return {boolean} true iff v is a non-empty list or pair.
+ */
 export function check(v) {
-    return (v instanceof MPair);
+    return typeof v === 'object' && v !== null && v.constructor === MPair;
 }
 
 export function make(hd, tl) {
