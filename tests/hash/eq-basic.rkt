@@ -1,11 +1,11 @@
 #lang racket/base
 
-(define h1 #hasheqv((1 . 2) (3 . 4)))
-(define h2 #hasheqv((color . red) (shape . circle)))
-(define h3 #hasheqv(((a b c) . d) (g . (e f g))))
-(define h4 #hasheqv(("name" . "Vishesh") ("location" . "Boston")))
+(define h1 #hasheq((1 . 2) (3 . 4)))
+(define h2 #hasheq((color . red) (shape . circle)))
+(define h3 #hasheq(((a b c) . d) (g . (e f g))))
+(define h4 #hasheq(("name" . "Vishesh") ("location" . "Boston")))
 
-(displayln (hasheqv 1 2 3 4))
+(displayln (hasheq 1 2 3 4))
 
 (displayln "equality")
 
@@ -23,9 +23,9 @@
 (hash-eqv? h2)
 (hash-eq? h2)
 
-(define h (make-hasheqv (list (cons 1 2) (cons 3 4))))
-(define wh (make-weak-hasheqv (list (cons 1 2) (cons 3 4))))
-(define imh (make-immutable-hasheqv (list (cons 1 2) (cons 3 4))))
+(define h (make-hasheq (list (cons 1 2) (cons 3 4))))
+(define wh (make-weak-hasheq (list (cons 1 2) (cons 3 4))))
+(define imh (make-immutable-hasheq (list (cons 1 2) (cons 3 4))))
 
 (displayln h)
 (hash? h)
@@ -66,8 +66,8 @@
 (struct posn (x y) #:transparent)
 
 (displayln "hash-set")
-(equal? (hash-set h1 5 6) #hasheqv((1 . 2) (3 . 4) (5 . 6)))
 (equal? (hash-set h1 5 6) #hasheq((1 . 2) (3 . 4) (5 . 6)))
+(equal? (hash-set h1 5 6) #hasheqv((1 . 2) (3 . 4) (5 . 6)))
 (equal? (hash-set h1 5 6) #hash((1 . 2) (3 . 4) (5 . 6)))
 (equal? (hash-set h1 '(1 4) 'foobar)
         #hasheq(((1 4) . 'foobar) (1 . 2) (3 . 4) (5 . 6)))
@@ -90,6 +90,6 @@
 
 ;; check eqv-ness
 ;; hasheqv should return 1, hasheq should return 2
-(hash-ref (hasheqv (integer->char 955) 1)
+(hash-ref (hasheq (integer->char 955) 1)
           (integer->char 955)
           2)

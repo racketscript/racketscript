@@ -145,3 +145,13 @@ export function map(hash, proc) {
 export function check(v1) {
     return (v1 instanceof Hash);
 }
+
+export function isEqualHash(h) {
+    return check(h) && h._type === "equal";
+}
+export function isEqvHash(h) {
+    return check(h) && h._type === "eqv";
+}
+export function isEqHash(h) {
+    return check(h) && h._type === "eq";
+}

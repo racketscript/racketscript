@@ -354,6 +354,11 @@
   (define assocs* (or assocs '()))
   (#js.Core.Hash.makeEqFromAssocs assocs* #f))
 
+(define+provide hash? #js.Core.Hash.check)
+(define+provide hash-equal? #js.Core.Hash.isEqualHash)
+(define+provide hash-eqv? #js.Core.Hash.isEqvHash)
+(define+provide hash-eq? #js.Core.Hash.isEqHash)
+
 (define+provide (hash-ref h k fail)
   (#js.h.ref k fail))
 
@@ -965,4 +970,7 @@
 (define+provide (system-type mod)
   'javascript)
 
+;; TODO: manually implement weak references? or ES6 WeakMap?
 (define+provide make-weak-hash make-hash)
+(define+provide make-weak-hasheqv make-hasheqv)
+(define+provide make-weak-hasheq make-hasheq)
