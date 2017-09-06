@@ -1,9 +1,9 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 
 /**
  * @abstract
  */
-class Port extends Primitive {
+class Port extends PrintablePrimitive {
     isOutputPort() {
         return false;
     }
@@ -25,7 +25,7 @@ export class OutputPort extends Port {
     /**
      * @param {function(String)} out
      */
-    display(out) {
+    displayNativeString(out) {
         out(`#<output-port:${this.name}>`);
     }
 }

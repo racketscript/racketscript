@@ -1,8 +1,8 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {internedMake} from "./lib.js";
 import * as Ports from './ports.js';
 
-class Keyword extends Primitive {
+class Keyword extends PrintablePrimitive {
     constructor(v) {
 	super();
 	this.v = v;

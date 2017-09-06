@@ -3,8 +3,6 @@
 import './core/polyfills/string.js';
 
 import * as Primitive from './core/primitive.js';
-import './core/primitive_print.js';
-
 import * as Box from "./core/box.js";
 import * as Bytes from "./core/bytes.js";
 import * as Char from "./core/char.js";

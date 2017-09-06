@@ -1,5 +1,3 @@
-import * as Ports from './ports.js';
-
 /**
  * @param {!Function} fn
  * @param {*} arity

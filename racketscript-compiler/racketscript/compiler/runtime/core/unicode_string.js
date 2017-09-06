@@ -1,7 +1,7 @@
 import {Primitive} from "./primitive.js";
 import * as Bytes from "./bytes.js";
 import * as Char from "./char.js";
-import * as Ports from './ports.js';
+import {MiniNativeOutputStringPort} from './mini_native_output_string_port.js';
 import {internedMake} from "./lib.js";
 import {racketContractError} from './errors.js';
 import {Encoder as TextEncoder} from "./text_transcoder.js";
@@ -14,7 +14,7 @@ import {hashIntArray} from "./raw_hashing.js";
  *
  * @abstract
  */
-export class UString extends Primitive {
+export class UString extends Primitive /* implements Printable */ {
     /**
      * @param {!Char.Char[]} chars
      * @param {(string|null)} nativeString
@@ -205,6 +205,17 @@ export class UString extends Primitive {
             }
         }
         out.consume('"');
+    }
+
+    /**
+     * Writes a UString representation that can be read by Racket's `read` to the given port.
+     *
+     * @param {!Ports.UStringOutputPort} out
+     */
+    writeUString(out) {
+        const stringOut = new MiniNativeOutputStringPort();
+        this.writeNativeString(stringOut);
+        out.consume(makeMutable(stringOut.getOutputString()));
     }
 
     /**
@@ -478,9 +489,21 @@ export function stringAppend(...strs) {
         })));
 }
 
+// The Char Printable *UString methods are defined here,
+// because Char cannot depend on UString.
+
 /**
  * @param {!Ports.UStringOutputPort} out
  */
 Char.Char.prototype.displayUString = function (out) {
     out.consume(new MutableUString([this], this._nativeString));
+}
+
+/**
+ * @param {!Ports.UStringOutputPort} out
+ */
+Char.Char.prototype.writeUString = function(out) {
+    const stringOut = new MiniNativeOutputStringPort();
+    this.writeNativeString(stringOut);
+    out.consume(makeMutable(stringOut.getOutputString()));
 }

@@ -1,5 +1,5 @@
-import {Primitive} from "./primitive.js";
-import * as Ports from './ports.js';
+import {Primitive} from './primitive.js';
+import {MiniNativeOutputStringPort} from './mini_native_output_string_port.js';
 
 /**
  * A single Unicode character.
@@ -14,7 +14,7 @@ import * as Ports from './ports.js';
  * @property {!number} codepoint
  * @final
  */
-export class Char extends Primitive {
+export class Char extends Primitive /* implements Printable */ {
     /**
      * @param {!number} codepoint a non-negative integer.
      * @param {(!string|null)} nativeString

@@ -1,4 +1,4 @@
-import {NativeOutputStringPort} from './ports.js';
+import {MiniNativeOutputStringPort} from './mini_native_output_string_port.js';
 import {printNativeString} from './print_native_string.js';
 
 function printError(out, msg, args) {
@@ -22,7 +22,7 @@ function makeError(name) {
     let e = function (msg, ...args) {
         this.name = name;
 
-        const stringOut = new NativeOutputStringPort();
+        const stringOut = new MiniNativeOutputStringPort();
         printError(stringOut, msg, args);
         this.message = stringOut.getOutputString();
 

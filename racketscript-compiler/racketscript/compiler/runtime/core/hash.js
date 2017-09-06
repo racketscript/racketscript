@@ -1,4 +1,4 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual, isEqv, isEq} from "./equality.js";
 import {hashForEqual, hashForEqv, hashForEq} from "./hashing.js";
 import {displayNativeString, writeNativeString} from './print_native_string.js';
@@ -22,7 +22,7 @@ const hashConfigs = {
     }
 }
 
-class Hash extends Primitive {
+class Hash extends PrintablePrimitive {
     constructor(hash, type, mutable) {
 	super();
 	this._h = hash;

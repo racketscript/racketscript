@@ -1,10 +1,10 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
 import {displayNativeString, writeNativeString} from './print_native_string.js';
 import * as Pair from "./pair.js";
 import * as Ports from './ports.js';
 
-class MPair extends Primitive {
+class MPair extends PrintablePrimitive {
     /** @private */
     constructor(hd, tl) {
         super();

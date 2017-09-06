@@ -1,10 +1,10 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
 import {displayNativeString, writeNativeString} from './print_native_string.js';
 import * as Ports from './ports.js';
 
 /** @singleton */
-class EmptyPair extends Primitive {
+class EmptyPair extends PrintablePrimitive {
     /**
     * @param {!Ports.NativeStringOutputPort} out
     */
@@ -32,7 +32,7 @@ class EmptyPair extends Primitive {
 
 export const EMPTY = new EmptyPair();
 
-export class Pair extends Primitive {
+export class Pair extends PrintablePrimitive {
     /** @private */
     constructor(hd, tl) {
         super();

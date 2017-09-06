@@ -1,4 +1,4 @@
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
 import {racketCoreError} from './errors.js';
 import {displayNativeString, writeNativeString} from './print_native_string.js';
@@ -6,7 +6,7 @@ import {hashArray} from './raw_hashing.js';
 import {hashForEqual} from './hashing.js';
 import * as Ports from './ports.js';
 
-class Vector extends Primitive {
+class Vector extends PrintablePrimitive {
     constructor(items, mutable) {
 	super();
 	this.mutable = mutable;

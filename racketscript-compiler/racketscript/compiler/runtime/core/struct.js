@@ -1,7 +1,7 @@
 import * as C from "./check.js";
 import {racketCoreError} from './errors.js';
 import * as Pair from "./pair.js";
-import {Primitive} from "./primitive.js";
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from "./equality.js";
 import * as Values from "./values.js";
 import * as $ from './lib.js';
@@ -38,7 +38,7 @@ import * as Print from './print.js';
 // - Structure Inspectors
 // - Prefab
 
-class Struct extends Primitive {
+class Struct extends PrintablePrimitive {
     constructor(desc, fields, callerName=false) {
 	super();
 	this._desc = desc; /* struct-type-descriptor */
@@ -194,7 +194,7 @@ class Struct extends Primitive {
 
 /*****************************************************************************/
 
-class StructTypeDescriptor extends Primitive {
+class StructTypeDescriptor extends PrintablePrimitive {
     constructor(options) {
 	super();
 	// Visit makeStructType (or make-struct-type in Racket docs)
@@ -395,7 +395,7 @@ class StructTypeDescriptor extends Primitive {
 
 /*****************************************************************************/
 
-class StructTypeProperty extends Primitive {
+class StructTypeProperty extends PrintablePrimitive {
     constructor(args) {
 	super();
 

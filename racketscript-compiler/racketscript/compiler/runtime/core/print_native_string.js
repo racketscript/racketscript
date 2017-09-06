@@ -1,7 +1,6 @@
 import * as Primitive from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Procedure from './procedure.js';
-import * as Ports from './ports.js';
 
 /**
  * @param {!Ports.NativeStringOutputPort} out

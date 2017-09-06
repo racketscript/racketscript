@@ -1,4 +1,4 @@
-import {Primitive} from './primitive.js';
+import {PrintablePrimitive} from './printable_primitive.js';
 import {isEqual} from './equality.js';
 import {hashForEqual} from './hashing.js';
 import {displayNativeString, writeNativeString} from './print_native_string.js';
@@ -8,7 +8,7 @@ import * as UString from './unicode_string.js';
 
 const BOX_PREFIX_USTRING = UString.makeInternedImmutable('#&');
 
-class Box extends Primitive {
+class Box extends PrintablePrimitive {
     constructor(v) {
         super();
         this.value = v;
