@@ -47,7 +47,7 @@ export class Pair extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      * @param {function(Ports.NativeStringOutputPort, *)} itemFn
      */
-    dumpToPort(out, itemFn) {
+    writeToPort(out, itemFn) {
         out.consume('(');
         let rest = this;
         while (true) {
@@ -72,14 +72,14 @@ export class Pair extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      */
     displayNativeString(out) {
-        this.dumpToPort(out, displayNativeString);
+        this.writeToPort(out, displayNativeString);
     }
 
     /**
      * @param {!Ports.NativeStringOutputPort} out
      */
     writeNativeString(out) {
-        this.dumpToPort(out, writeNativeString);
+        this.writeToPort(out, writeNativeString);
     }
 
     equals(v) {

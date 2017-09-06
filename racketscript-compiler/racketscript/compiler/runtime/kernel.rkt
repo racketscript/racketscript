@@ -800,6 +800,7 @@
 (define+provide (print datum [out (current-output-port)] [quote-depth 0])
   (#js.Core.print out datum (#js.Core.isPrintAsExpression) quote-depth))
 
+; TODO: This should be a parameter, not a case-lambda.
 (define+provide print-as-expression
   (case-lambda
     [() (#js.Core.isPrintAsExpression)]

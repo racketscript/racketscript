@@ -17,7 +17,7 @@ class Vector extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      * @param {function(Ports.NativeStringOutputPort, *)} itemFn
      */
-    dumpToPort(out, itemFn) {
+    writeToPort(out, itemFn) {
         const n = this.items.length;
         out.consume('#(');
         for (let i = 0; i < n; i++) {
@@ -31,14 +31,14 @@ class Vector extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      */
     displayNativeString(out) {
-        this.dumpToPort(out, displayNativeString);
+        this.writeToPort(out, displayNativeString);
     }
 
     /**
      * @param {!Ports.NativeStringOutputPort} out
      */
     writeNativeString(out) {
-        this.dumpToPort(out, writeNativeString);
+        this.writeToPort(out, writeNativeString);
     }
 
     isImmutable() {

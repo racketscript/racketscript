@@ -34,7 +34,7 @@ class Hash extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      * @param {function(Ports.NativeStringOutputPort, *)} itemFn
      */
-    dumpToPort(out, itemFn) {
+    writeToPort(out, itemFn) {
         out.consume('#hash');
         if (this._type === 'eq' || this._type === 'eqv') {
             out.consume(this._type);
@@ -57,14 +57,14 @@ class Hash extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      */
     displayNativeString(out) {
-        this.dumpToPort(out, displayNativeString);
+        this.writeToPort(out, displayNativeString);
     }
 
     /**
      * @param {!Ports.NativeStringOutputPort} out
      */
     writeNativeString(out) {
-        this.dumpToPort(out, writeNativeString);
+        this.writeToPort(out, writeNativeString);
     }
 
     isImmutable() {

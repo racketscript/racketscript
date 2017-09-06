@@ -85,7 +85,7 @@ class Struct extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      * @param {function(Ports.NativeStringOutputPort, *)} itemFn
      */
-    dumpToPort(out, itemFn) {
+    writeToPort(out, itemFn) {
         if (this._desc._options.inspector) {
             // Not a transparent inspector
             // TODO: support prefab
@@ -107,14 +107,14 @@ class Struct extends Primitive {
      * @param {!Ports.NativeStringOutputPort} out
      */
     displayNativeString(out) {
-        this.dumpToPort(out, displayNativeString);
+        this.writeToPort(out, displayNativeString);
     }
 
     /**
      * @param {!Ports.NativeStringOutputPort} out
      */
     writeNativeString(out) {
-        this.dumpToPort(out, writeNativeString);
+        this.writeToPort(out, writeNativeString);
     }
 
     /**
