@@ -1,9 +1,8 @@
 language: node_js
 
 node_js:
-  - "5"
-  - "6"
-  #- "node"
+  # TODO: Once Node 8 LTS has been released, switch to it here.
+  - "8.4"
 
 sudo: false
 
