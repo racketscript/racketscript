@@ -41,11 +41,6 @@ export {
 }
 
 export {
-    openOutputString,
-    getOutputString,
-} from './core/ports_ustring.js';
-
-export {
     argumentsToArray,
     argumentsSlice,
 } from "./core/lib.js";

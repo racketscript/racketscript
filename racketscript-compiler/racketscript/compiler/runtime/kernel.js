@@ -84,9 +84,9 @@ export function fprintf(out, form, ...args) {
  * @return {!Core.UString.UString}
  */
 export function format(form, ...args) {
-    const strOut = Core.openOutputString();
+    const strOut = Core.Ports.openOutputString();
     fprintf(strOut, form, ...args);
-    return Core.getOutputString(strOut);
+    return Core.Ports.getOutputString(strOut);
 }
 
 /**

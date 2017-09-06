@@ -785,10 +785,10 @@
   (#js.Core.Ports.isStringPort p))
 
 (define+provide (open-output-string)
-  (#js.Core.openOutputString))
+  (#js.Core.Ports.openOutputString))
 
 (define+provide (get-output-string p)
-  (#js.Core.getOutputString p))
+  (#js.Core.Ports.getOutputString p))
 
 ;; --------------------------------------------------------------------------
 ;; Printing
