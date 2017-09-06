@@ -36,22 +36,12 @@ export function displayUString(out, v) {
  * @param {!(Primitive.Primitive|Uint8Array|Function|String|number|boolean|undefined|null)} v
  */
 export function writeUString(out, v) {
-    if (v === true) {
-        out.consume(TRUE_USTRING);
-    } else if (v === false) {
-        out.consume(FALSE_USTRING);
-    } else if (v === undefined || v === null) {
-        out.consume(VOID_USTRING);
-    } else if (typeof v === 'number' || typeof v === 'string') {
-        out.consume(UString.makeMutable(v.toString()));
-    } else if (Primitive.check(v)) {
+    if (Primitive.check(v)) {
+        // Assume it implements Printable, as only Values does not,
+        // and it cannot be passed here.
         v.writeUString(out);
-    } else if (Bytes.check(v)) {
-        out.consume(UString.makeMutable(Bytes.toString(v)));
-    } else if (Procedure.check(v)) {
-        out.consume(UString.makeMutable(Procedure.toString(v)));
-    } else /* if (typeof v === 'number' || typeof v === 'string') */ {
-        out.consume(UString.makeMutable(v.toString()));
+    } else {
+        displayUString(out, v);
     }
 }
 

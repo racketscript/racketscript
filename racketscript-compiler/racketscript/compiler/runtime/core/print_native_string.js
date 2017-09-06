@@ -29,22 +29,12 @@ export function displayNativeString(out, v) {
  * @param {!(Primitive.Primitive|Uint8Array|Function|String|number|boolean|undefined|null)} v
  */
 export function writeNativeString(out, v) {
-    if (v === true) {
-        out.consume('#t');
-    } else if (v === false) {
-        out.consume('#f');
-    } else if (v === undefined || v === null) {
-        out.consume('#<void>');
-    } else if (typeof v === 'number' || typeof v === 'string') {
-        out.consume(v.toString());
-    } else if (Primitive.check(v)) {
+    if (Primitive.check(v)) {
+        // Assume it implements Printable, as only Values does not,
+        // and it cannot be passed here.
         v.writeNativeString(out);
-    } else if (Bytes.check(v)) {
-        Bytes.displayNativeString(out, v);
-    } else if (Procedure.check(v)) {
-        Procedure.displayNativeString(out, v);
-    } else /* if (typeof v === 'number' || typeof v === 'string') */ {
-        out.consume(v.toString());
+    } else {
+        displayNativeString(out, v);
     }
 }
 
