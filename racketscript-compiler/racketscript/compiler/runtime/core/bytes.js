@@ -1,5 +1,9 @@
-import { Decoder as TextDecoder } from "./text_transcoder.js";
 import { hashIntArray } from "./raw_hashing.js";
+
+// In node.js, TextDecoder is not global and needs to be imported.
+if (typeof TextDecoder === 'undefined') {
+    var TextDecoder = require('util').TextDecoder;
+}
 
 /**
  * @param {*} bs

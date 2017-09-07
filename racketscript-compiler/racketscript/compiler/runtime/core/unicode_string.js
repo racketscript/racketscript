@@ -4,8 +4,12 @@ import * as Char from "./char.js";
 import * as Pair from "./pair.js";
 import * as $ from "./lib.js";
 import { internedMake } from "./lib.js";
-import { Encoder as TextEncoder } from "./text_transcoder.js";
 import { hashIntArray } from "./raw_hashing.js";
+
+// In node.js, TextEncoder is not global and needs to be imported.
+if (typeof TextEncoder === 'undefined') {
+    var TextEncoder = require('util').TextEncoder;
+}
 
 /**
  * A sequence of {Char.Char}s.
