@@ -9,9 +9,10 @@
 .PHONY: build setup setup-extra clean
 .PHONY: test unit-test integration-test test
 .PHONY: coverage coverage-unit-test
-.PHONY: eslint jslint tscheck
+.PHONY: eslint eslint-fix jshint tscheck
 
 TSC=node_modules/typescript/bin/tsc
+ESLINT=node_modules/eslint/bin/eslint.js
 
 ## Compile recipes
 
@@ -54,10 +55,13 @@ coverage:
 
 ## JavaScript
 
-eslint:
+eslint: | node_modules
 	@echo "    RACKETSCRIPT RUNTIME LINT    "
 	@echo "++++++++++++++++++++++++++++"
-	eslint ./racketscript-compiler/racketscript/compiler/runtime/ || true
+	$(ESLINT) ./racketscript-compiler/racketscript/compiler/runtime/ || true
+
+eslint-fix: | node_modules
+	$(ESLINT) --fix ./racketscript-compiler/racketscript/compiler/runtime/
 
 jshint:
 	@echo "    RACKETSCRIPT RUNTIME LINT    "
