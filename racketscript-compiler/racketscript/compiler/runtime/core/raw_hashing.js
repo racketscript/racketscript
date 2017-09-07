@@ -77,7 +77,7 @@ export function hashNumber(n) {
 /**
  * A weak map to the object's ID for {hashObjectIdentity}.
  *
- * @type {!WeakMap<!Object, number>}
+ * @type {!WeakMap<Object, number>}
  */
 const objectIds = new WeakMap();
 let currentId = 0;
