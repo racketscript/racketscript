@@ -6,10 +6,12 @@
 ##               #
 ##               "
 
-.PHONY: build setup setup-extra clean 
+.PHONY: build setup setup-extra clean
 .PHONY: test unit-test integration-test test
 .PHONY: coverage coverage-unit-test
-.PHONY: eslint jslint
+.PHONY: eslint jslint tscheck
+
+TSC=node_modules/typescript/bin/tsc
 
 ## Compile recipes
 
@@ -61,6 +63,14 @@ jshint:
 	@echo "    RACKETSCRIPT RUNTIME LINT    "
 	@echo "++++++++++++++++++++++++++++"
 	jshint ./racketscript-compiler/racketscript/compiler/runtime/ || true
+
+# Typecheck JavaScript
+tscheck: node_modules
+	$(TSC) --noEmit --allowJs --checkJs --strict --lib es2017 --target es2017 \
+	racketscript-compiler/racketscript/compiler/runtime/kernel.js
+
+node_modules: package.json
+	npm install
 
 ## Test recipes
 

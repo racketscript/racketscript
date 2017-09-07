@@ -16,3 +16,4 @@ TAGS
 *.rej
 
 *.elc
+node_modules/
