@@ -33,14 +33,6 @@ export function format(pattern, ...args) {
 }
 
 /* --------------------------------------------------------------------------*/
-/* Arity */
-
-export function attachProcedureArity(fn, arity) {
-    fn.__rjs_arityValue = arity || fn.length;
-    return fn;
-}
-
-/* --------------------------------------------------------------------------*/
 /* Errors */
 
 function makeError(name) {
