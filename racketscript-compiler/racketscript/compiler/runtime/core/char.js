@@ -79,7 +79,7 @@ export class Char extends Primitive {
 const INTERN_CACHE_SIZE = 256;
 
 /**
- * @type {!Array<(!Char|undefined)>} A cache for chars with small codepoints.
+ * @type {!Array<Char|undefined>} A cache for chars with small codepoints.
  */
 const internedCache = new Array(INTERN_CACHE_SIZE);
 
