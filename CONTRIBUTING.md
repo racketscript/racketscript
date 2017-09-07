@@ -52,21 +52,21 @@ discussions.
 
 ### Setup Development Environment
 
-To start hacking on RacketScript codebase you will need some extra
+To start hacking on the RacketScript codebase you will need some extra
 tools and packages for running tests, lints and coverage.
 
 ```sh
 make setup-extra  # From RacketScript codebase root
 ```
 
-The compiler is written in Typed Racket. To avoid long startups, it is
+The compiler is written in Typed Racket. To avoid long startup times, it is
 advised to pre-compile Racket sources to bytecode.
 
 ```sh
 make build  # From RacketScript codebase root
 ```
 
-*Get familiar* with various command line options provided by the
+*Get familiar* with the various command line options provided by the
 RacketScript CLI `racks` and Node. Traceur or Babel CLI often come in
 handy to run ES6 modules directly.
 
@@ -77,12 +77,12 @@ which tests both compiler and runtime.
 
 #### Unit Tests
 
-Unit-test cover the compiler codepath. Unit-tests can be found in the
-original Racket source files in standard `test` submodule.
+Unit tests cover the compiler codepath. Unit tests can be found in the
+original Racket source files in the `test` submodule.
 
 ```sh
 # Run unit tests
-make unit-tests
+make unit-test
 ```
 
 #### Integration Tests
@@ -101,12 +101,12 @@ make integration-test
 make test
 ```
 
-Integration tests can be found in `tests/` subdirectory. The test are
-actual Racket code fragments which are compiled and run against both
-Racket and JavaScript, and the output produced by both targets are
-compared against each other.
+Integration tests can be found in the `tests/` subdirectory. The tests are
+Racket code fragments which are compiled with both Racket and RacketScript.
+The resulting Racket and JavaScript programs are then executed and a test fails
+if the two runs do not produce identical outputs.
 
-The tests are organized in various folders. Running complete
+The tests are organized in various folders. Running the complete
 integration test suite can take several minutes. `fixtures.rkt` can
 run individual or a specific set of tests.
 
@@ -136,8 +136,8 @@ $ make coverage
 $ make coverage-unit-test
 ```
 
-Currently only compiler codebase is covered in the report. Runtime
-including, `kernel.rkt` is *not* considered in this report even though
+Currently only the compiler codebase is covered in the report. The runtime,
+including `kernel.rkt`, is *not* considered in this report even though
 it actually is covered by our test suite.
 
 ## Submitting Patches
@@ -145,10 +145,10 @@ it actually is covered by our test suite.
 *TLDR*: Pull Requests must be created against the `develop` branch.
 
 Make sure that there is an open ticket for the issue you want to work
-on, and to avoid any duplicate efforts let the maintainers know.
+on, to avoid duplicate effort and to keep the maintainers informed.
 
 For small/trivial changes, you can submit a pull request
-directly. However, in this case, make sure that the PR contains all
+directly. In this case, make sure that the PR contains all
 the information that you would otherwise provide in the issue ticket.
 
 - Open a new GitHub pull request against `develop` branch.
@@ -164,18 +164,19 @@ the information that you would otherwise provide in the issue ticket.
 
 We like small patches. They are easier to reason about and review.
 
-- Use your best judgment to split the Pull Request in logical set of
-  patches that tackle one problem at a time.
-- Avoid making changes that are unnecessary for current task at
+- Use your best judgment to split the pull request into a logical set of
+  patches that tackles one problem at a time.
+- Avoid making changes that are unnecessary for the current task at
   hand. They should ideally be a separate issue. If necessary, follow
-  last point.
-- Make sure your patches have good commit message, with a good title,
-  description and Gitub issue number (see [additional resources on
-  Git](#git)).
+  the previous point.
+- Make sure your patches have a good commit message, title, and
+  description, and reference the relevant Gitub issue number
+  (see [additional resources on Git](#git)).
 
-For larger changes, it is good practice to be open and keep feedback
-loop running. This encourages an open community, and avoid any major
-design changes at later stage of the task.
+For larger changes, it is good practice to maintain open communication
+in order to receive continuous feedback. This encourages participation from
+the entire community and saves effort by avoiding major design changes at
+later stages of the task.
 
 ## Style Guide
 
@@ -206,13 +207,13 @@ to your `PATH`.
 
 #### Get familiar with the tools
 
-Get familiar with the tools used such as `racks`, `traceur`, `babel`,
-`make`, `fixture.rkt` etc. used for development. See various targets
-available in `Makefile`.
+Get familiar with the tools used for development such as `racks`, `traceur`,
+`babel`, `make`, `fixture.rkt` etc. See the various targets available in
+`Makefile` for usage examples.
 
 Over the life of RacketScript, we've added various command line flags
-to assist development workflow to save time and misery. Don't hesitate
-to file an issue you've new ideas to improve this area!
+to assist development workflow and to save time and misery. Don't hesitate
+to file an issue with new ideas to improve this area!
 
 ## Additional Resources
 
