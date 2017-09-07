@@ -46,11 +46,13 @@ export {
     argumentsToArray,
     argumentsSlice,
 
-    attachProcedureArity,
-
     racketCoreError,
     racketContractError
 } from "./core/lib.js";
+
+export {
+    attachProcedureArity,
+} from "./core/procedure.js";
 
 export {
     isEq,
