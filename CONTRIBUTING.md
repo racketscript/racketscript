@@ -227,7 +227,6 @@ to file an issue with new ideas to improve this area!
 ### Miscellaneous
 
 - [Open Source Contribution Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Attribution
 
