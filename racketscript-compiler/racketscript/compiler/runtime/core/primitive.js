@@ -1,5 +1,5 @@
-import * as $ from "./lib.js";
-import { hashString } from "./raw_hashing.js";
+import * as $ from './lib.js';
+import { hashString } from './raw_hashing.js';
 
 /**
  * Base class for various compound data types
@@ -25,7 +25,7 @@ export class Primitive {
      * @return {!String} The string representation matching Racket's `display`.
      */
     toString() {
-        throw $.racketCoreError("Not Implemented");
+        throw $.racketCoreError('Not Implemented');
     }
 
     /**
@@ -36,7 +36,7 @@ export class Primitive {
     }
 
     isImmutable() {
-        throw $.racketCoreError("Not Implemented");;
+        throw $.racketCoreError('Not Implemented');
     }
 
     /**
@@ -44,7 +44,7 @@ export class Primitive {
      * @return {!boolean}
      */
     equals(v) {
-        throw $.racketCoreError("Not Implemented {0}", v);
+        throw $.racketCoreError('Not Implemented {0}', v);
     }
 
     /**

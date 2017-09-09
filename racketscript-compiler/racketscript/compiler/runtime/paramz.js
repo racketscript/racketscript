@@ -1,5 +1,5 @@
-import * as Core from "./core.js";
-import { hamt } from "./core/lib.js";
+import * as Core from './core.js';
+import { hamt } from './core/lib.js';
 
 /* --------------------------------------------------------------------------*/
 // All exports go in exports
@@ -27,14 +27,14 @@ const Box = Core.Box;
 
 export const ParameterizationKey = {}; /* a unique reference that can act as key */
 export const ExceptionHandlerKey = {}; /* a unique reference that can act as key */
-let __top = undefined;
+let __top;
 
 export function getCurrentParameterization() {
     return Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false);
 }
 
 export function makeParameter(initValue) {
-    let param = function (maybeSetVal) {
+    const param = function (maybeSetVal) {
         // Get current value box from parameterization. The function
         // `param` that we result is the key.
         let pv = getCurrentParameterization().get(param, false) ||
@@ -47,10 +47,9 @@ export function makeParameter(initValue) {
         // Get/Set
         if (maybeSetVal === undefined) {
             return (pv && pv.get()) || initValue;
-        } else {
-            pv.set(maybeSetVal);
         }
-    }
+        pv.set(maybeSetVal);
+    };
     return param;
 }
 
@@ -64,7 +63,7 @@ export function extendParameterization(parameterization, ...args) {
 
 export function copyParameterization(parameterization) {
     let result = hamt.make();
-    for (let [key, val] of parameterization) {
+    for (const [key, val] of parameterization) {
         result = result.set(key, Box.make(val.get()));
     }
     return result;
@@ -74,29 +73,28 @@ export function copyParameterization(parameterization) {
 // Init parameterization
 
 (function () {
-    let p = getCurrentParameterization();
+    const p = getCurrentParameterization();
     if (p !== false) {
         return;
-    } else {
-        Marks.setMark(ParameterizationKey, hamt.make());
     }
+    Marks.setMark(ParameterizationKey, hamt.make());
+
     __top = new Map();
 
     Marks.registerAsynCallbackWrapper({
-        onCreate: function (state) {
-            let paramz = {};
+        onCreate(state) {
+            const paramz = {};
             paramz.top = new Map();
-            for (let [key, val] of __top) {
+            for (const [key, val] of __top) {
                 paramz.top.set(key, Box.make(val.get()));
             }
 
-            paramz.bottom = copyParameterization(
-                Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false));
+            paramz.bottom = copyParameterization(Marks.getFirstMark(Marks.getFrames(), ParameterizationKey, false));
             state.paramz = paramz;
         },
-        onInvoke: function (state) {
+        onInvoke(state) {
             __top = state.paramz.top;
             Marks.setMark(ParameterizationKey, state.paramz.bottom);
         }
     });
-})();
+}());

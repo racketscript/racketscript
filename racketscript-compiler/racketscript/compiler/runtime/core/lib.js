@@ -1,9 +1,9 @@
-export { hamt } from "../third-party/hamt.js";
+export { hamt } from '../third-party/hamt.js';
 
 // Because we don't have a wrapper type for bytes,
 // we depend on it here for type-checking and toString conversion.
 // TODO: extract toString to a separate file.
-import * as Bytes from "./bytes.js";
+import * as Bytes from './bytes.js';
 
 /* --------------------------------------------------------------------------*/
 /* Strings */
@@ -13,19 +13,17 @@ import * as Bytes from "./bytes.js";
  * @return {!String}
  */
 export function toString(v) {
-    if (v === true) return "#t";
-    if (v === false) return "#f";
-    if (v === undefined || v === null) return "#<void>";
+    if (v === true) return '#t';
+    if (v === false) return '#f';
+    if (v === undefined || v === null) return '#<void>';
     if (Bytes.check(v)) return Bytes.toString(v);
     return v.toString();
 }
 
 export function format1(pattern, args) {
-    return pattern.toString().replace(/{(\d+)}/g, function (match, number) {
-        return typeof args[number] != 'undefined'
-            ? args[number]
-            : match;
-    });
+    return pattern.toString().replace(/{(\d+)}/g, (match, number) => (typeof args[number] !== 'undefined'
+        ? args[number]
+        : match));
 }
 
 export function format(pattern, ...args) {
@@ -36,7 +34,7 @@ export function format(pattern, ...args) {
 /* Errors */
 
 function makeError(name) {
-    let e = function (pattern, ...args) {
+    const e = function (pattern, ...args) {
         this.name = name;
         this.message = format1(pattern, args);
         this.stack = (new Error()).stack;
@@ -45,16 +43,16 @@ function makeError(name) {
         } else {
             this.stack = (new Error()).stack;
         }
-    }
+    };
     e.prototype = Object.create(Error.prototype);
     e.prototype.constructor = e;
 
     return (...args) =>
-        new (Function.prototype.bind.apply(e, [this].concat(args)))
+        new (Function.prototype.bind.apply(e, [this].concat(args)))();
 }
 
-export let racketCoreError = makeError("RacketCoreError");
-export let racketContractError = makeError("RacketContractError");
+export const racketCoreError = makeError('RacketCoreError');
+export const racketContractError = makeError('RacketContractError');
 
 /* --------------------------------------------------------------------------*/
 /* Other Helpers */
@@ -82,13 +80,13 @@ export function attachReadOnlyProperty(o, k, v) {
 }
 
 export function internedMake(f) {
-    let cache = {};
+    const cache = {};
     return (v) => {
         if (v in cache) {
             return cache[v];
         }
-        let result = f(v);
+        const result = f(v);
         cache[v] = result;
         return result;
-    }
+    };
 }

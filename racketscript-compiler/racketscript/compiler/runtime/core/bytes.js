@@ -1,4 +1,4 @@
-import { hashIntArray } from "./raw_hashing.js";
+import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextDecoder is not global and needs to be imported.
 if (typeof TextDecoder === 'undefined') {

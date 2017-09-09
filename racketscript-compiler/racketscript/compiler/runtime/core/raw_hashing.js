@@ -15,13 +15,13 @@
 export function hash(o) {
     if (o === null) return 0;
     switch (typeof o) {
-        case 'number': return hashNumber(o);
-        case 'string': return hashString(o);
-        case 'boolean': return o ? 1 : -1;
-        case 'undefined': return 0;
-        case 'object':
-        case 'function': return hashObjectIdentity(o);
-        default: return hashString(o.toString());
+    case 'number': return hashNumber(o);
+    case 'string': return hashString(o);
+    case 'boolean': return o ? 1 : -1;
+    case 'undefined': return 0;
+    case 'object':
+    case 'function': return hashObjectIdentity(o);
+    default: return hashString(o.toString());
     }
 }
 

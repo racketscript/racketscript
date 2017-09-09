@@ -1,6 +1,6 @@
-import { Primitive } from "./primitive.js";
-import { isEqual } from "./equality.js";
-import * as $ from "./lib.js";
+import { Primitive } from './primitive.js';
+import { isEqual } from './equality.js';
+import * as $ from './lib.js';
 
 /** @singleton */
 class Empty extends Primitive {
@@ -13,11 +13,11 @@ class Empty extends Primitive {
     }
 
     toString() {
-	return "()";
+        return '()';
     }
 
     toRawString() {
-	return "'()";
+        return "'()";
     }
 
     /**
@@ -72,7 +72,7 @@ export class Pair extends Primitive {
     }
 
     toRawString() {
-        return "'" + this.toString();
+        return `'${this.toString()}`;
     }
 
     equals(v) {
@@ -99,7 +99,7 @@ export class Pair extends Primitive {
         }
     }
 
-	/**
+    /**
      * @return {!number}
      */
     hashForEqual() {
@@ -144,14 +144,12 @@ export function make(hd, tl) {
 }
 
 export function makeList(...items) {
-    return items.reduceRight((result, item) => {
-        return make(item, result);
-    }, EMPTY);
+    return items.reduceRight((result, item) => make(item, result), EMPTY);
 }
 
 export function listToArray(lst) {
-    let r = [];
-    listForEach(lst, (x) => r.push(x));
+    const r = [];
+    listForEach(lst, x => r.push(x));
     return r;
 }
 
@@ -168,7 +166,7 @@ export function listForEach(lst, fn) {
 
 export function listFind(lst, fn) {
     while (!isEmpty(lst)) {
-        let result = fn(lst.hd);
+        const result = fn(lst.hd);
         if (result !== false) {
             return result;
         }
@@ -178,8 +176,8 @@ export function listFind(lst, fn) {
 }
 
 export function listMap(lst, fn) {
-    let result = [];
-    let mapper = (x) => result.push(result, fn(x));
+    const result = [];
+    const mapper = x => result.push(result, fn(x));
     listForEach(lst, mapper);
     return listFromArray(result);
 }

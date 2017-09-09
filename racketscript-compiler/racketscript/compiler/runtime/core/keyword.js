@@ -1,5 +1,5 @@
-import { Primitive } from "./primitive.js";
-import { internedMake } from "./lib.js";
+import { Primitive } from './primitive.js';
+import { internedMake } from './lib.js';
 
 class Keyword extends Primitive {
     constructor(v) {
@@ -12,7 +12,7 @@ class Keyword extends Primitive {
     }
 
     toRawString() {
-        return "'" + this.v;
+        return `'${this.v}`;
     }
 
     equals(v) {
@@ -21,10 +21,8 @@ class Keyword extends Primitive {
 }
 
 
-export let make = internedMake(v => {
-    return new Keyword(v);
-});
+export const make = internedMake(v => new Keyword(v));
 
 export function check(v) {
-    return (v instanceof Keyword)
+    return (v instanceof Keyword);
 }

@@ -1,7 +1,7 @@
-import * as Bytes from "./bytes.js";
-import * as UString from "./unicode_string.js";
-import * as Pair from "./pair.js";
-import * as $ from "./lib.js";
+import * as Bytes from './bytes.js';
+import * as UString from './unicode_string.js';
+import * as Pair from './pair.js';
+import * as $ from './lib.js';
 
 /**
  * @param {*} v
@@ -35,7 +35,7 @@ export function match(pattern, input) {
 
     if (!(isRegexpPattern || isBytesPattern || isStringPattern)
         || !(isBytesInput || isStringInput)) {
-        throw $.racketContractError("expected regexp, string or byte pat, and string or byte input");
+        throw $.racketContractError('expected regexp, string or byte pat, and string or byte input');
     }
 
     /** @type {!UString.UString} */
@@ -54,18 +54,11 @@ export function match(pattern, input) {
         return false;
     }
     if ((isStringPattern || isRegexpPattern) && isStringInput) {
-        return Pair.listFromArray(
-            result.map(x => {
-                return x !== undefined
-                    ? UString.makeMutable(x)
-                    : false
-            }));
+        return Pair.listFromArray(result.map(x => (x !== undefined
+            ? UString.makeMutable(x)
+            : false)));
     }
-    return Pair.listFromArray(
-        result.map(x => {
-            return x !== undefined
-                ? UString.toBytesUtf8(x)
-                : false
-        }));
-
+    return Pair.listFromArray(result.map(x => (x !== undefined
+        ? UString.toBytesUtf8(x)
+        : false)));
 }

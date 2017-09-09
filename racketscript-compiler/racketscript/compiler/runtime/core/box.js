@@ -1,5 +1,5 @@
-import { Primitive } from "./primitive.js";
-import { isEqual } from "./equality.js";
+import { Primitive } from './primitive.js';
+import { isEqual } from './equality.js';
 
 class Box extends Primitive {
     constructor(v) {
@@ -34,5 +34,5 @@ export function make(v) {
 }
 
 export function check(v) {
-    return (v instanceof Box)
+    return (v instanceof Box);
 }

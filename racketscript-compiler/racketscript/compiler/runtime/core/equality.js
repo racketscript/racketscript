@@ -1,6 +1,6 @@
-import * as Primitive from "./primitive.js";
-import * as Char from "./char.js";
-import * as Bytes from "./bytes.js";
+import * as Primitive from './primitive.js';
+import * as Char from './char.js';
+import * as Bytes from './bytes.js';
 
 /**
  * @param {*} v1

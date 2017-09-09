@@ -1,6 +1,6 @@
-import { Primitive } from "./primitive.js";
-import * as $ from "./lib.js";
-import * as UString from "./unicode_string.js";
+import { Primitive } from './primitive.js';
+import * as $ from './lib.js';
+import * as UString from './unicode_string.js';
 
 class AbstractPort extends Primitive {
     isOutputPort() {
@@ -14,7 +14,7 @@ class AbstractPort extends Primitive {
 
 class AbstractOutputPort extends AbstractPort {
     write() {
-        throw new Error(`Expected ${this.constructor.name} to implement write(chars)`)
+        throw new Error(`Expected ${this.constructor.name} to implement write(chars)`);
     }
 
     isOutputPort() {
@@ -66,11 +66,11 @@ class NewlineFlushingOutputPort extends AbstractOutputPort {
     }
 }
 
-export const standardOutputPort = new NewlineFlushingOutputPort((str) => console.log(str));
-export let currentOutputPort = standardOutputPort;
+export const standardOutputPort = new NewlineFlushingOutputPort(str => console.log(str));
+export const currentOutputPort = standardOutputPort;
 
-export const standardErrorPort = new NewlineFlushingOutputPort((str) => console.log(str));
-export let currentErrorPort = standardErrorPort;
+export const standardErrorPort = new NewlineFlushingOutputPort(str => console.log(str));
+export const currentErrorPort = standardErrorPort;
 
 
 class OutputStringPort extends AbstractOutputPort {
@@ -91,7 +91,6 @@ class OutputStringPort extends AbstractOutputPort {
             return UString.makeMutable('');
         }
         if (this.__buffer.length > 1) {
-
             this.__buffer = [UString.stringAppend(...this.__buffer)];
         }
         return UString.copyAsMutable(this.__buffer[0]);

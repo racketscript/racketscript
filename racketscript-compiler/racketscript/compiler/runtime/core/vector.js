@@ -1,6 +1,6 @@
-import { Primitive } from "./primitive.js";
-import { isEqual } from "./equality.js";
-import * as $ from "./lib.js";
+import { Primitive } from './primitive.js';
+import { isEqual } from './equality.js';
+import * as $ from './lib.js';
 
 class Vector extends Primitive {
     constructor(items, mutable) {
@@ -10,18 +10,18 @@ class Vector extends Primitive {
     }
 
     toString() {
-        let items = "";
+        let items = '';
         for (let i = 0; i < this.items.length; i++) {
             items += this.items[i].toString();
             if (i != this.items.length - 1) {
-                items += " ";
+                items += ' ';
             }
         }
-        return "#(" + items + ")";
+        return `#(${items})`;
     }
 
     toRawString() {
-        return "'" + this.toString();
+        return `'${this.toString()}`;
     }
 
     isImmutable() {
@@ -30,7 +30,7 @@ class Vector extends Primitive {
 
     ref(n) {
         if (n < 0 || n > this.items.length) {
-            throw $.racketCoreError("vector-ref", "index out of range");
+            throw $.racketCoreError('vector-ref', 'index out of range');
         }
 
         return this.items[n];
@@ -38,9 +38,9 @@ class Vector extends Primitive {
 
     set(n, v) {
         if (n < 0 || n > this.items.length) {
-            throw $.racketCoreError("vector-set", "index out of range");
+            throw $.racketCoreError('vector-set', 'index out of range');
         } else if (!this.mutable) {
-            throw $.racketCoreError("vector-set", "immutable vector");
+            throw $.racketCoreError('vector-set', 'immutable vector');
         }
         this.items[n] = v;
     }
@@ -54,8 +54,8 @@ class Vector extends Primitive {
             return false;
         }
 
-        let items1 = this.items;
-        let items2 = v.items;
+        const items1 = this.items;
+        const items2 = v.items;
 
         if (items1.length != items2.length) {
             return false;
@@ -81,7 +81,7 @@ export function copy(vec, mutable) {
 
 
 export function makeInit(size, init) {
-    let r = new Array(size);
+    const r = new Array(size);
     r.fill(init);
     return new Vector(r, true);
 }

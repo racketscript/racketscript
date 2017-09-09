@@ -1,5 +1,5 @@
-import { Primitive } from "./primitive.js";
-import { internedMake } from "./lib.js";
+import { Primitive } from './primitive.js';
+import { internedMake } from './lib.js';
 
 class Symbol extends Primitive {
     constructor(v) {
@@ -13,7 +13,7 @@ class Symbol extends Primitive {
     }
 
     toRawString() {
-        return "'" + this.v;
+        return `'${this.v}`;
     }
 
     equals(v) {
@@ -36,12 +36,10 @@ class Symbol extends Primitive {
 }
 
 
-export let make = internedMake(v => {
-    return new Symbol(v.toString());
-});
+export const make = internedMake(v => new Symbol(v.toString()));
 
-export let makeUninterned = v => new Symbol(v);
+export const makeUninterned = v => new Symbol(v);
 
 export function check(v) {
-    return (v instanceof Symbol)
+    return (v instanceof Symbol);
 }
