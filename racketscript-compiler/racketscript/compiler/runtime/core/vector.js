@@ -1,5 +1,7 @@
 import { Primitive } from './primitive.js';
 import { isEqual } from './equality.js';
+import { hashArray } from './raw_hashing.js';
+import { hashForEqual } from './hashing.js';
 import * as $ from './lib.js';
 
 class Vector extends Primitive {
@@ -49,6 +51,10 @@ class Vector extends Primitive {
         return this.items.length;
     }
 
+    /**
+     * @param {*} v
+     * @return {!boolean}
+     */
     equals(v) {
         if (!check(v)) {
             return false;
@@ -68,6 +74,13 @@ class Vector extends Primitive {
         }
 
         return true;
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return hashArray(this.items, hashForEqual);
     }
 }
 
