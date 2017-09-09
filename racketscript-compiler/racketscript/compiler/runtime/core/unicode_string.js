@@ -1,10 +1,10 @@
-import { Primitive } from "./primitive.js";
-import * as Bytes from "./bytes.js";
-import * as Char from "./char.js";
-import * as Pair from "./pair.js";
-import * as $ from "./lib.js";
-import { internedMake } from "./lib.js";
-import { hashIntArray } from "./raw_hashing.js";
+import { Primitive } from './primitive.js';
+import * as Bytes from './bytes.js';
+import * as Char from './char.js';
+import * as Pair from './pair.js';
+import * as $ from './lib.js';
+import { internedMake } from './lib.js';
+import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextEncoder is not global and needs to be imported.
 if (typeof TextEncoder === 'undefined') {
@@ -99,13 +99,12 @@ export class UString extends Primitive {
      */
     checkIndexLtLength(i) {
         if (i >= this.length) {
-            throw $.racketContractError(
-                this.length > 0
-                    ? `string-ref: index is out of range
+            throw $.racketContractError(this.length > 0
+                ? `string-ref: index is out of range
   index: ${i}
   valid range: [0, ${this.length - 1}]
   string: ${this.toRawString()}`
-                    : `string-ref: index is out of range for empty string
+                : `string-ref: index is out of range for empty string
   index: ${i}`);
         }
     }
@@ -166,7 +165,6 @@ class ImmutableUString extends UString {
  * See {Char.Char} for implementation notes.
  */
 class ImmutableBMPString extends ImmutableUString {
-
     /**
      * @param {!number} start
      * @param {!number} end
@@ -176,7 +174,8 @@ class ImmutableBMPString extends ImmutableUString {
     substring(start, end) {
         return new MutableUString(
             this.chars.slice(start, end),
-            this.toString().substring(start, end));
+            this.toString().substring(start, end)
+        );
     }
 }
 
@@ -214,9 +213,7 @@ function nativeStringToChars(nativeString) {
  * @param {!string} nativeString
  * @return {!ImmutableUString}
  */
-export let makeInternedImmutable = internedMake(nativeString => {
-    return makeImmutable(nativeString);
-});
+export const makeInternedImmutable = internedMake(nativeString => makeImmutable(nativeString));
 
 /**
  * @param {!string} nativeString
@@ -225,7 +222,8 @@ export let makeInternedImmutable = internedMake(nativeString => {
 export function makeImmutable(nativeString) {
     return makeImmutableFromCharsAndNativeString(
         nativeStringToChars(nativeString),
-        nativeString);
+        nativeString
+    );
 }
 
 /**
@@ -246,7 +244,8 @@ function makeImmutableFromCharsAndNativeString(chars, nativeString) {
 export function makeMutable(nativeString) {
     return new MutableUString(
         nativeStringToChars(nativeString),
-        nativeString);
+        nativeString
+    );
 }
 
 /**
@@ -392,8 +391,7 @@ export function fromBytesUtf8(bytes) {
  * @return {!MutableUString}
  */
 export function stringAppend(...strs) {
-    return makeMutableFromChars(
-        [].concat(...strs.map(s => s.chars)));
+    return makeMutableFromChars([].concat(...strs.map(s => s.chars)));
 }
 
 const TRUE_STRING = makeInternedImmutable($.toString(true));

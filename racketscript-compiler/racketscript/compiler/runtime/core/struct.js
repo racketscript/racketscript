@@ -1,9 +1,9 @@
-import * as C from "./check.js";
-import * as $ from "./lib.js";
-import * as Pair from "./pair.js";
-import { Primitive } from "./primitive.js";
-import { isEqual } from "./equality.js";
-import * as Values from "./values.js";
+import * as C from './check.js';
+import * as $ from './lib.js';
+import * as Pair from './pair.js';
+import { Primitive } from './primitive.js';
+import { isEqual } from './equality.js';
+import * as Values from './values.js';
 
 // This module implements Racket structs via three classes which
 // directly corresponds to their Racket counterparts. Structure
@@ -37,53 +37,54 @@ class Struct extends Primitive {
         super();
         this._desc = desc; /* struct-type-descriptor */
 
-        C.eq(fields.length,
+        C.eq(
+            fields.length,
             this._desc._totalInitFields,
             $.racketCoreError,
-            "arity mismatch");
+            'arity mismatch'
+        );
 
         // Guard's are applied starting from subtype to supertype
         // Later when we instantiate the subtype, its guard will be
         // called in its constructor, hence maintaining the required
         // order
-        let guardLambda = this._desc._options.guard;
-        let finalCallerName = callerName ||
+        const guardLambda = this._desc._options.guard;
+        const finalCallerName = callerName ||
             this._desc._options.constructorName ||
             this._desc._options.name;
         if (guardLambda) {
-            let guardFields = fields.concat(finalCallerName);
-            fields = guardLambda.apply(null, guardFields).getAll()
+            const guardFields = fields.concat(finalCallerName);
+            fields = guardLambda(...guardFields).getAll();
         }
 
         // Initialize current and super instance
-        this._superStructInstance = false /* Struct instance of super-type */
-        let superType = this._desc.getSuperType();
+        this._superStructInstance = false; /* Struct instance of super-type */
+        const superType = this._desc.getSuperType();
         if (superType !== false) {
-            let superInitFields = fields.slice(0, superType._totalInitFields);
+            const superInitFields = fields.slice(0, superType._totalInitFields);
             this._fields = fields.slice(superType._totalInitFields);
             this._superStructInstance = superType
-                .getStructConstructor(finalCallerName)
-                .apply(null, superInitFields);
+                .getStructConstructor(finalCallerName)(...superInitFields);
         } else {
             this._fields = fields;
         }
 
         // Auto fields
-        let autoV = this._desc._options.autoV; /* Initial value for auto fields */
+        const autoV = this._desc._options.autoV; /* Initial value for auto fields */
         for (let i = 0; i < this._desc._options.autoFieldCount; i++) {
             this._fields.push(autoV);
         }
     }
 
     toString() {
-        let fields = "";
+        let fields = '';
         for (let i = 0; i < this._fields.length; i++) {
             fields += this._fields[i].toString();
             if (i !== this._fields.length - 1) {
-                fields += " ";
+                fields += ' ';
             }
         }
-        return "#(struct:" + this._desc.getName() + " " + fields + ")";
+        return `#(struct:${this._desc.getName()} ${fields})`;
     }
 
     toRawString() {
@@ -113,16 +114,20 @@ class Struct extends Primitive {
 
     getField(n) {
         if (n >= this._fields.length) {
-            throw new Error("TypeError: invalid field at position " + n);
+            throw new Error(`TypeError: invalid field at position ${n}`);
         }
         return this._fields[n];
     }
 
     setField(n, v) {
-        C.truthy(n < this._fields.length, $.racketCoreError,
-            "invalid field at position");
-        C.falsy(this._desc.isFieldImmutable(n), $.racketCoreError,
-            "field is immutable");
+        C.truthy(
+            n < this._fields.length, $.racketCoreError,
+            'invalid field at position'
+        );
+        C.falsy(
+            this._desc.isFieldImmutable(n), $.racketCoreError,
+            'field is immutable'
+        );
         this._fields[n] = v;
     }
 
@@ -139,7 +144,7 @@ class Struct extends Primitive {
     }
 }
 
-/*****************************************************************************/
+/** ************************************************************************** */
 
 class StructTypeDescriptor extends Primitive {
     constructor(options) {
@@ -152,13 +157,13 @@ class StructTypeDescriptor extends Primitive {
         // supers in struct-type-property are also added when
         // attached. However propeties attached to super types of this
         // struct are not added here and will have to be followed.
-        let props = options.props && Pair.listToArray(options.props);
+        const props = options.props && Pair.listToArray(options.props);
         this._options.props = new Map();
         if (props) {
             // TODO: If prop is already added, then check associated
             // values with eq?, else raise contract-errorx
-            for (let prop of props) {
-                prop.hd.attachToStructTypeDescriptor(this, prop.tl)
+            for (const prop of props) {
+                prop.hd.attachToStructTypeDescriptor(this, prop.tl);
             }
         }
         this._propProcedure = this._findProperty(propProcedure);
@@ -174,11 +179,11 @@ class StructTypeDescriptor extends Primitive {
         }
 
         // Immutables
-        let immutables = options.immutables || Pair.EMPTY;
+        const immutables = options.immutables || Pair.EMPTY;
         this._options.immutables = new Set(Pair.listToArray(immutables));
         this._options.immutables.forEach((e) => {
             if (e < 0 || e >= options.initFieldCount) {
-                C.raise("invalid index in immutables provided");
+                C.raise('invalid index in immutables provided');
             }
         });
     }
@@ -188,7 +193,7 @@ class StructTypeDescriptor extends Primitive {
     }
 
     toString() {
-        return "#<struct-type:" + this._options.name + ">";
+        return `#<struct-type:${this._options.name}>`;
     }
 
     toRawString() {
@@ -204,7 +209,7 @@ class StructTypeDescriptor extends Primitive {
     }
 
     getApplicableStructObject(structObject, procSpec) {
-        let structfn = function (...args) {
+        const structfn = function (...args) {
             // Struct object is also a procedure
             let proc;
             if (typeof (procSpec) === 'function') {
@@ -215,11 +220,11 @@ class StructTypeDescriptor extends Primitive {
             } else if (Number.isInteger(procSpec)) {
                 proc = structObject.getField(procSpec);
             } else {
-                throw new Error("ValueError: invalid field at position "
-                    + procSpec);
+                throw new Error(`ValueError: invalid field at position ${
+                    procSpec}`);
             }
-            return proc.apply(null, args);
-        }
+            return proc(...args);
+        };
         structfn.__rjs_struct_object = structObject;
         return structfn;
     }
@@ -231,19 +236,18 @@ class StructTypeDescriptor extends Primitive {
         } else if (s instanceof Function &&
             (s.__rjs_struct_object instanceof Struct)) {
             return s.__rjs_struct_object;
-        } else {
-            return false;
         }
+        return false;
     }
 
     getStructConstructor(subtype = false) {
         // subtype: Name of subtype which is used to call the constructor
         //   returned here.
         return $.attachReadOnlyProperty((...args) => {
-            let structObject = new Struct(this, args, subtype);
-            let hasPropProc = this._propProcedure !== undefined &&
+            const structObject = new Struct(this, args, subtype);
+            const hasPropProc = this._propProcedure !== undefined &&
                 this._propProcedure !== false;
-            let hasProcSpec = this._options.procSpec !== undefined &&
+            const hasProcSpec = this._options.procSpec !== undefined &&
                 this._options.procSpec !== false;
 
             if (!hasPropProc && !hasProcSpec) {
@@ -251,58 +255,62 @@ class StructTypeDescriptor extends Primitive {
             } else if (hasPropProc) {
                 return this.getApplicableStructObject(
                     structObject,
-                    this._propProcedure);
-            } else {
-                return this.getApplicableStructObject(
-                    structObject,
-                    this._options.procSpec);
+                    this._propProcedure
+                );
             }
-        }, "racketProcedureType", "struct-constructor");
+            return this.getApplicableStructObject(
+                structObject,
+                this._options.procSpec
+            );
+        }, 'racketProcedureType', 'struct-constructor');
     }
 
     getStructPredicate() {
         return $.attachReadOnlyProperty((s) => {
-            let structObject = this.maybeStructObject(s);
+            const structObject = this.maybeStructObject(s);
             return structObject &&
                 structObject._maybeFindSuperInstance(this) && true;
-        }, "racketProcedureType", "struct-predicate");
+        }, 'racketProcedureType', 'struct-predicate');
     }
 
     getStructAccessor() {
         return $.attachReadOnlyProperty((s, pos) => {
-            let structObject = this.maybeStructObject(s);
+            const structObject = this.maybeStructObject(s);
             if (!structObject) {
-                C.raise(TypeError,
-                    "(" + s + " : " + typeof (s) + " != " +
-                    this._options.name + " object)");
+                C.raise(
+                    TypeError,
+                    `(${s} : ${typeof (s)} != ${
+                        this._options.name} object)`
+                );
             }
 
-            let sobj = structObject._maybeFindSuperInstance(this);
+            const sobj = structObject._maybeFindSuperInstance(this);
             if (sobj === false) {
-                C.raise($.racketCoreError, "accessor applied to invalid type")
+                C.raise($.racketCoreError, 'accessor applied to invalid type');
             }
 
             return sobj.getField(pos);
-        }, "racketProcedureType", "struct-accessor");
+        }, 'racketProcedureType', 'struct-accessor');
     }
 
     getStructMutator() {
         return $.attachReadOnlyProperty((s, pos, v) => {
-            let structObject = this.maybeStructObject(s);
+            const structObject = this.maybeStructObject(s);
             if (!structObject) {
-                C.raise(TypeError,
-                    "(" + s + " : " + typeof (s) + " != " +
-                    this._options.name + " object)");
+                C.raise(
+                    TypeError,
+                    `(${s} : ${typeof (s)} != ${
+                        this._options.name} object)`
+                );
             }
 
-            let sobj = structObject._maybeFindSuperInstance(this);
+            const sobj = structObject._maybeFindSuperInstance(this);
             if (sobj === false) {
-                C.raise($.racketCoreError, "mutator applied to invalid type")
+                C.raise($.racketCoreError, 'mutator applied to invalid type');
             }
 
             return sobj.setField(pos, v);
-
-        }, "racketProcedureType", "struct-mutator");
+        }, 'racketProcedureType', 'struct-mutator');
     }
 
     // Find value associated with property `prop` or return `undefined`
@@ -317,7 +325,7 @@ class StructTypeDescriptor extends Primitive {
     // initialization in constructor.
     _findProperty(prop) {
         for (let desc = this; desc; desc = desc.getSuperType()) {
-            let val = desc._options.props.get(prop);
+            const val = desc._options.props.get(prop);
             if (val !== undefined) {
                 return val;
             }
@@ -331,7 +339,7 @@ class StructTypeDescriptor extends Primitive {
     }
 }
 
-/*****************************************************************************/
+/** ************************************************************************** */
 
 class StructTypeProperty extends Primitive {
     constructor(args) {
@@ -348,7 +356,7 @@ class StructTypeProperty extends Primitive {
     }
 
     toString() {
-        return "#<struct-type-property:" + this._name + ">";
+        return `#<struct-type-property:${this._name}>`;
     }
 
     toRawString() {
@@ -366,7 +374,7 @@ class StructTypeProperty extends Primitive {
             }
 
             return desc._findProperty(this) !== undefined;
-        }
+        };
     }
 
     getPropertyAccessor() {
@@ -376,12 +384,12 @@ class StructTypeProperty extends Primitive {
             } else if (v instanceof Struct) {
                 var desc = v._desc;
             } else {
-                C.raise($.racketCoreError, "invalid argument to accessor");
+                C.raise($.racketCoreError, 'invalid argument to accessor');
             }
 
             return desc._findProperty(this) ||
-                C.raise($.racketCoreError, "property not in struct");
-        }
+                C.raise($.racketCoreError, 'property not in struct');
+        };
     }
 
     // Attaches current property with given struct descriptor
@@ -397,17 +405,17 @@ class StructTypeProperty extends Primitive {
         }
         desc._options.props.set(this, newV);
         this._supers.forEach((superEntry) => {
-            let prop = superEntry.hd;
-            let proc = superEntry.tl;
+            const prop = superEntry.hd;
+            const proc = superEntry.tl;
             prop.attachToStructTypeDescriptor(desc, proc(newV));
         });
     }
 }
 
-/*****************************************************************************/
+/** ************************************************************************** */
 
 export function makeStructTypeProperty(options) {
-    let stProp = StructTypeProperty.make(options);
+    const stProp = StructTypeProperty.make(options);
 
     return Values.make([
         stProp,
@@ -416,17 +424,17 @@ export function makeStructTypeProperty(options) {
     ]);
 }
 
-/*****************************************************************************/
+/** ************************************************************************** */
 
 export function makeStructType(options) {
-    let descriptor = new StructTypeDescriptor(options);
+    const descriptor = new StructTypeDescriptor(options);
     return Values.make([
         descriptor,
         descriptor.getStructConstructor(),
         descriptor.getStructPredicate(),
         descriptor.getStructAccessor(),
         descriptor.getStructMutator()
-    ])
+    ]);
 }
 
 export function isStructType(v) {
@@ -440,9 +448,9 @@ export function structTypeInfo(desc) {
         desc._options.autoFieldCount,
         desc.getStructAccessor(),
         desc.getStructMutator(),
-        desc._options.immutables, //TODO: What about supers?
+        desc._options.immutables, // TODO: What about supers?
         desc._options.superType || false,
-        false //TODO: Not sure what this field means?
+        false // TODO: Not sure what this field means?
     ];
 }
 
@@ -455,9 +463,9 @@ export function check(v, desc) {
     return isStructInstance(v) && v._desc == desc;
 }
 
-/*****************************************************************************/
+/** ************************************************************************** */
 // Properties
 
 export let propProcedure = makeStructTypeProperty({
-    name: "prop:procedure"
+    name: 'prop:procedure'
 }).getAt(0);

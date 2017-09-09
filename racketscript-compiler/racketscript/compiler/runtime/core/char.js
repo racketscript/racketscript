@@ -1,4 +1,4 @@
-import { Primitive } from "./primitive.js";
+import { Primitive } from './primitive.js';
 
 /**
  * A single Unicode character.
@@ -162,7 +162,6 @@ export function charUtf8Length(c) {
         return 4;
     } else if (cp < 0x4000000) {
         return 5;
-    } else {
-        return 6;
     }
+    return 6;
 }
