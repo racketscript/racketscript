@@ -79,14 +79,19 @@ export function attachReadOnlyProperty(o, k, v) {
     });
 }
 
+/**
+ * @param {function(String|UString.UString)} f
+ * @return {function(String)}
+ */
 export function internedMake(f) {
-    const cache = {};
+    const cache = new Map();
     return (v) => {
-        if (v in cache) {
-            return cache[v];
+        v = v.toString();
+        let result = cache.get(v);
+        if (result === undefined) {
+            result = f(v);
+            cache.set(v, result);
         }
-        const result = f(v);
-        cache[v] = result;
         return result;
     };
 }
