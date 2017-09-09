@@ -30,8 +30,6 @@ before_install:
   - export PATH="${RACKET_DIR}/bin:${PATH}"
 
 install:
-  - make setup
-  - make setup-extra
   - raco pkg install --auto cover-codecov
 
 script:
