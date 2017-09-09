@@ -15,16 +15,27 @@ class Box extends Primitive {
         return this.toString();
     }
 
-    equals(v) {
-        return isEqual(v.value, this.value);
-    }
-
     set(v) {
         this.value = v;
     }
 
     get() {
         return this.value;
+    }
+
+    /**
+     * @param {*} v
+     * @return {!boolean}
+     */
+    equals(v) {
+        return isEqual(v.value, this.value);
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return hashForEqual(this.value);
     }
 }
 
