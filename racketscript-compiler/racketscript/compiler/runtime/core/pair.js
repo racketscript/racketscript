@@ -3,13 +3,21 @@ import { isEqual } from "./equality.js";
 import * as $ from "./lib.js";
 
 /** @singleton */
-class EmptyPair extends Primitive {
+class Empty extends Primitive {
     equals(v) {
         return this === v;
     }
 
     get length() {
         return 0;
+    }
+
+    toString() {
+	return "()";
+    }
+
+    toRawString() {
+	return "'()";
     }
 
     /**
@@ -22,7 +30,7 @@ class EmptyPair extends Primitive {
     }
 }
 
-export const EMPTY = new EmptyPair();
+export const EMPTY = new Empty();
 
 /**
  * @param {*} v
