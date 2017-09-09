@@ -1,4 +1,4 @@
-.PHONY: build setup clean \
+.PHONY: build setup setup-extras clean \
 eslint eslint-fix tscheck \
 test unit-test integration-test coverage coverage-unit-test
 
@@ -9,20 +9,22 @@ ESLINT=node_modules/.bin/eslint
 
 ## Compiler recipes
 
-build: setup
-	raco make -j 2 -v racketscript-compiler/racketscript/compiler/main.rkt \
-	  tests/fixture.rkt
-
 $(SETUP_BIN_DIR)/racks:
 	raco pkg install --auto -t dir racketscript-compiler/ || \
 	  raco pkg update --link racketscript-compiler/
 	raco pkg install --auto -t dir racketscript-extras/ || \
 	  raco pkg update --link racketscript-extras/
+setup: | $(SETUP_BIN_DIR)/racks
+
 $(SETUP_PKGS_DIR)/cover:
 	raco pkg install --auto cover || true
 $(SETUP_PKGS_DIR)/glob:
 	raco pkg install --auto glob || true
-setup: | $(SETUP_BIN_DIR)/racks $(SETUP_PKGS_DIR)/cover $(SETUP_PKGS_DIR)/glob
+setup-extras: | setup $(SETUP_PKGS_DIR)/cover $(SETUP_PKGS_DIR)/glob
+
+build: setup-extras
+	raco make -j 2 -v racketscript-compiler/racketscript/compiler/main.rkt \
+	  tests/fixture.rkt
 
 clean: clean-compiler
 	raco pkg remove racketscript-extras || true
