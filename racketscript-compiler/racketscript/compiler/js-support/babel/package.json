@@ -21,6 +21,7 @@
 	"gulp-babel",
         "gulp-uglify",
 	"hamt_plus",
+	"babel-core",
 	"babel-preset-env",
 	"babel-plugin-transform-runtime"
     ]

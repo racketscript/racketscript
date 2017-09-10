@@ -241,7 +241,9 @@
       (displayln "---------------------------------")
       (displayln "::: Optimizations on ::: none :::")
       (displayln "---------------------------------")
-      (run-tests tc-search-patterns)))
+      (run-tests (filter-not
+                  (λ (s) (string-contains? s "optimize"))
+                  tc-search-patterns))))
 
   ;; (displayln "")
   ;; (parameterize ([enabled-optimizations (set self-tail->loop)])

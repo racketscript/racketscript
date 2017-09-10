@@ -220,7 +220,7 @@
 
      (define arguments-array
        (ILApp (name-in-module 'core 'argumentsToArray)
-              (list 'arguments)))
+              (list (ILArguments))))
 
      (define-values (il-formals stms-formals-init)
        (cond
@@ -297,7 +297,7 @@
      (define result-id (fresh-id 'if_res))
      (values (append ps
                      (list
-                      (ILIf pe
+                      (ILIf (ILBinaryOp '!==  (list pe (ILValue #f)))
                             (append1 ts (ILVarDec result-id te))
                             (append1 fs (ILVarDec result-id fe)))))
              result-id)]
@@ -327,6 +327,8 @@
      (match args
        [(list (Quote 'var) (Quote var))
         (values '() (cast var Symbol))]
+       [(list (Quote 'string) (Quote str))
+        (values '() (ILValue str))]
        [(list (Quote 'ref) b xs ...)
         (define-values (stms il) (absyn-expr->il b #f))
         (values stms
@@ -408,6 +410,10 @@
         (values '() (ILNull))]
        [(list (Quote 'undefined))
         (values '() (ILUndefined))]
+       [(list (Quote 'arguments))
+        (values '() (ILArguments))]
+       [(list (Quote 'this))
+        (values '() (ILThis))]
        [_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(PlainApp lam args)
@@ -583,21 +589,62 @@
                    binding-stms))]))
 
 
-(: absyn-value->il (-> Any ILValue))
+(: absyn-value->il (-> Any ILExpr))
 (define (absyn-value->il d)
   (cond
-    [(or (symbol? d)
-         (string? d)
-         (bytes? d)
-         (integer? d)
-         (list? d)
-         (cons? d)
-         (hash? d)
-         (box? d)
+    [(Quote? d) (absyn-value->il (Quote-datum d))]
+    [(string? d)
+     (ILApp (name-in-module 'core 'UString.makeInternedImmutable)
+            (list (ILValue d)))]
+    [(symbol? d)
+     (ILApp (name-in-module 'core 'Symbol.make)
+            (list (ILValue (symbol->string d))))]
+    [(keyword? d)
+     (ILApp (name-in-module 'core 'Keyword.make)
+            (list (ILValue (keyword->string d))))]
+    [(list? d)
+     (ILApp (name-in-module 'core 'Pair.makeList)
+            (map absyn-value->il d))]
+    [(empty? d)
+     (name-in-module 'core 'Pair.EMPTY)]
+    [(cons? d)
+     (ILApp (name-in-module 'core 'Pair.make)
+            (list (absyn-value->il (car d))
+                  (absyn-value->il (cdr d))))]
+    [(vector? d)
+     (ILApp (name-in-module 'core 'Vector.make)
+            (list
+             (ILArray
+              (map absyn-value->il
+                   (vector->list (cast d (Vectorof Any)))))))]
+    [(hash? d)
+     (: maker Symbol)
+     (define maker (cond
+                     [(hash-eq? d) 'Hash.makeEq]
+                     [(hash-eqv? d) 'Hash.makeEqv]
+                     [(hash-equal? d) 'Hash.makeEqual]
+                     [else (error 'assemble-value "unknown hash type")]))
+     (define mutable (not (immutable? d)))
+     (ILApp (name-in-module 'core maker)
+            (list
+             (ILArray
+              (for/list ([(key value) (in-hash d)])
+                (ILArray (list (absyn-value->il key) (absyn-value->il value)))))
+             (ILValue mutable)))]
+    [(bytes? d)
+     (ILApp (name-in-module 'core 'Bytes.fromIntArray)
+            (list (ILArray (map ILValue (bytes->list d)))))]
+    [(box? d)
+     (ILApp (name-in-module 'core 'Box.make)
+            (list (absyn-value->il (unbox d))))]
+    [(char? d)
+     (ILApp (name-in-module 'core 'Char.charFromCodepoint)
+            (list (absyn-value->il (char->integer d))))]
+    [(or (integer? d)
          (boolean? d)
-         (vector? d)
-         (struct? d)
-         (keyword? d)
+         (regexp? d)
+         (byte-regexp? d)
+         (void? d)
          (real? d))
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
@@ -621,6 +668,7 @@
                    fixed-lam-names fixed-lams)))
 
   (define *null* (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'null))))
+  (define *arguments* (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'arguments))))
 
   (define-values (var-lam-stms var-lam-val)
     (absyn-expr->il
@@ -639,17 +687,17 @@
                                      (list (Quote 'ref)
                                            (LocalIdent nh)
                                            (Quote 'apply)))
-                           (list *null* (LocalIdent 'arguments)))
+                           (list *null* *arguments*))
                  (loop lt nt))]))
      #f))
 
   ;; TODO: We can avoid using apply here.
   (define dispatch-stms
-    (list (ILVarDec fixed-lam-name (ILIndex fixed-lam-map (ILRef 'arguments 'length)))
+    (list (ILVarDec fixed-lam-name (ILIndex fixed-lam-map (ILRef (ILArguments) 'length)))
           (ILIf (ILBinaryOp '!== (list fixed-lam-name (ILUndefined)))
                 (list (ILReturn
                        (ILApp (ILRef fixed-lam-name 'apply)
-                              (list (ILNull) 'arguments))))
+                              (list (ILNull) (ILArguments)))))
                 (append1 var-lam-stms
                          (ILReturn var-lam-val)))))
 
@@ -819,258 +867,303 @@
   ;; enable test environment
   (test-environment? #t)
 
+  (: ~str (-> String ILExpr))
+  (define (~str s)
+    (ILApp
+     (name-in-module 'core 'UString.makeInternedImmutable)
+     (list (ILValue s))))
+
+  (: ~sym (-> Symbol ILExpr))
+  (define (~sym s)
+    (ILApp
+     (name-in-module 'core 'Symbol.make) (list (ILValue (symbol->string s)))))
+
+  (: ~cons (-> ILExpr ILExpr ILExpr))
+  (define (~cons a b)
+    (ILApp (name-in-module 'core 'Pair.make) (list a b)))
+
+  (define ~val ILValue)
+
+  (define-syntax-rule (~list v ...)
+    (ILApp (name-in-module 'core 'Pair.makeList) (list v ...)))
+
   ;; Expressions ----------------------------------------------------
 
-  ;; Values
+  (test-case "Racket values"
+    (check-ilexpr (Quote 42)        '() (~val 42))
+    (check-ilexpr (Quote "Hello")   '() (~str "Hello"))
+    (check-ilexpr (Quote 'hello)    '() (~sym 'hello))
+    (check-ilexpr
+     (Quote '(1 2 3))
+     '()
+     (~list (~val 1) (~val 2) (~val 3)))
+    (check-ilexpr
+     (Quote '(1 (2 3) 4 (a b)))
+     '()
+     (~list
+      (~val 1)
+      (~list (~val 2) (~val 3))
+      (~val 4)
+      (~list (~sym 'a) (~sym 'b))))
+    (check-ilexpr (Quote '(1 . 2))  '() (~cons (~val 1) (~val 2)))
+    (check-ilexpr (Quote #f)        '() (~val #f)))
 
-  (check-ilexpr (Quote 42)        '() (ILValue 42))
-  (check-ilexpr (Quote "Hello")   '() (ILValue "Hello"))
-  (check-ilexpr (Quote 'hello)    '() (ILValue 'hello))
-  (check-ilexpr (Quote '(1 2 3))  '() (ILValue '(1 2 3)))
-  (check-ilexpr (Quote '(1 (2 3) 4 (a b)))
-                '() (ILValue '(1 (2 3) 4 (a b))))
-  (check-ilexpr (Quote '(1 . 2))  '() (ILValue '(1 . 2)))
-  (check-ilexpr (Quote #f)        '() (ILValue #f))
 
-  ;; Function application
+  ;; --------------------------------------------------------------------------
 
-  (check-ilexpr (PlainLambda '(x) (LI* 'x))
-                '()
-                (ILLambda '(x) (list (ILReturn 'x))))
-  (check-ilexpr (PlainLambda 'x (LI* 'x))
-                '()
-                (ILApp
-                 (name-in-module 'core 'attachProcedureArity)
-                 (list
-                  (ILLambda
-                   '()
+  (test-case "Function Application"
+    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+                  '()
+                  (ILLambda '(x) (list (ILReturn 'x))))
+    (check-ilexpr (PlainLambda 'x (LI* 'x))
+                  '()
+                  (ILApp
+                   (name-in-module 'core 'attachProcedureArity)
                    (list
-                    (ILVarDec
-                     'x
-                     (ILApp
-                      (name-in-module 'core 'Pair.listFromArray)
-                      (list
-                       (ILApp (name-in-module 'core 'argumentsToArray)
-                              '(arguments)))))
-                    (ILReturn 'x))))))
-  ;; If expressions
+                    (ILLambda
+                     '()
+                     (list
+                      (ILVarDec
+                       'x
+                       (ILApp
+                        (name-in-module 'core 'Pair.listFromArray)
+                        (list
+                         (ILApp (name-in-module 'core 'argumentsToArray)
+                                (list (ILArguments))))))
+                      (ILReturn 'x)))))))
 
-  (check-ilexpr (If (Quote #t) (Quote 'yes) (Quote 'no))
-                (list
-                 (ILIf
-                  (ILValue #t)
-                  (list (ILVarDec 'if_res1 (ILValue 'yes)))
-                  (list (ILVarDec 'if_res1 (ILValue 'no)))))
-                'if_res1)
+  ;; --------------------------------------------------------------------------
 
-  ;; Lambdas
+  (test-case "If expression"
+    (check-ilexpr (If (Quote #t) (Quote 'yes) (Quote 'no))
+                  (list
+                   (ILIf (ILBinaryOp '!== (list (ILValue #t) (ILValue #f)))
+                         (list (ILVarDec 'if_res1 (~sym 'yes)))
+                         (list (ILVarDec 'if_res1 (~sym 'no)))))
+                  'if_res1))
 
-  (check-ilexpr (PlainLambda '(x) (LI* 'x))
-                '()
-                (ILLambda
-                 '(x)
-                 (list (ILReturn 'x))))
-  (check-ilexpr (PlainLambda '(a b)
-                             (list
-                              (PlainApp (LocalIdent 'list)
-                                        (LI* 'a 'b))))
-                '()
-                (ILLambda
-                 '(a b)
-                 (list
-                  (ILReturn (ILApp 'list '(a b))))))
+  ;; --------------------------------------------------------------------------
 
-  ;; Let expressions
-  (check-ilexpr (LetValues (list (cons '(a) (Quote 1))
-                                 (cons '(b) (Quote 2)))
-                           (LI* 'a 'b))
-                (list
-                 (ILVarDec 'a (ILValue 1)) (ILVarDec 'b (ILValue 2))
-                      'a)
-                'b)
-  (check-ilexpr (LetValues (list (cons '(a)
-                                       (If (Quote #t)
-                                           (Quote 'yes)
-                                           (Quote 'false)))
-                                 (cons '(b)
-                                       (PlainApp (kident '+)
-                                                 (list
-                                                  (Quote 1)
-                                                  (Quote 2)))))
-                           (list (PlainApp (LocalIdent 'list)
-                                           (LI* 'a 'b))))
-                (list
-                 (ILIf
-                  (ILValue #t)
-                  (list (ILVarDec 'if_res1 (ILValue 'yes)))
-                  (list (ILVarDec 'if_res1 (ILValue 'false))))
-                 (ILVarDec 'a 'if_res1)
-                 (ILVarDec 'b (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
-                (ILApp 'list '(a b)))
+  (test-case "Lambda expressions"
+    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+                  '()
+                  (ILLambda
+                   '(x)
+                   (list (ILReturn 'x))))
+    (check-ilexpr (PlainLambda '(a b)
+                               (list
+                                (PlainApp (LocalIdent 'list)
+                                          (LI* 'a 'b))))
+                  '()
+                  (ILLambda
+                   '(a b)
+                   (list
+                    (ILReturn (ILApp 'list '(a b)))))))
 
-  ;; Binary operations
 
-  (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
-                '()
-                (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
-  (check-ilexpr (PlainApp (kident '-) (list (Quote 1)
-                                            (Quote 2)
-                                            (Quote 3)))
-                '()
-                (ILBinaryOp '-
-                            (list
-                             (ILValue 1) (ILValue 2) (ILValue 3))))
+  (test-case "Let expressions"
+    (check-ilexpr (LetValues (list (cons '(a) (Quote 1))
+                                   (cons '(b) (Quote 2)))
+                             (LI* 'a 'b))
+                  (list
+                   (ILVarDec 'a (ILValue 1)) (ILVarDec 'b (ILValue 2))
+                   'a)
+                  'b)
+    (check-ilexpr (LetValues (list (cons '(a)
+                                         (If (Quote #t)
+                                             (Quote 'yes)
+                                             (Quote 'false)))
+                                   (cons '(b)
+                                         (PlainApp (kident '+)
+                                                   (list
+                                                    (Quote 1)
+                                                    (Quote 2)))))
+                             (list (PlainApp (LocalIdent 'list)
+                                             (LI* 'a 'b))))
+                  (list
+                   (ILIf (ILBinaryOp '!== (list (~val #t) (~val #f)))
+                         (list (ILVarDec 'if_res1 (~sym 'yes)))
+                         (list (ILVarDec 'if_res1 (~sym 'false))))
+                   (ILVarDec 'a 'if_res1)
+                   (ILVarDec 'b (ILBinaryOp '+ (list (~val 1) (~val 2)))))
+                  (ILApp 'list '(a b))))
 
-  ;; Case Lambda
+  ;; --------------------------------------------------------------------------
 
-  (check-equal? (resolve-procedure-arities '(1 2 3 4))
-                '(1 2 3 4))
-  (check-equal? (resolve-procedure-arities '(1 3 2 6 4))
-                '(1 2 3 4 6))
-  (check-equal? (resolve-procedure-arities
-                 (list 1 2 3 (arity-at-least 3) (arity-at-least 6)))
-                (list 1 2 (arity-at-least 3)))
-  (check-equal? (resolve-procedure-arities
-                 (list 1 2 3 (arity-at-least 6) (arity-at-least 3)))
-                (list 1 2 (arity-at-least 3)))
+  (test-case "Identify binary operators"
+    (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
+                  '()
+                  (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
+    (check-ilexpr (PlainApp (kident '-) (list (Quote 1)
+                                              (Quote 2)
+                                              (Quote 3)))
+                  '()
+                  (ILBinaryOp '-
+                              (list
+                               (ILValue 1) (ILValue 2) (ILValue 3)))))
 
-  (check-ilexpr
-   (CaseLambda
-    (list
-     (PlainLambda '(a b) (list (PlainApp (kident 'add)
-                                         (LI* 'a 'b))))
-     (PlainLambda '(a b c) (list (PlainApp (kident 'mul)
-                                           (LI* 'a 'b 'c))))))
-   (list
-    (ILVarDec
-     'cl1
-     (ILLambda '(a b) (list (ILReturn (ILApp (ILRef 'kernel 'add) '(a b))))))
-    (ILVarDec
-     'cl2
-     (ILLambda
-      '(a b c)
-      (list (ILReturn (ILApp (ILRef 'kernel 'mul) '(a b c)))))))
-   (ILApp
-    '$rjs_core.attachProcedureArity
-    (list
-     (ILLambda
-      '()
+  ;; --------------------------------------------------------------------------
+
+  (test-case "Case Lambda"
+    (check-equal? (resolve-procedure-arities '(1 2 3 4))
+                  '(1 2 3 4))
+    (check-equal? (resolve-procedure-arities '(1 3 2 6 4))
+                  '(1 2 3 4 6))
+    (check-equal? (resolve-procedure-arities
+                   (list 1 2 3 (arity-at-least 3) (arity-at-least 6)))
+                  (list 1 2 (arity-at-least 3)))
+    (check-equal? (resolve-procedure-arities
+                   (list 1 2 3 (arity-at-least 6) (arity-at-least 3)))
+                  (list 1 2 (arity-at-least 3)))
+
+    (check-ilexpr
+     (CaseLambda
       (list
-       (ILVarDec
-        'fixed-lam3
-        (ILIndex
-         (ILObject '((|2| . cl1) (|3| . cl2)))
-         (ILRef 'arguments 'length)))
-       (ILIf
-        (ILBinaryOp '!== (list 'fixed-lam3 (ILUndefined)))
+       (PlainLambda '(a b) (list (PlainApp (kident 'add)
+                                           (LI* 'a 'b))))
+       (PlainLambda '(a b c) (list (PlainApp (kident 'mul)
+                                             (LI* 'a 'b 'c))))))
+     (list
+      (ILVarDec
+       'cl1
+       (ILLambda '(a b) (list (ILReturn (ILApp (ILRef 'kernel 'add) '(a b))))))
+      (ILVarDec
+       'cl2
+       (ILLambda
+        '(a b c)
+        (list (ILReturn (ILApp (ILRef 'kernel 'mul) '(a b c)))))))
+     (ILApp
+      '$rjs_core.attachProcedureArity
+      (list
+       (ILLambda
+        '()
         (list
-         (ILReturn
-          (ILApp (ILRef 'fixed-lam3 'apply) (list (ILNull) 'arguments))))
-        (list
-         (ILReturn
-          (ILApp
-           (ILRef 'kernel 'error)
-           (list (ILValue "case-lambda: invalid case"))))))))
-     (ILArray (list (ILValue 2) (ILValue 3))))))
+         (ILVarDec
+          'fixed-lam3
+          (ILIndex
+           (ILObject '((|2| . cl1) (|3| . cl2)))
+           (ILRef (ILArguments) 'length)))
+         (ILIf
+          (ILBinaryOp '!== (list 'fixed-lam3 (ILUndefined)))
+          (list
+           (ILReturn
+            (ILApp (ILRef 'fixed-lam3 'apply) (list (ILNull) (ILArguments)))))
+          (list
+           (ILReturn
+            (ILApp
+             (ILRef 'kernel 'error)
+             (list (~str "case-lambda: invalid case"))))))))
+       (ILArray (list (ILValue 2) (ILValue 3))))))
 
-  ;; FFI ------------------------------------------------------------
 
+  ;; --------------------------------------------------------------------------
   (define absyn-js-ffi (ImportedIdent '#%js-ffi "fakepath.rkt" #t))
 
-  (check-ilexpr
-   (PlainApp absyn-js-ffi (list (Quote 'var) (Quote 'console)))
-   '()
-   'console)
+  (test-case "Foreign Function Interface"
+    (check-ilexpr
+     (PlainApp absyn-js-ffi (list (Quote 'var) (Quote 'console)))
+     '()
+     'console)
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'ref) (Quote 'obj) (Quote 'key1) (Quote 'key2)))
-    '()
-    (ILRef (ILRef 'obj 'key1) 'key2))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'ref) (Quote 'obj) (Quote 'key1) (Quote 'key2)))
+     '()
+     (ILRef (ILRef (~sym 'obj) 'key1) 'key2))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'index)
-          (Quote 'obj)
-          (PlainApp (LocalIdent 'do) (list (Quote "Hello!")))))
-   '()
-   (ILIndex 'obj (ILApp 'do (list (ILValue "Hello!")))))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'ref)
+            (LocalIdent 'obj) (Quote 'key1) (Quote 'key2)))
+     '()
+     (ILRef (ILRef 'obj 'key1) 'key2))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'object)
-          (Quote 'key1) (Quote 'key2) (Quote 'key3)
-          (Quote 'val1) (Quote 'val2) (Quote 'val3)))
-   '()
-   (ILObject (list (cons 'key1 (ILValue 'val1))
-                   (cons 'key2 (ILValue 'val2))
-                   (cons 'key3 (ILValue 'val3)))))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'index)
+            (Quote 'obj)
+            (PlainApp (LocalIdent 'do) (list (Quote "Hello!")))))
+     '()
+     (ILIndex (~sym 'obj) (ILApp 'do (list (~str "Hello!")))))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'array)
-          (Quote 1) (Quote 2) (Quote 3)))
-   '()
-   (ILArray (list (ILValue 1) (ILValue 2) (ILValue 3))))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'object)
+            (Quote 'key1) (Quote 'key2) (Quote 'key3)
+            (Quote 'val1) (Quote 'val2) (Quote 'val3)))
+     '()
+     (ILObject (list (cons 'key1 (~sym 'val1))
+                     (cons 'key2 (~sym 'val2))
+                     (cons 'key3 (~sym 'val3)))))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'assign)
-          (LocalIdent 'name) (Quote "John Doe")))
-   (list (ILAssign 'name (ILValue "John Doe")))
-   (ILValue (void))) ;;TODO: FFI special case!
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'array)
+            (Quote 1) (Quote 2) (Quote 3)))
+     '()
+     (ILArray (list (ILValue 1) (ILValue 2) (ILValue 3))))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'new) (LocalIdent 'Array)))
-   '()
-   (ILNew 'Array))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'assign)
+            (LocalIdent 'name) (Quote "John Doe")))
+     (list (ILAssign 'name (~str "John Doe")))
+     (ILValue (void))) ;;TODO: FFI special case!
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'throw) (Quote "What")))
-   (list (ILThrow (ILValue "What")))
-   (ILValue (void)))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'new) (LocalIdent 'Array)))
+     '()
+     (ILNew 'Array))
 
-  (check-ilexpr
-   (PlainApp
-    absyn-js-ffi
-    (list (Quote 'operator) (Quote '+) (Quote 1) (Quote 2)))
-   '()
-   (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'throw) (Quote "What")))
+     (list (ILThrow (~str "What")))
+     (ILValue (void)))
 
-  ;; Top Level ------------------------------------------------------
+    (check-ilexpr
+     (PlainApp
+      absyn-js-ffi
+      (list (Quote 'operator) (Quote '+) (Quote 1) (Quote 2)))
+     '()
+     (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
 
-  (check-iltoplevel
-   (list (PlainApp (kident 'display) (list (Quote "hello")))
-         (PlainApp (kident 'print) (list (Quote "what" )
-                                         (LocalIdent 'out))))
-   (list
-    (ILApp (ILRef 'kernel 'display) (list (ILValue "hello")))
-    (ILApp (ILRef 'kernel 'print) (list (ILValue "what") 'out))))
+  ;; --------------------------------------------------------------------------
 
-  ;; General Top Level ----------------------------------------------
+  (test-case "Top Level Forms"
+    (check-iltoplevel
+     (list (PlainApp (kident 'display) (list (Quote "hello")))
+           (PlainApp (kident 'print) (list (Quote "what" )
+                                           (LocalIdent 'out))))
+     (list
+      (ILApp (ILRef 'kernel 'display) (list (~str "hello")))
+      (ILApp (ILRef 'kernel 'print) (list (~str "what") 'out)))))
 
-  (check-ilgtl
-   (DefineValues '(x) (Quote 42))
-   (list (ILVarDec 'x (ILValue 42))))
+  ;; --------------------------------------------------------------------------
 
-  (check-ilgtl
-   (DefineValues '(x ident)
-     (PlainApp (kident 'values)
-               (list (Quote 42)
-                     (PlainLambda '(x) (LI* 'x)))))
-   (list
-    (ILVarDec
-     'let_result1
-     (ILApp (ILRef 'kernel 'values)
-            (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
-    (ILVarDec 'x (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 0))))
-    (ILVarDec 'ident (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 1)))))))
+  (test-case "General Top Level Forms"
+    (check-ilgtl
+     (DefineValues '(x) (Quote 42))
+     (list (ILVarDec 'x (ILValue 42))))
+
+    (check-ilgtl
+     (DefineValues '(x ident)
+       (PlainApp (kident 'values)
+                 (list (Quote 42)
+                       (PlainLambda '(x) (LI* 'x)))))
+     (list
+      (ILVarDec
+       'let_result1
+       (ILApp (ILRef 'kernel 'values)
+              (list (ILValue 42) (ILLambda '(x) (list (ILReturn 'x))))))
+      (ILVarDec 'x (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 0))))
+      (ILVarDec 'ident (ILApp (ILRef 'let_result1 'getAt) (list (ILValue 1)))))))))

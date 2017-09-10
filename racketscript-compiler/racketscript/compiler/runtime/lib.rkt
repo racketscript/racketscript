@@ -16,6 +16,7 @@
          instanceof
          *null*
          *undefined*
+         *this*
          define-binop
          and
          or
@@ -37,6 +38,7 @@
          check/raise
          check/and
          check/or
+         check/not
          check/pair-of?
          define-checked
          define-checked+provide)
@@ -93,6 +95,7 @@
 
 (define-syntax *null*       (make-rename-transformer #'$/null))
 (define-syntax *undefined*  (make-rename-transformer #'$/undefined))
+(define-syntax *this*  (make-rename-transformer #'$/this))
 
 (define-syntax define-binop
   (syntax-parser
@@ -121,9 +124,9 @@
 (define-syntax (v-λ stx)
   (define (-arguments stx)
     (syntax-parse stx
-      [(_ i:expr) #'($ 'arguments i)]
-      [(_ i:expr j:expr) #'($ 'arguments i)]
-      [arguments #'($ 'arguments)]))
+      [(_ i:expr) #'($ $/arguments i)]
+      [(_ i:expr j:expr) #'($ $/arguments i)]
+      [arguments #'$/arguments]))
   (syntax-parse stx
     [(_ args:id body ...+)
      #`(syntax-parameterize ([arguments #,-arguments])
@@ -173,7 +176,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Errors
 
-(define default-check-message "Given: {0}, Expected: {1}, At: {2}")
+(define default-check-message "Expected: {0}, Given: {1}, At: {2}")
 
 (define-syntax-rule (type-check/raise type what)
   (unless (#js.type.check what)
@@ -199,11 +202,15 @@
 
 (define-syntax-rule (check/or c1 ...)
   (λ (v)
-    (and (c1 v) ...)))
+    (or (c1 v) ...)))
 
 (define-syntax-rule (check/and c1 ...)
   (λ (v)
     (and (c1 v) ...)))
+
+(define-syntax-rule (check/not c)
+  (λ (v)
+    (not (c v))))
 
 (define-syntax (check/pair-of? stx)
   (syntax-parse stx

@@ -15,11 +15,17 @@
          $/null
          $/typeof
          $/instanceof
+         $/arguments
          $/binop
+         $/str
+         $/this
          =>$
+         js-string
+         racket-string
          assoc->object)
 
-(require (for-syntax syntax/parse
+(require syntax/parse/define
+         (for-syntax syntax/parse
                      racket/string
                      racket/base
                      racket/sequence
@@ -94,6 +100,14 @@
   (syntax-parse stx
     [_ #`(#%js-ffi 'null)]))
 
+(define-syntax ($/this stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'this)]))
+
+(define-syntax ($/arguments stx)
+  (syntax-parse stx
+    [_ #`(#%js-ffi 'arguments)]))
+
 (define-syntax ($/obj stx)
   ;; TODO: What to do about ambiguity with the cases where fieldname
   ;; could be both string or symbol? Maybe generate string is it can't
@@ -159,7 +173,7 @@
                           (~datum "number")
                           (~datum "string")
                           (~datum "function"))))
-     #'(eqv? (#%js-ffi 'typeof e) v)]))
+     #'($/binop === (#%js-ffi 'typeof e) ($/str v))]))
 
 (define-syntax ($/instanceof stx)
   (syntax-parse stx
@@ -169,6 +183,16 @@
   (syntax-parse stx
     [(_ oper:id operand0:expr operand1:expr)
      #'(#%js-ffi 'operator 'oper operand0 operand1)]))
+
+(define (js-string e)
+  ($$ e.toString))
+
+(define (racket-string e)
+  (($ ($ '$rjs_core) 'UString 'makeImmutable) e))
+
+(define-syntax-parser $/str
+  [(_ v:str) #'(#%js-ffi 'string v)]
+  [(_ e:expr) #'(js-string e)])
 
 (define (assoc->object pairs)
   (define result ($/obj))

@@ -75,7 +75,6 @@
          (emit (~a oper))))]
     [(ILRef e s)
      (cond
-       [(symbol? e) (emit (normalize-symbol e))]
        [(wrap-e? e)
         (emit "(")
         (assemble-expr e out)
@@ -84,9 +83,7 @@
         (assemble-expr e out)])
      (emit (~a "." (normalize-symbol s)))]
     [(ILIndex e e0)
-     (if (symbol? e)
-         (emit (normalize-symbol e))
-         (assemble-expr e out))
+     (assemble-expr e out)
      (emit "[")
      (assemble-expr e0 out)
      (emit "]")]
@@ -101,9 +98,9 @@
      (emit "{")
      (for/last? ([i last? items])
                 (if (string? (car i))
-                    (begin (assemble-value (car i) out)
+                    (begin (emit "~s" (car i))
                            (emit ":"))
-                    (emit (format "'~a':" (car i))))
+                    (emit "'~a':" (car i)))
                 (assemble-expr (cdr i) out)
                 (unless last?
                   (emit ",")))
@@ -124,6 +121,10 @@
      (emit "null")]
     [(ILUndefined)
      (emit "undefined")]
+    [(ILArguments)
+     (emit "arguments")]
+    [(ILThis)
+     (emit "this")]
     [_ #:when (symbol? expr)
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
@@ -248,9 +249,9 @@
     (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
                            (jsruntime-module-path 'core)))
 
-  (emit (format "import * as ~a from '~a';"
-                (jsruntime-core-module)
-                core-import-path))
+  (emit "import * as ~a from '~a';"
+        (jsruntime-core-module)
+        core-import-path)
   (for ([req reqs*])
     (match-define (ILRequire mod obj-name import-sym) req)
     (define import-string
@@ -276,9 +277,9 @@
                  [(ILSimpleProvide id)
                   (emit (~a (normalize-symbol id)))]
                  [(ILRenamedProvide local-id exported-id)
-                  (emit (format "~a as ~a"
-                                (normalize-symbol local-id)
-                                (normalize-symbol exported-id)))])
+                  (emit "~a as ~a"
+                        (normalize-symbol local-id)
+                        (normalize-symbol exported-id))])
                (unless last?
                  (emit ",")))
 
@@ -289,13 +290,8 @@
   (define emit (curry fprintf out))
   ;; TODO: this will eventually be replaced by runtime primitives
   (cond
-    [(Quote? v) (assemble-value (Quote-datum v) out)] ;; FIXME
-    [(symbol? v)
-     (emit (~a (name-in-module 'core 'Symbol.make) "("))
-     (write (symbol->string v) out)
-     (emit ")")]
-    [(keyword? v) (emit (~a (name-in-module 'core 'Keyword.make) "('" v "')"))]
-    [(string? v) (write v out)]
+    [(string? v)
+     (emit "~s" v)]
     [(number? v)
      (match v
        [+inf.0 (emit "Infinity")]
@@ -305,60 +301,6 @@
        [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
-    [(empty? v) (emit (~a (name-in-module 'core 'Pair.Empty)))]
-    [(list? v)
-     (emit (~a (name-in-module 'core 'Pair.makeList) "("))
-     (for/last? ([item last? v])
-                (match item
-                  [(Quote v) (assemble-value v out)]
-                  [_ (assemble-value item out)])
-                (unless last?
-                  (emit ", ")))
-     (emit ")")]
-    [(vector? v)
-     (emit (~a (name-in-module 'core 'Vector.make) "(["))
-     (for/last? ([item last? (vector->list (cast v (Vectorof Any)))]) ;; HACK
-                (match item
-                  [(Quote v) (assemble-value v out)]
-                  [_ (assemble-value item out)])
-                (unless last?
-                  (emit ", ")))
-     (emit "], true)")]
-    [(hash? v)
-     (: maker Symbol)
-     (define maker (cond
-                     [(hash-eq? v) 'Hash.makeEq]
-                     [(hash-eqv? v) 'Hash.makeEqv]
-                     [(hash-equal? v) 'Hash.makeEqual]
-                     [else (error 'assemble-value "unknown hash type")]))
-     (define mutable (not (immutable? v)))
-     (emit (~a (name-in-module 'core maker) "(["))
-     (for/last? ([key last? (hash-keys v)]
-                 [val _ (hash-values v)])
-       (emit "[")
-       (assemble-value key out)
-       (emit ",")
-       (assemble-value val out)
-       (emit "]")
-       (unless last?
-         (emit ", ")))
-     (emit "], false)")]
-    [(cons? v)
-     (emit (~a (name-in-module 'core 'Pair.make) "("))
-     (assemble-value (car v) out)
-     (emit ", ")
-     (assemble-value (cdr v) out)
-     (emit ")")]
-    [(box? v)
-     (emit (~a (name-in-module 'core 'Box.make) "("))
-     (assemble-value (unbox v) out)
-     (emit ")")]
-    [(char? v)
-     (write (~a v) out)]
-    [(bytes? v)
-     (define byte-vals
-       (string-join (map number->string (bytes->list v)) ","))
-     (emit (format "new Uint8Array([~a])" byte-vals))]
     [(regexp? v)
      (define s (string-replace (cast (object-name v) String) "/" "\\/"))
      (write (format "/~a/" s) out)]
@@ -369,7 +311,7 @@
      (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
-    [else (displayln v) (error "TODO: Check how this thing actually works!")]))
+    [else (error "Unexpected value: " v)]))
 
 [module+ test
   (require typed/rackunit
@@ -408,39 +350,17 @@
 
   ;; Strings
   (check-value "Hello World!" "\"Hello World!\"")
-  (check-value 'hello (format "~a(\"hello\")" (name-in-module 'core 'Symbol.make)))
 
   ;; Booleans
   (check-value #t "true")
   (check-value #f "false")
-
-  ;; Lists and pairs
-  (check-value '() (~a (name-in-module 'core 'Pair.Empty)))
-  (check-value '(1) (~a (name-in-module 'core 'Pair.makeList) "(1)"))
-  (check-value '(1 2) (~a (name-in-module 'core 'Pair.makeList) "(1, 2)"))
-  (check-value '(1 2 (3 4) 5) (format "~a(1, 2, ~a(3, 4), 5)"
-                                      (name-in-module 'core 'Pair.makeList)
-                                      (name-in-module 'core 'Pair.makeList)))
-  (check-value '(1 . 2) (format "~a(1, 2)" (name-in-module 'core 'Pair.make)))
-  (check-value '(1 2 . 3) (format "~a(1, ~a(2, 3))"
-                                  (name-in-module 'core 'Pair.make)
-                                  (name-in-module 'core 'Pair.make)))
-
   (check-value (void) "null")
-
-  ;; Vectors
-  (check-value #(1 2 3) (format "~a([1, 2, 3], true)"
-                                (name-in-module 'core 'Vector.make))
-               "immutable vector")
-  (check-value #(1 2 3 (4 5)) (format "~a([1, 2, 3, ~a(4, 5)], true)"
-                                       (name-in-module 'core 'Vector.make)
-                                       (name-in-module 'core 'Pair.makeList))
-               "immutable vector with nested list")
 
   ;;; Expressions -------------------------------------------------------------
 
   ;; Values most should be covered above
-  (check-expr (ILValue "Hello World!") "\"Hello World!\"")
+  (check-expr (ILValue "Hello World!")
+              (format "\"Hello World!\""))
   (check-expr (ILValue 12) "12")
 
   ;; Lambda
@@ -457,7 +377,8 @@
 
   ;; Application
   (check-expr (ILApp 'add (list 'a 'b)) "add(a,b)")
-  (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar"))) "add(\"foo\",\"bar\")")
+  (check-expr (ILApp 'add (list (ILValue "foo") (ILValue "bar")))
+              "add(\"foo\",\"bar\")")
   (check-expr (ILApp (ILLambda '(x) (list (ILReturn 'x))) (list (ILValue "Hello")))
               "(function(x) {return x;})(\"Hello\")")
 
@@ -509,7 +430,7 @@
   (check-expr (ILRef (ILObject '()) 'valueOf)
               "({}).valueOf")
   (check-expr (ILRef (ILNew (ILApp 'String (list (ILValue "Hello!")))) 'valueOf)
-              "(new String(\"Hello!\")).valueOf")
+              (format "(new String(\"Hello!\")).valueOf"))
 
   ;; Objects
 
@@ -524,7 +445,7 @@
   ;; Arrays
 
   (check-expr (ILArray (list (ILValue 1) (ILValue "1") (ILObject '())))
-              "[1,\"1\",{}]")
+              (format "[1,\"1\",{}]"))
 
   ;; Instanceof
   (check-expr (ILInstanceOf (ILValue 1) (ILValue 2))

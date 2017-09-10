@@ -8,5 +8,5 @@
 (displayln (sum 100 0))
 (displayln (sum 1000 0))
 (displayln (sum 10000 0))
-;;(displayln (sum 15000 0))
+(displayln (sum 15000 0))
 

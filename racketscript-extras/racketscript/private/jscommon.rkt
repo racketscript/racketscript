@@ -4,12 +4,14 @@
                      syntax/parse))
 
 (provide :=
+         *this*
+         *null*
+         *undefined*
          new
          define-proto
          set-object!
          schedule-method
          schedule-animation-frame
-         ++
          document
          console
          Math
@@ -29,6 +31,9 @@
 
 (define-syntax  :=        (make-rename-transformer #'$/:=))
 (define-syntax  new       (make-rename-transformer #'$/new))
+(define-syntax *this*     (make-rename-transformer #'$/this))
+(define-syntax *null*       (make-rename-transformer #'$/null))
+(define-syntax *undefined*  (make-rename-transformer #'$/undefined))
 
 (begin-for-syntax
   (define-syntax-class field
@@ -64,7 +69,6 @@
 ;;-----------------------------------------------------------------------------
 ;; Helper functions
 
-(define ++        string-append)
 (define document  #js*.window.document)
 (define console   #js*.window.console)
 (define Math      #js*.window.Math)

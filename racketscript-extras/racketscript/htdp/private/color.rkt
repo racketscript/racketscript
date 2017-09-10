@@ -17,11 +17,11 @@
   ($ *color-table* (string-downcase color-string)))
 
 (define (color->web-color color)
-  (string-append "rgba("
-                 (color-red color) ","
-                 (color-green color) ","
-                 (color-blue color) ","
-                 (color-alpha color) ")"))
+  (format "rgba(~a,~a,~a,~a)"
+          (color-red color)
+          (color-green color)
+          (color-blue color)
+          (color-alpha color)))
 
 (define (string->web-color str)
   (color->web-color (string->color str)))

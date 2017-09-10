@@ -60,6 +60,8 @@
             ;; Should be ideally in values
             (ILNull)
             (ILUndefined)
+            (ILArguments)
+            (ILThis)
             Symbol]
 
   [ILStatement   ILExpr

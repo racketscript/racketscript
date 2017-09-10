@@ -1,20 +1,19 @@
 // Continuation Marks
-import * as Pair from "./pair.js"
-import * as Symbol from "./symbol.js"
-import * as $ from "./lib.js";
+import * as Pair from './pair.js';
+import * as Symbol from './symbol.js';
+import * as $ from './lib.js';
+import { hashForEq as HASH } from './hashing.js';
 
-let __frames = false;
-let __prompts = new Map();
-let __async_callback_wrappers = [];
-let __defaultContinuationPromptTag
-    = makeContinuationPromptTag(Symbol.make("default"));
-
-let HASH = $.hashEq;
+let __frames;
+const __prompts = new Map();
+const __async_callback_wrappers = [];
+const __defaultContinuationPromptTag
+    = makeContinuationPromptTag(Symbol.make('default'));
 
 /* --------------------------------------------------------------------------*/
 
 export function init() {
-    __frames = Pair.Empty;
+    __frames = Pair.EMPTY;
     savePrompt(__defaultContinuationPromptTag);
     enterFrame();
 }
@@ -35,7 +34,7 @@ init();
 // until given prompt. The most recent frame marked with a prompt is last
 // item in the array mapped to the prompt tag.
 
-//TODO: Handle default-continution-prompt-tag
+// TODO: Handle default-continution-prompt-tag
 
 function ContinuationPromptTag(tag) {
     this.tag = tag;
@@ -43,7 +42,7 @@ function ContinuationPromptTag(tag) {
 }
 
 export function AbortCurrentContinuation(promptTag, handlerArgs) {
-    this.name = "abort-current-continuation";
+    this.name = 'abort-current-continuation';
     this.promptTag = promptTag;
     this.handlerArgs = handlerArgs;
 
@@ -60,32 +59,31 @@ AbortCurrentContinuation.prototype.constructor = AbortCurrentContinuation;
 function savePrompt(promptTag) {
     let promptVal = __prompts.get(promptTag);
     if (promptVal === undefined) {
-	promptVal = []
-	__prompts.set(promptTag, promptVal);
+        promptVal = [];
+        __prompts.set(promptTag, promptVal);
     }
     // Most recent prompt is at the end of array.
-    promptVal.push(__frames.hd)
+    promptVal.push(__frames.hd);
 }
 
 function deleteCurrentPrompt(promptTag) {
-    let promptVal = __prompts.get(promptTag);
+    const promptVal = __prompts.get(promptTag);
     if (promptVal === undefined) {
-	throw $.racketCoreError("No corresponding tag in continuation!");
+        throw $.racketCoreError('No corresponding tag in continuation!');
     }
-    promptVal.pop()
+    promptVal.pop();
     if (promptVal.length === 0) {
-	__prompts.delete(promptTag);
+        __prompts.delete(promptTag);
     }
 }
 
 function getPromptFrame(promptTag) {
     if (promptTag === undefined) {
-	return promptTag;
-    } else {
-	let result = __prompts.get(promptTag);
-	return (result && result[result.length-1])
-	    || undefined;
+        return promptTag;
     }
+    const result = __prompts.get(promptTag);
+    return (result && result[result.length - 1])
+            || undefined;
 }
 
 export function makeContinuationPromptTag(sym) {
@@ -99,17 +97,16 @@ export function isContinuationPromptTag(tag) {
 export function callWithContinuationPrompt(proc, promptTag, handler, ...args) {
     promptTag = promptTag || __defaultContinuationPromptTag;
     try {
-	savePrompt(promptTag);
-	return proc.apply(null, args);
+        savePrompt(promptTag);
+        return proc(...args);
     } catch (e) {
-	if (e instanceof AbortCurrentContinuation &&
-	    e.promptTag === promptTag) {
-	    return handler.apply(null, e.handlerArgs);
-	} else {
-	    throw e;
-	}
+        if (e instanceof AbortCurrentContinuation &&
+            e.promptTag === promptTag) {
+            return handler(...e.handlerArgs);
+        }
+        throw e;
     } finally {
-	deleteCurrentPrompt(promptTag);
+        deleteCurrentPrompt(promptTag);
     }
 }
 
@@ -121,7 +118,7 @@ export function getFrames() {
 
 export function updateFrame(newFrames, oldFrames) {
     if (__frames !== oldFrames) {
-	throw new Error("current frame doesn't match with old frame");
+        throw new Error("current frame doesn't match with old frame");
     }
     return __frames = newFrames;
 }
@@ -132,73 +129,73 @@ export function enterFrame() {
 }
 
 export function setMark(key, value) {
-    let frame = __frames.hd;
+    const frame = __frames.hd;
     frame[HASH(key)] = value;
 }
 
 export function getContinuationMarks(promptTag) {
     promptTag = promptTag || __defaultContinuationPromptTag;
     let frames = __frames;
-    let promptFrame = getPromptFrame(promptTag);
+    const promptFrame = getPromptFrame(promptTag);
     if (promptFrame === undefined &&
-	promptTag !== __defaultContinuationPromptTag) {
-	throw $.racketCoreError("No corresponding tag in continuation!");
+        promptTag !== __defaultContinuationPromptTag) {
+        throw $.racketCoreError('No corresponding tag in continuation!');
     }
 
-    let result = [];
+    const result = [];
     while (!Pair.isEmpty(frames)) {
-	if (frames.hd === promptFrame) {
-	    break;
-	}
-	result.push(frames.hd);
-	frames = frames.tl;
+        if (frames.hd === promptFrame) {
+            break;
+        }
+        result.push(frames.hd);
+        frames = frames.tl;
     }
     return result;
 }
 
 export function getMarks(framesArr, key, promptTag) {
     promptTag = promptTag || __defaultContinuationPromptTag;
-    let keyHash = HASH(key);
-    let promptFrame = getPromptFrame(promptTag);
+    const keyHash = HASH(key);
+    const promptFrame = getPromptFrame(promptTag);
 
-    let result = []
+    const result = [];
     for (let ii = 0; ii < framesArr.length; ++ii) {
-	//FIXME: for-of requires polyfill
-	let fr = framesArr[ii];
-	if (keyHash in fr) {
-	    if (fr === promptFrame) {
-		break;
-	    }
-	    result.push(fr[keyHash]);
-	}
+        // FIXME: for-of requires polyfill
+        const fr = framesArr[ii];
+        if (keyHash in fr) {
+            if (fr === promptFrame) {
+                break;
+            }
+            result.push(fr[keyHash]);
+        }
     }
     return Pair.listFromArray(result);
 }
 
-//TODO: Used by parameterization. Add test cases around promptTag
-// and parameterization and check if that if this needs 
+// TODO: Used by parameterization. Add test cases around promptTag
+// and parameterization and check if that if this needs
 export function getFirstMark(frames, key, noneV) {
-    let keyHash = HASH(key);
+    const keyHash = HASH(key);
     return Pair.listFind(frames, (fr) => {
-	if (keyHash in fr) {
-	    return fr[keyHash];
-	}
+        if (keyHash in fr) {
+            return fr[keyHash];
+        }
     }) || noneV;
 }
 
 export function wrapWithContext(fn) {
     return (function (currentFrames) {
-	let state = {};
-	__async_callback_wrappers.forEach((w) => w.onCreate(state));
-	return function (...args) {
-	    init();
-	    __async_callback_wrappers.forEach((w) => w.onInvoke(state));
-	    try {
-		return fn.apply(null, args);
-	    } finally {
-		/* This callback/coroutine is finished */
-		__frames = undefined;
-	    }
-	}
-    })(__frames);
+        const state = {};
+        __async_callback_wrappers.forEach(w => w.onCreate(state));
+        return function (...args) {
+            init();
+            __async_callback_wrappers.forEach(w => w.onInvoke(state));
+            try {
+                return fn(...args);
+            } finally {
+                /* This callback/coroutine is finished */
+                __frames = undefined;
+            }
+        };
+    }(__frames));
 }
