@@ -7,9 +7,9 @@ import { internedMake } from './lib.js';
 import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextEncoder is not global and needs to be imported.
-if (typeof TextEncoder === 'undefined') {
-    var TextEncoder = require('util').TextEncoder;
-}
+const TextEncoder = (typeof window === 'undefined')
+    ? require('util').TextEncoder
+    : window.TextEncoder; // eslint-disable-line no-undef
 
 /**
  * A sequence of {Char.Char}s.
