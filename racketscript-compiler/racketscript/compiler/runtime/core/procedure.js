@@ -22,3 +22,13 @@ export function check(v) {
 export function toString(f) {
     return f.name ? `#<procedure:${f.name}>` : '#<procedure>';
 }
+
+/**
+ * Writes a string representation similar to Racket's `display` to the given port.
+ *
+ * @param {!Ports.NativeStringOutputPort} out
+ * @param {!Function} f
+ */
+export function displayNativeString(out, f) {
+    out.consume(toString(f));
+}

@@ -1,9 +1,9 @@
 import { Primitive } from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Char from './char.js';
-import * as Pair from './pair.js';
-import * as $ from './lib.js';
+import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { internedMake } from './lib.js';
+import { racketContractError } from './errors.js';
 import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextEncoder is not global and needs to be imported.
@@ -18,7 +18,7 @@ const TextEncoder = (typeof window === 'undefined')
  *
  * @abstract
  */
-export class UString extends Primitive {
+export class UString extends Primitive /* implements Printable */ {
     /**
      * @param {!Char.Char[]} chars
      * @param {(string|null)} nativeString
@@ -94,18 +94,19 @@ export class UString extends Primitive {
     }
 
     /**
-     *
      * @param {!number} i
      */
     checkIndexLtLength(i) {
         if (i >= this.length) {
-            throw $.racketContractError(this.length > 0
-                ? `string-ref: index is out of range
+            if (this.length > 0) {
+                throw racketContractError(`string-ref: index is out of range
   index: ${i}
   valid range: [0, ${this.length - 1}]
-  string: ${this.toRawString()}`
-                : `string-ref: index is out of range for empty string
+  string: `, this);
+            } else {
+                throw racketContractError(`string-ref: index is out of range for empty string
   index: ${i}`);
+            }
         }
     }
 
@@ -138,11 +139,98 @@ export class UString extends Primitive {
     }
 
     /**
-     * As source-code literal representation of this string.
+     * @param {!Ports.NativeStringOutputPort} out
      */
-    toRawString() {
-        // TODO: Improve Racket compatibility (e.g. unicode escapes).
-        return JSON.stringify(this.toString());
+    displayNativeString(out) {
+        out.consume(this.toString());
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    displayUString(out) {
+        out.consume(this);
+    }
+
+    /**
+     * Writes a string representation that can be read by Racket's `read` to the given port.
+     *
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        // The JSON representation happens to be readable by Racket's `read`.
+        out.consume('"');
+        for (const char of this.chars) {
+            const c = char.codepoint;
+            switch (c) {
+            // Reference implementation:
+            // https://github.com/racket/racket/blob/cbfcc904ab621a338627e77d8f5a34f930ead0ab/racket/src/racket/src/print.c#L3690
+            case 7:
+                out.consume('\\a');
+                break;
+            case 8:
+                out.consume('\\b');
+                break;
+            case 9:
+                out.consume('\\t');
+                break;
+            case 11:
+                out.consume('\\v');
+                break;
+            case 12:
+                out.consume('\\f');
+                break;
+            case 10:
+                out.consume('\\n');
+                break;
+            case 13:
+                out.consume('\\r');
+                break;
+            case 27:
+                out.consume('\\e');
+                break;
+            case 34:
+                out.consume('\\"');
+                break;
+            case 92:
+                out.consume('\\\\');
+                break;
+            default:
+                if (Char.isGraphicCodepoint(c) || Char.isBlankCodepoint(c)) {
+                    out.consume(char.toString());
+                } else {
+                    out.consume(c > 0xFFFF
+                        ? `\\U${c.toString(16).toUpperCase().padStart(8, '0')}`
+                        : `\\u${c.toString(16).toUpperCase().padStart(4, '0')}`);
+                }
+            }
+        }
+        out.consume('"');
+    }
+
+    /**
+     * Writes a UString representation that can be read by Racket's `read` to the given port.
+     *
+     * @param {!Ports.UStringOutputPort} out
+     */
+    writeUString(out) {
+        const stringOut = new MiniNativeOutputStringPort();
+        this.writeNativeString(stringOut);
+        out.consume(makeMutable(stringOut.getOutputString()));
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.writeNativeString(out);
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    printUString(out) {
+        this.writeUString(out);
     }
 }
 
@@ -176,6 +264,16 @@ class ImmutableBMPString extends ImmutableUString {
             this.chars.slice(start, end),
             this.toString().substring(start, end)
         );
+    }
+
+    /**
+     * Writes a string representation that can be read by Racket's `read` to the given port.
+     *
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        // The JSON representation for BMP strings happens to be readable by Racket's `read`.
+        out.consume(JSON.stringify(this.toString()));
     }
 }
 
@@ -276,15 +374,6 @@ export function stringToImmutableString(v) {
     return v instanceof ImmutableUString
         ? v
         : makeImmutableFromCharsAndNativeString(v.chars, v.toString());
-}
-
-/**
- * @param {!Pair.Pair} charsList a list of chars
- * @return {!MutableUString}
- */
-export function listToString(charsList) {
-    const chars = Pair.listToArray(charsList);
-    return new MutableUString(chars, chars.join(''));
 }
 
 /**
@@ -394,20 +483,21 @@ export function stringAppend(...strs) {
     return makeMutableFromChars([].concat(...strs.map(s => s.chars)));
 }
 
-const TRUE_STRING = makeInternedImmutable($.toString(true));
-const FALSE_STRING = makeInternedImmutable($.toString(false));
-const VOID_STRING = makeInternedImmutable($.toString(null));
+// The Char Printable *UString methods are defined here,
+// because Char cannot depend on UString.
 
 /**
- * @param {any} v
- * @return {!UString}
+ * @param {!Ports.UStringOutputPort} out
  */
-export function toUString(v) {
-    if (check(v)) return v;
-    if (v === true) return TRUE_STRING;
-    if (v === false) return FALSE_STRING;
-    if (v === undefined || v === null) return VOID_STRING;
-    if (Bytes.check(v)) return makeImmutable(Bytes.toString(v));
-    if ('toUString' in v) return v.toUString();
-    return makeImmutable(v.toString());
-}
+Char.Char.prototype.displayUString = function (out) {
+    out.consume(new MutableUString([this], this._nativeString));
+};
+
+/**
+ * @param {!Ports.UStringOutputPort} out
+ */
+Char.Char.prototype.writeUString = function (out) {
+    const stringOut = new MiniNativeOutputStringPort();
+    this.writeNativeString(stringOut);
+    out.consume(makeMutable(stringOut.getOutputString()));
+};

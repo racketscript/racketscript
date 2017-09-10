@@ -1,18 +1,18 @@
-import { Primitive } from './primitive.js';
+import { PrintablePrimitive } from './printable_primitive.js';
 import { internedMake } from './lib.js';
 
-class Keyword extends Primitive {
+class Keyword extends PrintablePrimitive {
     constructor(v) {
         super();
         this.v = v;
     }
 
-    toString() {
-        return this.v;
-    }
-
-    toRawString() {
-        return `'${this.v}`;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#:');
+        out.consume(this.v);
     }
 
     equals(v) {

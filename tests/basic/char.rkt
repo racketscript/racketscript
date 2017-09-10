@@ -40,3 +40,10 @@
 
 (displayln (char-utf-8-length #\a))
 (displayln (char-utf-8-length #\🎂))
+
+(println #\a)
+(println #\tab)
+(println #\߆)
+
+; This test requires a full implementation of isGraphicCodepoint to pass.
+; (println #\🎂)

@@ -22,3 +22,15 @@
 (pair? (cons 1 #\x))
 
 (immutable? '())
+
+(displayln (cons 1 #\x))
+(writeln (cons 1 #\x))
+(println (cons 1 #\x))
+
+(displayln '(1 2 3))
+(displayln '())
+(writeln '(1 2 3))
+(writeln '())
+(println '(1 2 3))
+(println '(1 2 3) (current-output-port) 1)
+(println '())

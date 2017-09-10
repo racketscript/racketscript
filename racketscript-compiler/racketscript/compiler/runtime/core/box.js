@@ -1,19 +1,16 @@
-import { Primitive } from './primitive.js';
+import { PrintablePrimitive } from './printable_primitive.js';
 import { isEqual } from './equality.js';
 import { hashForEqual } from './hashing.js';
+import { displayNativeString, writeNativeString } from './print_native_string.js';
+import { displayUString, writeUString } from './print_ustring.js';
+import * as UString from './unicode_string.js';
 
-class Box extends Primitive {
+const BOX_PREFIX_USTRING = UString.makeInternedImmutable('#&');
+
+class Box extends PrintablePrimitive {
     constructor(v) {
         super();
         this.value = v;
-    }
-
-    toString() {
-        return this.value;
-    }
-
-    toRawString() {
-        return this.toString();
     }
 
     set(v) {
@@ -37,6 +34,38 @@ class Box extends Primitive {
      */
     hashForEqual() {
         return hashForEqual(this.value);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#&');
+        displayNativeString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    displayUString(out) {
+        out.consume(BOX_PREFIX_USTRING);
+        displayUString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        out.consume('#&');
+        writeNativeString(out, this.value);
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    writeUString(out) {
+        out.consume(BOX_PREFIX_USTRING);
+        writeUString(out, this.value);
     }
 }
 

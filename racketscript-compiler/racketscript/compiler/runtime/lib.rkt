@@ -176,13 +176,10 @@
 ;; ----------------------------------------------------------------------------
 ;; Errors
 
-(define default-check-message "Expected: {0}, Given: {1}, At: {2}")
-
 (define-syntax-rule (type-check/raise type what)
   (unless (#js.type.check what)
-    (throw (#js.Core.racketContractError "expected a {0}, but given {1}"
-                                         type
-                                         what))))
+    (throw (#js.Core.racketContractError "expected a" type
+                                         ", but given" what))))
 
 (define-syntax (check/raise stx)
   (syntax-parse stx
@@ -195,10 +192,9 @@
     [(_ chkfn what expected at)
      #'(unless (chkfn what)
          (throw
-          (#js.Core.racketContractError default-check-message
-                                        expected
-                                        what
-                                        at)))]))
+          (#js.Core.racketContractError "Expected:" expected ", given:" what
+                                        ", at:" at)))]))
+
 
 (define-syntax-rule (check/or c1 ...)
   (λ (v)

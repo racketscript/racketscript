@@ -587,16 +587,6 @@
 
 (define+provide string #js.Core.UString.makeMutableFromCharsVarArgs)
 
-; TODO: This should return a UString and its behaviour should match Racket.
-(define+provide ~a
-  (v-λ args
-    ($> (array)
-        reduce
-        (call args
-              (λ (x r)
-                (binop + r (#js.Core.toString x)))
-              ""))))
-
 (define+provide string-append
     #js.Core.UString.stringAppend)
 
@@ -621,7 +611,14 @@
 (define+provide (string? v)
   (#js.Core.UString.check v))
 
-(define+provide format #js.Kernel.format)
+(define+provide (fprintf out form . args)
+  (apply #js.Kernel.fprintf (print-as-expression) out form args))
+
+(define+provide (format form . args)
+  (let ([out (open-output-string)])
+       (apply fprintf out form args)
+       (get-output-string out)))
+
 (define+provide symbol? #js.Core.Symbol.check)
 
 (define+provide (make-string k [c #\nul])
@@ -756,51 +753,6 @@
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 
 ;; --------------------------------------------------------------------------
-;; Ports + Writers
-
-(define+provide (current-output-port)
-  #js.Core.Ports.currentOutputPort)
-
-(define+provide (current-error-port)
-  #js.Core.Ports.currentErrorPort)
-
-(define+provide (current-print)
-  (λ (p)
-    (when (string? p)
-      (display "\""))
-    (display p)
-    (when (string? p)
-      (display "\""))
-    (newline)))
-
-(define+provide (port? p)
-  (#js.Core.Ports.isPort p))
-
-(define+provide (input-port? p)
-  (#js.Core.Ports.isInputPort p))
-
-(define+provide (output-port? p)
-  (#js.Core.Ports.isOutputPort p))
-
-(define+provide (string-port? p)
-  (#js.Core.Ports.isStringPort p))
-
-(define+provide (open-output-string)
-  (#js.Core.Ports.openOutputString))
-
-(define+provide (get-output-string p)
-  (#js.Core.Ports.getOutputString p))
-
-;; --------------------------------------------------------------------------
-;; Printing
-
-(define+provide (display v [out (current-output-port)]) (#js.Kernel.display v out))
-(define+provide (print v [out (current-output-port)]) (#js.Kernel.print v out))
-
-(define+provide (newline [out (current-output-port)])
-  (display "\n" out))
-
-;; --------------------------------------------------------------------------
 ;; Errors
 
 (define+provide error #js.Kernel.error)
@@ -852,6 +804,55 @@
   (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
                                                 #js.Paramz.ExceptionHandlerKey)])
     (abort-ccp e)))
+
+;; --------------------------------------------------------------------------
+;; Ports + Writers
+
+(define+provide current-output-port
+  (make-parameter #js.Core.Ports.standardOutputPort))
+
+(define+provide current-error-port
+  (make-parameter #js.Core.Ports.standardErrorPort))
+
+(define+provide current-print
+  (make-parameter
+    (λ (p)
+      (when (not (void? p))
+        (print p)  ; can't use println here yet (it's defined by private/misc.rkt)
+        (newline)))))
+
+(define+provide (port? p)
+  (#js.Core.Ports.check p))
+
+(define+provide (input-port? p)
+  (#js.Core.Ports.isInputPort p))
+
+(define+provide (output-port? p)
+  (#js.Core.Ports.isOutputPort p))
+
+(define+provide (string-port? p)
+  (#js.Core.Ports.isStringPort p))
+
+(define+provide (open-output-string)
+  (#js.Core.Ports.openOutputString))
+
+(define+provide (get-output-string p)
+  (#js.Core.Ports.getOutputString p))
+
+;; --------------------------------------------------------------------------
+;; Printing
+
+(define+provide print-as-expression (make-parameter #t))
+
+(define+provide (display datum [out (current-output-port)])
+  (#js.Core.display out datum))
+(define+provide (write datum [out (current-output-port)])
+  (#js.Core.write out datum))
+(define+provide (print datum [out (current-output-port)] [quote-depth 0])
+  (#js.Core.print out datum (print-as-expression) quote-depth))
+
+(define+provide (newline [out (current-output-port)])
+  (display "\n" out))
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
