@@ -24,3 +24,23 @@
  (with-continuation-mark 'key 'value
    (extract-current-continuation-marks
     (string->uninterned-symbol "key"))))
+
+(displayln
+ (with-continuation-mark 'key 'value
+   (let ([k2 (string->uninterned-symbol "key")])
+   (with-continuation-mark k2 'inner-value
+     (list (extract-current-continuation-marks k2)
+           (extract-current-continuation-marks 'key))))))
+
+(displayln
+ (with-continuation-mark (box 'a) 'value
+   (let ([k2 (box 'b)])
+   (with-continuation-mark k2 'inner-value
+     (list (extract-current-continuation-marks (box 'a))
+           (extract-current-continuation-marks (box 'b))
+           (extract-current-continuation-marks k2))))))
+
+;; Since RS numbers may not be JS numbers forever.
+(displayln
+ (with-continuation-mark 123 'value
+   (extract-current-continuation-marks 123)))
