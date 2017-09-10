@@ -16,4 +16,11 @@
     (set! p2 p2*)
     (displayln (list (p1) (p2)))))
 
+(define falsy-param (make-parameter #t))
+(displayln (falsy-param))
+(parameterize ([falsy-param #f])
+  (displayln (falsy-param)))
+(parameterize ([falsy-param 0])
+  (displayln (falsy-param)))
+
 (displayln (list (p1) (p2)))

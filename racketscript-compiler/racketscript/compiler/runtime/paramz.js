@@ -37,7 +37,8 @@ export function makeParameter(initValue) {
     const param = function (maybeSetVal) {
         // Get current value box from parameterization. The function
         // `param` that we result is the key.
-        let pv = getCurrentParameterization().get(param, false) ||
+        const current = getCurrentParameterization();
+        let pv = (current && current.get(param, false)) ||
             __top.get(param, false);
         // Create entry in __top if its a mutation.
         if (!pv && maybeSetVal !== undefined) {
@@ -46,7 +47,7 @@ export function makeParameter(initValue) {
         }
         // Get/Set
         if (maybeSetVal === undefined) {
-            return (pv && pv.get()) || initValue;
+            return pv ? pv.get() : initValue;
         }
         pv.set(maybeSetVal);
     };
