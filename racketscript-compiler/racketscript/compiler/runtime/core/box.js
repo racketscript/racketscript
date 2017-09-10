@@ -1,5 +1,6 @@
 import { Primitive } from './primitive.js';
 import { isEqual } from './equality.js';
+import { hashForEqual } from './hashing.js';
 
 class Box extends Primitive {
     constructor(v) {
