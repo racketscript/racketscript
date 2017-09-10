@@ -81,7 +81,10 @@
         (emit ")")]
        [else
         (assemble-expr e out)])
-     (emit (~a "." (normalize-symbol s)))]
+     (let ([s* (if (js-identifier? s)
+                   s
+                   (normalize-symbol s))])
+       (emit (~a "." s*)))]
     [(ILIndex e e0)
      (assemble-expr e out)
      (emit "[")
@@ -414,6 +417,19 @@
   (check-expr (ILRef (ILRef (ILRef 'global 'window) 'document) 'write)
               "global.window.document.write"
               "successive refs to object shouldn't generate parens")
+
+  (check-expr (ILRef 'obj 'static)
+              "obj.static"
+              "Reserved keywords do not require normalization here")
+
+  (check-expr (ILRef 'obj 'if)
+              "obj.if"
+              "Reserved keywords do not require normalization here")
+
+  ;;TODO: Should we do this?
+  (check-expr (ILRef 'obj 'if-not)
+              "obj.if_not"
+              "Do normalization for other symbols")
 
   ;; NOTE: These are some cases whose output could be improved in future by reducing
   ;; unnecessary parens

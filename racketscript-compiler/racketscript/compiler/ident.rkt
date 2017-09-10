@@ -13,6 +13,7 @@
 
 (provide fresh-id
          fresh-id-counter
+         reserved-keyword?
          normalize-symbol)
 
 ;;; Identifier renaming -------------------------------------------------------
@@ -32,7 +33,7 @@
 
   (cond
     [(false? (should-rename? ss)) ss]
-    [(reserved-keyword? ss)
+    [(reserved-keyword? s)
      (~a "r" ss)]
    [else
      (match-define (cons ch-first ch-rest) (string->list ss))
@@ -68,9 +69,9 @@
   (check-true (valid-literal-atom? #\3 #f))
   (check-false (valid-literal-atom? #\3 #t)))
 
-(: reserved-keyword? (-> String Boolean))
+(: reserved-keyword? (-> Symbol Boolean))
 (define (reserved-keyword? s)
-  (set-member? es6-reserved-keywords (string->symbol s)))
+  (set-member? es6-reserved-keywords s))
 
 (: normalize-symbol-atom (->* (Char Boolean) ((Listof String)) String))
 (define (normalize-symbol-atom ch first? [ignores '()])

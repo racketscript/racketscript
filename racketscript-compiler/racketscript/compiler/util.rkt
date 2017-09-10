@@ -20,6 +20,7 @@
 
 (require/typed "util-untyped.rkt"
   [improper->proper (-> (Pairof Any Any) (Listof Any))]
+  [js-identifier? (-> Symbol Boolean)]
   [links-module? (-> Path
                      (Option (List String Path)))])
 
@@ -37,6 +38,7 @@
          module-output-file
          module->relative-import
          actual-module-path
+         js-identifier?
          jsruntime-import-path
          path-parent
          length=?

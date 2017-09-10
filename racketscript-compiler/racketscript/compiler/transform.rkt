@@ -340,6 +340,7 @@
                   ;; HACK: To avoid wrapping the base symbol into
                   ;; Symbol class We have to generate code context
                   ;; sensitively
+                  ;; TODO: We should accept only vaild JS idents.
                   (if (ILValue? il)
                       (ILRef (cast (ILValue-v il) Symbol)
                              (cast s Symbol))
@@ -502,6 +503,17 @@
       overwrite-mark-frame?)]
 
     [(ImportedIdent id src reachable?)
+     ;; Imported Identifiers are compiled to a ref operation from the
+     ;; module object. We do normalize the field we are looking for in
+     ;; ILRef but only if its not a valid JavaScript id literal, which
+     ;; excludes reserved keywords in this case.
+     ;;
+     ;; Hence, we have to normalize those cases right here so that we
+     ;; refer to right binding.
+     (define id* (if (reserved-keyword? id)
+                     (string->symbol (normalize-symbol id))
+                     id))
+
      ;; For compiling #%kernel (or primitive module) we may end
      ;; up thinking that's id is imported as we are actually
      ;; overriding the module. Don't make it happen.
@@ -520,10 +532,10 @@
         (values '()
                 (ILRef (ILRef (assert mod-obj-name symbol?)
                               *quoted-binding-ident-name*)
-                       id))]
+                       id*))]
        [else
         (define mod-obj-name (hash-ref (module-object-name-map) src))
-        (values '() (ILRef (assert mod-obj-name symbol?) id))])]
+        (values '() (ILRef (assert mod-obj-name symbol?) id*))])]
 
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key
