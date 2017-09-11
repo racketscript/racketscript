@@ -124,7 +124,8 @@
 
 (define-proto EmptyScene
   (λ (width height borders?)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
                  [type      "empty-scene"]
                  [width     width]
                  [height    height]
@@ -135,7 +136,8 @@
 
 (define-proto Text
   (λ (text size color face family style weight underline?)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
                  [type       "text"]
                  [text       text]
                  [size       size]
@@ -145,47 +147,51 @@
                  [style      style]
                  [weight     weight]
                  [underline  underline?])
-    (#js*.this._updateMetrics))
+    (#js.this._updateMetrics))
   [_updateMetrics
    (λ ()
+     #:with-this this
      (define font (string-append
-                     #js*.this.weight " "
-                     #js*.this.style " "
-                     (number->string #js*.this.size) "px "
-                     #js*.this.face " "
-                     #js*.this.family))
+                     #js.this.weight " "
+                     #js.this.style " "
+                     (number->string #js.this.size) "px "
+                     #js.this.face " "
+                     #js.this.family))
 
      (:= ($ *invisible-canvas-context* 'font) (js-string font))
      (define metrics ($> *invisible-canvas-context*
-                         (measureText (js-string #js*.this.text))))
+                         (measureText (js-string #js.this.text))))
 
-     (set-object! #js*.this
+     (set-object! this
                   [font    font]
                   [width   #js.metrics.width]
-                  [height  #js*.this.size]))]
+                  [height  #js.this.size]))]
   [render
    (λ (ctx x y)
+     #:with-this this
      (with-origin ctx [x y]
        (set-object! ctx
-                    [font          (js-string #js*.this.font)]
+                    [font          (js-string #js.this.font)]
                     [textAlign     #js"center"]
                     [textBaseline  #js"middle"]
-                    [fillStyle     (js-string #js*.this.color)])
-       (#js.ctx.fillText (js-string #js*.this.text) 0 0)))])
+                    [fillStyle     (js-string #js.this.color)])
+       (#js.ctx.fillText (js-string #js.this.text) 0 0)))])
 
 (define-proto Line
   (λ (x y pen-or-color)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
                  [type    "line"]
                  [width   (abs+ceil x)]
                  [height  (abs+ceil y)]
                  [mode    #f]
                  [pen     pen-or-color]))
   [render (λ (ctx x y)
+            #:with-this this
             (with-origin ctx [x y]
-              (with-path ctx {"outline" #js*.this.pen}
-                (define sx (- (abs (half #js*.this.x))))
-                (define sy (- (abs (half #js*.this.y))))
+              (with-path ctx {"outline" #js.this.pen}
+                (define sx (- (abs (half #js.this.x))))
+                (define sy (- (abs (half #js.this.y))))
                 (cond
                   [(and (>= x 0) (>= y 0))
                    (#js.ctx.moveTo sx sy)
@@ -202,7 +208,8 @@
 
 (define-proto Rectangle
   (λ (width height mode pen-or-color)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
       [type     "rectangle"]
       [width    width]
       [height   height]
@@ -210,18 +217,20 @@
       [pen      pen-or-color]))
   [render
    (λ (ctx x y)
+     #:with-this this
      (with-origin ctx [x y]
-       (with-path ctx {#js*.this.mode #js*.this.pen}
-         (let* ([width     #js*.this.width]
-                [height    #js*.this.height]
+       (with-path ctx {#js.this.mode #js.this.pen}
+         (let* ([width     #js.this.width]
+                [height    #js.this.height]
                 [start-x   (- (half width))]
                 [start-y   (- (half height))])
            (#js.ctx.rect start-x start-y width height)))))])
 
 (define-proto Circle
   (λ (radius mode pen-or-color)
+    #:with-this this
     (define diameter (twice radius))
-    (set-object! #js*.this
+    (set-object! this
       [type     "circle"]
       [radius   radius]
       [width    diameter]
@@ -230,22 +239,24 @@
       [pen      pen-or-color]))
   [render
    (λ (ctx x y)
-     (define radius #js*.this.radius)
+     #:with-this this
+     (define radius #js.this.radius)
      (with-origin ctx [x y]
-       (with-path ctx {#js*.this.mode #js*.this.pen}
+       (with-path ctx {#js.this.mode #js.this.pen}
          (#js.ctx.ellipse 0 0            ;; center
                           radius radius  ;; radius-x, radius-y
                           0 0 (twice #js.Math.PI)))))])
 
 (define-proto Polygon
   (λ (vertices mode pen-or-color)
+    #:with-this this
     (define xs (map posn-x vertices))
     (define ys (map posn-y vertices))
 
     (define width (- (apply max xs) (apply min xs)))
     (define height (- (apply max ys) (apply min xs)))
 
-    (set-object! #js*.this
+    (set-object! this
                  [type       "polygon"]
                  [vertices   vertices]
                  [width      width]
@@ -254,11 +265,12 @@
                  [pen        pen-or-color]))
   [render
    (λ (ctx x y)
-     (define first-point (car #js*.this.vertices))
-     (define rest-points (cdr #js*.this.vertices))
-     (define radius #js*.this.radius)
+     #:with-this this
+     (define first-point (car #js.this.vertices))
+     (define rest-points (cdr #js.this.vertices))
+     (define radius #js.this.radius)
      (with-origin ctx [x y]
-       (with-path ctx {#js*.this.mode #js*.this.pen}
+       (with-path ctx {#js.this.mode #js.this.pen}
          (#js.ctx.moveTo (posn-x first-point) (posn-y first-point))
          (let loop ([points rest-points])
            (unless (null? points)
@@ -315,6 +327,7 @@
 
 (define-proto Overlay
   (λ (x-place y-place ima imb)
+    #:with-this this
     (define ima-cx (half #js.ima.width))
     (define ima-cy (half #js.ima.height))
     (define imb-cx (half #js.imb.width))
@@ -395,7 +408,7 @@
            [else
              (error "invalid y-place align")])]))
 
-    (set-object! #js*.this
+    (set-object! this
       [type       "overlay"]
       [ima        ima]
       [imb        imb]
@@ -407,15 +420,17 @@
       [bDy        δ-b-y]))
   [render
    (λ (ctx x y)
-     (define ima #js*.this.ima)
-     (define imb #js*.this.imb)
+     #:with-this this
+     (define ima #js.this.ima)
+     (define imb #js.this.imb)
      (with-origin ctx [x y]
-       (#js.imb.render ctx #js*.this.bDx #js*.this.bDy)
-       (#js.ima.render ctx #js*.this.aDx #js*.this.aDy)))])
+       (#js.imb.render ctx #js.this.bDx #js.this.bDy)
+       (#js.ima.render ctx #js.this.aDx #js.this.aDy)))])
 
 (define-proto Container
   (λ (childs posns width height)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
       [type     "container"]
       [childs   childs]
       [posns    posns]
@@ -423,15 +438,16 @@
       [height   height]))
   [render
    (λ (ctx x y)
-     (define width   #js*.this.width)
-     (define height  #js*.this.height)
+     #:with-this this
+     (define width   #js.this.width)
+     (define height  #js.this.height)
 
      (with-origin ctx [(- x (half width)) (- y (half height))]
        (#js.ctx.beginPath)
        (#js.ctx.rect 0 0 (sub1 width) (sub1 height))
        (#js.ctx.clip)
-       (let loop ([childs #js*.this.childs]
-                  [posns  #js*.this.posns])
+       (let loop ([childs #js.this.childs]
+                  [posns  #js.this.posns])
          (unless (null? childs)
            (define child (car childs))
            (define posn (car posns))
@@ -443,7 +459,8 @@
 
 (define-proto Bitmap
   (λ (data)
-    (define self #js*.this)
+    #:with-this this
+    (define self #js.this)
     (define image (new #js*.Image))
     (:= #js.image.src (js-string data))
     (set-object! self
@@ -452,7 +469,8 @@
                  [height #js.image.height]))
     [render
      (λ (ctx x y)
-       (define image #js*.this.image)
+       #:with-this this
+       (define image #js.this.image)
        (with-origin ctx [x y]
          (#js.ctx.drawImage image
                             (- (half #js.image.width))
@@ -461,6 +479,7 @@
 
 (define-proto Freeze
   (λ (img)
+    #:with-this this
     (define canvas (#js.document.createElement #js"canvas"))
     (define ctx (#js.canvas.getContext #js"2d"))
 
@@ -472,16 +491,17 @@
     (with-origin ctx [(half width) (half height)]
       (#js.img.render ctx 0 0))
 
-    (set-object! #js*.this
+    (set-object! this
                  [width    width]
                  [height   height]
                  [canvas   canvas]))
   [render
    (λ (ctx x y)
-     (define width #js*.this.width)
-     (define height #js*.this.height)
+     #:with-this this
+     (define width #js.this.width)
+     (define height #js.this.height)
      (with-origin ctx [x y]
-       (#js.ctx.drawImage #js*.this.canvas
+       (#js.ctx.drawImage #js.this.canvas
                           (- (half width))
                           (- (half height)))))])
 
@@ -492,6 +512,7 @@
 ;; TODO: Rotated bouding box is not actually right.
 (define-proto Rotate
   (λ (image angle)
+    #:with-this this
     (define width #js.image.width)
     (define height #js.image.height)
     (define θ (/ (* #js.Math.PI angle) 180.0))
@@ -519,21 +540,23 @@
     (define rotated-width   (floor (- max-x min-x)))
     (define rotated-height  (floor (- max-y min-y)))
 
-    (set-object! #js*.this
+    (set-object! this
                  [image        image]
                  [width        rotated-width]
                  [height       rotated-height]
                  [degrees      angle]
                  [radians      θ]))
   [render
-   (λ (ctx x y)1
+   (λ (ctx x y)
+     #:with-this this
      (with-origin ctx [x y]
-       (#js.ctx.rotate #js*.this.radians)
-       (#js*.this.image.render ctx 0 0)))])
+       (#js.ctx.rotate #js.this.radians)
+       (#js.this.image.render ctx 0 0)))])
 
 (define-proto Scale
   (λ (image x-factor y-factor)
-    (set-object! #js*.this
+    #:with-this this
+    (set-object! this
                  [image        image]
                  [x-factor     x-factor]
                  [y-factor     y-factor]
@@ -541,9 +564,10 @@
                  [height       (abs (floor (* #js.image.height y-factor)))]))
   [render
    (λ (ctx x y)
+     #:with-this this
      (with-origin ctx [x y]
-       (#js.ctx.scale #js*.this.x-factor #js*.this.y-factor)
-       (#js*.this.image.render ctx 0 0)))])
+       (#js.ctx.scale #js.this.x-factor #js.this.y-factor)
+       (#js.this.image.render ctx 0 0)))])
 
 (define (container childs posns width height)
   (new (Container childs posns width height)))

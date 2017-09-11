@@ -26,18 +26,20 @@
 
 (define-proto BigBang
   (λ (init-world handlers)
-    (:= #js*.this.world      init-world)
-    (:= #js*.this.interval   (/ 1000 *default-frames-per-second*))
-    (:= #js*.this.handlers   handlers)
+    #:with-this this
+    (:= #js.this.world      init-world)
+    (:= #js.this.interval   (/ 1000 *default-frames-per-second*))
+    (:= #js.this.handlers   handlers)
 
-    (:= #js*.this.-active-handlers         ($/obj))
-    (:= #js*.this.-world-change-listeners  ($/array))
+    (:= #js.this.-active-handlers         ($/obj))
+    (:= #js.this.-world-change-listeners  ($/array))
 
-    (:= #js*.this.-idle       #t)
-    (:= #js*.this.-stopped    #t)
-    (:= #js*.this.-events     ($/array)))
+    (:= #js.this.-idle       #t)
+    (:= #js.this.-stopped    #t)
+    (:= #js.this.-events     ($/array)))
   [setup
    (λ ()
+     #:with-this this
      ;; Create canvas DOM element and add to screen
      (define canvas  (#js.document.createElement #js"canvas"))
      (define ctx     (#js.canvas.getContext #js"2d"))
@@ -45,32 +47,33 @@
      (#js.canvas.setAttribute #js"tabindex" 1)
      (#js.canvas.setAttribute #js"style" #js"outline: none")
 
-     (:= #js*.this.-canvas    canvas)
-     (:= #js*.this.-context   ctx)
+     (:= #js.this.-canvas    canvas)
+     (:= #js.this.-context   ctx)
 
      (#js.document.body.appendChild canvas)
      (#js.canvas.focus)
 
-     (#js*.this.register-handlers)
+     (#js.this.register-handlers)
 
      ;; Set canvas size as the size of first world
-     (define draw-handler ($ #js*.this.-active-handlers #js"to-draw"))
+     (define draw-handler ($ #js.this.-active-handlers #js"to-draw"))
      (unless draw-handler
        (error 'big-bang "to-draw handle not provided"))
-     (define img ($$ draw-handler.callback #js*.this.world))
+     (define img ($$ draw-handler.callback #js.this.world))
      (:= #js.canvas.width   #js.img.width)
      (:= #js.canvas.height  #js.img.height)
 
      ;; We are reassiging using change-world so that change world
      ;; callbacks gets invoked at start of big-bang
-     (#js*.this.change-world #js*.this.world)
+     (#js.this.change-world #js.this.world)
 
-     #js*.this)]
+     this)]
   [register-handlers
    (λ ()
-     (define active-handlers #js*.this.-active-handlers)
-     (define self #js*.this)
-     (let loop ([handlers #js*.this.handlers])
+     #:with-this this
+     (define active-handlers #js.this.-active-handlers)
+     (define self this)
+     (let loop ([handlers #js.this.handlers])
        (when (pair? handlers)
          (define h ((car handlers) self))
          (#js.h.register)
@@ -78,58 +81,66 @@
          (loop (cdr handlers)))))]
   [deregister-handlers
    (λ ()
-     (define active-handlers #js*.this.-active-handlers)
-     (define self #js*.this)
+     #:with-this this
+     (define active-handlers #js.this.-active-handlers)
      ($> (#js*.Object.keys active-handlers)
          (forEach
           (λ (key)
             (define h ($ active-handlers key))
             (#js.h.deregister)
-            (:= ($ #js.active-handlers #js.h.name) #js*.undefined)))))]
+            (:= ($ #js.active-handlers #js.h.name) *undefined*)))))]
   [start
    (λ ()
-     (:= #js*.this.-stopped #f)
-     (#js*.this.process-events))]
+     #:with-this this
+     (:= #js.this.-stopped #f)
+     (#js.this.process-events))]
   [stop
    (λ ()
-     (#js*.this.clear-event-queue)
-     (set-object! #js*.this
+     #:with-this this
+     (#js.this.clear-event-queue)
+     (set-object! this
                   [-stopped #t]
                   [-idle    #t])
-     (#js*.this.deregister-handlers)
-     (set-object! #js*.this
+     (#js.this.deregister-handlers)
+     (set-object! #js.this
                   [-active-handlers ($/obj)]
                   [handlers '()]))]
   [clear-event-queue
    (λ ()
-     (#js*.this.-events.splice 0 #js*.this.-events.length))]
+     #:with-this this
+     (#js.this.-events.splice 0 #js.this.-events.length))]
   [queue-event
    (λ (e)
-     (#js*.this.-events.push e)
-     (when #js*.this.-idle
-       (schedule-animation-frame #js*.this 'process_events)))]
+     #:with-this this
+     (#js.this.-events.push e)
+     (when #js.this.-idle
+       (schedule-animation-frame #js.this 'process_events)))]
   [change-world
    (λ (new-world)
-     (define listeners #js*.this.-world-change-listeners)
+     #:with-this this
+     (define listeners #js.this.-world-change-listeners)
      (let loop ([i 0])
        (when (< i #js.listeners.length)
          (define listener ($ #js.listeners i))
          (listener new-world)
          (loop (add1 i))))
-     (:= #js*.this.world new-world))]
+     (:= #js.this.world new-world))]
   [add-world-change-listener
    (λ (cb)
-     (#js*.this.-world-change-listeners.push cb))]
+     #:with-this this
+     (#js.this.-world-change-listeners.push cb))]
   [remove-world-change-listener
    (λ (cb)
-     (define index (#js*.this.-world-change-listeners.indexOf cb))
-     (#js*.this.-world-change-listeners.splice index 1))]
+     #:with-this this
+     (define index (#js.this.-world-change-listeners.indexOf cb))
+     (#js.this.-world-change-listeners.splice index 1))]
   [process-events
    (λ ()
-     (define events #js*.this.-events)
-     (define self #js*.this)
+     #:with-this this
+     (define events #js.this.-events)
+     (define self this)
 
-     (:= #js*.this.-idle #f)
+     (:= #js.this.-idle #f)
 
      (let loop ([world-changed? #f])
        (cond
@@ -149,7 +160,7 @@
           (#js.self.queue-event ($/obj [type #js"to-draw"]))
           (loop #f)]))
 
-     (:= #js*.this.-idle #t))])
+     (:= #js.this.-idle #t))])
 
 (define (to-draw cb)
   (λ (bb)
@@ -176,20 +187,23 @@
     ($/obj
      [name         #js"on-tick"]
      [register     (λ ()
+                     #:with-this this
                      (#js.bb.queue-event on-tick-evt)
                      (if rate
                          (set! rate (* 1000 rate))
                          (set! rate #js.bb.interval)))]
      [deregister   (λ ()
-                     (define last-cb #js*.this.last-cb)
+                     #:with-this this
+                     (define last-cb #js.this.last-cb)
                      (when last-cb
                        ;; TODO: This sometimes doesn't work,
                        ;; particularly with high fps, so we need to do
                        ;; something at event loop itself.
                        (#js*.window.clearTimeout last-cb)))]
      [invoke       (λ (world _)
+                     #:with-this this
                      (#js.bb.change-world (cb world))
-                     (:= #js*.this.last-cb (#js*.setTimeout
+                     (:= #js.this.last-cb (#js*.setTimeout
                                             (λ ()
                                               (#js.bb.queue-event on-tick-evt))
                                             rate))
@@ -202,6 +216,7 @@
      [listeners     ($/obj)]
      [register
       (λ ()
+        #:with-this this
         (define canvas #js.bb.-canvas)
         (define (make-listener r-evt-name)
           (λ (evt)
@@ -211,7 +226,7 @@
                                        [x    ($ posn 'x)]
                                        [y    ($ posn 'y)]))))
 
-        (define self #js*.this) ;; TODO: is this needed?
+        (define self this) ;; TODO: is this needed?
         (define (register-listener evt-name r-evt-name)
           (define cb (make-listener r-evt-name))
           (#js.canvas.addEventListener evt-name cb)
@@ -225,7 +240,8 @@
         (register-listener #js"drag"       #js"drag"))]
      [deregister
       (λ ()
-        (define self #js*.this)
+        #:with-this this
+        (define self this)
         (define (remove-listener evt-name)
           (define cb ($ #js.self.listeners evt-name))
           (#js.bb.-canvas.removeEventListener evt-name cb))
@@ -248,18 +264,20 @@
        [name        r-evt-name]
        [register
         (λ ()
+          #:with-this this
           (define canvas #js.bb.-canvas)
-          (:= #js*.this.listener
+          (:= #js.this.listener
               (λ (evt)
                 (#js.evt.preventDefault)
                 (#js.evt.stopPropagation)
                 (#js.bb.queue-event ($/obj [type r-evt-name]
                                            [key  (key-event->key-name evt)]))))
-          (#js.canvas.addEventListener evt-name #js*.this.listener))]
+          (#js.canvas.addEventListener evt-name #js.this.listener))]
        [deregister
         (λ ()
-          (#js.bb.-canvas.removeEventListener evt-name #js*.this.listener)
-          (:= #js*.this.listener #js*.undefined))]
+          #:with-this this
+          (#js.bb.-canvas.removeEventListener evt-name #js.this.listener)
+          (:= #js.this.listener *undefined*))]
        [invoke
         (λ (world evt)
           (define new-world (cb world #js.evt.key))
@@ -277,10 +295,12 @@
      [lastpicture  last-picture]
      [register
       (λ ()
-        (#js.bb.add-world-change-listener #js*.this.invoke))]
+        #:with-this this
+        (#js.bb.add-world-change-listener #js.this.invoke))]
      [deregister
       (λ ()
-        (#js.bb.remove-world-change-listener #js*.this.invoke))]
+        #:with-this this
+        (#js.bb.remove-world-change-listener #js.this.invoke))]
      [invoke
       (λ (w)
         (when (last-world? w)
