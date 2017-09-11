@@ -72,10 +72,9 @@
    (λ ()
      #:with-this this
      (define active-handlers #js.this.-active-handlers)
-     (define self this)
      (let loop ([handlers #js.this.handlers])
        (when (pair? handlers)
-         (define h ((car handlers) self))
+         (define h ((car handlers) this))
          (#js.h.register)
          (:= ($ active-handlers #js.h.name) h)
          (loop (cdr handlers)))))]
@@ -138,7 +137,6 @@
    (λ ()
      #:with-this this
      (define events #js.this.-events)
-     (define self this)
 
      (:= #js.this.-idle #f)
 
@@ -146,18 +144,18 @@
        (cond
          [(> #js.events.length 0)
           (define evt         (#js.events.shift))
-          (define handler     ($ #js.self.-active-handlers #js.evt.type))
+          (define handler     ($ #js.this.-active-handlers #js.evt.type))
 
           (define changed?
             (cond
-              [handler (#js.handler.invoke #js.self.world evt)]
+              [handler (#js.handler.invoke #js.this.world evt)]
               [(equal? #js.evt.type #js"raw")
-               (#js.evt.invoke #js.self.world evt)]
+               (#js.evt.invoke #js.this.world evt)]
               [else
                (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
           (loop (or world-changed? changed?))]
-         [(and world-changed? (not #js.self.-stopped))
-          (#js.self.queue-event ($/obj [type #js"to-draw"]))
+         [(and world-changed? (not #js.this.-stopped))
+          (#js.this.queue-event ($/obj [type #js"to-draw"]))
           (loop #f)]))
 
      (:= #js.this.-idle #t))])
@@ -226,11 +224,10 @@
                                        [x    ($ posn 'x)]
                                        [y    ($ posn 'y)]))))
 
-        (define self this) ;; TODO: is this needed?
         (define (register-listener evt-name r-evt-name)
           (define cb (make-listener r-evt-name))
           (#js.canvas.addEventListener evt-name cb)
-          (:= ($ #js.self.listeners evt-name) cb))
+          (:= ($ #js.this.listeners evt-name) cb))
 
         (register-listener #js"mousemove"  #js"move")
         (register-listener #js"mousedown"  #js"button-down")
@@ -241,9 +238,8 @@
      [deregister
       (λ ()
         #:with-this this
-        (define self this)
         (define (remove-listener evt-name)
-          (define cb ($ #js.self.listeners evt-name))
+          (define cb ($ #js.this.listeners evt-name))
           (#js.bb.-canvas.removeEventListener evt-name cb))
         (remove-listener #js"mousemove")
         (remove-listener #js"mousedown")

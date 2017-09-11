@@ -460,10 +460,9 @@
 (define-proto Bitmap
   (λ (data)
     #:with-this this
-    (define self #js.this)
     (define image (new #js*.Image))
     (:= #js.image.src (js-string data))
-    (set-object! self
+    (set-object! this
                  [image  image]
                  [width  #js.image.width]
                  [height #js.image.height]))
