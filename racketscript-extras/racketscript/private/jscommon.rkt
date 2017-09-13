@@ -24,7 +24,8 @@
          max
          min
          twice
-         half)
+         half
+         (rename-out [field-λ λ]))
 
 ;;-----------------------------------------------------------------------------
 ;; Interop helpers
@@ -39,6 +40,14 @@
   (define-syntax-class field
     #:description "a key-value pair for object"
     (pattern [name:id val:expr])))
+
+(define-syntax (field-λ stx)
+  (syntax-parse stx
+    [(_ formals (~datum #:with-this) self:id body ...)
+     #'(λ formals
+         (define self *this*)
+         body ...)]
+    [(_ formals body ...) #'(λ formals body ...)]))
 
 (define-syntax (define-proto stx)
   (syntax-parse stx
