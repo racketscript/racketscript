@@ -1,8 +1,12 @@
 import * as C from './check.js';
 import * as $ from './lib.js';
+import { racketCoreError } from './errors.js';
 import * as Pair from './pair.js';
-import { Primitive } from './primitive.js';
+import { PrintablePrimitive } from './printable_primitive.js';
+import { displayNativeString, writeNativeString, printNativeString } from './print_native_string.js';
 import { isEqual } from './equality.js';
+import { hashArray } from './raw_hashing.js';
+import { hashForEqual } from './hashing.js';
 import * as Values from './values.js';
 
 // This module implements Racket structs via three classes which
@@ -32,7 +36,7 @@ import * as Values from './values.js';
 // - Structure Inspectors
 // - Prefab
 
-class Struct extends Primitive {
+class Struct extends PrintablePrimitive {
     constructor(desc, fields, callerName = false) {
         super();
         this._desc = desc; /* struct-type-descriptor */
@@ -40,7 +44,7 @@ class Struct extends Primitive {
         C.eq(
             fields.length,
             this._desc._totalInitFields,
-            $.racketCoreError,
+            racketCoreError,
             'arity mismatch'
         );
 
@@ -76,19 +80,62 @@ class Struct extends Primitive {
         }
     }
 
-    toString() {
-        let fields = '';
-        for (let i = 0; i < this._fields.length; i++) {
-            fields += this._fields[i].toString();
-            if (i !== this._fields.length - 1) {
-                fields += ' ';
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    writeToPort(out, itemFn) {
+        if (this._desc._options.inspector) {
+            // Not a transparent inspector
+            // TODO: support prefab
+            out.consume('#<');
+            out.consume(this._desc.getName());
+            out.consume('>');
+        } else {
+            out.consume('#(struct:');
+            out.consume(this._desc.getName());
+            for (const field of this._fields) {
+                out.consume(' ');
+                itemFn(out, field);
             }
+            out.consume(')');
         }
-        return `#(struct:${this._desc.getName()} ${fields})`;
     }
 
-    toRawString() {
-        return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.writeToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.writeToPort(out, writeNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        if (this._desc._options.inspector) {
+            // Not a transparent inspector
+            // TODO: support prefab
+            this.writeNativeString(out);
+        } else {
+            out.consume('(');
+            out.consume(this._desc.getName());
+            for (const field of this._fields) {
+                out.consume(' ');
+                printNativeString(
+                    out, field,
+                    /* printAsExpression */ true, /* quoteDepth */ 0
+                );
+            }
+            out.consume(')');
+        }
     }
 
     equals(v) {
@@ -121,11 +168,11 @@ class Struct extends Primitive {
 
     setField(n, v) {
         C.truthy(
-            n < this._fields.length, $.racketCoreError,
+            n < this._fields.length, racketCoreError,
             'invalid field at position'
         );
         C.falsy(
-            this._desc.isFieldImmutable(n), $.racketCoreError,
+            this._desc.isFieldImmutable(n), racketCoreError,
             'field is immutable'
         );
         this._fields[n] = v;
@@ -146,7 +193,7 @@ class Struct extends Primitive {
 
 /** ************************************************************************** */
 
-class StructTypeDescriptor extends Primitive {
+class StructTypeDescriptor extends PrintablePrimitive {
     constructor(options) {
         super();
         // Visit makeStructType (or make-struct-type in Racket docs)
@@ -192,12 +239,20 @@ class StructTypeDescriptor extends Primitive {
         return Object.freeze(new StructTypeDescriptor(options));
     }
 
-    toString() {
-        return `#<struct-type:${this._options.name}>`;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#<struct-type:');
+        out.consume(this._options.name);
+        out.consume('>');
     }
 
-    toRawString() {
-        return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.writeNativeString(out);
     }
 
     getName() {
@@ -286,7 +341,7 @@ class StructTypeDescriptor extends Primitive {
 
             const sobj = structObject._maybeFindSuperInstance(this);
             if (sobj === false) {
-                C.raise($.racketCoreError, 'accessor applied to invalid type');
+                C.raise(racketCoreError, 'accessor applied to invalid type');
             }
 
             return sobj.getField(pos);
@@ -306,7 +361,7 @@ class StructTypeDescriptor extends Primitive {
 
             const sobj = structObject._maybeFindSuperInstance(this);
             if (sobj === false) {
-                C.raise($.racketCoreError, 'mutator applied to invalid type');
+                C.raise(racketCoreError, 'mutator applied to invalid type');
             }
 
             return sobj.setField(pos, v);
@@ -341,7 +396,7 @@ class StructTypeDescriptor extends Primitive {
 
 /** ************************************************************************** */
 
-class StructTypeProperty extends Primitive {
+class StructTypeProperty extends PrintablePrimitive {
     constructor(args) {
         super();
 
@@ -355,12 +410,20 @@ class StructTypeProperty extends Primitive {
         return Object.freeze(new StructTypeProperty(args));
     }
 
-    toString() {
-        return `#<struct-type-property:${this._name}>`;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#<struct-type-property:');
+        out.consume(this._name);
+        out.consume('>');
     }
 
-    toRawString() {
-        return this.toString();
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    printNativeString(out) {
+        this.writeNativeString(out);
     }
 
     getPropertyPredicate() {
@@ -384,11 +447,11 @@ class StructTypeProperty extends Primitive {
             } else if (v instanceof Struct) {
                 var desc = v._desc;
             } else {
-                C.raise($.racketCoreError, 'invalid argument to accessor');
+                C.raise(racketCoreError, 'invalid argument to accessor');
             }
 
             return desc._findProperty(this) ||
-                C.raise($.racketCoreError, 'property not in struct');
+                C.raise(racketCoreError, 'property not in struct');
         };
     }
 

@@ -6,64 +6,126 @@ import * as Core from './core.js';
 export function isImmutable(v) {
     if (Core.Primitive.check(v)) {
         return v.isImmutable();
-    } else if (Core.Bytes.check(v)) {
+    } else if (Core.Bytes.check(v) || typeof v === 'string') {
         return true;
+    } else if (typeof v === 'number' || typeof v === 'boolean' ||
+        typeof v === 'undefined' || v === null) {
+        return false;
     }
-    $.racketCoreError(`isImmutable not implemented for ${v}`);
+    throw Core.racketCoreError('isImmutable not implemented for', v);
 }
 
 /* --------------------------------------------------------------------------*/
 // String construction and manipulation
 
-export function format(pattern, ...args) {
-    // TODO: Only ~a and ~x are supported
-    let matched = 0;
-    return Core.UString.makeMutable(pattern.toString().replace(/~[axs]/g, (match) => {
-        if (matched >= args.length) {
-            throw Core.racketContractError('insufficient pattern arguments');
+// fprintf forms that do not require an argument.
+const NO_ARG_FORM_RE = /^~[\s~n%]/;
+
+export function fprintf(isPrintAsExpression, out, form, ...args) {
+    // TODO: Missing forms: ~.[asv], ~e, ~c.
+    // TODO: The ~whitespace form should match Unicode whitespace.
+    const regex = /~(?:[aAsSvVbBoOxX~n%]|\s+)/g;
+    const formStr = form.toString();
+    let reExecResult;
+    let currentMatchIndex = 0;
+    let prevIndex = 0;
+    let lastMatch = '';
+
+    const matches = formStr.match(regex);
+    const numExpected = matches ?
+        matches.filter(m => !NO_ARG_FORM_RE.test(m)).length : 0;
+    if (numExpected !== args.length) {
+        throw Core.racketContractError(`fprintf: format string requires ${numExpected} arguments, ` +
+            `given ${args.length}; arguments were:`, out, form, ...args);
+    }
+
+    // eslint-disable-next-line no-cond-assign
+    while ((reExecResult = regex.exec(formStr)) !== null) {
+        Core.display(out, formStr.slice(prevIndex + lastMatch.length, reExecResult.index));
+        prevIndex = reExecResult.index;
+        lastMatch = reExecResult[0]; // eslint-disable-line prefer-destructuring
+        if (/^~\s/.test(lastMatch)) continue; // eslint-disable-line no-continue
+        switch (lastMatch.charAt(1)) { // eslint-disable-line default-case
+        case '~':
+            Core.display(out, '~');
+            continue; // eslint-disable-line no-continue
+        case 'n':
+        case '%':
+            Core.display(out, '\n');
+            continue; // eslint-disable-line no-continue
         }
-        switch (match[1]) {
-        case 'a': return args[matched++];
-        case 'x': return args[matched++].toString(16);
-        case 's': return ((v) => {
-            // TODO: This is very broken, fix it (likely needs a new Primitive method).
-            if (typeof v === 'number') {
-                return v.toString();
-            }
-            return JSON.stringify(v.toString());
-        })(args[matched++]);
+        const v = args[currentMatchIndex];
+        currentMatchIndex += 1;
+        switch (lastMatch.charAt(1)) {
+        case 'a':
+        case 'A':
+            Core.display(out, v);
+            break;
+        case 's':
+        case 'S':
+            Core.write(out, v);
+            break;
+        case 'v':
+        case 'V':
+            Core.print(out, v, isPrintAsExpression, 0);
+            break;
+        case 'b':
+        case 'B':
+            // TODO: raise exn:fail:contract if the number is not exact.
+            Core.display(out, v.toString(2));
+            break;
+        case 'o':
+        case 'O':
+            // TODO: raise exn:fail:contract if the number is not exact.
+            Core.display(out, v.toString(8));
+            break;
+        case 'x':
+        case 'X':
+            // TODO: raise exn:fail:contract if the number is not exact.
+            Core.display(out, v.toString(16));
+            break;
+        default:
+            throw Core.racketContractError('Unsupported format:', lastMatch);
         }
-    }));
+    }
+    if (lastMatch.length + prevIndex < form.length) {
+        Core.display(out, formStr.slice(lastMatch.length + prevIndex));
+    }
 }
 
-export function listToString(lst) {
-    return Core.UString.makeMutableFromChars(Core.Pair.listToArray(lst));
+/**
+ * @return {!Core.UString.UString}
+ */
+export function format(form, ...args) {
+    const strOut = Core.Ports.openOutputString();
+    fprintf(strOut, form, ...args);
+    return Core.Ports.getOutputString(strOut);
 }
 
-/* --------------------------------------------------------------------------*/
-// Printing to Console
-
-export function display(v, out) {
-    /* TODO: this is still line */
-    out.write(v);
+/**
+ * @param {!Core.Pair.Pair} charsList a list of chars
+ * @return {!Core.UString.MutableUString}
+ */
+export function listToString(charsList) {
+    return Core.UString.makeMutableFromChars(Core.Pair.listToArray(charsList));
 }
-
-export function print(v, out) {
-    /* TODO: this is still line */
-    out.write(v);
-}
-
 
 /* --------------------------------------------------------------------------*/
 // Errors
 
-export function error(...args) {
-    if (args.length === 1 && Core.Symbol.check(args[0])) {
-        throw Core.racketCoreError(args[0].toString());
-    } else if (args.length > 0 && typeof args[0] === 'string') {
-        throw Core.racketCoreError(args.map(v => v.toString()).join(' '));
-    } else if (args.length > 0 && Core.Symbol.check(args[0])) {
-        throw Core.racketCoreError(format(`${args[0].toString()}: ${args[1]}`, ...args.slice(2)));
+/**
+ * @param {Core.Symbol|Core.UString|String} firstArg
+ * @param {*[]} rest
+ */
+export function error(firstArg, ...rest) {
+    if (Core.Symbol.check(firstArg)) {
+        if (rest.length === 0) {
+            throw Core.racketCoreError(firstArg.toString());
+        } else {
+            throw Core.racketCoreError(`${firstArg.toString()}:`, ...rest);
+        }
+    } else if (Core.UString.check(firstArg) || typeof firstArg === 'string') {
+        throw Core.racketCoreError(firstArg.toString(), ...rest);
     } else {
         throw Core.racketContractError('error: invalid arguments');
     }

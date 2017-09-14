@@ -1,7 +1,7 @@
 // Continuation Marks
 import * as Pair from './pair.js';
 import * as Symbol from './symbol.js';
-import * as $ from './lib.js';
+import { racketCoreError } from './errors.js';
 import { hashForEq as HASH } from './hashing.js';
 
 let __frames;
@@ -69,7 +69,7 @@ function savePrompt(promptTag) {
 function deleteCurrentPrompt(promptTag) {
     const promptVal = __prompts.get(promptTag);
     if (promptVal === undefined) {
-        throw $.racketCoreError('No corresponding tag in continuation!');
+        throw racketCoreError('No corresponding tag in continuation!');
     }
     promptVal.pop();
     if (promptVal.length === 0) {
@@ -139,7 +139,7 @@ export function getContinuationMarks(promptTag) {
     const promptFrame = getPromptFrame(promptTag);
     if (promptFrame === undefined &&
         promptTag !== __defaultContinuationPromptTag) {
-        throw $.racketCoreError('No corresponding tag in continuation!');
+        throw racketCoreError('No corresponding tag in continuation!');
     }
 
     const result = [];

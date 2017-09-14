@@ -4,3 +4,7 @@
 (displayln (bytes=? #"abc" #"abc"))
 (displayln (bytes=? #"abc" #"abd"))
 (bytes? (void))
+
+;; TODO: Not implemented correctly yet.
+; (writeln #"abc")
+; (println #"abc")

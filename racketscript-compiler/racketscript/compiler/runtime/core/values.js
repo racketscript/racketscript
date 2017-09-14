@@ -1,18 +1,9 @@
 import { Primitive } from './primitive.js';
-import { racketCoreError } from './lib.js';
 
 class Values extends Primitive {
     constructor(vals) {
         super();
         this.v = vals;
-    }
-
-    toString() {
-        throw racketCoreError('Not Implemented');
-    }
-
-    toRawString() {
-        return this.toString();
     }
 
     getAt(i) {
