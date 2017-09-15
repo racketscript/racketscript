@@ -194,12 +194,15 @@
                  (syntax-parse c
                    [(formals . body)
                     (register-lexical-bindings! #'formals)
-                    (PlainLambda (formals->absyn #'formals) (stx-map to-absyn #'body))]))
+                    (PlainLambda (formals->absyn #'formals)
+                                 (stx-map to-absyn #'body)
+                                 #f)]))
                #'clauses))]
     [(#%plain-lambda formals . body)
      (register-lexical-bindings! #'formals)
+     (define unchecked? (syntax-property v 'racketscript-unchecked-lambda?))
      (define fabsyn (formals->absyn #'formals))
-     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
+     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) unchecked?)]
     [(define-values (name)
        (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote mod:str)))
      ;; HACK: Special case for JSRequire
@@ -554,9 +557,9 @@
   ;; Check lambdas
 
   (check-equal? (to-absyn/expand #`(λ (x) x))
-                (PlainLambda '(x) (list (LocalIdent 'x))))
+                (PlainLambda '(x) (list (LocalIdent 'x)) #f))
   (check-equal? (to-absyn/expand #`(λ x x))
-                (PlainLambda 'x (list (LocalIdent 'x))))
+                (PlainLambda 'x (list (LocalIdent 'x)) #f))
   (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c))))
                 (PlainLambda
                  '((a b) . c)
@@ -564,13 +567,14 @@
                   (PlainApp (ident #'+)
                             (list (LocalIdent 'a) (LocalIdent'b)
                                   (PlainApp (TopId'reduce)
-                                            (list (ident #'+) (LocalIdent 'c))))))))
+                                            (list (ident #'+) (LocalIdent 'c))))))
+                 #f))
   ;; Check application
 
   (check-equal? (to-absyn/expand #`(print "hello"))
                 (PlainApp (ident #'print) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
-                (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
+                (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)) #f)
                           (list (Quote 42))))
 
   ;; If expresion
@@ -615,7 +619,8 @@
                                (PlainApp
                                 (TopId 'fact)
                                 (list (PlainApp (ident #'sub1)
-                                                (list (LocalIdent 'n))))))))))))
+                                                (list (LocalIdent 'n)))))))))
+                   #f)))
   (check-equal?
    (to-absyn/expand
     #`(letrec-values
@@ -645,7 +650,8 @@
              (LocalIdent 'or-part)
              (LocalIdent 'or-part)
              (PlainApp (LocalIdent 'odd?)
-                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n)))))))))
+         #f)
         (PlainLambda
          '(n)
          (list
@@ -658,7 +664,8 @@
              (LocalIdent 'or-part)
              (LocalIdent 'or-part)
              (PlainApp (LocalIdent 'even?)
-                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))))))
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n)))))))))
+         #f)))))
     (list (PlainApp (LocalIdent 'even?) (list (Quote 50))))))
 
 ;;; Begin expressions
@@ -695,7 +702,8 @@
       (list
        (PlainApp (ident #'write) (list (LocalIdent'a)))
        (PlainApp (ident #'write) (list (LocalIdent'b)))
-       (PlainApp (ident #'write) (list (LocalIdent'c)))))))
+       (PlainApp (ident #'write) (list (LocalIdent'c))))
+      #f)))
 
 ;;; Case Lambda
 
@@ -706,11 +714,13 @@
    (CaseLambda
     (list
      (PlainLambda '(a b) (list (PlainApp (ident #'+)
-                                         (list (LocalIdent 'a) (LocalIdent 'b)))))
+                                         (list (LocalIdent 'a) (LocalIdent 'b))))
+                  #f)
      (PlainLambda '(a b c) (list (PlainApp (ident #'*)
                                            (list (LocalIdent 'a)
                                                  (LocalIdent 'b)
-                                                 (LocalIdent 'c))))))))
+                                                 (LocalIdent 'c))))
+                  #f))))
 
 ;;; Check freshening
   (test-case "test freshening"
@@ -805,7 +815,8 @@
                      (PlainLambda '(name)
                                   (list
                                    (PlainApp (ident #'print)
-                                             (list (Quote "Hello")))))))))
+                                             (list (Quote "Hello"))))
+                                  #f)))))
 
   (check-equal? (parse-provide #'foo) (list (SimpleProvide 'foo)))
   (check-equal? (parse-provide #'(all-defined)) (list (AllDefined (set))))

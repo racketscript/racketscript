@@ -22,7 +22,9 @@
              if
              lambda
              λ
+             #%plain-lambda
              case-lambda
+
              begin
              begin0
              let-values

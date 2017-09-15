@@ -63,7 +63,7 @@
                               [expr*    : (Listof Expr)])
 
            (PlainApp          [lam      : Expr]    [args  : (Listof Expr)])
-           (PlainLambda       [formals  : Formals] [exprs : (Listof Expr)])
+           (PlainLambda       [formals  : Formals] [exprs : (Listof Expr)] [unchecked? : Boolean])
            (CaseLambda        [clauses  : (Listof PlainLambda)])
 
 

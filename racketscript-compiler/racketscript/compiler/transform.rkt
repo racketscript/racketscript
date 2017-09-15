@@ -210,13 +210,31 @@
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr overwrite-mark-frame?)
   (match expr
-    [(PlainLambda formals body)
+    [(PlainLambda formals body unchecked?)
      ;; TODO: This is terribly mixed up lower level details. Perhaps
      ;;       something with IL can be improved this avoid this
      ;;       madness?
      (: ->jslist (-> ILExpr ILExpr))
      (define (->jslist f)
        (ILApp (name-in-module 'core 'Pair.listFromArray) (list f)))
+
+     (: check-arity-stm (-> Symbol Natural ILIf))
+     (define (check-arity-stm op arity)
+       (ILIf (ILBinaryOp op (list (ILRef (ILArguments) 'length) (ILValue arity)))
+             (list
+              (ILThrow (ILApp (name-in-module 'core 'racketContractError)
+                              (list (ILValue "arity mismatch")))))
+             '()))
+
+     (define check-formals-stms : ILStatement*
+       (cond
+         [unchecked? '()]
+         [(symbol? formals) '()]
+         [(list? formals)
+          (list (check-arity-stm '!== (length formals)))]
+         [(cons? formals)
+          (define pos-formals (cast (car formals) (Listof Symbol)))
+          (list (check-arity-stm '< (length pos-formals)))]))
 
      (define arguments-array
        (ILApp (name-in-module 'core 'argumentsToArray)
@@ -253,7 +271,8 @@
 
      (define variadic-lambda? (not (list? formals)))
      (define lambda-expr (ILLambda il-formals
-                                   (append stms-formals-init
+                                   (append #;check-formals-stms
+                                           stms-formals-init
                                            body-stms
                                            (list (ILReturn body-value)))))
      (values '()
@@ -748,35 +767,35 @@
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '(a) '())
-                  (PlainLambda '(a b) '())
-                  (PlainLambda '((a) . c) '()))))
+                  (PlainLambda '(a) '() #f)
+                  (PlainLambda '(a b) '() #f)
+                  (PlainLambda '((a) . c) '() #f))))
                "all clauses are reachable")
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '((a b c) . d) '())
-                  (PlainLambda '(a b) '()))))
+                  (PlainLambda '((a b c) . d) '() #f)
+                  (PlainLambda '(a b) '() #f))))
                "all clauses are reachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '((a b c) . d) '())
-                 (PlainLambda '(a b c) '()))))
+                 (PlainLambda '((a b c) . d) '() #f)
+                 (PlainLambda '(a b c) '() #f))))
               "last clauses is unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(() . a) '())
-                 (PlainLambda '((a) . c) '())
-                 (PlainLambda '(a b) '()))))
+                 (PlainLambda '(() . a) '() #f)
+                 (PlainLambda '((a) . c) '() #f)
+                 (PlainLambda '(a b) '() #f))))
               "second and third clause are unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(a) '())
-                 (PlainLambda '((a) . c) '())
-                 (PlainLambda '(a b) '()))))
+                 (PlainLambda '(a) '() #f)
+                 (PlainLambda '((a) . c) '() #f)
+                 (PlainLambda '(a b) '() #f))))
               "third clause is unreachable"))
 
 (: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
@@ -924,10 +943,10 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Function Application"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda '(x) (list (ILReturn 'x))))
-    (check-ilexpr (PlainLambda 'x (LI* 'x))
+    (check-ilexpr (PlainLambda 'x (LI* 'x) #t)
                   '()
                   (ILApp
                    (name-in-module 'core 'attachProcedureArity)
@@ -957,7 +976,7 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Lambda expressions"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda
                    '(x)
@@ -965,7 +984,8 @@
     (check-ilexpr (PlainLambda '(a b)
                                (list
                                 (PlainApp (LocalIdent 'list)
-                                          (LI* 'a 'b))))
+                                          (LI* 'a 'b)))
+                               #t)
                   '()
                   (ILLambda
                    '(a b)
@@ -1032,9 +1052,11 @@
      (CaseLambda
       (list
        (PlainLambda '(a b) (list (PlainApp (kident 'add)
-                                           (LI* 'a 'b))))
+                                           (LI* 'a 'b)))
+                    #t)
        (PlainLambda '(a b c) (list (PlainApp (kident 'mul)
-                                             (LI* 'a 'b 'c))))))
+                                             (LI* 'a 'b 'c)))
+                    #t)))
      (list
       (ILVarDec
        'cl1
@@ -1171,7 +1193,7 @@
      (DefineValues '(x ident)
        (PlainApp (kident 'values)
                  (list (Quote 42)
-                       (PlainLambda '(x) (LI* 'x)))))
+                       (PlainLambda '(x) (LI* 'x) #t))))
      (list
       (ILVarDec
        'let_result1
