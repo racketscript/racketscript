@@ -160,7 +160,7 @@
 
 (begin-for-syntax
   (define (make-unchecked-lambda-syntax stx)
-    (syntax-property stx 'racketscript-unchecked-lambda? #t #t)))
+    (syntax-property stx 'racketscript-unchecked-lambda? #t)))
 
 (define-syntax (loop+ stx)
   (syntax-parse stx

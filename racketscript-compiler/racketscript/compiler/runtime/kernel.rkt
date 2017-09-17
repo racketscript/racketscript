@@ -790,13 +790,14 @@
 (define+provide current-continuation-marks   #js.Core.Marks.getContinuationMarks)
 (define+provide continuation-mark-set->list  #js.Core.Marks.getMarks)
 
-(define+provide (continuation-mark-set-first mark-set key-v none-v prompt-tag)
-  ;; TODO: implement prompt tag
-  (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
-  (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
-  (if (null? marks)
-      none-v
-      #js.marks.hd))
+(define+provide continuation-mark-set-first
+  (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
+    ;; TODO: implement prompt tag
+    (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
+    (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
+    (if (null? marks)
+        none-v
+        #js.marks.hd)))
 
 (define+provide make-parameter #js.Paramz.makeParameter)
 
@@ -812,10 +813,11 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-(define+provide (raise e)
-  (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
-                                                #js.Paramz.ExceptionHandlerKey)])
-    (abort-ccp e)))
+(define+provide raise
+  (v-λ (e) #:unchecked
+    (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
+                                                  #js.Paramz.ExceptionHandlerKey)])
+      (abort-ccp e))))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -828,8 +830,8 @@
 
 (define+provide current-print
   (make-parameter
-    (λ (p)
-      (when (not (void? p))
+    (v-λ (p) #:unchecked
+      (unless (void? p)
         (print p)  ; can't use println here yet (it's defined by private/misc.rkt)
         (newline)))))
 
@@ -856,6 +858,8 @@
 
 (define+provide print-as-expression (make-parameter #t))
 
+;;TODO: These compile to case-lambda's. Check performance and use unchecked
+;;      lambdas.
 (define+provide (display datum [out (current-output-port)])
   (#js.Core.display out datum))
 (define+provide (write datum [out (current-output-port)])
@@ -869,7 +873,7 @@
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
 
-(define+provide (current-inspector) #t)
+(define+provide current-inspector (v-λ () #:unchecked #t))
 (define+provide raise-argument-error error)
 (define+provide (check-method) #f)
 
@@ -946,7 +950,6 @@
                    (kernel:arity-at-least? v)))
              v)))
 
-
 (define+provide (checked-procedure-check-and-extract type v proc v1 v2)
   (cond
     [(and (#js.Core.Struct.check v type)
@@ -977,8 +980,9 @@
 
 (define __count 1000)
 
-(define+provide (system-type mod)
-  'javascript)
+(define+provide system-type
+  (v-λ (system-type mod) #:unchecked
+    'javascript))
 
 ;; TODO: manually implement weak references? or ES6 WeakMap?
 (define+provide make-weak-hash make-hash)

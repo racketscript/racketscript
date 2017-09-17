@@ -211,53 +211,30 @@
 (define (absyn-expr->il expr overwrite-mark-frame?)
   (match expr
     [(PlainLambda formals body unchecked?)
-     ;; TODO: This is terribly mixed up lower level details. Perhaps
-     ;;       something with IL can be improved this avoid this
-     ;;       madness?
      (: ->jslist (-> ILExpr ILExpr))
      (define (->jslist f)
        (ILApp (name-in-module 'core 'Pair.listFromArray) (list f)))
 
-     (: check-arity-stm (-> Symbol Natural ILIf))
-     (define (check-arity-stm op arity)
-       (ILIf (ILBinaryOp op (list (ILRef (ILArguments) 'length) (ILValue arity)))
-             (list
-              (ILThrow (ILApp (name-in-module 'core 'racketContractError)
-                              (list (ILValue "arity mismatch")))))
-             '()))
+     (: maybe-make-checked-formals (-> Formals ILFormals))
+     (define (maybe-make-checked-formals formals)
+       (if unchecked?
+           formals
+           (ILCheckedFormals formals)))
 
-     (define check-formals-stms : ILStatement*
-       (cond
-         [unchecked? '()]
-         [(symbol? formals) '()]
-         [(list? formals)
-          (list (check-arity-stm '!== (length formals)))]
-         [(cons? formals)
-          (define pos-formals (cast (car formals) (Listof Symbol)))
-          (list (check-arity-stm '< (length pos-formals)))]))
-
-     (define arguments-array
-       (ILApp (name-in-module 'core 'argumentsToArray)
-              (list (ILArguments))))
-
-     (define-values (il-formals stms-formals-init)
+     (: in-formals Formals)
+     (: stms-formals-init ILStatement*)
+     (define-values (in-formals stms-formals-init)
        (cond
          [(symbol? formals)
-          (values '()
-                  (list
-                   (ILVarDec formals (->jslist arguments-array))))]
+          (define in-formals (fresh-id formals))
+          (values in-formals (list (ILVarDec formals (->jslist in-formals))))]
          [(list? formals) (values formals '())]
          [(cons? formals)
           (define fi (car formals))
           (define fp (cdr formals))
-          (define fi-len (length fi))
-          (values fi
-                  (list (ILVarDec fp
-                                  (->jslist
-                                   (ILApp
-                                    (name-in-module 'core 'argumentsSlice)
-                                    (list arguments-array
-                                          (ILValue fi-len)))))))]))
+          (define in-fp (fresh-id fp))
+          (values (cons fi in-fp)
+                  (list (ILVarDec fp (->jslist in-fp))))]))
 
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
@@ -269,14 +246,12 @@
                           (values (append stms s) v)
                           (values (append stms s (list v)) v))))
 
-     (define variadic-lambda? (not (list? formals)))
-     (define lambda-expr (ILLambda il-formals
-                                   (append #;check-formals-stms
-                                           stms-formals-init
+     (define lambda-expr (ILLambda (maybe-make-checked-formals in-formals)
+                                   (append stms-formals-init
                                            body-stms
                                            (list (ILReturn body-value)))))
      (values '()
-             (if variadic-lambda?
+             (if (variadic-lambda? expr)
                  (ILApp (name-in-module 'core 'attachProcedureArity)
                         (list lambda-expr))
                  lambda-expr))]
@@ -942,7 +917,7 @@
 
   ;; --------------------------------------------------------------------------
 
-  (test-case "Function Application"
+  (test-case "Lambda Expressions"
     (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda '(x) (list (ILReturn 'x))))
@@ -952,15 +927,13 @@
                    (name-in-module 'core 'attachProcedureArity)
                    (list
                     (ILLambda
-                     '()
+                     'x1
                      (list
                       (ILVarDec
                        'x
                        (ILApp
                         (name-in-module 'core 'Pair.listFromArray)
-                        (list
-                         (ILApp (name-in-module 'core 'argumentsToArray)
-                                (list (ILArguments))))))
+                        (list 'x1)))
                       (ILReturn 'x)))))))
 
   ;; --------------------------------------------------------------------------

@@ -731,7 +731,7 @@
                    [skip-freshening? #f])
       (define expand-to-absyn (compose1 to-absyn/top expand))
       (check-equal? (expand-to-absyn #'(λ (x) x))
-                    (PlainLambda '(x1) (list (LocalIdent 'x1))))
+                    (PlainLambda '(x1) (list (LocalIdent 'x1)) #f))
       (check-equal? (expand-to-absyn #'(let-values ([(x) 1]
                                                     [(y) 2])
                                          (list x y)
@@ -789,8 +789,10 @@
                                (list
                                 (LocalIdent 'x10)
                                 (LocalIdent 'y11)
-                                (LocalIdent 'z9)))))))))))))
-
+                                (LocalIdent 'z9))))
+                             #f))))
+                         #f))))
+                     #f)
                     #f)))
 
 ;;; Check module and provides
