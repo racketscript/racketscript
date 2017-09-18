@@ -1,6 +1,7 @@
 #lang typed/racket/base
 
-(require "language.rkt")
+(require "language.rkt"
+         "ident.rkt")
 
 (provide (all-defined-out))
 
@@ -63,7 +64,7 @@
                               [expr*    : (Listof Expr)])
 
            (PlainApp          [lam      : Expr]    [args  : (Listof Expr)])
-           (PlainLambda       [formals  : Formals] [exprs : (Listof Expr)])
+           (PlainLambda       [formals  : Formals] [exprs : (Listof Expr)] [unchecked? : Boolean])
            (CaseLambda        [clauses  : (Listof PlainLambda)])
 
 
@@ -105,3 +106,35 @@
     [(symbol? frmls) (arity-at-least 0)]
     [(list? frmls) (length frmls)]
     [(pair? frmls) (arity-at-least (length (car frmls)))]))
+
+(: variadic-lambda? (-> PlainLambda Boolean))
+(define (variadic-lambda? lam)
+  (not (list? (PlainLambda-formals lam))))
+
+(: plain-lambda-arity-includes (-> PlainLambda Natural Boolean))
+(define (plain-lambda-arity-includes lam k)
+  (formals-arity-includes (PlainLambda-formals lam) k))
+
+(: formals-arity-includes (-> Formals Natural Boolean))
+(define (formals-arity-includes formals k)
+  (cond
+    [(symbol? formals) #t]
+    [(list? formals) (equal? (length formals) k)]
+    [(pair? formals) (>= k (length (car formals)))]))
+
+(: freshen-formals (-> Formals Formals))
+(define (freshen-formals formals)
+  (cond
+    [(symbol? formals) (fresh-id (string->symbol (format "_~a" formals)))]
+    [(list? formals) (for/list ([f : Symbol formals]) : (Listof Symbol)
+                       (cast (freshen-formals f) Symbol))]
+    [(pair? formals) (cons (cast (freshen-formals (car formals)) (Listof Symbol))
+                           (cast (freshen-formals (cdr formals)) Symbol))]))
+
+(: formals->list (-> Formals (Listof Symbol)))
+(define (formals->list formals)
+  (cond
+    [(symbol? formals) (list formals)]
+    [(list? formals) formals]
+    [(pair? formals) (append (car formals)
+                             (list (cdr formals)))]))

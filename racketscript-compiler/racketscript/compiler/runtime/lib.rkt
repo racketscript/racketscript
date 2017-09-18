@@ -2,7 +2,9 @@
 
 (require racketscript/interop
          racket/stxparam
-         (for-syntax racket/list
+         syntax/parse/define
+         (for-syntax racket/base
+                     racket/list
                      racket/format
                      syntax/parse))
 
@@ -127,22 +129,38 @@
       [(_ i:expr) #'($ $/arguments i)]
       [(_ i:expr j:expr) #'($ $/arguments i)]
       [arguments #'$/arguments]))
-  (syntax-parse stx
-    [(_ args:id body ...+)
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ ()
-           (define args (#js.Core.argumentsToArray arguments))
-           body ...))]
-    [(_ (a0:id ...) body ...+)
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ (a0 ...)
-           body ...))]
-    [(_ (a0:id ...+ . as:id) body ...+)
-     (define fixed-args (length (syntax-e #'(a0 ...))))
-     #`(syntax-parameterize ([arguments #,-arguments])
-         (λ (a0 ...)
-           (define as (#js.Array.prototype.slice.call arguments #,fixed-args))
-           body ...))]))
+
+  (define-values (stx* unchecked?)
+    (syntax-parse stx
+      [(v-λ args #:unchecked body ...+) (values #'(v-λ args body ...) #t)]
+      [v (values stx #f)]))
+
+  ;; TODO: raise-arity-error instead of contract error
+  #`(syntax-parameterize ([arguments #,-arguments])
+      #,(make-unchecked-lambda-syntax
+         (syntax-parse stx*
+           [(_ args:id body ...+) ;; Always unchecked
+            #`(#%plain-lambda ()
+                (define args (#js.Core.argumentsToArray arguments))
+                body ...)]
+           [(_ (a0:id ...) body ...+)
+            #`(#%plain-lambda (a0 ...)
+                #,(unless unchecked?
+                    #`(when (binop !== #js.arguments.length #,(length (syntax-e #'(a0 ...))))
+                        (throw (#js.Core.racketContractError "arity mismatch"))))
+                body ...)]
+           [(_ (a0:id ...+ . as:id) body ...+)
+            (define fixed-args (length (syntax-e #'(a0 ...))))
+            #`(#%plain-lambda (a0 ...)
+                #,(unless unchecked?
+                    #`(when (binop < #js.arguments.length #,fixed-args)
+                        (throw (#js.Core.racketContractError "arity mismatch"))))
+                (define as (#js.Array.prototype.slice.call arguments #,fixed-args))
+                body ...)]))))
+
+(begin-for-syntax
+  (define (make-unchecked-lambda-syntax stx)
+    (syntax-property stx 'racketscript-unchecked-lambda? #t)))
 
 (define-syntax (loop+ stx)
   (syntax-parse stx
@@ -225,12 +243,22 @@
               (c1 #js.v.tl)))]))
 
 (define-syntax (define-checked stx)
+  (define-syntax-class checked-arg
+    (pattern name:id)
+    (pattern [name:id checkfn]))
+
   (syntax-parse stx
-    [(_ (name:id [arg:id checkfn] ...) body ...)
+    [(_ (name:id arg:checked-arg  ...) body ...)
      #:with (n ...) #`#,(range (length (syntax-e #'(arg ...))))
-     #`(define (name arg ...)
-         (check/raise checkfn arg n) ...
-         body ...)]))
+     #:with ([n* (c-arg-name:id c-arg-checkfn)] ...)
+     (filter (syntax-parser
+               [(n [name:id checkfn]) #t]
+               [(n name:id) #f])
+             (syntax->list #'((n arg) ...)))
+     #`(define name
+         (v-λ (arg.name ...) #:unchecked
+           (check/raise c-arg-checkfn c-arg-name n*) ...
+           body ...))]))
 
 (define-syntax (define-checked+provide stx)
   (syntax-parse stx

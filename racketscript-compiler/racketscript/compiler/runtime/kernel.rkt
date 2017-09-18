@@ -193,7 +193,7 @@
               (cons (car rst) result)))))
 
 (define+provide append
-  (v-λ ()
+  (v-λ () #:unchecked
     (define result '())
     (define lsts arguments)
     (for/array [lst lsts]
@@ -232,44 +232,49 @@
 ;; --------------------------------------------------------------------------
 ;; Structs
 
-(define+provide (make-struct-type name
-                                  super-type
-                                  init-field-count
-                                  auto-field-count
-                                  auto-v
-                                  props
-                                  inspector
-                                  proc-spec
-                                  immutables
-                                  guard
-                                  constructor-name)
-  (#js.Core.Struct.makeStructType
-   {object [name (#js.name.toString)]
-           [superType super-type]
-           [initFieldCount init-field-count]
-           [autoFieldCount auto-field-count]
-           [autoV auto-v]
-           [props props]
-           [inspector inspector]
-           [procSpec proc-spec]
-           [immutables immutables]
-           [guard guard]
-           [constructorName constructor-name]}))
+(define+provide make-struct-type
+  (v-λ (name
+        super-type
+        init-field-count
+        auto-field-count
+        auto-v
+        props
+        inspector
+        proc-spec
+        immutables
+        guard
+        constructor-name) #:unchecked
+    ;;TODO: Add arity check
+    (#js.Core.Struct.makeStructType
+     {object [name (#js.name.toString)]
+             [superType super-type]
+             [initFieldCount init-field-count]
+             [autoFieldCount auto-field-count]
+             [autoV auto-v]
+             [props props]
+             [inspector inspector]
+             [procSpec proc-spec]
+             [immutables immutables]
+             [guard guard]
+             [constructorName constructor-name]})))
 
-(define+provide (make-struct-field-accessor ref index field-name)
-  (λ (s)
-    (ref s index)))
+(define+provide make-struct-field-accessor
+  (v-λ (ref index field-name) #:unchecked
+    (v-λ (s)
+      (ref s index))))
 
-(define+provide (make-struct-field-mutator set index fieldName)
-  (λ (s v)
-    (set s index v)))
+(define+provide make-struct-field-mutator
+  (v-λ (set index fieldName) #:unchecked
+    (v-λ (s v)
+      (set s index v))))
 
-(define+provide (make-struct-type-property name guard supers can-impersonate?)
-  (#js.Core.Struct.makeStructTypeProperty
-   {object [name name]
-           [guard guard]
-           [supers supers]
-           [canImpersonate can-impersonate?]}))
+(define+provide make-struct-type-property
+  (v-λ (name guard supers can-impersonate?) #:unchecked
+    (#js.Core.Struct.makeStructTypeProperty
+     {object [name name]
+             [guard guard]
+             [supers supers]
+             [canImpersonate can-impersonate?]})))
 
 (define+provide (check-struct-type name what)
   (when what
@@ -287,7 +292,7 @@
 ;; Vectors
 
 (define+provide vector
-  (v-λ ()
+  (v-λ () #:unchecked
      (#js.Core.Vector.make (#js.Core.argumentsToArray arguments) #t)))
 
 ;; v is optional
@@ -315,7 +320,7 @@
 ;; Hashes
 
 (define-syntax-rule (make-hash-contructor make)
-  (v-λ ()
+  (v-λ () #:unchecked
     (define kv* arguments)
     (when (binop !== (binop % #js.kv*.length 2) 0)
       (throw (#js.Core.racketContractError "invalid number of arguments")))
@@ -328,33 +333,40 @@
 (define+provide hasheqv (make-hash-contructor #js.Core.Hash.makeEqv))
 (define+provide hasheq  (make-hash-contructor #js.Core.Hash.makeEq))
 
-(define+provide (make-hash assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqualFromAssocs assocs* #t))
-(define+provide (make-hasheqv assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqvFromAssocs assocs* #t))
-(define+provide (make-hasheq assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqFromAssocs assocs* #t))
+(define+provide make-hash
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqualFromAssocs assocs* #t)))
+(define+provide make-hasheqv
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqvFromAssocs assocs* #t)))
+(define+provide make-hasheq
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqFromAssocs assocs* #t)))
 
-(define+provide (make-immutable-hash assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqualFromAssocs assocs* #f))
-(define+provide (make-immutable-hasheqv assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqvFromAssocs assocs* #f))
-(define+provide (make-immutable-hasheq assocs)
-  (define assocs* (or assocs '()))
-  (#js.Core.Hash.makeEqFromAssocs assocs* #f))
+(define+provide make-immutable-hash
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqualFromAssocs assocs* #f)))
+(define+provide make-immutable-hasheqv
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqvFromAssocs assocs* #f)))
+(define+provide make-immutable-hasheq
+  (v-λ (assocs) #:unchecked
+    (define assocs* (or assocs '()))
+    (#js.Core.Hash.makeEqFromAssocs assocs* #f)))
 
 (define+provide hash? #js.Core.Hash.check)
 (define+provide hash-equal? #js.Core.Hash.isEqualHash)
 (define+provide hash-eqv? #js.Core.Hash.isEqvHash)
 (define+provide hash-eq? #js.Core.Hash.isEqHash)
 
-(define+provide (hash-ref h k fail)
-  (#js.h.ref k fail))
+(define+provide hash-ref
+  (v-λ (h k fail) #:unchecked
+    (#js.h.ref k fail)))
 
 (define+provide (hash-set h k v)
   (#js.h.set k v))
@@ -369,7 +381,7 @@
 ;; Higher Order Functions
 
 (define+provide apply
-  (v-λ (lam . args)
+  (v-λ (lam . args) #:unchecked
     (check/raise procedure? lam 0)
     (define final-args
       (cond
@@ -515,7 +527,7 @@
 
 (define+provide compose
   (v-λ procs
-    (v-λ ()
+    (v-λ () #:unchecked
       (define result (#js.Core.argumentsToArray arguments))
       (define procs* (#js.procs.reverse))
       (for/array [p procs*]
@@ -529,7 +541,7 @@
 
 (define+provide compose1
   (v-λ procs
-    (λ (v)
+    (v-λ (v) #:unchecked
       (define result v)
       (define procs* (#js.procs.reverse))
       (for/array [p procs*]
@@ -778,13 +790,14 @@
 (define+provide current-continuation-marks   #js.Core.Marks.getContinuationMarks)
 (define+provide continuation-mark-set->list  #js.Core.Marks.getMarks)
 
-(define+provide (continuation-mark-set-first mark-set key-v none-v prompt-tag)
-  ;; TODO: implement prompt tag
-  (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
-  (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
-  (if (null? marks)
-      none-v
-      #js.marks.hd))
+(define+provide continuation-mark-set-first
+  (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
+    ;; TODO: implement prompt tag
+    (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
+    (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
+    (if (null? marks)
+        none-v
+        #js.marks.hd)))
 
 (define+provide make-parameter #js.Paramz.makeParameter)
 
@@ -800,10 +813,11 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-(define+provide (raise e)
-  (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
-                                                #js.Paramz.ExceptionHandlerKey)])
-    (abort-ccp e)))
+(define+provide raise
+  (v-λ (e) #:unchecked
+    (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
+                                                  #js.Paramz.ExceptionHandlerKey)])
+      (abort-ccp e))))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -816,8 +830,8 @@
 
 (define+provide current-print
   (make-parameter
-    (λ (p)
-      (when (not (void? p))
+    (v-λ (p) #:unchecked
+      (unless (void? p)
         (print p)  ; can't use println here yet (it's defined by private/misc.rkt)
         (newline)))))
 
@@ -844,6 +858,8 @@
 
 (define+provide print-as-expression (make-parameter #t))
 
+;;TODO: These compile to case-lambda's. Check performance and use unchecked
+;;      lambdas.
 (define+provide (display datum [out (current-output-port)])
   (#js.Core.display out datum))
 (define+provide (write datum [out (current-output-port)])
@@ -857,7 +873,7 @@
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
 
-(define+provide (current-inspector) #t)
+(define+provide current-inspector (v-λ () #:unchecked #t))
 (define+provide raise-argument-error error)
 (define+provide (check-method) #f)
 
@@ -913,7 +929,9 @@
 (define+provide (arity-at-least-value p)
   (kernel:arity-at-least-value p))
 
-(define+provide (procedure-arity-includes? f) #t)
+(define+provide procedure-arity-includes?
+  (v-λ (f) #:unchecked
+    #t))
 
 (define+provide (procedure-arity fn)
   (if (#js.Array.isArray #js.fn.__rjs_arityValue)
@@ -932,7 +950,6 @@
                    (kernel:arity-at-least? v)))
              v)))
 
-
 (define+provide (checked-procedure-check-and-extract type v proc v1 v2)
   (cond
     [(and (#js.Core.Struct.check v type)
@@ -946,10 +963,11 @@
 ;; --------------------------------------------------------------------------
 ;;
 
-(define+provide (gensym sym)
-  (let ([s (or (and sym #js.sym.v) "")])
-    (set! __count (binop + __count 1))
-    (#js.Core.Symbol.makeUninterned (binop + s __count))))
+(define+provide gensym
+  (v-λ (sym) #:unchecked
+    (let ([s (or (and sym #js.sym.v) "")])
+      (set! __count (binop + __count 1))
+      (#js.Core.Symbol.makeUninterned (binop + s __count)))))
 
 (define+provide (eval-jit-enabled) #f)
 
@@ -962,8 +980,9 @@
 
 (define __count 1000)
 
-(define+provide (system-type mod)
-  'javascript)
+(define+provide system-type
+  (v-λ (system-type mod) #:unchecked
+    'javascript))
 
 ;; TODO: manually implement weak references? or ES6 WeakMap?
 (define+provide make-weak-hash make-hash)

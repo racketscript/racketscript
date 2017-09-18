@@ -285,7 +285,9 @@
        (define expanded (quick-expand next))
        (define ast (convert expanded (override-module-path next)))
 
-       (assemble-module (absyn-module->il* ast) #f)
+       (assemble-module (insert-arity-checks
+                         (absyn-module->il* ast))
+                        #f)
 
        ;; Run JS beautifier
        (when (js-output-beautify?)
@@ -413,6 +415,7 @@
     ['il (~> (expanded-module)
              (convert _ source)
              (absyn-module->il* _)
+             (insert-arity-checks _)
              (pretty-print _))]
     ['js
      (logging? #f)
@@ -420,6 +423,7 @@
      (~> (expanded-module)
          (convert _ source)
          (absyn-module->il* _)
+         (insert-arity-checks _)
          (assemble-module _ output-string))
      (displayln
       (if (js-output-beautify?)

@@ -54,7 +54,14 @@
   (match expr
     [(ILLambda args body)
      (emit "function(")
-     (emit (string-join (map normalize-symbol args) ", "))
+     (define args-str : (Listof String)
+       (cond
+         [(symbol? args) (list (~a "..." (normalize-symbol args)))]
+         [(list? args) (map normalize-symbol args)]
+         [(cons? args) (append1 (map normalize-symbol (car args))
+                                (~a "..." (normalize-symbol (cdr args))))]
+         [else (error 'assemble-expr "λ must be unchecked by assembler phase")]))
+     (emit (string-join args-str ", "))
      (emit ") {")
      (for ([s body])
        (assemble-statement s out))
