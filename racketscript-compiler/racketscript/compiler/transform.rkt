@@ -210,36 +210,31 @@
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr overwrite-mark-frame?)
   (match expr
-    [(PlainLambda formals body)
-     ;; TODO: This is terribly mixed up lower level details. Perhaps
-     ;;       something with IL can be improved this avoid this
-     ;;       madness?
+    [(PlainLambda formals body unchecked?)
      (: ->jslist (-> ILExpr ILExpr))
      (define (->jslist f)
        (ILApp (name-in-module 'core 'Pair.listFromArray) (list f)))
 
-     (define arguments-array
-       (ILApp (name-in-module 'core 'argumentsToArray)
-              (list (ILArguments))))
+     (: maybe-make-checked-formals (-> Formals ILFormals))
+     (define (maybe-make-checked-formals formals)
+       (if unchecked?
+           formals
+           (ILCheckedFormals formals)))
 
-     (define-values (il-formals stms-formals-init)
+     (: in-formals Formals)
+     (: stms-formals-init ILStatement*)
+     (define-values (in-formals stms-formals-init)
        (cond
          [(symbol? formals)
-          (values '()
-                  (list
-                   (ILVarDec formals (->jslist arguments-array))))]
+          (define in-formals (fresh-id formals))
+          (values in-formals (list (ILVarDec formals (->jslist in-formals))))]
          [(list? formals) (values formals '())]
          [(cons? formals)
           (define fi (car formals))
           (define fp (cdr formals))
-          (define fi-len (length fi))
-          (values fi
-                  (list (ILVarDec fp
-                                  (->jslist
-                                   (ILApp
-                                    (name-in-module 'core 'argumentsSlice)
-                                    (list arguments-array
-                                          (ILValue fi-len)))))))]))
+          (define in-fp (fresh-id fp))
+          (values (cons fi in-fp)
+                  (list (ILVarDec fp (->jslist in-fp))))]))
 
      (define-values (body-stms body-value)
        (for/fold/last ([stms : ILStatement* '()]
@@ -251,13 +246,12 @@
                           (values (append stms s) v)
                           (values (append stms s (list v)) v))))
 
-     (define variadic-lambda? (not (list? formals)))
-     (define lambda-expr (ILLambda il-formals
+     (define lambda-expr (ILLambda (maybe-make-checked-formals in-formals)
                                    (append stms-formals-init
                                            body-stms
                                            (list (ILReturn body-value)))))
      (values '()
-             (if variadic-lambda?
+             (if (variadic-lambda? expr)
                  (ILApp (name-in-module 'core 'attachProcedureArity)
                         (list lambda-expr))
                  lambda-expr))]
@@ -340,6 +334,7 @@
                   ;; HACK: To avoid wrapping the base symbol into
                   ;; Symbol class We have to generate code context
                   ;; sensitively
+                  ;; TODO: We should accept only vaild JS idents.
                   (if (ILValue? il)
                       (ILRef (cast (ILValue-v il) Symbol)
                              (cast s Symbol))
@@ -502,6 +497,17 @@
       overwrite-mark-frame?)]
 
     [(ImportedIdent id src reachable?)
+     ;; Imported Identifiers are compiled to a ref operation from the
+     ;; module object. We do normalize the field we are looking for in
+     ;; ILRef but only if its not a valid JavaScript id literal, which
+     ;; excludes reserved keywords in this case.
+     ;;
+     ;; Hence, we have to normalize those cases right here so that we
+     ;; refer to right binding.
+     (define id* (if (reserved-keyword? id)
+                     (string->symbol (normalize-symbol id))
+                     id))
+
      ;; For compiling #%kernel (or primitive module) we may end
      ;; up thinking that's id is imported as we are actually
      ;; overriding the module. Don't make it happen.
@@ -520,10 +526,10 @@
         (values '()
                 (ILRef (ILRef (assert mod-obj-name symbol?)
                               *quoted-binding-ident-name*)
-                       id))]
+                       id*))]
        [else
         (define mod-obj-name (hash-ref (module-object-name-map) src))
-        (values '() (ILRef (assert mod-obj-name symbol?) id))])]
+        (values '() (ILRef (assert mod-obj-name symbol?) id*))])]
 
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
      ;; Overwrites previous key
@@ -736,35 +742,35 @@
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '(a) '())
-                  (PlainLambda '(a b) '())
-                  (PlainLambda '((a) . c) '()))))
+                  (PlainLambda '(a) '() #f)
+                  (PlainLambda '(a b) '() #f)
+                  (PlainLambda '((a) . c) '() #f))))
                "all clauses are reachable")
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '((a b c) . d) '())
-                  (PlainLambda '(a b) '()))))
+                  (PlainLambda '((a b c) . d) '() #f)
+                  (PlainLambda '(a b) '() #f))))
                "all clauses are reachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '((a b c) . d) '())
-                 (PlainLambda '(a b c) '()))))
+                 (PlainLambda '((a b c) . d) '() #f)
+                 (PlainLambda '(a b c) '() #f))))
               "last clauses is unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(() . a) '())
-                 (PlainLambda '((a) . c) '())
-                 (PlainLambda '(a b) '()))))
+                 (PlainLambda '(() . a) '() #f)
+                 (PlainLambda '((a) . c) '() #f)
+                 (PlainLambda '(a b) '() #f))))
               "second and third clause are unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(a) '())
-                 (PlainLambda '((a) . c) '())
-                 (PlainLambda '(a b) '()))))
+                 (PlainLambda '(a) '() #f)
+                 (PlainLambda '((a) . c) '() #f)
+                 (PlainLambda '(a b) '() #f))))
               "third clause is unreachable"))
 
 (: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
@@ -911,25 +917,23 @@
 
   ;; --------------------------------------------------------------------------
 
-  (test-case "Function Application"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+  (test-case "Lambda Expressions"
+    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda '(x) (list (ILReturn 'x))))
-    (check-ilexpr (PlainLambda 'x (LI* 'x))
+    (check-ilexpr (PlainLambda 'x (LI* 'x) #t)
                   '()
                   (ILApp
                    (name-in-module 'core 'attachProcedureArity)
                    (list
                     (ILLambda
-                     '()
+                     'x1
                      (list
                       (ILVarDec
                        'x
                        (ILApp
                         (name-in-module 'core 'Pair.listFromArray)
-                        (list
-                         (ILApp (name-in-module 'core 'argumentsToArray)
-                                (list (ILArguments))))))
+                        (list 'x1)))
                       (ILReturn 'x)))))))
 
   ;; --------------------------------------------------------------------------
@@ -945,7 +949,7 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Lambda expressions"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x))
+    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda
                    '(x)
@@ -953,7 +957,8 @@
     (check-ilexpr (PlainLambda '(a b)
                                (list
                                 (PlainApp (LocalIdent 'list)
-                                          (LI* 'a 'b))))
+                                          (LI* 'a 'b)))
+                               #t)
                   '()
                   (ILLambda
                    '(a b)
@@ -1020,9 +1025,11 @@
      (CaseLambda
       (list
        (PlainLambda '(a b) (list (PlainApp (kident 'add)
-                                           (LI* 'a 'b))))
+                                           (LI* 'a 'b)))
+                    #t)
        (PlainLambda '(a b c) (list (PlainApp (kident 'mul)
-                                             (LI* 'a 'b 'c))))))
+                                             (LI* 'a 'b 'c)))
+                    #t)))
      (list
       (ILVarDec
        'cl1
@@ -1159,7 +1166,7 @@
      (DefineValues '(x ident)
        (PlainApp (kident 'values)
                  (list (Quote 42)
-                       (PlainLambda '(x) (LI* 'x)))))
+                       (PlainLambda '(x) (LI* 'x) #t))))
      (list
       (ILVarDec
        'let_result1

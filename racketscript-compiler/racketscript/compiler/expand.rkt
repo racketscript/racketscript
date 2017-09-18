@@ -15,6 +15,7 @@
          racket/path
          racket/pretty
          racket/set
+         racket/sequence
          racket/syntax
          racket/vector
          syntax/modresolve
@@ -49,6 +50,8 @@
 (define current-module (make-parameter #f))
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
+(define lexical-bindings (make-parameter #f)) ;; Free-Id-Table
+(define skip-freshening? (make-parameter #f))
 
 ;;;----------------------------------------------------------------------------
 ;;;; Module dependencies and imports
@@ -67,6 +70,26 @@
 
 ;;;-----------------------------------------------------------------------------
 ;;;; Conversion and expansion
+
+(define (register-lexical-bindings! stx)
+  (cond
+    [(stx-list? stx)
+     (for-each register-lexical-bindings! (syntax->list stx))]
+    [(identifier? stx)
+     (dict-set! (lexical-bindings)
+                stx
+                (if (skip-freshening?)
+                    stx
+                    (car (generate-temporaries (list stx)))))]
+    [(stx-pair? stx)
+     (register-lexical-bindings! (stx-car stx))
+     (register-lexical-bindings! (stx-cdr stx))]
+    [else (error 'register-lexical-bindings "unexpected ~a" stx)]))
+
+(define (get-freshened-lexical-binding! id)
+  (dict-ref! (lexical-bindings)
+             id
+             (λ _ (error 'get-freshened-lexical-binding! "Missed binding: ~a" id))))
 
 #;(define (require-parse r)
   (syntax-parse r
@@ -99,16 +122,27 @@
     [((~datum protect) p ...) '()]
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
-(define (to-absyn v)
-  (define (formals->absyn formals)
-    (parameterize ([quoted? #t])
-      (let ([f (to-absyn formals)])
-        (cond
-          [(or (list? f) (symbol? f)) f]
-          [(cons? f) (let-values ([(fp fi) (splitf-at f identity)])
-                       (cons fp fi))]
-          [else (error 'λ "invalid λ formals")]))))
+(define (formals->absyn formals)
+  (cond
+    [(stx-list? formals) (stx-map formals->absyn formals)]
+    [(stx-pair? formals)
+     ;; Splits the formals to be compatible with
+     ;; LetValues/PlainLambda.  If we reach here, rest of the
+     ;; structure will also reach here unless its terminal. We build
+     ;; up proper part and improper part result recursively.
+     (cond
+       [(stx-pair? (stx-cdr formals))
+        (match-define (cons pos rst) (formals->absyn (stx-cdr formals)))
+        (cons (cons (formals->absyn (stx-car formals)) pos)
+              rst)]
+       [else (cons (list (formals->absyn (stx-car formals)))
+                   (formals->absyn (stx-cdr formals)))])]
+    [(identifier? formals)
+     (syntax-e (get-freshened-lexical-binding! formals))]
+    [(null? formals) null]
+    [else 'formals->absyn "Invalid formals: ~a" formals]))
 
+(define (to-absyn v)
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [v:str (syntax-e #'v)]
@@ -132,15 +166,17 @@
     [(if e0 e1 e2)
      (If (to-absyn #'e0) (to-absyn #'e1) (to-absyn #'e2))]
     [(let-values ([xs es] ...) b ...)
-     (LetValues (for/list ([x (syntax->list #'(xs ...))]
+     (register-lexical-bindings! #'(xs ...))
+     (LetValues (for/list ([x (syntax-e #'(xs ...))]
                            [e (syntax->list #'(es ...))])
-                  (cons (syntax->datum x)
+                  (cons (formals->absyn x)
                         (to-absyn e)))
                 (map to-absyn (syntax->list #'(b ...))))]
     [(letrec-values ([xs es] ...) b ...)
+     (register-lexical-bindings! #'(xs ...))
      (LetValues (for/list ([x (syntax->list #'(xs ...))]
                            [e (syntax->list #'(es ...))])
-                  (cons (syntax->datum x)
+                  (cons (formals->absyn x)
                         (to-absyn e)))
                 (map to-absyn (syntax->list #'(b ...))))]
     [(quote e) (Quote
@@ -156,12 +192,17 @@
      (CaseLambda
       (stx-map (λ (c)
                  (syntax-parse c
-                   [(formals . body) (PlainLambda (formals->absyn #'formals)
-                                                  (stx-map to-absyn #'body))]))
+                   [(formals . body)
+                    (register-lexical-bindings! #'formals)
+                    (PlainLambda (formals->absyn #'formals)
+                                 (stx-map to-absyn #'body)
+                                 #f)]))
                #'clauses))]
     [(#%plain-lambda formals . body)
+     (register-lexical-bindings! #'formals)
+     (define unchecked? (syntax-property v 'racketscript-unchecked-lambda?))
      (define fabsyn (formals->absyn #'formals))
-     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)))]
+     (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) unchecked?)]
     [(define-values (name)
        (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote mod:str)))
      ;; HACK: Special case for JSRequire
@@ -182,11 +223,10 @@
          [(symbol? mpath) (list #f mpath)]
          #;[(collects-module? mpath) (list #t '#%kernel)]
          [else (list #f mpath)]))
-     (define ident-sym (syntax-e #'i))
 
      (match (identifier-binding #'i)
-       ['lexical (LocalIdent ident-sym)]
-       [#f (TopLevelIdent ident-sym)]
+       ['lexical (LocalIdent (syntax-e (get-freshened-lexical-binding! #'i)))]
+       [#f (TopLevelIdent (syntax-e #'i))]
        [(list src-mod src-id nom-src-mod mod-src-id src-phase import-phase nominal-export-phase)
         ;; from where we import
         (match-define (list src-mod-path-orig self?) (index->path src-mod))
@@ -194,7 +234,7 @@
         (match-define (list module-renamed? src-mod-path) (rename-module src-mod-path-orig))
 
         (cond
-          [self? (LocalIdent ident-sym)]
+          [self? (LocalIdent (syntax-e #'i))]
           [else
            ;; Add the module from where we actual import this, so that we import this, and
            ;; any side-effects due to this module is actually executed
@@ -266,7 +306,10 @@
            (ImportedIdent effective-id effective-mod reachable?)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)
-     (Set! (syntax-e #'s) (to-absyn #'e))]
+     (let ([id* (if (equal? (identifier-binding #'s) 'lexical)
+                    (get-freshened-lexical-binding! #'s)
+                    #'s)])
+       (Set! (syntax-e id*) (to-absyn #'e)))]
     [(with-continuation-mark key value result)
      (WithContinuationMark (to-absyn #'key)
                            (to-absyn #'value)
@@ -323,7 +366,8 @@
     [(module name:id lang:expr (#%plain-module-begin forms ...))
      (parameterize ([current-module path]
                     [current-module-imports (set)]
-                    [current-directory (path-only path)])
+                    [current-directory (path-only path)]
+                    [lexical-bindings (make-free-id-table)])
        (define mod-id (syntax-e #'name))
        (log-rjs-info "[absyn] ~a" mod-id)
        (let* ([ast (filter-map to-absyn (syntax->list #'(forms ...)))]
@@ -472,7 +516,9 @@
            "util.rkt"
            "moddeps.rkt")
   (define-syntax-rule (to-absyn/expand stx)
-    (parameterize ([global-export-graph (hash)])
+    (parameterize ([global-export-graph (hash)]
+                   [skip-freshening? #t]
+                   [lexical-bindings (make-free-id-table)])
       (to-absyn/top (expand stx))))
   (define (ident i)
     (match (identifier-binding i)
@@ -511,9 +557,9 @@
   ;; Check lambdas
 
   (check-equal? (to-absyn/expand #`(λ (x) x))
-                (PlainLambda '(x) (list (LocalIdent 'x))))
+                (PlainLambda '(x) (list (LocalIdent 'x)) #f))
   (check-equal? (to-absyn/expand #`(λ x x))
-                (PlainLambda 'x (list (LocalIdent 'x))))
+                (PlainLambda 'x (list (LocalIdent 'x)) #f))
   (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c))))
                 (PlainLambda
                  '((a b) . c)
@@ -521,13 +567,14 @@
                   (PlainApp (ident #'+)
                             (list (LocalIdent 'a) (LocalIdent'b)
                                   (PlainApp (TopId'reduce)
-                                            (list (ident #'+) (LocalIdent 'c))))))))
+                                            (list (ident #'+) (LocalIdent 'c))))))
+                 #f))
   ;; Check application
 
   (check-equal? (to-absyn/expand #`(print "hello"))
                 (PlainApp (ident #'print) (list (Quote "hello"))))
   (check-equal? (to-absyn/expand #`((λ (x) x) 42))
-                (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)))
+                (PlainApp (PlainLambda '(x) (list (LocalIdent 'x)) #f)
                           (list (Quote 42))))
 
   ;; If expresion
@@ -572,7 +619,8 @@
                                (PlainApp
                                 (TopId 'fact)
                                 (list (PlainApp (ident #'sub1)
-                                                (list (LocalIdent 'n))))))))))))
+                                                (list (LocalIdent 'n)))))))))
+                   #f)))
   (check-equal?
    (to-absyn/expand
     #`(letrec-values
@@ -602,7 +650,8 @@
              (LocalIdent 'or-part)
              (LocalIdent 'or-part)
              (PlainApp (LocalIdent 'odd?)
-                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n)))))))))
+         #f)
         (PlainLambda
          '(n)
          (list
@@ -615,7 +664,8 @@
              (LocalIdent 'or-part)
              (LocalIdent 'or-part)
              (PlainApp (LocalIdent 'even?)
-                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n))))))))))))))
+                       (list (PlainApp (ident #'sub1) (list (LocalIdent 'n)))))))))
+         #f)))))
     (list (PlainApp (LocalIdent 'even?) (list (Quote 50))))))
 
 ;;; Begin expressions
@@ -652,7 +702,8 @@
       (list
        (PlainApp (ident #'write) (list (LocalIdent'a)))
        (PlainApp (ident #'write) (list (LocalIdent'b)))
-       (PlainApp (ident #'write) (list (LocalIdent'c)))))))
+       (PlainApp (ident #'write) (list (LocalIdent'c))))
+      #f)))
 
 ;;; Case Lambda
 
@@ -663,17 +714,93 @@
    (CaseLambda
     (list
      (PlainLambda '(a b) (list (PlainApp (ident #'+)
-                                         (list (LocalIdent 'a) (LocalIdent 'b)))))
+                                         (list (LocalIdent 'a) (LocalIdent 'b))))
+                  #f)
      (PlainLambda '(a b c) (list (PlainApp (ident #'*)
                                            (list (LocalIdent 'a)
                                                  (LocalIdent 'b)
-                                                 (LocalIdent 'c))))))))
+                                                 (LocalIdent 'c))))
+                  #f))))
+
+;;; Check freshening
+  (test-case "test freshening"
+    ;;TODO: We need to check alpha-equivalence here rather than hardcoding
+    ;;      renamed identifiers which can vary based on run.
+    (parameterize ([global-export-graph (hash)]
+                   [lexical-bindings (make-free-id-table)]
+                   [skip-freshening? #f])
+      (define expand-to-absyn (compose1 to-absyn/top expand))
+      (check-equal? (expand-to-absyn #'(λ (x) x))
+                    (PlainLambda '(x1) (list (LocalIdent 'x1)) #f))
+      (check-equal? (expand-to-absyn #'(let-values ([(x) 1]
+                                                    [(y) 2])
+                                         (list x y)
+                                         (let-values ([(x) 3]
+                                                      [(z) 4])
+                                           (list x y z)
+                                           (let-values ([(y) 6])
+                                             (list x y z)))))
+                    (LetValues
+                     (list (cons '(x2) (Quote 1)) (cons '(y3) (Quote 2)))
+                     (list
+                      (PlainApp
+                       (ImportedIdent 'list '#%kernel #f)
+                       (list (LocalIdent 'x2) (LocalIdent 'y3)))
+                      (LetValues
+                       (list (cons '(x4) (Quote 3)) (cons '(z5) (Quote 4)))
+                       (list
+                        (PlainApp
+                         (ImportedIdent 'list '#%kernel #f)
+                         (list (LocalIdent 'x4) (LocalIdent 'y3) (LocalIdent 'z5)))
+                        (LetValues
+                         (list (cons '(y6) (Quote 6)))
+                         (list
+                          (PlainApp
+                           (ImportedIdent 'list '#%kernel #f)
+                           (list (LocalIdent 'x4) (LocalIdent 'y6) (LocalIdent 'z5))))))))))
+
+      (check-equal? (expand-to-absyn #'(λ (x y z)
+                                         (list x y z (λ (x)
+                                                       (list x y z (λ (y)
+                                                                     (list x y z)))))))
+                    (PlainLambda
+                     '(x7 y8 z9)
+                     (list
+                      (PlainApp
+                       (ImportedIdent 'list '#%kernel #f)
+                       (list
+                        (LocalIdent 'x7)
+                        (LocalIdent 'y8)
+                        (LocalIdent 'z9)
+                        (PlainLambda
+                         '(x10)
+                         (list
+                          (PlainApp
+                           (ImportedIdent 'list '#%kernel #f)
+                           (list
+                            (LocalIdent 'x10)
+                            (LocalIdent 'y8)
+                            (LocalIdent 'z9)
+                            (PlainLambda
+                             '(y11)
+                             (list
+                              (PlainApp
+                               (ImportedIdent 'list '#%kernel #f)
+                               (list
+                                (LocalIdent 'x10)
+                                (LocalIdent 'y11)
+                                (LocalIdent 'z9))))
+                             #f))))
+                         #f))))
+                     #f)
+                    #f)))
 
 ;;; Check module and provides
 
   (test-case "simple module"
     (define module-output
-      (parameterize ([global-export-graph (hash)])
+      (parameterize ([global-export-graph (hash)]
+                     [skip-freshening? #t])
         (convert (expand
                   #'(module foo racket/base
                       (provide foo)
@@ -690,7 +817,8 @@
                      (PlainLambda '(name)
                                   (list
                                    (PlainApp (ident #'print)
-                                             (list (Quote "Hello")))))))))
+                                             (list (Quote "Hello"))))
+                                  #f)))))
 
   (check-equal? (parse-provide #'foo) (list (SimpleProvide 'foo)))
   (check-equal? (parse-provide #'(all-defined)) (list (AllDefined (set))))

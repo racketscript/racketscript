@@ -24,7 +24,6 @@
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
-         "freshen.rkt"
          "global.rkt"
          "logging.rkt"
          "moddeps.rkt"
@@ -248,12 +247,6 @@
        (= (get-module-timestamp ts mod)
           (file-or-directory-modify-seconds (actual-module-path mod)))))
 
-;; Syntax(Module) -> Syntax(Module)
-;; Freshens given module
-(define (freshen-module mod)
-  (parameterize ([current-directory (path-only (actual-module-path (current-source-file)))])
-    (freshen mod)))
-
 ;; -> Void
 ;; For given global parameters starts build process starting
 ;; with entry point module and all its dependencies
@@ -290,10 +283,11 @@
        (save-module-timestamp! timestamps next)
 
        (define expanded (quick-expand next))
-       (define renamed (freshen-module expanded))
-       (define ast (convert renamed (override-module-path next)))
+       (define ast (convert expanded (override-module-path next)))
 
-       (assemble-module (absyn-module->il* ast) #f)
+       (assemble-module (insert-arity-checks
+                         (absyn-module->il* ast))
+                        #f)
 
        ;; Run JS beautifier
        (when (js-output-beautify?)
@@ -416,25 +410,20 @@
                  (syntax->datum _)
                  (pretty-print _))]
     ['absyn (~> (expanded-module)
-                (freshen-module _)
                 (convert _ source)
                 (pretty-print _))]
-    ['rename  (~> (expanded-module)
-                  (freshen-module _)
-                  (syntax->datum _)
-                  (pretty-print _))]
     ['il (~> (expanded-module)
-             (freshen-module _)
              (convert _ source)
              (absyn-module->il* _)
+             (insert-arity-checks _)
              (pretty-print _))]
     ['js
      (logging? #f)
      (define output-string (open-output-string))
      (~> (expanded-module)
-         (freshen-module _)
          (convert _ source)
          (absyn-module->il* _)
+         (insert-arity-checks _)
          (assemble-module _ output-string))
      (displayln
       (if (js-output-beautify?)

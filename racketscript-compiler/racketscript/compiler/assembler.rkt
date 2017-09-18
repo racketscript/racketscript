@@ -54,7 +54,14 @@
   (match expr
     [(ILLambda args body)
      (emit "function(")
-     (emit (string-join (map normalize-symbol args) ", "))
+     (define args-str : (Listof String)
+       (cond
+         [(symbol? args) (list (~a "..." (normalize-symbol args)))]
+         [(list? args) (map normalize-symbol args)]
+         [(cons? args) (append1 (map normalize-symbol (car args))
+                                (~a "..." (normalize-symbol (cdr args))))]
+         [else (error 'assemble-expr "λ must be unchecked by assembler phase")]))
+     (emit (string-join args-str ", "))
      (emit ") {")
      (for ([s body])
        (assemble-statement s out))
@@ -81,7 +88,10 @@
         (emit ")")]
        [else
         (assemble-expr e out)])
-     (emit (~a "." (normalize-symbol s)))]
+     (let ([s* (if (js-identifier? s)
+                   s
+                   (normalize-symbol s))])
+       (emit (~a "." s*)))]
     [(ILIndex e e0)
      (assemble-expr e out)
      (emit "[")
@@ -414,6 +424,19 @@
   (check-expr (ILRef (ILRef (ILRef 'global 'window) 'document) 'write)
               "global.window.document.write"
               "successive refs to object shouldn't generate parens")
+
+  (check-expr (ILRef 'obj 'static)
+              "obj.static"
+              "Reserved keywords do not require normalization here")
+
+  (check-expr (ILRef 'obj 'if)
+              "obj.if"
+              "Reserved keywords do not require normalization here")
+
+  ;;TODO: Should we do this?
+  (check-expr (ILRef 'obj 'if-not)
+              "obj.if_not"
+              "Do normalization for other symbols")
 
   ;; NOTE: These are some cases whose output could be improved in future by reducing
   ;; unnecessary parens

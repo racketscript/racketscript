@@ -40,7 +40,7 @@
     (pattern (name:id
               [field-name:id (~datum :) field-type] ...))
     (pattern name))
-  
+
   ;; Maybe<Syntax> -> Syntax
   ;; Generate type definition and predicate code for creating an alias
   (define (generate-alias stx)

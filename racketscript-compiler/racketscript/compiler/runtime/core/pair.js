@@ -1,9 +1,9 @@
-import { Primitive } from './primitive.js';
+import { PrintablePrimitive } from './printable_primitive.js';
+import { displayNativeString, writeNativeString } from './print_native_string.js';
 import { isEqual } from './equality.js';
-import * as $ from './lib.js';
 
 /** @singleton */
-class Empty extends Primitive {
+class Empty extends PrintablePrimitive {
     equals(v) {
         return this === v;
     }
@@ -12,12 +12,11 @@ class Empty extends Primitive {
         return 0;
     }
 
-    toString() {
-        return '()';
-    }
-
-    toRawString() {
-        return "'()";
+    /**
+    * @param {!Ports.NativeStringOutputPort} out
+    */
+    displayNativeString(out) {
+        out.consume('()');
     }
 
     /**
@@ -40,7 +39,7 @@ export function isEmpty(v) {
     return v === EMPTY;
 }
 
-export class Pair extends Primitive {
+export class Pair extends PrintablePrimitive {
     /** @private */
     constructor(hd, tl) {
         super();
@@ -50,29 +49,43 @@ export class Pair extends Primitive {
         this._cachedHashCode = null;
     }
 
-    toString() {
-        const result = ['('];
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+     */
+    writeToPort(out, itemFn) {
+        out.consume('(');
         let rest = this;
         while (true) {
             if (check(rest)) {
-                result.push($.toString(rest.hd));
+                itemFn(out, rest.hd);
             } else {
-                result.push('. ', $.toString(rest));
+                out.consume('. ');
+                itemFn(out, rest);
                 break;
             }
             rest = rest.tl;
             if (isEmpty(rest)) {
                 break;
             } else {
-                result.push(' ');
+                out.consume(' ');
             }
         }
-        result.push(')');
-        return result.join('');
+        out.consume(')');
     }
 
-    toRawString() {
-        return `'${this.toString()}`;
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        this.writeToPort(out, displayNativeString);
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        this.writeToPort(out, writeNativeString);
     }
 
     equals(v) {

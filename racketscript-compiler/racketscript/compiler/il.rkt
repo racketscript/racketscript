@@ -39,7 +39,7 @@
   [ObjectPair      (Pairof ObjectKey ILExpr)]
 
   #:forms
-  [ILExpr   (ILLambda      [args      : (Listof Symbol)]
+  [ILExpr   (ILLambda      [args      : ILFormals]
                            [body      : ILStatement*])
             (ILBinaryOp    [operator  : Symbol]
                            [args      : (Listof ILExpr)])
@@ -86,6 +86,9 @@
                                 [finally    : ILStatement*])
                  (ILThrow       [expr       : ILExpr])]
 
+  [ILFormals     Formals
+                 (ILCheckedFormals [formals : Formals])]
+
   [ILProvide*    (Listof ILProvide)]
   [ILProvide     SimpleProvide
                  RenamedProvide])
@@ -94,7 +97,6 @@
 (define (il-apply-optimization mod opt)
   (match-define (ILModule id p r b) mod)
   (ILModule id p r (opt b)))
-
 
 (: ILObject-fields (-> ILObject (Listof ObjectKey)))
 (define (ILObject-fields o)
@@ -109,3 +111,31 @@
 (: flatten-statements (-> (Listof Any) ILStatement*))
 (define (flatten-statements stms)
   (cast (flatten (cast stms (Listof Any))) ILStatement*))
+
+(: il-formals-arity-includes (-> ILFormals Natural Boolean))
+(define (il-formals-arity-includes formals k)
+  (match formals
+    [(ILCheckedFormals formals*)
+     (formals-arity-includes formals* k)]
+    [v (assert v Formals?)
+       (formals-arity-includes v k)]))
+
+(: il-freshen-formals (-> ILFormals ILFormals))
+(define (il-freshen-formals formals)
+  (match formals
+    [(ILCheckedFormals formals*)
+     (ILCheckedFormals (freshen-formals formals*))]
+    [v (assert v Formals?)
+       (freshen-formals v)]))
+
+(: il-variadic-lambda? (-> ILLambda Boolean))
+(define (il-variadic-lambda? lam)
+  (not (list? (ILLambda-args lam))))
+
+(: il-formals->list (-> ILFormals (Listof Symbol)))
+(define (il-formals->list formals)
+  (match formals
+    [(ILCheckedFormals formals*)
+     (formals->list formals*)]
+    [v (assert v Formals?)
+       (formals->list v)]))

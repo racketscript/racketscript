@@ -13,3 +13,13 @@
 (define pb (posn0 1 2))
 (equal? (posn0 1 2) pb)
 (displayln pb)
+(writeln pb)
+(println pb)
+
+(displayln (posn '(1 2) #\x))
+(writeln (posn '(1 2) #\x))
+(println (posn '(1 2) #\x))
+
+(displayln (posn0 '(1 2) #\x))
+(writeln (posn0 '(1 2) #\x))
+(println (posn0 '(1 2) #\x))

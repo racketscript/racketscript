@@ -1,9 +1,9 @@
 import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextDecoder is not global and needs to be imported.
-if (typeof TextDecoder === 'undefined') {
-    var TextDecoder = require('util').TextDecoder;
-}
+const TextDecoder = (typeof window === 'undefined')
+    ? require('util').TextDecoder
+    : window.TextDecoder; // eslint-disable-line no-undef
 
 /**
  * @param {*} bs
@@ -45,6 +45,16 @@ const utf8Decoder = new TextDecoder('utf-8');
  */
 export function toString(bytes) {
     return utf8Decoder.decode(bytes);
+}
+
+/**
+ * Writes a string representation similar to Racket's `display` to the given port.
+ *
+ * @param {!Ports.NativeStringOutputPort} out
+ * @param {!Uint8Array} bytes
+ */
+export function displayNativeString(out, bytes) {
+    out.consume(toString(bytes));
 }
 
 /**

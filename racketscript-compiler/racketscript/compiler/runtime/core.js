@@ -40,15 +40,14 @@ export {
 };
 
 export {
-    toString,
-    format,
-
     argumentsToArray,
-    argumentsSlice,
+    argumentsSlice
+} from './core/lib.js';
 
+export {
     racketCoreError,
     racketContractError
-} from './core/lib.js';
+} from './core/errors.js';
 
 export {
     attachProcedureArity
@@ -65,6 +64,12 @@ export {
     hashForEqv,
     hashForEqual
 } from './core/hashing.js';
+
+export {
+    display,
+    write,
+    print
+} from './core/printing.js';
 
 // ;-----------------------------------------------------------------------------
 
