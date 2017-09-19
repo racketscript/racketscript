@@ -26,7 +26,9 @@
 
          primitive-modules
          ignored-module-imports-in-boot
-         ignored-undefined-identifier?)
+         ignored-undefined-identifier?
+
+         skip-arity-checks?)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -124,3 +126,8 @@
        '#%foreign
        '#%place
        (build-path racketscript-runtime-dir "lib.rkt")))
+
+;;; ---------------------------------------------------------------------------
+
+(: skip-arity-checks? (Parameter Boolean))
+(define skip-arity-checks? (make-parameter #f))

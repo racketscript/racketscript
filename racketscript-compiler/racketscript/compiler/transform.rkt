@@ -217,7 +217,7 @@
 
      (: maybe-make-checked-formals (-> Formals ILFormals))
      (define (maybe-make-checked-formals formals)
-       (if unchecked?
+       (if (or unchecked? (skip-arity-checks?))
            formals
            (ILCheckedFormals formals)))
 

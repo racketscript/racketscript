@@ -324,6 +324,7 @@
    [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
    [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
+   ["--skip-arity-checks" "Skip arity checks in beginning of functions" (skip-arity-checks? #t)]
    ["--stdin" "Reads module from standard input, with file name argument being pseudo name"
     (input-from-stdin? #t)]
    ["--enable-self-tail" "Translate self tail calls to loops"
