@@ -34,6 +34,9 @@
 (define-language IL
   #:alias
   [ILStatement*    (Listof ILStatement)]
+  [ILStatement**   (U ILStatement
+                      ILStatement*
+                      (Listof ILStatement**))]
   [ObjectKey       (U String Symbol)]
   [ILLValue        (U Symbol ILRef ILIndex)]
   [ObjectPair      (Pairof ObjectKey ILExpr)]
@@ -108,9 +111,9 @@
   (for/list ([item (ILObject-items o)])
     (cdr item)))
 
-(: flatten-statements (-> (Listof Any) ILStatement*))
+(: flatten-statements (-> ILStatement** ILStatement*))
 (define (flatten-statements stms)
-  (cast (flatten (cast stms (Listof Any))) ILStatement*))
+  (assert (flatten stms) ILStatement*?))
 
 (: il-formals-arity-includes (-> ILFormals Natural Boolean))
 (define (il-formals-arity-includes formals k)

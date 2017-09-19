@@ -312,11 +312,11 @@
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
     [(regexp? v)
-     (define s (string-replace (cast (object-name v) String) "/" "\\/"))
+     (define s (string-replace (assert (object-name v) string?) "/" "\\/"))
      (write (format "/~a/" s) out)]
     [(byte-regexp? v)
      (define s (string-replace (bytes->string/utf-8
-                                (cast (object-name v) Bytes))
+                                (assert (object-name v) bytes?))
                                "/" "\\/"))
      (write (format "/~a/" s) out)]
     [(void? v)

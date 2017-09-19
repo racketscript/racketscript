@@ -53,7 +53,7 @@
 
 (: racketscript-compiler-dir Path)
 (define racketscript-compiler-dir
-  (cast (path-only racketscript-main-module) Path))
+  (assert (path-only racketscript-main-module) path?))
 
 (: racketscript-runtime-dir Path)
 (define racketscript-runtime-dir

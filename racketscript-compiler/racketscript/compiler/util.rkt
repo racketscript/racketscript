@@ -170,9 +170,9 @@
         p
         (build-path (~a "./" p-str))))
   (fix-for-down
-   (cast (find-relative-path (path-parent (module-output-file base))
-                             runtime-fpath)
-         Path)))
+   (assert (find-relative-path (path-parent (module-output-file base))
+                               runtime-fpath)
+           path?)))
 
 ;;; Module path renaming ------------------------------------------------------
 
@@ -251,9 +251,9 @@
   (let ([src (current-source-file)])
     (if src
         (fix-for-down
-         (cast (find-relative-path (path-parent (module-output-file src))
-                                   (module-output-file mod-path))
-               Path))
+         (assert (find-relative-path (path-parent (module-output-file src))
+                                     (module-output-file mod-path))
+                 path?))
          (error 'module->relative-import "current-source-file is #f"))))
 
 (: collects-module? (-> Path (Option Path)))
@@ -269,7 +269,7 @@
 (: runtime-module? (-> Path (Option Path)))
 (define (runtime-module? mod-path)
   (and (string-prefix? (~a mod-path) (~a racketscript-runtime-dir))
-       (cast (find-relative-path racketscript-runtime-dir mod-path) Path)))
+       (assert (find-relative-path racketscript-runtime-dir mod-path) path?)))
 
 (: module-kind (-> (U Symbol Path)
                    (U (List 'collects  Path Path)
@@ -284,12 +284,12 @@
     [(collects-module? mod-path)
      (list 'collects
            it
-           (cast (find-relative-path it mod-path) Path))]
+           (assert (find-relative-path it mod-path) path?))]
     [(links-module? mod-path)
      (list 'links
            (car it)
            (cadr it)
-           (cast (find-relative-path (cadr it) mod-path) Path))]
+           (assert (find-relative-path (cadr it) mod-path) path?))]
     [else (list 'general mod-path)]))
 
 (: converge (∀ [X] (-> (-> X X) X X)))

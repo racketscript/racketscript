@@ -42,7 +42,7 @@
     [(list? formals*)
      (list (check-arity-stm '!== (length formals*)))]
     [(cons? formals*)
-     (define pos-formals (cast (car formals*) (Listof Symbol)))
+     (define pos-formals (car formals*))
      (list (check-arity-stm '< (length pos-formals)))]))
 
 (: insert-arity-checks (-> ILModule ILModule))
@@ -102,7 +102,7 @@
                 (IfClause (and pred (traverse-expr pred))
                           (traverse-stm* body))))]
       [(ILAssign lvalue rvalue)
-       (ILAssign (cast (traverse-expr lvalue) ILLValue)
+       (ILAssign (assert (traverse-expr lvalue) ILLValue?)
                  (traverse-expr rvalue))]
       [(ILWhile condition body)
        (ILWhile (traverse-expr condition)
@@ -230,7 +230,7 @@
                                    (var-in-scope? lvalue)
                                    (equal? e lvalue))
           (ILReturn (handle-expr rvalue))]
-         [_ (ILAssign (cast (handle-expr lvalue) ILLValue)
+         [_ (ILAssign (assert (handle-expr lvalue) ILLValue?)
                       (handle-expr rvalue))])]
       [(ILIf pred t-branch f-branch)
        (match-define (list t-branch* t-removed)
@@ -641,7 +641,7 @@
                   ;; which breaks the closure in case any of the
                   ;; closure variable is mutated.
                   (reset-formals (lambda-formals) new-frmls))
-                (list (ILLabel (cast (lambda-start-label) Symbol))
+                (list (ILLabel (assert (lambda-start-label) symbol?))
                       (ILWhile (ILValue #t)
                                (append reset-formals-decls s*)))])))
          (ILLambda (or (lambda-updated-formals) args)
@@ -693,7 +693,7 @@
               (ILAssign frml (handle-expr/general a))))
           (append compute-args
                   (list (ILContinue
-                         (cast (lambda-start-label) Symbol))))]
+                         (assert (lambda-start-label) symbol?))))]
          [else (ILReturn (ILApp lam (map handle-expr/general args)))])]
       [(ILVarDec id expr)
        (ILVarDec id (and expr

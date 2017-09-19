@@ -127,9 +127,9 @@
   (cond
     [(symbol? formals) (fresh-id (string->symbol (format "_~a" formals)))]
     [(list? formals) (for/list ([f : Symbol formals]) : (Listof Symbol)
-                       (cast (freshen-formals f) Symbol))]
+                       (assert (freshen-formals f) symbol?))]
     [(pair? formals) (cons (cast (freshen-formals (car formals)) (Listof Symbol))
-                           (cast (freshen-formals (cdr formals)) Symbol))]))
+                           (assert (freshen-formals (cdr formals)) symbol?))]))
 
 (: formals->list (-> Formals (Listof Symbol)))
 (define (formals->list formals)

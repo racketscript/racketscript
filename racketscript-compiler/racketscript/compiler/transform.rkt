@@ -89,7 +89,7 @@
           [(? symbol? _)
            (jsruntime-import-path path
                                   (jsruntime-module-path mod-path))]
-          [_ (module->relative-import (cast mod-path Path))]))
+          [_ (module->relative-import (assert mod-path path?))]))
       ;; See expansion of identifier in `expand.rkt` for primitive
       ;; modules
       (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
@@ -320,7 +320,7 @@
     [(PlainApp (ImportedIdent '#%js-ffi _ _) args)
      (match args
        [(list (Quote 'var) (Quote var))
-        (values '() (cast var Symbol))]
+        (values '() (assert var symbol?))]
        [(list (Quote 'string) (Quote str))
         (values '() (ILValue str))]
        [(list (Quote 'ref) b xs ...)
@@ -336,9 +336,9 @@
                   ;; sensitively
                   ;; TODO: We should accept only vaild JS idents.
                   (if (ILValue? il)
-                      (ILRef (cast (ILValue-v il) Symbol)
-                             (cast s Symbol))
-                      (ILRef il (cast s Symbol)))))]
+                      (ILRef (assert (ILValue-v il) symbol?)
+                             (assert s symbol?))
+                      (ILRef il (assert s symbol?)))))]
        [(list (Quote 'index) b xs ...)
         (define-values (stms il) (absyn-expr->il b #f))
         (for/fold ([stms stms]
@@ -347,7 +347,7 @@
           (define-values (x-stms s-il) (absyn-expr->il x #f))
           (values (append stms x-stms)
                   (if (ILValue? il)
-                      (ILIndex (cast (ILValue-v il) Symbol)
+                      (ILIndex (assert (ILValue-v il) symbol?)
                                s-il)
                       (ILIndex il s-il))))]
        [(list (Quote 'assign) lv rv)
@@ -355,7 +355,7 @@
         (define-values (rv-stms rv-il) (absyn-expr->il rv #f))
         (values (append lv-stms
                         rv-stms
-                        (list (ILAssign (cast lv-il ILLValue) rv-il)))
+                        (list (ILAssign (assert lv-il ILLValue?) rv-il)))
                 (ILValue (void)))]
        [(list (Quote 'new) lv)
         (define-values (stms il) (absyn-expr->il lv #f))
@@ -373,7 +373,7 @@
                 (ILArray items*))]
        [(list (Quote 'object) items ...)
         (define-values (keys vals) (split-at items (cast (/ (length items) 2)
-                                                           Nonnegative-Integer)))
+                                                         Nonnegative-Integer)))
         (define-values (stms* items*)
           (for/fold ([stms : ILStatement* '()]
                      [kvs : (Listof (Pairof ObjectKey ILExpr)) '()])
@@ -381,7 +381,7 @@
                      [v (cast vals (Listof Expr))])
             (define-values (s* v*) (absyn-expr->il v #f))
             (values (append stms s*)
-                    (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
+                    (append kvs (list (cons (assert (Quote-datum k) ObjectKey?)
                                             v*))))))
         (values stms* (ILObject items*))]
        [(list (Quote 'throw) e)
@@ -400,7 +400,7 @@
         (define-values (stms0 val0) (absyn-expr->il e0 #f))
         (define-values (stms1 val1) (absyn-expr->il e1 #f))
         (values (append stms0 stms1)
-                (ILBinaryOp (cast oper Symbol) (list val0 val1)))]
+                (ILBinaryOp (assert oper symbol?) (list val0 val1)))]
        [(list (Quote 'null))
         (values '() (ILNull))]
        [(list (Quote 'undefined))
@@ -515,8 +515,8 @@
      (cond
        [(and (or (symbol? (current-source-file))
                  (path? (current-source-file)))
-             (equal? (actual-module-path (cast (current-source-file) ModuleName))
-                     (actual-module-path (cast src ModuleName))))
+             (equal? (actual-module-path (assert (current-source-file) ModuleName?))
+                     (actual-module-path (assert src ModuleName?))))
         (absyn-expr->il (LocalIdent id) overwrite-mark-frame?)]
        [(false? reachable?)
         ;; Probably a macro-introduced binding.
@@ -621,8 +621,7 @@
      (ILApp (name-in-module 'core 'Vector.make)
             (list
              (ILArray
-              (map absyn-value->il
-                   (vector->list (cast d (Vectorof Any)))))))]
+              (map absyn-value->il (vector->list d)))))]
     [(hash? d)
      (: maker Symbol)
      (define maker (cond
