@@ -600,7 +600,7 @@
   (cond
     [(Quote? d) (absyn-value->il (Quote-datum d))]
     [(string? d)
-     (ILApp (name-in-module 'core 'UString.makeInternedImmutable)
+     (ILApp (name-in-module 'core 'UString.make)
             (list (ILValue d)))]
     [(symbol? d)
      (ILApp (name-in-module 'core 'Symbol.make)
@@ -876,7 +876,7 @@
   (: ~str (-> String ILExpr))
   (define (~str s)
     (ILApp
-     (name-in-module 'core 'UString.makeInternedImmutable)
+     (name-in-module 'core 'UString.make)
      (list (ILValue s))))
 
   (: ~sym (-> Symbol ILExpr))

@@ -317,6 +317,12 @@ export const makeInternedImmutable = internedMake(nativeString => makeImmutable(
  * @param {!string} nativeString
  * @return {!ImmutableUString}
  */
+export const make = makeInternedImmutable;
+
+/**
+ * @param {!string} nativeString
+ * @return {!ImmutableUString}
+ */
 export function makeImmutable(nativeString) {
     return makeImmutableFromCharsAndNativeString(
         nativeStringToChars(nativeString),
