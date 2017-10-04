@@ -183,14 +183,19 @@
         result
         (loop #js.lst.tl (#js.Core.Pair.make #js.lst.hd result)))))
 
-(define+provide (list* a0 . args)
-  (define lst (reverse (cons a0 args)))
-  (let loop ([rst (cdr lst)]
-             [result (car lst)])
-    (if (null? rst)
-        rst
-        (loop (cdr rst)
-              (cons (car rst) result)))))
+(define+provide list*
+  (v-λ () #:unchecked
+    ;; TODO: check at-least one argument given
+    (define n-args #js.arguments.length)
+    (define top-arguments arguments) ;;TODO: Make this explicit bound like `this`
+    (let loop ([ii (binop - n-args 1)]
+               [result ($ arguments (binop - n-args 1))])
+      (cond
+        [(binop === ii 0) result]
+        [else
+         (define next-ii (binop - ii 1))
+         (loop next-ii
+               (#js.Core.Pair.make ($ top-arguments next-ii) result))]))))
 
 (define+provide append
   (v-λ () #:unchecked
