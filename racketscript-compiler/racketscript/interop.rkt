@@ -24,7 +24,9 @@
          racket-string
          assoc->object
          (rename-out [*in-js-array in-js-array]
-                     [*in-js-object in-js-object]))
+                     [*in-js-object in-js-object])
+         for/js-array
+         for/js-object)
 
 (require syntax/parse/define
          (for-syntax syntax/parse
@@ -241,8 +243,7 @@
            #true
 
            ;; loop args
-           [($/binop + i 1)])]]
-      [_ #f])))
+           [($/binop + i 1)])]])))
 
 #;(define (unsafe-js-array-length arr)
   ($ arr 'length))
@@ -292,8 +293,7 @@
            #true
 
            ;; loop args
-           [($/binop + i 1)])]]
-      [_ #f])))
+           [($/binop + i 1)])]])))
 
 (define (in-js-obect obj)
   (check-object obj)
@@ -305,6 +305,30 @@
 (define (check-object v)
   (unless (js-object? v)
     (raise-argument-error 'in-js-object "js-object?" v)))
+
+(define-syntax (for/js-array stx)
+  (syntax-parse stx
+    [(_ clauses body ... tail-expr)
+     #:with original-stx stx
+     #'(for/fold/derived original
+                         ([result ($/array)])
+                         clauses
+                         body ...
+                         (define iter-result tail-expr)
+                         ($$ result.push iter-result)
+                         result)]))
+
+(define-syntax (for/js-object stx)
+  (syntax-parse stx
+    [(_ clauses body ... tail-expr)
+     #:with original-stx stx
+     #'(for/fold/derived original
+                         ([result ($/obj)])
+                         clauses
+                         body ...
+                         (let-values ([(k v) tail-expr])
+                           ($/:= ($ result k) v))
+                         result)]))
 
 (module+ test
   (require rackunit)
