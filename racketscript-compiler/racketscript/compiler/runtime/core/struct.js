@@ -55,10 +55,15 @@ class Struct extends PrintablePrimitive {
         const guardLambda = this._desc._options.guard;
         const finalCallerName = callerName ||
             this._desc._options.constructorName ||
-            this._desc._options.name;
+              this._desc._options.name;
         if (guardLambda) {
             const guardFields = fields.concat(finalCallerName);
-            fields = guardLambda(...guardFields).getAll();
+	    let new_fields = guardLambda(...guardFields);
+	    if (Values.check(new_fields)) {
+		fields = new_fields.getAll();
+	    } else {
+		fields = [new_fields];
+	    }
         }
 
         // Initialize current and super instance
