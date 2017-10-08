@@ -18,7 +18,11 @@ export function displayNativeString(out, v) {
     } else if (Bytes.check(v)) {
         Bytes.displayNativeString(out, v);
     } else if (Procedure.check(v)) {
-        Procedure.displayNativeString(out, v);
+	if (v.__rjs_struct_object) {
+	    v.__rjs_struct_object.displayNativeString(out);
+	} else {
+            Procedure.displayNativeString(out, v);
+	}
     } else /* if (typeof v === 'number' || typeof v === 'string') */ {
         out.consume(v.toString());
     }

@@ -631,6 +631,9 @@
 (define+provide (fprintf out form . args)
   (apply #js.Kernel.fprintf (print-as-expression) out form args))
 
+(define+provide (eprintf form . args)
+  (apply #js.Kernel.fprintf (print-as-expression) (current-output-port) form args))
+
 (define+provide (format form . args)
   (let ([out (open-output-string)])
        (apply fprintf out form args)
