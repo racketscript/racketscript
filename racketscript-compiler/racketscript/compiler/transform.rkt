@@ -157,7 +157,8 @@
           (~> (set->list quoted-bindings)
               (filter (λ (b) (set-member? top-level-defines b)) _)
               (map (λ ([b : Symbol])
-                     (ILAssign (ILRef *quoted-binding-ident-name* b) b))
+                     (define b* (string->symbol (normalize-symbol b)))
+                     (ILAssign (ILRef *quoted-binding-ident-name* b*) b*))
                    _))))
 
   (ILModule path
