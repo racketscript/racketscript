@@ -22,7 +22,11 @@
          =>$
          js-string
          racket-string
-         assoc->object)
+         assoc->object
+         (rename-out [*in-js-array in-js-array]
+                     [*in-js-object in-js-object])
+         for/js-array
+         for/js-object)
 
 (require syntax/parse/define
          (for-syntax syntax/parse
@@ -209,6 +213,122 @@
              [else (error 'assoc->object "invalid key value")])))
        ($/:= ($ result key) (car (cdr p)))
        (loop (cdr pairs))])))
+
+(define-sequence-syntax *in-js-array
+  (lambda () #'in-js-array)
+  (lambda (stx)
+    (syntax-case stx ()
+      [[(id) (_ arr-expr)]
+       #'[(id)
+          (:do-in
+           ;; outer bindings
+           ([(arr) arr-expr])
+
+           ;; outer check
+           (unless (js-array? arr) (in-js-array arr))
+
+           ;; loop bindings
+           ([i 0])
+
+           ;; position check
+           (< i ($ arr 'length))
+
+           ;; inner bindings
+           ([(id) ($ arr i)])
+
+           ;; pre guard
+           #true
+
+           ;; post guard
+           #true
+
+           ;; loop args
+           [($/binop + i 1)])]])))
+
+#;(define (unsafe-js-array-length arr)
+  ($ arr 'length))
+
+#;(define (unsafe-js-array-ref arr i)
+  ($ arr 'length i))
+
+(define (js-array? v)
+  ($/instanceof v ($ 'Array)))
+
+(define (in-js-array arr)
+  (check-array arr)
+  (for/list ([v (*in-js-array arr)]) v))
+
+(define (check-array v)
+  (unless (js-array? v)
+    (raise-argument-error 'in-js-array "js-array?" v)))
+
+(define-sequence-syntax *in-js-object
+  (lambda () #'in-js-array)
+  (lambda (stx)
+    (syntax-case stx ()
+      [[(key val) (_ obj-expr)]
+       #'[(key val)
+          (:do-in
+           ;; outer bindings
+           ([(obj) obj-expr]
+            [(keys) (($ ($ 'Object) 'keys) obj-expr)])
+
+           ;; outer check
+           (unless (js-object? obj) (*in-js-object obj))
+
+           ;; loop bindings
+           ([i 0])
+
+           ;; position check
+           (< i ($ keys 'length))
+
+           ;; inner bindings
+           ([(key) ($ keys i)]
+            [(val) ($ obj ($ keys i))])
+
+           ;; pre guard
+           #true
+
+           ;; post guard
+           #true
+
+           ;; loop args
+           [($/binop + i 1)])]])))
+
+(define (in-js-obect obj)
+  (check-object obj)
+  (for/list ([(k v) (*in-js-object obj)]) (values k v)))
+
+(define (js-object? v)
+  ($/typeof v "object"))
+
+(define (check-object v)
+  (unless (js-object? v)
+    (raise-argument-error 'in-js-object "js-object?" v)))
+
+(define-syntax (for/js-array stx)
+  (syntax-parse stx
+    [(_ clauses body ... tail-expr)
+     #:with original-stx stx
+     #'(for/fold/derived original
+                         ([result ($/array)])
+                         clauses
+                         body ...
+                         (define iter-result tail-expr)
+                         ($$ result.push iter-result)
+                         result)]))
+
+(define-syntax (for/js-object stx)
+  (syntax-parse stx
+    [(_ clauses body ... tail-expr)
+     #:with original-stx stx
+     #'(for/fold/derived original
+                         ([result ($/obj)])
+                         clauses
+                         body ...
+                         (let-values ([(k v) tail-expr])
+                           ($/:= ($ result k) v))
+                         result)]))
 
 (module+ test
   (require rackunit)

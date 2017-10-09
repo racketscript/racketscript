@@ -157,7 +157,8 @@
           (~> (set->list quoted-bindings)
               (filter (λ (b) (set-member? top-level-defines b)) _)
               (map (λ ([b : Symbol])
-                     (ILAssign (ILRef *quoted-binding-ident-name* b) b))
+                     (define b* (string->symbol (normalize-symbol b)))
+                     (ILAssign (ILRef *quoted-binding-ident-name* b*) b*))
                    _))))
 
   (ILModule path
@@ -217,7 +218,7 @@
 
      (: maybe-make-checked-formals (-> Formals ILFormals))
      (define (maybe-make-checked-formals formals)
-       (if unchecked?
+       (if (or unchecked? (skip-arity-checks?))
            formals
            (ILCheckedFormals formals)))
 
@@ -600,7 +601,7 @@
   (cond
     [(Quote? d) (absyn-value->il (Quote-datum d))]
     [(string? d)
-     (ILApp (name-in-module 'core 'UString.makeInternedImmutable)
+     (ILApp (name-in-module 'core 'UString.make)
             (list (ILValue d)))]
     [(symbol? d)
      (ILApp (name-in-module 'core 'Symbol.make)
@@ -876,7 +877,7 @@
   (: ~str (-> String ILExpr))
   (define (~str s)
     (ILApp
-     (name-in-module 'core 'UString.makeInternedImmutable)
+     (name-in-module 'core 'UString.make)
      (list (ILValue s))))
 
   (: ~sym (-> Symbol ILExpr))
