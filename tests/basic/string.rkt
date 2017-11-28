@@ -38,6 +38,20 @@
 (displayln (string-append "Hello" "World" "🎂"))
 (displayln (immutable? (string-append "a" "🎂")))
 
+; Valid string->number arguments
+(displayln (string->number "123"))
+(displayln (string->number "-123"))
+(displayln (string->number "A"))
+(displayln (string->number "AFe1" 16))
+(displayln (string->number "1101" 2))
+
+; Invalid string->number arguments
+(displayln (string->number " 123"))
+(displayln (string->number "123x"))
+(displayln (string->number "2" 2))
+(displayln (string->number "" 2))
+(displayln (string->number " "))
+
 ;; These don't work because RacketScript cannot yet handle racket/string.
 ; (displayln (car (string-split "Hello+World" "+")))
 ; (displayln (immutable? (car (string-split "Hello+World" "+"))))
