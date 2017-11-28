@@ -659,6 +659,20 @@
 (define-checked+provide (string->uninterned-symbol [s string?])
   (#js.Core.Symbol.makeUninterned s))
 
+; Does not support prefixed forms such as "#b101".
+(define+provide (string->number s [radix 10])
+  (define (integer-in lo hi)
+    (v-λ (v) #:unchecked
+      (and (exact-integer? v) (>= v lo) (<= v hi))))
+  (check/raise string? s 0)
+  (check/raise (integer-in 2 16) radix 1)
+  (let ([result (#js*.parseInt s radix)])
+    (if (or (#js*.isNaN result)
+            ; Work around parseInt permissiveness.
+            (not (#js.s.isValidInteger radix)))
+      #f
+      result)))
+
 (define-checked+provide (symbol-interned? [sym symbol?])
   ;;NOTE: We simply check if given symbol is equal to an
   ;; interned symbol.
