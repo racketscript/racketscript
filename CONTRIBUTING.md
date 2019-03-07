@@ -142,8 +142,6 @@ it actually is covered by our test suite.
 
 ## Submitting Patches
 
-*TLDR*: Pull Requests must be created against the `develop` branch.
-
 Make sure that there is an open ticket for the issue you want to work
 on, to avoid duplicate effort and to keep the maintainers informed.
 
@@ -151,7 +149,7 @@ For small/trivial changes, you can submit a pull request
 directly. In this case, make sure that the PR contains all
 the information that you would otherwise provide in the issue ticket.
 
-- Open a new GitHub pull request against `develop` branch.
+- Open a new GitHub pull request against `master` branch.
 - Ensure the PR description clearly describes the problem and
   solution. Include the relevant issue number if applicable.
 - Make sure the test suite passes and your changes are covered. Note
