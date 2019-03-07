@@ -194,6 +194,10 @@ Node. Babel is highly recommended if your target is NodeJS.
 
 Please read [Contribution Guidelines](CONTRIBUTING.md).
 
+## Troubleshooting
+
+Please read the [Troubleshooting Wiki](https://github.com/vishesh/racketscript/wiki/Troubleshooting).
+
 ## Related Work
 
 - [Whalesong](https://github.com/soegaard/whalesong)

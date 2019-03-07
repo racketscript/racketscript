@@ -232,6 +232,35 @@ export class UString extends Primitive /* implements Printable */ {
     printUString(out) {
         this.writeUString(out);
     }
+
+    /**
+     * Whether the string can be parsed as an integer as defined by
+     * Racket's string->number.
+     *
+     * @param {!number} radix an integer in [2, 16] range.
+     * @return {!boolean}
+     */
+    isValidInteger(radix) {
+        const chars = this.chars;
+        const startFrom = chars[0].codepoint === /* '-' */ 45 ? 1 : 0;
+        if (radix > 10) {
+            const maxLowercase = /* 'a' - 11 */ 86 + radix;
+            const maxUppercase = maxLowercase - 32;
+            for (let i = startFrom; i < chars.length; ++i) {
+                let cp = chars[i].codepoint;
+                if (cp < /* '0' */ 48 || cp > maxLowercase ||
+                    cp > maxUppercase && cp < /* 'a' */ 97 ||
+                    cp > /* '9' */ 57 && cp < /* 'A' */ 65) return false;
+            }
+        } else {
+            const max = /* '0' - 1 */ 47 + radix;
+            for (let i = startFrom; i < chars.length; ++i) {
+                let cp = chars[i].codepoint;
+                if (cp < /* '0' */ 48 || cp > max) return false;
+            }
+        }
+        return true;
+    }
 }
 
 /**
