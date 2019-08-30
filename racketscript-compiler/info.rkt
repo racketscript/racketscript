@@ -9,7 +9,7 @@
     "typed-racket-lib"
     "typed-racket-more"
     "threading"
-    "graph"
+    "graph-lib"
     "anaphoric"))
 
 (define build-deps '("base"
