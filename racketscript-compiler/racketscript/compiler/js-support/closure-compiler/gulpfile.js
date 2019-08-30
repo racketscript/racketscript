@@ -10,7 +10,7 @@ gulp.task('copy-hamt', function() {
 	.pipe(gulp.dest("runtime/third-party/"));
 });
 
-gulp.task('build', ['copy-hamt'], function() {
+gulp.task('build', gulp.series('copy-hamt', function() {
     return gulp.src(['./**/*.js',
 		     '!./node_modules/**',
 		     '!./dist/**',
@@ -24,8 +24,8 @@ gulp.task('build', ['copy-hamt'], function() {
             js_output_file: 'compiled.js'
         }))
         .pipe(gulp.dest('dist'));
-});
+}));
 
-gulp.task('default', ['build']);
+gulp.task('default', gulp.series('build', function () {}));
 
 
