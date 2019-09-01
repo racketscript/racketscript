@@ -14,7 +14,7 @@ gulp.task('copy-hamt', function() {
 	.pipe(gulp.dest("runtime/third-party/"));
 });
 
-gulp.task('transform', ['copy-hamt'], function() {
+gulp.task('transform', gulp.series('copy-hamt', function() {
     return gulp.src(['./**/*.js',
 		     '!./node_modules/**',
 		     '!./dist/**',
@@ -41,8 +41,8 @@ gulp.task('transform', ['copy-hamt'], function() {
 	    }
 	}))
         .pipe(gulp.dest('dist'));
-});
+}));
 
-gulp.task('build', ['transform'], function () {});
+gulp.task('build', gulp.series('transform', function () {}));
 
-gulp.task('default', ['build']);
+gulp.task('default', gulp.series('build', function () {}));

@@ -12,12 +12,12 @@ gulp.task('copy-hamt', function() {
 	.pipe(gulp.dest("runtime/third-party/"));
 });
 
-gulp.task('build', ['copy-hamt'], function() {
+gulp.task('build', gulp.series('copy-hamt', function() {
     return gulp.src('modules/' + target)
 	.pipe(traceur({modules: 'inline'}))
         .pipe(concat('compiled.js'))
         //.pipe(uglify())
 	.pipe(gulp.dest('dist'));
-});
+}));
 
-gulp.task('default', ['build']);
+gulp.task('default', gulp.series('build', function () {}));

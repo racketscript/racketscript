@@ -198,9 +198,8 @@
                                           (displayln* "✘")
                                           ((current-check-handler) e)
                                           #f)])
-         (case (test-thunk)
-           [(#t) (displayln* "✔") #t]
-           [(#f) (displayln* "✘") #f])))))
+         (test-thunk)
+         (displayln* "✔")))))
 
   (for ([test testcases]
         [i (in-naturals 1)])
