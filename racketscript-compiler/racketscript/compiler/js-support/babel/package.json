@@ -15,14 +15,14 @@
     "bugs": {
 	"url": "https://github.com/vishesh/racketscript/issues"
     },
-    "dependencies": [
-	"gulp",
-	"gulp-replace",
-	"gulp-babel",
-        "gulp-uglify",
-	"hamt_plus",
-	"babel-core",
-	"babel-preset-env",
-	"babel-plugin-transform-runtime"
-    ]
+    "dependencies": {
+	"gulp": "^4.0.0",
+	"gulp-replace": "*",
+	"gulp-babel": "*",
+        "gulp-uglify": "*",
+	"hamt_plus": "*",
+	"babel-core": "*",
+	"babel-preset-env": "*",
+	"babel-plugin-transform-runtime": "*"
+    }
 }
