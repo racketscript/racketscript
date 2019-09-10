@@ -183,7 +183,7 @@
     [(and (symbol? in-path) (primitive-module? in-path))
      (build-path racketscript-runtime-dir
                  (~a (substring (symbol->string in-path) 2) ".rkt"))]
-    [else (error 'actual-module-path "~a is not a primtive module" in-path)]))
+    [else (error 'actual-module-path "~a is not a primitive module" in-path)]))
 
 
 (: primitive-module? (-> (U Path Symbol) Boolean))

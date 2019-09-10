@@ -58,6 +58,9 @@
     (define module-exports (hash-ref tree (first src*) #f))
     (and module-exports
          (match (hash-ref module-exports (first id*) '())
+           ;; TODO: is symbol? pred still sufficient for finding leaf modules
+           ;; eg, '#%kernel is not a leaf module
+           ;;     (although it still is according to the module dep graph?)
            [(cons (? symbol? next-module) next-id)
             ;; When module name is a symbol such as #%kernel, #%unsafe ...
             (result (cons next-module src*)

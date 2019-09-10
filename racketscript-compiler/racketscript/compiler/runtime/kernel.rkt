@@ -83,6 +83,11 @@
 (define+provide (exact-integer? v)
   (#js.Number.isInteger v))
 
+(define+provide (exact? v)
+  (#js.Number.isInteger v))
+
+(define+provide (single-flonum-available?) #f)
+
 (define+provide *  #js.Core.Number.mul)
 (define+provide /  #js.Core.Number.div)
 (define+provide +  #js.Core.Number.add)
@@ -964,6 +969,8 @@
           #js.fn.length
           (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length)))))
 
+(define+provide (procedure-arity-mask fn) (procedure-arity fn))
+
 (define+provide (procedure-arity? v)
   (or (exact-nonnegative-integer? v)
       (kernel:arity-at-least? v)
@@ -994,6 +1001,7 @@
 (define+provide (eval-jit-enabled) #f)
 
 (define+provide (variable-reference-constant? x) #f)
+(define+provide (variable-reference-from-unsafe? x) #f)
 
 (define+provide (inspector? p)
   #t)

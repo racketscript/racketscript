@@ -111,8 +111,11 @@
 
 (: primitive-modules (Setof (U Symbol Path)))
 (define primitive-modules
-  (set '#%kernel
-       '#%utils
+  (set '#%runtime
+       '#%core
+       '#%main
+       '#%read
+       '#%kernel
        '#%paramz
        '#%unsafe
        '#%utils
