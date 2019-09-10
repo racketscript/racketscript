@@ -13,17 +13,16 @@ env:
   matrix:
     - RACKET_VERSION=HEAD
     - RACKET_VERSION=RELEASE
+    - RACKET_VERSION=7.4
     - RACKET_VERSION=7.0
     - RACKET_VERSION=6.12
-    - RACKET_VERSION=6.10
-    - RACKET_VERSION=6.7
+    - RACKET_VERSION=6.8
     - RACKET_VERSION=6.4
 
 matrix:
   allow_failures:
     - env: RACKET_VERSION=HEAD
     - env: RACKET_VERSION=RELEASE
-    - env: RACKET_VERSION=7.0
     - node_js: "node"
   fast_finish: true
 
