@@ -26,6 +26,9 @@
 (require/typed racket/syntax
   [format-symbol (-> String Any * Symbol)])
 
+(require/typed version/utils
+  [version<=? (-> String String Boolean)])
+
 (provide absyn-top-level->il
          absyn-gtl-form->il
          absyn-expr->il
@@ -499,7 +502,11 @@
 
     [(ImportedIdent id src_ reachable?)
      ;; FIXME?: Racket7 workaround
-     (define src (if (equal? src_ '#%runtime) '#%kernel src_))
+     (define src
+       (if (and (version<=? "7.0" (version))
+                (equal? src_ '#%runtime))
+           '#%kernel
+           src_))
 
      ;; Imported Identifiers are compiled to a ref operation from the
      ;; module object. We do normalize the field we are looking for in
