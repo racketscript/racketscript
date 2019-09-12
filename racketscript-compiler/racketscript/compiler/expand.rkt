@@ -22,6 +22,7 @@
          syntax/stx
          syntax/parse
          syntax/id-table
+         version/utils
          (only-in racket/list
                   append-map
                   last-pair
@@ -244,7 +245,11 @@
            ;; And still add the actual module where identifier is defined for easy
            ;; and compact import. NOTE:In future we may want to remove this and
            ;; compute this with moddeps information.
-           (current-module-imports (set-add (current-module-imports) src-mod-path))
+           ;; FIXME?: Racket7 workaround
+           (if (and (version<=? "7.0" (version))
+                    (equal? src-mod-path '#%runtime))
+               (current-module-imports (set-add (current-module-imports) '#%kernel))
+               (current-module-imports (set-add (current-module-imports) src-mod-path)))
 
            ;;HACK: See test/struct/import-struct.rkt. Somehow, the
            ;;  struct contructor has different src-id returned by
@@ -722,6 +727,8 @@
                                                  (LocalIdent 'c))))
                   #f))))
 
+  (require version/utils)
+  (define kernel-lang (if (version<? (version) "7.0") '#%kernel '#%runtime))
 ;;; Check freshening
   (test-case "test freshening"
     ;;TODO: We need to check alpha-equivalence here rather than hardcoding
@@ -744,19 +751,19 @@
                      (list (cons '(x2) (Quote 1)) (cons '(y3) (Quote 2)))
                      (list
                       (PlainApp
-                       (ImportedIdent 'list '#%kernel #f)
+                       (ImportedIdent 'list kernel-lang #f)
                        (list (LocalIdent 'x2) (LocalIdent 'y3)))
                       (LetValues
                        (list (cons '(x4) (Quote 3)) (cons '(z5) (Quote 4)))
                        (list
                         (PlainApp
-                         (ImportedIdent 'list '#%kernel #f)
+                         (ImportedIdent 'list kernel-lang #f)
                          (list (LocalIdent 'x4) (LocalIdent 'y3) (LocalIdent 'z5)))
                         (LetValues
                          (list (cons '(y6) (Quote 6)))
                          (list
                           (PlainApp
-                           (ImportedIdent 'list '#%kernel #f)
+                           (ImportedIdent 'list kernel-lang #f)
                            (list (LocalIdent 'x4) (LocalIdent 'y6) (LocalIdent 'z5))))))))))
 
       (check-equal? (expand-to-absyn #'(λ (x y z)
@@ -767,7 +774,7 @@
                      '(x7 y8 z9)
                      (list
                       (PlainApp
-                       (ImportedIdent 'list '#%kernel #f)
+                       (ImportedIdent 'list kernel-lang #f)
                        (list
                         (LocalIdent 'x7)
                         (LocalIdent 'y8)
@@ -776,7 +783,7 @@
                          '(x10)
                          (list
                           (PlainApp
-                           (ImportedIdent 'list '#%kernel #f)
+                           (ImportedIdent 'list kernel-lang #f)
                            (list
                             (LocalIdent 'x10)
                             (LocalIdent 'y8)
@@ -785,7 +792,7 @@
                              '(y11)
                              (list
                               (PlainApp
-                               (ImportedIdent 'list '#%kernel #f)
+                               (ImportedIdent 'list kernel-lang #f)
                                (list
                                 (LocalIdent 'x10)
                                 (LocalIdent 'y11)

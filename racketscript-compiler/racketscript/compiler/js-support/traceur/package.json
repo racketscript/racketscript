@@ -15,13 +15,13 @@
     "bugs": {
 	"url": "https://github.com/vishesh/racketscript/issues"
     },
-    "dependencies": [
-	"gulp",
-	"gulp-concat",
-	"gulp-traceur-cmdline",
-        "gulp-replace",
-        "gulp-uglify",
-	"hamt_plus",
-	"traceur"
-    ]
+    "dependencies": {
+	"gulp": "^4.0.0",
+	"gulp-concat": "*",
+	"gulp-traceur-cmdline": "*",
+        "gulp-replace": "*",
+        "gulp-uglify": "*",
+	"hamt_plus": "*",
+	"traceur": "*"
+    }
 }

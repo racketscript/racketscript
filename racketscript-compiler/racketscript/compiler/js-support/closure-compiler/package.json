@@ -15,10 +15,10 @@
     "bugs": {
 	"url": "https://github.com/vishesh/racketscript/issues"
     },
-    "dependencies": [
-	"gulp",
-	"gulp-replace",
-	"hamt_plus",
-	"google-closure-compiler"
-    ]
+    "dependencies": {
+	"gulp": "^4.0.0",
+	"gulp-replace": "*",
+	"hamt_plus": "*",
+	"google-closure-compiler": "*"
+    }
 }

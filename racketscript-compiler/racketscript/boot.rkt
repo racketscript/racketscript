@@ -1,4 +1,4 @@
-;; Langauge to write RacketScript's #%kernel. Export nothing except what's
+;; Language to write RacketScript's #%kernel. Export nothing except what's
 ;; really needed.
 
 (module boot '#%kernel
