@@ -62,3 +62,28 @@
 (define mstr (string #\a #\🎂 #\c))
 (string-set! mstr 2 #\x)
 (displayln mstr)
+
+;; string cmp
+(string<=? "b" "aa")
+(string<=? "aa" "b")
+(string<=? "aa" "a")
+(string<=? "a" "aa")
+(string<=? "aa" "aa")
+
+(string<? "b" "aa")
+(string<? "aa" "b")
+(string<? "aa" "a")
+(string<? "a" "aa")
+(string<? "aa" "aa")
+
+(string>=? "b" "aa")
+(string>=? "aa" "b")
+(string>=? "aa" "a")
+(string>=? "a" "aa")
+(string>=? "aa" "aa")
+
+(string>? "b" "aa")
+(string>? "aa" "b")
+(string>? "aa" "a")
+(string>? "a" "aa")
+(string>? "aa" "aa")

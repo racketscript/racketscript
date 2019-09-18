@@ -434,16 +434,13 @@ export function eq(a, b) {
  * @return {!boolean}
  */
 export function lt(a, b) {
-    if (a.length < b.length) {
-        return true;
-    }
-    const n = a.length;
+    const n = (a.length < b.length) ? a.length : b.length;
     for (let i = 0; i < n; i++) {
         if (!Char.eq(a.chars[i], b.chars[i])) {
             return a.chars[i] < b.chars[i];
         }
     }
-    return false;
+    return (a.length < b.length);
 }
 
 /**
@@ -452,16 +449,13 @@ export function lt(a, b) {
  * @return {!boolean}
  */
 export function gt(a, b) {
-    if (a.length > b.length) {
-        return true;
-    }
-    const n = a.length;
+    const n = (a.length < b.length) ? a.length : b.length;
     for (let i = 0; i < n; i++) {
         if (!Char.eq(a.chars[i], b.chars[i])) {
             return a.chars[i] > b.chars[i];
         }
     }
-    return false;
+    return (a.length > b.length);
 }
 
 /**
