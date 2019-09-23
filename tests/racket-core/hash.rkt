@@ -155,19 +155,20 @@
   (define ht4 (hash (a 1 0) #f
                     (a 1 2) #f))
 
-  ;; Subset must compare a collision node with a subtree node (that
-  ;; contains a collision node):
-  (test #t hash-keys-subset? ht1 ht2)
-
-  (test #t hash-keys-subset? ht3 ht2)
-  (test #t hash-keys-subset? ht0 ht3)
-
-  (test #t hash-keys-subset? ht0 ht2)
-  (test #t hash-keys-subset? ht0 ht1)
-  (test #f hash-keys-subset? ht2 ht1)
-  (test #f hash-keys-subset? ht2 ht0)
-  (test #f hash-keys-subset? ht1 ht0)
-  (test #f hash-keys-subset? ht1 ht3)
+  (run-if-version "6.5.0.8"
+   ;; Subset must compare a collision node with a subtree node (that
+   ;; contains a collision node):
+   (test #t hash-keys-subset? ht1 ht2)
+   
+   (test #t hash-keys-subset? ht3 ht2)
+   (test #t hash-keys-subset? ht0 ht3)
+   
+   (test #t hash-keys-subset? ht0 ht2)
+   (test #t hash-keys-subset? ht0 ht1)
+   (test #f hash-keys-subset? ht2 ht1)
+   (test #f hash-keys-subset? ht2 ht0)
+   (test #f hash-keys-subset? ht1 ht0)
+   (test #f hash-keys-subset? ht1 ht3))
 
   ;; Equality of collision nodes:
   (test #f equal? ht1 ht4)
@@ -533,7 +534,7 @@
 ;; ----------------------------------------
 ;; hash-ref-key
 
-(let ()
+(run-if-version "7.4.0.3"
   ;; TODO: implement arity-test in testing.rkt
 ;;   (arity-test hash-ref-key 2 3)
 
