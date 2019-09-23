@@ -408,10 +408,11 @@
 ;;    (test #t number? i)
     (test #t list? (hash-iterate-key ht i))
     (test #t equal? (hash-iterate-value ht i) 'val)
-    (test #t equal? (cdr (hash-iterate-pair ht i)) 'val)
-    (test #t equal? 
-          (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
-          '((1 2 3 4 5 6 7 8 9 10) . val))
+    (run-if-version "6.4.0.5"
+      (test #t equal? (cdr (hash-iterate-pair ht i)) 'val)
+      (test #t equal?
+            (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
+            '((1 2 3 4 5 6 7 8 9 10) . val)))
     (run-if-version "7.0.0.10" (test #f hash-iterate-next ht i))
 
     ;; TODO: not sure how to implement weak hashes in js yet
@@ -439,10 +440,11 @@
 ;;     (test #t number? i)
     (test #t equal? (hash-iterate-key ht i) 'a)
     (test #t equal? (hash-iterate-value ht i) 'b)
-    (test #t equal? (hash-iterate-pair ht i) '(a . b))
-    (test #t equal? 
-          (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
-          '(a . b))
+    (run-if-version "6.4.0.5"
+      (test #t equal? (hash-iterate-pair ht i) '(a . b))
+      (test #t equal?
+            (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
+            '(a . b)))
     (run-if-version "7.0.0.10" (test #t boolean? (hash-iterate-next ht i)))
     
     ;; remove element, everything should error
@@ -465,10 +467,11 @@
 ;;     (test #t number? i)
     (test #t equal? (hash-iterate-key ht i) 'a)
     (test #t equal? (hash-iterate-value ht i) 'b)
-    (test #t equal? (hash-iterate-pair ht i) '(a . b))
-    (test #t equal? (call-with-values 
-                        (lambda () (hash-iterate-key+value ht i)) cons)
-                    '(a . b))
+    (run-if-version "6.4.0.5"
+      (test #t equal? (hash-iterate-pair ht i) '(a . b))
+      (test #t equal?
+            (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
+            '(a . b)))
     (run-if-version "7.0.0.10" (test #t boolean? (hash-iterate-next ht i)))
 
     ;; remove element, everything should error
