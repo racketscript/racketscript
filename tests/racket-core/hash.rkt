@@ -132,7 +132,7 @@
           #:property
           prop:equal+hash
           (list (lambda (a b eql) (and (= (a-n a) (a-n b))
-                                  (= (a-m a) (a-m b))))
+                                       (= (a-m a) (a-m b))))
                 (lambda (a hc) (a-n a))
                 (lambda (a hc) (a-n a))))
 
@@ -158,7 +158,9 @@
   (run-if-version "6.5.0.8"
    ;; Subset must compare a collision node with a subtree node (that
    ;; contains a collision node):
-   (test #t hash-keys-subset? ht1 ht2)
+
+   ;; weird failure <= v6.8; old bug?
+   (run-if-version "6.8.0.1" (test #t hash-keys-subset? ht1 ht2))
    
    (test #t hash-keys-subset? ht3 ht2)
    (test #t hash-keys-subset? ht0 ht3)
@@ -181,7 +183,7 @@
     (test #f equal? ht1 ht4b)
     (test #t equal? ht1 ht5)))
 
-(let ()
+(run-if-version "6.4.0.6" ;; for in-immutable-hash, etc
   (define-syntax (define-hash-iterations-tester stx)
     (syntax-case stx ()
      [(_ tag -in-hash -in-pairs -in-keys -in-values)
@@ -367,7 +369,7 @@
 ; get "almost" collisions that force the hash table
 ; to use a deeper tree.
 
-(let ()
+(run-if-version "6.4.0.6" ;; for in-immutable-hash, etc
   (define vals (for/list ([j (in-range 100)]) (add1 j)))
   (define sum-vals (for/sum ([v (in-list vals)]) v))
   ;  (for ([shift (in-range 150)])
@@ -410,7 +412,7 @@
     (test #t equal? 
           (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
           '((1 2 3 4 5 6 7 8 9 10) . val))
-    (test #f hash-iterate-next ht i)
+    (run-if-version "7.0.0.10" (test #f hash-iterate-next ht i))
 
     ;; TODO: not sure how to implement weak hashes in js yet
     ;; - does js have concept of weak pointers?
@@ -441,7 +443,7 @@
     (test #t equal? 
           (call-with-values (lambda () (hash-iterate-key+value ht i)) cons)
           '(a . b))
-    (test #t boolean? (hash-iterate-next ht i))
+    (run-if-version "7.0.0.10" (test #t boolean? (hash-iterate-next ht i)))
     
     ;; remove element, everything should error
     (hash-remove! ht 'a)
@@ -450,7 +452,7 @@
 ;;     (err/rt-test (hash-iterate-value ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-pair ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-key+value ht i) exn:fail:contract? err-msg)
-    (test #f hash-iterate-next ht i)
+    (run-if-version "7.0.0.10" (test #f hash-iterate-next ht i))
     )
 
   (let ()
@@ -467,7 +469,7 @@
     (test #t equal? (call-with-values 
                         (lambda () (hash-iterate-key+value ht i)) cons)
                     '(a . b))
-    (test #t boolean? (hash-iterate-next ht i))
+    (run-if-version "7.0.0.10" (test #t boolean? (hash-iterate-next ht i)))
 
     ;; remove element, everything should error
     (hash-remove! ht 'a)
@@ -476,7 +478,7 @@
 ;;     (err/rt-test (hash-iterate-value ht i) exn:fail:contract?)
 ;;     (err/rt-test (hash-iterate-pair ht i) exn:fail:contract?)
 ;;     (err/rt-test (hash-iterate-key+value ht i) exn:fail:contract?)
-    (test #f hash-iterate-next ht i)
+    (run-if-version "7.0.0.10" (test #f hash-iterate-next ht i))
     ))
 
 ;; ;; ----------------------------------------
