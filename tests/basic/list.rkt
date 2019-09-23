@@ -34,3 +34,6 @@
 (println '(1 2 3))
 (println '(1 2 3) (current-output-port) 1)
 (println '())
+
+;; anything larger will blow the stack
+(build-list 1000 add1)

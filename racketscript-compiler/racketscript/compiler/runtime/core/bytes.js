@@ -30,6 +30,55 @@ export function eq(a, b) {
 }
 
 /**
+ * @param {!Uint8Array} a
+ * @param {!Uint8Array} b
+ * @return {!boolean}
+ */
+//  lt and gt copied (mostly) from unicode_string.js
+export function lt(a, b) {
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+        if (a[i] !== b[i]) {
+            return a[i] < b[i];
+        }
+    }
+    return (a.length < b.length);
+}
+
+/**
+ * @param {!Uint8Array} a
+ * @param {!Uint8Array} b
+ * @return {!boolean}
+ */
+export function gt(a, b) {
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+        if (a[i] !== b[i]) {
+            return a[i] > b[i];
+        }
+    }
+    return (a.length > b.length);
+}
+
+/**
+ * @param {!Uint8Array} a
+ * @param {!Uint8Array} b
+ * @return {!boolean}
+ */
+export function lte(a, b) {
+    return !gt(a, b);
+}
+
+/**
+ * @param {!Uint8Array} a
+ * @param {!Uint8Array} b
+ * @return {!boolean}
+ */
+export function gte(a, b) {
+    return !lt(a, b);
+}
+
+/**
  * @param {!number[]} ints non-negative integers less than 256.
  * @return {!Uint8Array}
  */
