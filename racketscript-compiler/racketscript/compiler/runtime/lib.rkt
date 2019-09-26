@@ -199,6 +199,28 @@
     (throw (#js.Core.racketContractError "expected a" type
                                          ", but given" what))))
 
+#;(define+provide continuation-mark-set-fst
+  (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
+    ;; TODO: implement prompt tag
+    (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
+    (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
+    (if (#js.Core.Pair.isEmpty marks)
+        none-v
+        #js.marks.hd)))
+
+(define+provide doraise
+  (v-λ (e) #:unchecked
+       (let ([abort-ccp
+              (let* ([mark-set (#js.Core.Marks.getContinuationMarks)]
+                     [marks (#js.Core.Marks.getMarks mark-set #js.Paramz.ExceptionHandlerKey)])
+                (if (#js.Core.Pair.isEmpty marks)
+                    (λ (x) (throw x))
+                    #js.marks.hd))
+              #;(continuation-mark-set-first #;(current-continuation-marks) (#js.Core.Marks.getContinuationMarks)
+                                           #js.Paramz.ExceptionHandlerKey
+                                           (lambda (x) (throw x)))]) ; throw unhandled exn
+         (abort-ccp e))))
+
 (define-syntax (check/raise stx)
   (syntax-parse stx
     [(_ (~datum #t) what at)
@@ -209,7 +231,7 @@
      #`(check/raise chkfn what #,(~a (syntax->datum #'chkfn)) at)]
     [(_ chkfn what expected at)
      #'(unless (chkfn what)
-         (throw
+         (doraise
           (#js.Core.racketContractError "Expected:" expected ", given:" what
                                         ", at:" at)))]))
 

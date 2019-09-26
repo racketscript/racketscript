@@ -41,3 +41,10 @@ function makeError(name) {
 
 export const racketCoreError = makeError('RacketCoreError');
 export const racketContractError = makeError('RacketContractError');
+
+export function isContractErr(e) {
+    const nm = e.name;
+    return nm !== undefined && nm === "RacketContractError";
+}
+export function errName(e) { return e.name; }
+export function errMsg(e)  { return e.message; }

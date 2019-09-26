@@ -46,7 +46,9 @@ export {
 
 export {
     racketCoreError,
-    racketContractError
+    racketContractError,
+    isContractErr,
+    errMsg
 } from './core/errors.js';
 
 export {

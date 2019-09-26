@@ -450,7 +450,7 @@
     ;; remove element, everything should error
     (hash-remove! ht 'a)
     (test #t boolean? (hash-iterate-first ht))
-;;    (err/rt-test (hash-iterate-key ht i) exn:fail:contract? err-msg)
+;;     (err/rt-test (hash-iterate-key ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-value ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-pair ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-key+value ht i) exn:fail:contract? err-msg)
@@ -545,7 +545,7 @@
 
   (define (test-hash-ref-key ht eql? expected-retained-key expected-excised-key)
     (define actual-retained-key (hash-ref-key ht expected-excised-key))
-    (define non-key (gensym 'nope))
+    (define non-key 'nope)
     (test #t eql? expected-retained-key expected-excised-key)
     ;; TODO: js hash (hamt) currently does opposite of Racket
     ;; ie, replaces key with second key, racket retains the first
@@ -557,7 +557,7 @@
     ;; (test (eq? eql? eq?) eq? actual-retained-key expected-retained-key)
     (test #t eq? (hash-ref-key ht non-key 'absent) 'absent)
     (test #t eq? (hash-ref-key ht non-key (lambda () 'absent)) 'absent)
-    #;(err/rt-test (hash-ref-key ht non-key) exn:fail:contract?))
+    (err/rt-test (hash-ref-key ht non-key) exn:fail:contract?))
 
   (define (test-hash-ref-key/mut ht eql? expected-retained-key expected-excised-key)
     (hash-set! ht expected-retained-key 'here)
@@ -588,7 +588,10 @@
   (test-hash-ref-key/mut (make-hasheqv) eq? 'foo 'foo)
   (test-hash-ref-key/mut (make-weak-hasheqv) eq? 'foo 'foo)
   (test-hash-ref-key/immut (hasheqv) eq? 'foo 'foo)
-)
+  )
+
+(err/rt-test (hash-set! (hash) 1 2) exn:fail:contract? "expected.*not.*immutable")
+
 ;; ----------------------------------------
 ;;
 

@@ -388,9 +388,20 @@
   (v-λ (h k fail) #:unchecked
     (#js.h.ref k fail)))
 
+(define+provide hash-has-key?
+  (v-λ (h k) #:unchecked
+    (#js.h.hasKey k)))
+
 (define+provide hash-ref-key
   (v-λ (h k fail) #:unchecked
-    (#js.h.refkey k fail)))
+    (if (#js.h.hasKey k)
+        (#js.h.refkey k fail)
+        (if (eq? fail *undefined*)
+            (raise
+             (#js.Core.racketContractError
+              "hash-ref-key: hash does not contain key\n  key:"
+              k))
+	    (if (typeof fail "function") (fail) fail)))))
 
 (define+provide (hash-set h k v)
   (#js.h.set k v))
@@ -411,7 +422,12 @@
   (#js.h.doremove k))
 
 (define+provide (hash-set! h k v)
-  (#js.h.doset k v))
+  (if (#js.h.isImmutable h)
+      (raise
+       (#js.Core.racketContractError
+        "hash-set!: contract violation\n  expected: (and/c hash? (not/c immutable?))\n  given: "
+        (#js.h.toString)))
+      (#js.h.doset k v)))
 
 ;; iteration
 (define+provide (hash-iterate-first h)
@@ -689,6 +705,9 @@
   (apply #js.Kernel.fprintf (print-as-expression) out form args))
 
 (define+provide (eprintf form . args)
+  (apply #js.Kernel.fprintf (print-as-expression) (current-error-port) form args))
+
+(define+provide (printf form . args)
   (apply #js.Kernel.fprintf (print-as-expression) (current-output-port) form args))
 
 (define+provide (format form . args)
@@ -887,7 +906,7 @@
 (define+provide current-continuation-marks   #js.Core.Marks.getContinuationMarks)
 (define+provide continuation-mark-set->list  #js.Core.Marks.getMarks)
 
-(define+provide continuation-mark-set-first
+(define+provide continuation-mark-set-first ;continuation-mark-set-fst
   (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
     ;; TODO: implement prompt tag
     (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
@@ -910,11 +929,19 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
+#;(define+provide raise doraise)
 (define+provide raise
   (v-λ (e) #:unchecked
-    (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
-                                                  #js.Paramz.ExceptionHandlerKey)])
+       (let ([abort-ccp
+              (continuation-mark-set-first #;(current-continuation-marks) (#js.Core.Marks.getContinuationMarks)
+                                           #js.Paramz.ExceptionHandlerKey
+                                           (lambda (x) (throw x)))]) ; throw unhandled exn
       (abort-ccp e))))
+
+(define+provide exn:fail:contract? #js.Core.isContractErr)
+(define+provide exn:fail:contract:arity? #js.Core.isContractErr)
+(define+provide (exn-message e)
+  (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers

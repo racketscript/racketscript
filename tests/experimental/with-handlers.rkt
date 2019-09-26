@@ -39,3 +39,9 @@
 (nested 0)
 (nested 1)
 (nested 2)
+
+(with-handlers ([exn:fail:contract?
+                 (λ (e)
+                   (displayln
+                    (regexp-match "mutable" (exn-message e))))])
+  (hash-set! (hash) 1 2))

@@ -6,6 +6,7 @@ import { displayNativeString, writeNativeString } from './print_native_string.js
 import { isEqual, isEqv, isEq } from './equality.js';
 import { hashForEqual, hashForEqv, hashForEq } from './hashing.js';
 import { racketCoreError, racketContractError } from './errors.js';
+import { getMarks, getContinuationMarks } from './marks.js'
 
 const hashConfigs = {
     eq: {
@@ -86,22 +87,15 @@ class Hash extends PrintablePrimitive {
         throw racketCoreError('hash-ref: no value found for key\n  key:', k);
     }
 
+    hasKey(k) { return this._h.has(k); }
+
     // implements hash-ref-key
     refkey(k, fail) {
-        if (this._h.has(k)) {
-            for (const key of this._h.keys()) {
-                if (hashConfigs[this._type].keyEq(key, k)) {
-                    return key;
-                }
-            }
-        } else if (fail !== undefined) {
-            if (typeof fail === "function") {
-                return fail();
-            } else {
-                return fail;
+        for (const key of this._h.keys()) {
+            if (hashConfigs[this._type].keyEq(key, k)) {
+                return key;
             }
         }
-        throw racketCoreError('hash-ref-key: hash does not contain key\n  key:', k);
     }
 
     set(k, v) {
