@@ -93,8 +93,6 @@ class Hash extends PrintablePrimitive {
                 if (hashConfigs[this._type].keyEq(key, k)) {
                     return key;
                 }
-                // can't get here
-                return k;
             }
         } else if (fail !== undefined) {
             if (typeof fail === "function") {
