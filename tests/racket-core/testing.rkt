@@ -3,12 +3,15 @@
          syntax/parse/define)
 (provide (all-defined-out))
 
-(define (test expected f . args)
+(define (test expected maybe-fn . args)
   (if (null? args)
-      (displayln (equal? expected f))
-      (displayln (equal? expected (apply f args)))))
+      (displayln (equal? expected maybe-fn))
+      (displayln (equal? expected
+                         (if (procedure? maybe-fn)
+                             (apply maybe-fn args)
+                             (car args))))))
 
-(define-simple-macro (err/rt-test e) e)
+(define-simple-macro (err/rt-test e . _) e)
 
 (define-syntax (run-if-version stx)
   (syntax-parse stx

@@ -18,6 +18,15 @@ class Keyword extends PrintablePrimitive {
     equals(v) {
         return check(v) && this.v === v.v;
     }
+
+    lt(v) {
+        if (v === this) {
+            return false;
+        } else {
+            return this.v < v.v;
+        }
+        return false;
+    }
 }
 
 

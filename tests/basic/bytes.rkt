@@ -8,3 +8,16 @@
 ;; TODO: Not implemented correctly yet.
 ; (writeln #"abc")
 ; (println #"abc")
+
+;; cmp
+(bytes<? #"b" #"aa")
+(bytes<? #"aa" #"b")
+(bytes<? #"aa" #"a")
+(bytes<? #"a" #"aa")
+(bytes<? #"aa" #"aa")
+
+(bytes>? #"b" #"aa")
+(bytes>? #"aa" #"b")
+(bytes>? #"aa" #"a")
+(bytes>? #"a" #"aa")
+(bytes>? #"aa" #"aa")

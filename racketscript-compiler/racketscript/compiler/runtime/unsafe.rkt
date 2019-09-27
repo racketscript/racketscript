@@ -91,3 +91,41 @@
 
 (define+provide (unsafe-vector-length v)
   (#js.v.length))
+
+;;-----------------------------------------------------------------------------
+;; Hash
+(define+provide (unsafe-immutable-hash-iterate-first h)
+  (#js.h.iterateFirst))
+
+(define+provide (unsafe-immutable-hash-iterate-next h i)
+  (#js.h.iterateNext i))
+
+(define+provide (unsafe-immutable-hash-iterate-key h i)
+  (#js.h.iterateKey i))
+
+(define+provide (unsafe-immutable-hash-iterate-value h i)
+  (#js.h.iterateValue i))
+
+(define+provide (unsafe-immutable-hash-iterate-key+value h i)
+  (#js.h.iterateKeyValue i))
+
+(define+provide (unsafe-immutable-hash-iterate-pair h i)
+  (#js.h.iteratePair i))
+
+(define+provide (unsafe-mutable-hash-iterate-first h)
+  (#js.h.iterateFirst))
+
+(define+provide (unsafe-mutable-hash-iterate-next h i)
+  (#js.h.iterateNext i))
+
+(define+provide (unsafe-mutable-hash-iterate-key h i)
+  (#js.h.iterateKey i))
+
+(define+provide (unsafe-mutable-hash-iterate-value h i)
+  (#js.h.iterateValue i))
+
+(define+provide (unsafe-mutable-hash-iterate-key+value h i)
+  (#js.h.iterateKeyValue i))
+
+(define+provide (unsafe-mutable-hash-iterate-pair h i)
+  (#js.h.iteratePair i))

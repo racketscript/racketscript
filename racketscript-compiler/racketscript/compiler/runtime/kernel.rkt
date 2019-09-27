@@ -139,6 +139,12 @@
 (define-checked+provide (number->string [n number?])
   (#js.Core.UString.makeMutable (#js.n.toString)))
 
+;; TODO: only works for numbers < 32 bits
+(define-checked+provide (arithmetic-shift [n integer?] [m integer?])
+  (if (negative? n)
+      (binop >> n m)
+      (binop << n m)))
+
 ;;TODO: Support bignums
 (define+provide (inexact->exact x) x)
 (define+provide (exact->inexact x) x)
@@ -153,6 +159,9 @@
 (define+provide true #t)
 
 (define+provide (false? v) (binop === v #f))
+
+(define+provide (boolean? v)
+  (or (binop === v #t) (binop === v #f)))
 
 ;; ----------------------------------------------------------------------------
 ;; Pairs
@@ -373,19 +382,62 @@
 (define+provide hash-equal? #js.Core.Hash.isEqualHash)
 (define+provide hash-eqv? #js.Core.Hash.isEqvHash)
 (define+provide hash-eq? #js.Core.Hash.isEqHash)
+(define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO: implement weak hashes
 
 (define+provide hash-ref
   (v-λ (h k fail) #:unchecked
     (#js.h.ref k fail)))
 
+(define+provide hash-ref-key
+  (v-λ (h k fail) #:unchecked
+    (#js.h.refkey k fail)))
+
 (define+provide (hash-set h k v)
   (#js.h.set k v))
 
-(define+provide (hash-set! h k v)
-  (#js.h.set k v))
+(define+provide hash-map
+  (case-lambda
+    [(h proc) (#js.Core.Hash.map h proc)]
+    [(h proc try-order?) (#js.Core.Hash.map h proc)]))
 
-(define+provide (hash-map h proc)
-  (#js.Core.Hash.map h proc))
+(define+provide (hash-count h)
+  (#js.h.size))
+
+(define+provide (hash-remove h k)
+  (#js.h.remove k))
+
+;; mutating operations
+(define+provide (hash-remove! h k)
+  (#js.h.doremove k))
+
+(define+provide (hash-set! h k v)
+  (#js.h.doset k v))
+
+;; iteration
+(define+provide (hash-iterate-first h)
+  (#js.h.iterateFirst))
+
+(define+provide (hash-iterate-next h i)
+  (#js.h.iterateNext i))
+
+(define+provide (hash-iterate-key h i)
+  (#js.h.iterateKey i))
+
+(define+provide (hash-iterate-value h i)
+  (#js.h.iterateValue i))
+
+(define+provide (hash-iterate-key+value h i)
+  (#js.h.iterateKeyValue i))
+
+(define+provide (hash-iterate-pair h i)
+  (#js.h.iteratePair i))
+
+;; set operations for hash tables
+(define+provide (hash-keys-subset? h1 h2)
+  (#js.h1.isKeysSubset h2))
+
+(define+provide (hash-union h1 h2)
+  (#js.h1.union h2))
 
 ;; --------------------------------------------------------------------------
 ;; Higher Order Functions
@@ -645,6 +697,7 @@
        (get-output-string out)))
 
 (define+provide symbol? #js.Core.Symbol.check)
+(define+provide keyword? #js.Core.Keyword.check)
 
 (define+provide (make-string k [c #\nul])
   (#js.Core.UString.repeatChar k c))
@@ -663,6 +716,10 @@
 
 (define-checked+provide (string->uninterned-symbol [s string?])
   (#js.Core.Symbol.makeUninterned s))
+
+;; TODO: implement unreadable symbols
+(define-checked+provide (string->unreadable-symbol [s string?])
+  (#js.Core.Symbol.make s))
 
 ; Does not support prefixed forms such as "#b101".
 (define+provide (string->number s [radix 10])
@@ -685,6 +742,12 @@
 
 (define+provide (symbol=? s v)
   (#js.s.equals v))
+
+(define+provide (symbol<? s v)
+  (#js.s.lt v))
+
+(define+provide (keyword<? s v)
+  (#js.s.lt v))
 
 (define-checked+provide (string-length [s string?])
   #js.s.length)
@@ -790,6 +853,7 @@
 (define-property+provide prop:exn:srclocs)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
+(define+provide prop:equal+hash #js.Core.Struct.propEqualHash)
 
 ;; --------------------------------------------------------------------------
 ;; Errors
@@ -810,6 +874,12 @@
 
 (define-checked+provide (bytes=? [bstr1 bytes?] [bstr2 bytes?])
   (#js.Core.Bytes.eq bstr1 bstr2))
+
+(define-checked+provide (bytes<? [bstr1 bytes?] [bstr2 bytes?])
+  (#js.Core.Bytes.lt bstr1 bstr2))
+
+(define-checked+provide (bytes>? [bstr1 bytes?] [bstr2 bytes?])
+  (#js.Core.Bytes.gt bstr1 bstr2))
 
 ;; --------------------------------------------------------------------------
 ;; Continuation Marks

@@ -1,10 +1,11 @@
 import * as $ from './lib.js';
 import * as Pair from './pair.js';
+import * as Values from './values.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 import { displayNativeString, writeNativeString } from './print_native_string.js';
 import { isEqual, isEqv, isEq } from './equality.js';
 import { hashForEqual, hashForEqv, hashForEq } from './hashing.js';
-import { racketCoreError } from './errors.js';
+import { racketCoreError, racketContractError } from './errors.js';
 
 const hashConfigs = {
     eq: {
@@ -27,6 +28,7 @@ class Hash extends PrintablePrimitive {
         this._h = hash;
         this._mutable = mutable;
         this._type = type;
+        this._iterator = undefined;
     }
 
     /**
@@ -84,8 +86,120 @@ class Hash extends PrintablePrimitive {
         throw racketCoreError('hash-ref: no value found for key\n  key:', k);
     }
 
+    // implements hash-ref-key
+    refkey(k, fail) {
+        if (this._h.has(k)) {
+            for (const key of this._h.keys()) {
+                if (hashConfigs[this._type].keyEq(key, k)) {
+                    return key;
+                }
+            }
+        } else if (fail !== undefined) {
+            if (typeof fail === "function") {
+                return fail();
+            } else {
+                return fail;
+            }
+        }
+        throw racketCoreError('hash-ref-key: hash does not contain key\n  key:', k);
+    }
+
     set(k, v) {
-        const newH = this._h.set(k, v);
+        if (this._mutable) {
+            throw racketContractError('hash-set: contract violation\n',
+                                      'expected: (and hash? immutable?)\n',
+                                      'given: ', this.toString());
+        } else {
+            return new Hash(this._h.set(k, v), this._type, false);
+        }
+    }
+
+    remove(k) {
+        if (this._mutable) {
+            throw racketContractError('hash-remove: contract violation\n',
+                                      'expected: (and hash? immutable?)\n',
+                                      'given: ', this.toString());
+        } else {
+            return new Hash(this._h.delete(k), this._type, false);
+        }
+    }
+
+    // mutating operations
+    doset(k, v) {
+        if (this._mutable) {
+            // TODO: if there already exists entry for key equal to `k`,
+            // this will change key to (new) `k`,
+            // but Racket retains the existing (old) key
+            // see `refkey` (hash-ref-key) fn for more details
+            this._h = this._h.set(k, v);
+            // TODO: what to do when mutated while iterating?
+            // for now, invalidate iterator
+            this._iterator = undefined;
+        } else {
+            throw racketContractError('hash-set!: contract violation\n',
+                                      'expected: (and/c hash? (not/c immutable?))\n',
+                                      'given: ', this.toString());
+        }
+    }
+
+    doremove(k) {
+        if (this._mutable) {
+            this._h = this._h.delete(k);
+            // TODO: what to do when mutated while iterating?
+            // for now, invalidate iterator
+            this._iterator = undefined;
+        } else {
+            throw racketContractError('hash-remove!: contract violation\n',
+                                      'expected: (and/c hash? (not/c immutable?))\n',
+                                      'given: ', this.toString());
+        }
+    }
+
+    size() {
+        return this._h.size;
+    }
+
+    // iteration operations, eg hash-iterate-first/next
+    iterateFirst() {
+        if (this._h.size == 0) return false;
+        // must save iterator since next() is stateful
+        this._iterator = this._h.entries();
+        return this._iterator.next();
+    }
+
+    iterateNext(i) {
+        if (this._iterator == undefined) {
+            return false;
+        }
+        const j = this._iterator.next();
+        if (j.done) {
+            this._iterator = undefined;
+            return false;
+        }
+        return j;
+    }
+
+    iterateKey(i) {
+        return i.value[0];
+    }
+
+    iterateValue(i) {
+        return i.value[1];
+    }
+
+    iteratePair(i) {
+        return Pair.make(i.value[0], i.value[1]);
+    }
+
+    iterateKeyValue(i) {
+        return Values.make(i.value);
+    }
+
+    union(h) {
+        let newH = this._h;
+        for (const [key, val] of h) {
+            newH = newH.set(key, val);
+        }
 
         if (this._mutable) {
             this._h = newH;
@@ -94,8 +208,29 @@ class Hash extends PrintablePrimitive {
         }
     }
 
-    size() {
-        return this._h.size;
+    isKeysSubset(v) {
+        if (!check(v)) {
+            return false;
+        }
+
+        if (this._type !== v._type) {
+            throw racketCoreError('hash-keys-subset?: ',
+                                  'given hash tables do not use the same key comparison\n',
+                                  'first table:', this);
+        }
+
+        if (this._h.size > v._h.size) {
+            return false;
+        }
+
+        for (const key of this._h.keys()) {
+            const vv = v._h.get(key);
+            if (vv === undefined) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     equals(v) {
@@ -159,6 +294,7 @@ export function makeEqualFromAssocs(assocs, mutable) {
     return makeFromAssocs(assocs, 'equal', mutable);
 }
 
+// TODO: allow ordering of hash traversal
 export function map(hash, proc) {
     let result = Pair.EMPTY;
     hash._h.forEach((value, key) => {
@@ -179,4 +315,8 @@ export function isEqvHash(h) {
 }
 export function isEqHash(h) {
     return check(h) && h._type === 'eq';
+}
+
+export function isWeakHash(h) {
+    return false; // TODO: implement weak hashes
 }

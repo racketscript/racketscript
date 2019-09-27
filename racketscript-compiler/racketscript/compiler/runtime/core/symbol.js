@@ -20,7 +20,17 @@ class Symbol extends PrintablePrimitive {
         // with same name can't be unequal.
         // Eg. (define x (gensym)) ;;=> 'g60
         //     (equal? x 'g60)     ;;=> #f
+        // TODO: does this handle uninterned symbols?
         return v === this;
+    }
+
+    lt(v) {
+        if (v === this) {
+            return false;
+        } else {
+            return this.v < v.v;
+        }
+        return false;
     }
 
     /**
@@ -37,7 +47,8 @@ class Symbol extends PrintablePrimitive {
 
 export const make = internedMake(v => new Symbol(v.toString()));
 
-export const makeUninterned = v => new Symbol(v);
+// TODO: is it correct to convert toString()?
+export const makeUninterned = v => new Symbol(v.toString());
 
 export function check(v) {
     return (v instanceof Symbol);
