@@ -89,19 +89,19 @@ class Hash extends PrintablePrimitive {
     // implements hash-ref-key
     refkey(k, fail) {
         if (this._h.has(k)) {
-	    for (const key of this._h.keys()) {
-		if (hashConfigs[this._type].keyEq(key, k)) {
-		    return key;
-		}
-		// can't get here
-		return k;
-	    }
+            for (const key of this._h.keys()) {
+                if (hashConfigs[this._type].keyEq(key, k)) {
+                    return key;
+                }
+                // can't get here
+                return k;
+            }
         } else if (fail !== undefined) {
-	    if (typeof fail === "function") {
-		return fail();
-	    } else {
-		return fail;
-	    }
+            if (typeof fail === "function") {
+                return fail();
+            } else {
+                return fail;
+            }
         }
         throw racketCoreError('hash-ref-key: hash does not contain key\n  key:', k);
     }
@@ -109,8 +109,8 @@ class Hash extends PrintablePrimitive {
     set(k, v) {
         if (this._mutable) {
             throw racketContractError('hash-set: contract violation\n',
-				      'expected: (and hash? immutable?)\n',
-				      'given: ', this.toString());
+                                      'expected: (and hash? immutable?)\n',
+                                      'given: ', this.toString());
         } else {
             return new Hash(this._h.set(k, v), this._type, false);
         }
@@ -119,8 +119,8 @@ class Hash extends PrintablePrimitive {
     remove(k) {
         if (this._mutable) {
             throw racketContractError('hash-remove: contract violation\n',
-				      'expected: (and hash? immutable?)\n',
-				      'given: ', this.toString());
+                                      'expected: (and hash? immutable?)\n',
+                                      'given: ', this.toString());
         } else {
             return new Hash(this._h.delete(k), this._type, false);
         }
@@ -129,31 +129,31 @@ class Hash extends PrintablePrimitive {
     // mutating operations
     doset(k, v) {
         if (this._mutable) {
-	    // TODO: if there already exists entry for key equal to `k`,
-	    // this will change key to (new) `k`,
-	    // but Racket retains the existing (old) key
-	    // see `refkey` (hash-ref-key) fn for more details
+            // TODO: if there already exists entry for key equal to `k`,
+            // this will change key to (new) `k`,
+            // but Racket retains the existing (old) key
+            // see `refkey` (hash-ref-key) fn for more details
             this._h = this._h.set(k, v);
-	    // TODO: what to do when mutated while iterating?
-	    // for now, invalidate iterator
-	    this._iterator = undefined;
+            // TODO: what to do when mutated while iterating?
+            // for now, invalidate iterator
+            this._iterator = undefined;
         } else {
             throw racketContractError('hash-set!: contract violation\n',
-				      'expected: (and/c hash? (not/c immutable?))\n',
-				      'given: ', this.toString());
+                                      'expected: (and/c hash? (not/c immutable?))\n',
+                                      'given: ', this.toString());
         }
     }
 
     doremove(k) {
         if (this._mutable) {
             this._h = this._h.delete(k);
-	    // TODO: what to do when mutated while iterating?
-	    // for now, invalidate iterator
-	    this._iterator = undefined;
+            // TODO: what to do when mutated while iterating?
+            // for now, invalidate iterator
+            this._iterator = undefined;
         } else {
             throw racketContractError('hash-remove!: contract violation\n',
-				      'expected: (and/c hash? (not/c immutable?))\n',
-				      'given: ', this.toString());
+                                      'expected: (and/c hash? (not/c immutable?))\n',
+                                      'given: ', this.toString());
         }
     }
 
@@ -163,22 +163,22 @@ class Hash extends PrintablePrimitive {
 
     // iteration operations, eg hash-iterate-first/next
     iterateFirst() {
-	if (this._h.size == 0) return false;
-	// must save iterator since next() is stateful
+        if (this._h.size == 0) return false;
+        // must save iterator since next() is stateful
         this._iterator = this._h.entries();
-	return this._iterator.next();
+        return this._iterator.next();
     }
 
     iterateNext(i) {
-	if (this._iterator == undefined) {
-	    return false;
-	}
-	const j = this._iterator.next();
-	if (j.done) {
-	    this._iterator = undefined;
-	    return false;
-	}
-	return j;
+        if (this._iterator == undefined) {
+            return false;
+        }
+        const j = this._iterator.next();
+        if (j.done) {
+            this._iterator = undefined;
+            return false;
+        }
+        return j;
     }
 
     iterateKey(i) {
@@ -199,9 +199,9 @@ class Hash extends PrintablePrimitive {
 
     union(h) {
         let newH = this._h;
-	for (const [key, val] of h) {
-	    newH = newH.set(key, val);
-	}
+        for (const [key, val] of h) {
+            newH = newH.set(key, val);
+        }
 
         if (this._mutable) {
             this._h = newH;
@@ -211,21 +211,21 @@ class Hash extends PrintablePrimitive {
     }
 
     isKeysSubset(v) {
-	if (!check(v)) {
-	    return false;
-	}
-
-        if (this._type !== v._type) {
-	    throw racketCoreError('hash-keys-subset?: ',
-				  'given hash tables do not use the same key comparison\n',
-				  'first table:', this);
-	}
-
-	if (this._h.size > v._h.size) {
+        if (!check(v)) {
             return false;
         }
 
-	for (const key of this._h.keys()) {
+        if (this._type !== v._type) {
+            throw racketCoreError('hash-keys-subset?: ',
+                                  'given hash tables do not use the same key comparison\n',
+                                  'first table:', this);
+        }
+
+        if (this._h.size > v._h.size) {
+            return false;
+        }
+
+        for (const key of this._h.keys()) {
             const vv = v._h.get(key);
             if (vv === undefined) {
                 return false;

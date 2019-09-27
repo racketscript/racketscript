@@ -20,17 +20,17 @@ class Symbol extends PrintablePrimitive {
         // with same name can't be unequal.
         // Eg. (define x (gensym)) ;;=> 'g60
         //     (equal? x 'g60)     ;;=> #f
-	// TODO: does this handle uninterned symbols?
+        // TODO: does this handle uninterned symbols?
         return v === this;
     }
 
     lt(v) {
         if (v === this) {
-	    return false;
-	} else {
-	    return this.v < v.v;
-	}
-	return false;
+            return false;
+        } else {
+            return this.v < v.v;
+        }
+        return false;
     }
 
     /**

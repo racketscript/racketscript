@@ -58,12 +58,12 @@ class Struct extends PrintablePrimitive {
               this._desc._options.name;
         if (guardLambda) {
             const guardFields = fields.concat(finalCallerName);
-	    let new_fields = guardLambda(...guardFields);
-	    if (Values.check(new_fields)) {
-		fields = new_fields.getAll();
-	    } else {
-		fields = [new_fields];
-	    }
+            let new_fields = guardLambda(...guardFields);
+            if (Values.check(new_fields)) {
+                fields = new_fields.getAll();
+            } else {
+                fields = [new_fields];
+            }
         }
 
         // Initialize current and super instance
@@ -148,12 +148,12 @@ class Struct extends PrintablePrimitive {
             return false;
         }
 
-	// check for prop:equal+hash must come before transparent check
-	const p = this._desc._options.props.get(propEqualHash);
-	if (p !== undefined) {
-	    const eqhashfn = p.car();
-	    return eqhashfn(this, v, null); // TODO: prop:equal+hash rec arg?
-	}
+        // check for prop:equal+hash must come before transparent check
+        const p = this._desc._options.props.get(propEqualHash);
+        if (p !== undefined) {
+            const eqhashfn = p.car();
+            return eqhashfn(this, v, null); // TODO: prop:equal+hash rec arg?
+        }
 
         if (this._desc._options.inspector) {
             // Not a transparent inspector
