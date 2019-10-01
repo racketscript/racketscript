@@ -223,6 +223,18 @@
 
 (define-syntax (check/raise stx)
   (syntax-parse stx
+    [(_ #:who who (~datum #t) what at)
+     #`(begin)]
+    [(_ #:who who chkfn:id what at)
+     #`(check/raise #:who who chkfn what #,(symbol->string (syntax-e #'chkfn)) at)]
+    [(_ #:who who chkfn what at)
+     #`(check/raise #:who who chkfn what #,(~a (syntax->datum #'chkfn)) at)]
+    [(_ #:who who chkfn what expected at)
+     #'(unless (chkfn what)
+         (doraise
+          (#js.Core.makeContractError who expected what)
+#;          (#js.Core.racketContractError "Expected:" expected ", given:" what
+             ", at:" at)))]
     [(_ (~datum #t) what at)
      #`(begin)]
     [(_ chkfn:id what at)
@@ -231,9 +243,10 @@
      #`(check/raise chkfn what #,(~a (syntax->datum #'chkfn)) at)]
     [(_ chkfn what expected at)
      #'(unless (chkfn what)
-         (doraise
+         (throw
           (#js.Core.racketContractError "Expected:" expected ", given:" what
-                                        ", at:" at)))]))
+           ", at:" at)))]
+))
 
 
 (define-syntax-rule (check/or c1 ...)
@@ -279,7 +292,7 @@
              (syntax->list #'((n arg) ...)))
      #`(define name
          (v-λ (arg.name ...) #:unchecked
-           (check/raise c-arg-checkfn c-arg-name n*) ...
+           (check/raise #:who 'name c-arg-checkfn c-arg-name n*) ...
            body ...))]))
 
 (define-syntax (define-checked+provide stx)

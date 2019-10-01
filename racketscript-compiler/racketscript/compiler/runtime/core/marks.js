@@ -124,7 +124,7 @@ export function updateFrame(newFrames, oldFrames) {
 }
 
 export function enterFrame() {
-    __frames = Pair.make({}, __frames);
+    __frames = Pair.cons({}, __frames);
     return __frames;
 }
 

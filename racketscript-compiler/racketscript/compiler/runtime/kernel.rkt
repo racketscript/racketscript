@@ -53,9 +53,6 @@
 (define-checked+provide (zero? [v number?])
   (binop === v 0))
 
-(define+provide (raise-mismatch-error e)
-  (error 'boo))
-
 (define-checked+provide (positive? [v real?])
   (binop > v 0))
 
@@ -168,7 +165,7 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons       #js.Core.Pair.make)
+(define+provide cons       #js.Core.Pair.cons)
 (define+provide pair?      #js.Core.Pair.check)
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
@@ -183,7 +180,7 @@
   #js.v.tl.tl.hd)
 
 (define+provide null #js.Core.Pair.EMPTY)
-(define+provide list #js.Core.Pair.makeList)
+(define+provide list #js.Core.Pair.list)
 
 (define+provide null? #js.Core.Pair.isEmpty)
 (define+provide list? #js.Core.Pair.isList)
@@ -195,7 +192,7 @@
              [result '()])
     (if (null? lst)
         result
-        (loop #js.lst.tl (#js.Core.Pair.make #js.lst.hd result)))))
+        (loop #js.lst.tl (#js.Core.Pair.cons #js.lst.hd result)))))
 
 (define+provide list*
   (v-λ () #:unchecked
@@ -209,14 +206,14 @@
         [else
          (define next-ii (binop - ii 1))
          (loop next-ii
-               (#js.Core.Pair.make ($ top-arguments next-ii) result))]))))
+               (#js.Core.Pair.cons ($ top-arguments next-ii) result))]))))
 
 (define+provide append
   (v-λ () #:unchecked
     (define result '())
     (define lsts arguments)
     (for/array [lst lsts]
-      (set! result (foldr #js.Core.Pair.make lst result)))
+      (set! result (foldr #js.Core.Pair.cons lst result)))
     result))
 
 (define+provide for-each
@@ -569,7 +566,7 @@
              [lst lst])
     (cond
       [(null? lst) (reverse result)]
-      [(fn #js.lst.hd) (loop (#js.Core.Pair.make #js.lst.hd result)
+      [(fn #js.lst.hd) (loop (#js.Core.Pair.cons #js.lst.hd result)
                              #js.lst.tl)]
       [else (loop result #js.lst.tl)])))
 
@@ -647,7 +644,7 @@
              [i 0])
     (if (binop === i n)
         result
-        (loop (#js.Core.Pair.make v result) (binop + i 1)))))
+        (loop (#js.Core.Pair.cons v result) (binop + i 1)))))
 
 (define+provide (flatten lst)
   (cond
@@ -878,6 +875,9 @@
 ;; Errors
 
 (define+provide error #js.Kernel.error)
+(define+provide raise-argument-error #js.Kernel.argerror)
+(define+provide raise-arguments-error #js.Kernel.argerror) ;; TODO: not quite the same
+(define+provide raise-mismatch-error #js.Kernel.mismatcherror)
 
 ;; --------------------------------------------------------------------------
 ;; Bytes
@@ -938,6 +938,7 @@
                                            (lambda (x) (throw x)))]) ; throw unhandled exn
       (abort-ccp e))))
 
+(define+provide exn:fail? #js.Core.isErr)
 (define+provide exn:fail:contract? #js.Core.isContractErr)
 (define+provide exn:fail:contract:arity? #js.Core.isContractErr)
 (define+provide (exn-message e)
@@ -986,10 +987,19 @@
 ;;      lambdas.
 (define+provide (display datum [out (current-output-port)])
   (#js.Core.display out datum))
+(define+provide (displayln datum [out (current-output-port)])
+  (display datum out)
+  (displayln "\n" out))
 (define+provide (write datum [out (current-output-port)])
   (#js.Core.write out datum))
+(define+provide (writeln datum [out (current-output-port)])
+  (write datum out)
+  (write "\n" out))
 (define+provide (print datum [out (current-output-port)] [quote-depth 0])
   (#js.Core.print out datum (print-as-expression) quote-depth))
+(define+provide (println datum [out (current-output-port)])
+  (print datum out)
+  (print "\n" out))
 
 (define+provide (newline [out (current-output-port)])
   (display "\n" out))
@@ -998,13 +1008,25 @@
 ;; Not implemented/Unorganized/Dummies
 
 (define+provide current-inspector (v-λ () #:unchecked #t))
-(define+provide raise-argument-error error)
 (define+provide (check-method) #f)
 
 (define+provide random #js.Kernel.random)
 
 (define+provide (current-seconds)
   (#js.Math.floor (binop / (#js.Date.now) 1000)))
+
+(define+provide (object-name fn) ;; TODO: what if not fn?
+  #js.fn.name)
+(define+provide (unquoted-printing-string s) s) ;; TODO
+(define+provide (error-print-width) 42)
+(define+provide (error-value->string-handler)
+  (v-λ (x n)
+       "str" #;(#js.x.toString)))
+
+(define+provide (procedure-arity-mask fn) (procedure-arity fn))
+(define+provide (bitwise-bit-set? mask n) #t)
+
+
 
 ;; --------------------------------------------------------------------------
 ;; Regexp
@@ -1054,8 +1076,24 @@
   (kernel:arity-at-least-value p))
 
 (define+provide procedure-arity-includes?
-  (v-λ (f) #:unchecked
-    #t))
+  (v-λ (fn n) #:unchecked
+       ;; (#js.console.log fn)
+       ;; (#js.console.log n)
+       ;; (#js.console.log (#js.Array.isArray #js.fn.__rjs_arityValue))
+       ;; (#js.console.log (binop === #js.fn.__rjs_arityValue *undefined*))
+       ;; (#js.console.log #js.fn.length)
+       ;; (#js.console.log #js.fn.name)
+       ;; first case special-cases variable-arity fns like `values`:
+       ;; for these fns, procedure-arity incorrectly returns #js.fn.length,
+       ;; which does not include "rest" arg;
+       ;; TODO: how to better handle this?
+       (or (and (not (#js.Array.isArray #js.fn.__rjs_arityValue)) ; not case-lamba
+                (binop === #js.fn.__rjs_arityValue *undefined*)
+                (or (binop == #js.fn.name "values")
+                    (binop == #js.fn.name "list")
+                    (binop == #js.fn.name "equals")
+                    (binop == #js.fn.name "lt")))
+           (binop === n (procedure-arity fn)))))
 
 (define+provide (procedure-arity fn)
   (if (#js.Array.isArray #js.fn.__rjs_arityValue)
@@ -1065,8 +1103,6 @@
       (if (binop === #js.fn.__rjs_arityValue *undefined*)
           #js.fn.length
           (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length)))))
-
-(define+provide (procedure-arity-mask fn) (procedure-arity fn))
 
 (define+provide (procedure-arity? v)
   (or (exact-nonnegative-integer? v)
@@ -1086,6 +1122,9 @@
            (#js.v.getField 1)
            (proc v v1 v2)))]
     [else (proc v v1 v2)]))
+
+(define+provide (procedure-extract-target f) ;; TODO
+  #f)
 ;; --------------------------------------------------------------------------
 ;;
 

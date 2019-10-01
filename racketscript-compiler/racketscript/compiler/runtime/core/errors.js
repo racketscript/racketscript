@@ -46,5 +46,21 @@ export function isContractErr(e) {
     const nm = e.name;
     return nm !== undefined && nm === "RacketContractError";
 }
+export function isErr(e) {
+    const nm = e.name;
+    return nm !== undefined && nm === "RacketCoreError";
+}
 export function errName(e) { return e.name; }
 export function errMsg(e)  { return e.message; }
+
+export function makeContractError(name, expected, ...rest) {
+    const stringOut = new MiniNativeOutputStringPort();
+    stringOut.consume(`${name.toString()}: contract violation\n`);
+    stringOut.consume('  expected: ');
+    stringOut.consume(expected.toString());
+    stringOut.consume('\n');
+    stringOut.consume('  given: ');
+    // TODO: handle multiple rest args
+    printNativeString(stringOut, rest[0], true, 0);
+    return racketContractError(stringOut.getOutputString());
+}

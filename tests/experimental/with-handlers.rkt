@@ -45,3 +45,28 @@
                    (displayln
                     (regexp-match "mutable" (exn-message e))))])
   (hash-set! (hash) 1 2))
+
+(with-handlers ([(λ (x)
+                   (displayln 'checking)
+                   (exn:fail:contract? x))
+                 (λ (e)
+                   (displayln 'caught)
+                   (displayln (exn-message e))
+                   ;; TODO: improve racket->js regexp translation
+                   (displayln (regexp-match "foldl" (exn-message e)))
+                   (displayln (regexp-match "contract violation" (exn-message e)))
+                   (displayln (regexp-match "expected" (exn-message e)))
+                   (displayln (regexp-match "procedure" (exn-message e)))
+                   (displayln (regexp-match "given" (exn-message e)))
+                   (displayln (regexp-match "\\+" (exn-message e))))])
+  (foldl '+ 0 (build-list 10 add1)))
+
+(with-handlers ([exn:fail:contract? (λ (e) (displayln (exn-message e)))])
+  (foldl 'list 0 10))
+
+(with-handlers ([exn:fail:contract? (λ (e) (displayln (exn-message e)))])
+  (foldl list 0 10))
+
+;; arity
+(with-handlers ([exn:fail:contract? (λ (e) (displayln (exn-message e)))])
+  (foldl add1 0 '(1 2)))

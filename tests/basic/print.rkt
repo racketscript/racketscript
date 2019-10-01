@@ -7,3 +7,8 @@
 
 ((current-print) '(1 2 3))
 ((current-print) (void)) ;;TODO
+
+;; only println should have starting '
+(displayln '(1 2 3 4))
+(writeln '(1 2 3 4))
+(println '(1 2 3 4))

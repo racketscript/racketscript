@@ -73,7 +73,7 @@
 (define+provide (unsafe-set-mcar! p v) (#js.p.setCar v))
 (define+provide (unsafe-set-mcdr! p v) (#js.p.setCdr v))
 (define+provide (unsafe-cons-list v rest)
-  (#js.Core.Pair.make v rest))
+  (#js.Core.Pair.cons v rest))
 
 ;;-----------------------------------------------------------------------------
 ;; Structures
