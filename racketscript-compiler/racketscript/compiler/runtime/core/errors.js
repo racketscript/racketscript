@@ -71,11 +71,11 @@ function toOrdinal(i) {
     return i + "th";
 }
 
+// format exn message to exactly match Racket raise-argument-error
 export function makeContractError(name, expected, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
-    // code duplicated from core/errors.js
-    // convert "other" args to string (via `print`, not `write` or `display`)
-    // duplicates exact output (ie `exn-message`) of racket raise-argument-error
+    // "other" args must be converted to string via `print`
+    // (not `write` or `display`)
     stringOut.consume(`${name.toString()}: contract violation\n`);
     stringOut.consume('  expected: ');
     stringOut.consume(expected.toString());
@@ -100,14 +100,4 @@ export function makeContractError(name, expected, ...rest) {
     }
 
     return racketContractError(stringOut.getOutputString());
-
-    // const stringOut = new MiniNativeOutputStringPort();
-    // stringOut.consume(`${name.toString()}: contract violation\n`);
-    // stringOut.consume('  expected: ');
-    // stringOut.consume(expected.toString());
-    // stringOut.consume('\n');
-    // stringOut.consume('  given: ');
-    // // TODO: handle multiple rest args
-    // printNativeString(stringOut, rest[0], true, 0);
-    // return racketContractError(stringOut.getOutputString());
 }

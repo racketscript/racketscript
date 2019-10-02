@@ -906,7 +906,7 @@
 (define+provide current-continuation-marks   #js.Core.Marks.getContinuationMarks)
 (define+provide continuation-mark-set->list  #js.Core.Marks.getMarks)
 
-(define+provide continuation-mark-set-first ;continuation-mark-set-fst
+(define+provide continuation-mark-set-first
   (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
     ;; TODO: implement prompt tag
     (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
@@ -929,13 +929,7 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-(define+provide raise
-  (v-λ (e) #:unchecked
-       (let ([abort-ccp
-              (continuation-mark-set-first (current-continuation-marks)
-                                           #js.Paramz.ExceptionHandlerKey
-                                           (lambda (x) (throw x)))]) ; throw unhandled exn
-      (abort-ccp e))))
+(define+provide raise doraise)
 
 (define+provide exn:fail? #js.Core.isErr)
 (define+provide exn:fail:contract? #js.Core.isContractErr)

@@ -199,28 +199,20 @@
     (throw (#js.Core.racketContractError "expected a" type
                                          ", but given" what))))
 
-#;(define+provide continuation-mark-set-fst
-  (v-λ (mark-set key-v none-v prompt-tag) #:unchecked
-    ;; TODO: implement prompt tag
-    (define mark-set (or mark-set (#js.Core.Marks.getContinuationMarks prompt-tag)))
-    (define marks (#js.Core.Marks.getMarks mark-set key-v prompt-tag))
-    (if (#js.Core.Pair.isEmpty marks)
-        none-v
-        #js.marks.hd)))
-
+;; somewhat duplicates continuation-mark-set-first in kernel.rkt
+;; (but less general, eg ignore prompt tag for now);
+;; this needs to be here for check/raise
 (define+provide doraise
   (v-λ (e) #:unchecked
        (let ([abort-ccp
               (let* ([mark-set (#js.Core.Marks.getContinuationMarks)]
                      [marks (#js.Core.Marks.getMarks mark-set #js.Paramz.ExceptionHandlerKey)])
                 (if (#js.Core.Pair.isEmpty marks)
-                    (λ (x) (throw x))
-                    #js.marks.hd))
-              #;(continuation-mark-set-first #;(current-continuation-marks) (#js.Core.Marks.getContinuationMarks)
-                                           #js.Paramz.ExceptionHandlerKey
-                                           (lambda (x) (throw x)))]) ; throw unhandled exn
+                    (λ (x) (throw x)) ; throw unhandled exn
+                    #js.marks.hd))])  ; else get handler from mark
          (abort-ccp e))))
 
+;; #:who arg allows duplicating Racket error msg ala raise-argument-error
 (define-syntax (check/raise stx)
   (syntax-parse stx
     [(_ #:who who (~datum #t) what at)
@@ -232,9 +224,8 @@
     [(_ #:who who chkfn what expected at)
      #'(unless (chkfn what)
          (doraise
-          (#js.Core.makeContractError who expected what)
-#;          (#js.Core.racketContractError "Expected:" expected ", given:" what
-             ", at:" at)))]
+          (#js.Core.makeContractError who expected what)))]
+    ;; no #:who arg cases, keep for backwards compat for now, TODO: remove?
     [(_ (~datum #t) what at)
      #`(begin)]
     [(_ chkfn:id what at)
