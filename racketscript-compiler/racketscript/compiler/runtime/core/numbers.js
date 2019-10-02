@@ -69,20 +69,3 @@ export function equals(...operands) {
 export function check(v) {
     return typeof v === 'number';
 }
-
-// copied from internet:
-// https://gist.github.com/jlbruno/1535691/db35b4f3af3dcbb42babc01541410f291a8e8fac
-export function toOrdinal(i) {
-    var j = i % 10,
-        k = i % 100;
-    if (j == 1 && k != 11) {
-        return i + "st";
-    }
-    if (j == 2 && k != 12) {
-        return i + "nd";
-    }
-    if (j == 3 && k != 13) {
-        return i + "rd";
-    }
-    return i + "th";
-}

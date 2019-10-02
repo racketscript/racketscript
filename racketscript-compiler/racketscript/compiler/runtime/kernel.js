@@ -36,7 +36,7 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
 
     const matches = formStr.match(regex);
     const numExpected = matches ?
-          matches.filter(m => !NO_ARG_FORM_RE.test(m)).length : 0;
+        matches.filter(m => !NO_ARG_FORM_RE.test(m)).length : 0;
     if (numExpected !== args.length) {
         throw Core.racketContractError(`fprintf: format string requires ${numExpected} arguments, ` +
             `given ${args.length}; arguments were:`, out, form, ...args);
@@ -156,51 +156,52 @@ export function argerror(name, expected, ...rest) {
         if (rest.length === 0) {
             theerr = Core.racketContractError(name.toString());
         } else {
-            const stringOut = new MiniNativeOutputStringPort();
-            // code duplicated from core/errors.js
-            // convert "other" args to string (via `print`, not `write` or `display`)
-            // duplicates exact output (ie `exn-message`) of racket raise-argument-error
-            stringOut.consume(`${name.toString()}: contract violation\n`);
-            stringOut.consume('  expected: ');
-            // if (typeof expected === 'string') {
-            //     displayNativeString(stringOut, expected, true, 0);
+            theerr = Core.makeContractError(name, expected, ...rest);
+            // const stringOut = new MiniNativeOutputStringPort();
+            // // code duplicated from core/errors.js
+            // // convert "other" args to string (via `print`, not `write` or `display`)
+            // // duplicates exact output (ie `exn-message`) of racket raise-argument-error
+            // stringOut.consume(`${name.toString()}: contract violation\n`);
+            // stringOut.consume('  expected: ');
+            // // if (typeof expected === 'string') {
+            // //     displayNativeString(stringOut, expected, true, 0);
+            // // } else {
+            //     stringOut.consume(expected.toString());
+            // // }                    
+            // stringOut.consume('\n');
+            // stringOut.consume('  given: ');
+            // if (rest.length === 1) {
+            //     printNativeString(stringOut, rest[0], true, 0);
+            //     // theerr = Core.racketContractError(`${name.toString()}:`,
+            //     //                                   'contract violation\n',
+            //     //                                   ' expected:', expected, '\n',
+            //     //                                   ' given:', rest[0].toString());
             // } else {
-                stringOut.consume(expected.toString());
-            // }                    
-            stringOut.consume('\n');
-            stringOut.consume('  given: ');
-            if (rest.length === 1) {
-                printNativeString(stringOut, rest[0], true, 0);
-                // theerr = Core.racketContractError(`${name.toString()}:`,
-                //                                   'contract violation\n',
-                //                                   ' expected:', expected, '\n',
-                //                                   ' given:', rest[0].toString());
-            } else {
-                printNativeString(stringOut, rest[rest[0]+1], true, 0);
-                if (rest.length > 2) {
-                    stringOut.consume('\n');
-                    stringOut.consume('  argument position: ');
-                    printNativeString(stringOut, Core.Number.toOrdinal(rest[0]+1), true, 0);
-                    stringOut.consume('\n');
-                    stringOut.consume('  other arguments...:');
-                    for (let i = 1; i < rest.length; i++) {//const arg of rest.splice(1)) {
-                        if (i === rest[0]+1) { continue; }
-                        stringOut.consume('\n   ');
-                        printNativeString(stringOut, rest[i], true, 0);
-                    }
-                }
-            }
-                // const reststr = stringOut.getOutputString();
+            //     printNativeString(stringOut, rest[rest[0]+1], true, 0);
+            //     if (rest.length > 2) {
+            //         stringOut.consume('\n');
+            //         stringOut.consume('  argument position: ');
+            //         printNativeString(stringOut, Core.Number.toOrdinal(rest[0]+1), true, 0);
+            //         stringOut.consume('\n');
+            //         stringOut.consume('  other arguments...:');
+            //         for (let i = 1; i < rest.length; i++) {//const arg of rest.splice(1)) {
+            //             if (i === rest[0]+1) { continue; }
+            //             stringOut.consume('\n   ');
+            //             printNativeString(stringOut, rest[i], true, 0);
+            //         }
+            //     }
+            // }
+            //     // const reststr = stringOut.getOutputString();
 
-                theerr = Core.racketContractError(stringOut.getOutputString());
-                                                  // 'contract violation\n',
-                                                  // ' expected:', expected.toString(), '\n',
-                                                  // ' given:', rest[1], '\n',
-                                                  // ' argument position:',
-                                                  // Core.Number.toOrdinal(rest[0]+1), '\n',
-                                                  // ' other arguments...:',
-                                                  // reststr);
-                                                  // //rest.splice(2));//.join('\n   '));
+            //     theerr = Core.racketContractError(stringOut.getOutputString());
+            //                                       // 'contract violation\n',
+            //                                       // ' expected:', expected.toString(), '\n',
+            //                                       // ' given:', rest[1], '\n',
+            //                                       // ' argument position:',
+            //                                       // Core.Number.toOrdinal(rest[0]+1), '\n',
+            //                                       // ' other arguments...:',
+            //                                       // reststr);
+            //                                       // //rest.splice(2));//.join('\n   '));
         }
     } else if (Core.UString.check(name) || typeof name === 'string') {
         theerr = Core.racketContractError(name.toString(), ...rest);

@@ -876,7 +876,7 @@
 
 (define+provide error #js.Kernel.error)
 (define+provide raise-argument-error #js.Kernel.argerror)
-(define+provide raise-arguments-error #js.Kernel.argerror) ;; TODO: not quite the same
+(define+provide raise-arguments-error #js.Kernel.argerror) ;; TODO: not quite the same formatting
 (define+provide raise-mismatch-error #js.Kernel.mismatcherror)
 
 ;; --------------------------------------------------------------------------
@@ -929,11 +929,10 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-#;(define+provide raise doraise)
 (define+provide raise
   (v-λ (e) #:unchecked
        (let ([abort-ccp
-              (continuation-mark-set-first #;(current-continuation-marks) (#js.Core.Marks.getContinuationMarks)
+              (continuation-mark-set-first (current-continuation-marks)
                                            #js.Paramz.ExceptionHandlerKey
                                            (lambda (x) (throw x)))]) ; throw unhandled exn
       (abort-ccp e))))
@@ -989,20 +988,20 @@
   (#js.Core.display out datum))
 (define+provide (displayln datum [out (current-output-port)])
   (display datum out)
-  (displayln "\n" out))
+  (newline out))
 (define+provide (write datum [out (current-output-port)])
   (#js.Core.write out datum))
 (define+provide (writeln datum [out (current-output-port)])
   (write datum out)
-  (write "\n" out))
+  (newline out))
 (define+provide (print datum [out (current-output-port)] [quote-depth 0])
   (#js.Core.print out datum (print-as-expression) quote-depth))
 (define+provide (println datum [out (current-output-port)])
   (print datum out)
-  (print "\n" out))
+  (newline out))
 
 (define+provide (newline [out (current-output-port)])
-  (display "\n" out))
+  (display "\n" out)) ; TODO: should be write-char, but write doesnt work either
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
@@ -1025,8 +1024,7 @@
 
 (define+provide (procedure-arity-mask fn) (procedure-arity fn))
 (define+provide (bitwise-bit-set? mask n) #t)
-
-
+(define+provide (procedure-extract-target f) #f)
 
 ;; --------------------------------------------------------------------------
 ;; Regexp
@@ -1075,25 +1073,21 @@
 (define+provide (arity-at-least-value p)
   (kernel:arity-at-least-value p))
 
+(define multi-arity-fns
+  (array (#js.String "values")
+         (#js.String "list")
+         (#js.String "equals")
+         (#js.String "lt")))
 (define+provide procedure-arity-includes?
   (v-λ (fn n) #:unchecked
-       ;; (#js.console.log fn)
-       ;; (#js.console.log n)
-       ;; (#js.console.log (#js.Array.isArray #js.fn.__rjs_arityValue))
-       ;; (#js.console.log (binop === #js.fn.__rjs_arityValue *undefined*))
-       ;; (#js.console.log #js.fn.length)
-       ;; (#js.console.log #js.fn.name)
        ;; first case special-cases variable-arity fns like `values`:
        ;; for these fns, procedure-arity incorrectly returns #js.fn.length,
        ;; which does not include "rest" arg;
-       ;; TODO: how to better handle this?
+       ;; TODO: how to better handle this? see pr#153
        (or (and (not (#js.Array.isArray #js.fn.__rjs_arityValue)) ; not case-lamba
                 (binop === #js.fn.__rjs_arityValue *undefined*)
-                (or (binop == #js.fn.name "values")
-                    (binop == #js.fn.name "list")
-                    (binop == #js.fn.name "equals")
-                    (binop == #js.fn.name "lt")))
-           (binop === n (procedure-arity fn)))))
+                (#js.multi-arity-fns.includes #js.fn.name))
+                (binop === n (procedure-arity fn)))))
 
 (define+provide (procedure-arity fn)
   (if (#js.Array.isArray #js.fn.__rjs_arityValue)
@@ -1123,8 +1117,6 @@
            (proc v v1 v2)))]
     [else (proc v v1 v2)]))
 
-(define+provide (procedure-extract-target f) ;; TODO
-  #f)
 ;; --------------------------------------------------------------------------
 ;;
 
@@ -1150,7 +1142,7 @@
   (v-λ (system-type mod) #:unchecked
     'javascript))
 
-;; TODO: manually implement weak references? or ES6 WeakMap?
+;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)

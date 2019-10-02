@@ -6,7 +6,6 @@ import { displayNativeString, writeNativeString } from './print_native_string.js
 import { isEqual, isEqv, isEq } from './equality.js';
 import { hashForEqual, hashForEqv, hashForEq } from './hashing.js';
 import { racketCoreError, racketContractError } from './errors.js';
-import { getMarks, getContinuationMarks } from './marks.js'
 
 const hashConfigs = {
     eq: {

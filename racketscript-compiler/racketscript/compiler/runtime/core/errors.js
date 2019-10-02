@@ -53,14 +53,61 @@ export function isErr(e) {
 export function errName(e) { return e.name; }
 export function errMsg(e)  { return e.message; }
 
+// this must be here to avoid circular dependency with numbers.js
+// copied from internet:
+// https://gist.github.com/jlbruno/1535691/db35b4f3af3dcbb42babc01541410f291a8e8fac
+function toOrdinal(i) {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + "st";
+    }
+    if (j == 2 && k != 12) {
+        return i + "nd";
+    }
+    if (j == 3 && k != 13) {
+        return i + "rd";
+    }
+    return i + "th";
+}
+
 export function makeContractError(name, expected, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
+    // code duplicated from core/errors.js
+    // convert "other" args to string (via `print`, not `write` or `display`)
+    // duplicates exact output (ie `exn-message`) of racket raise-argument-error
     stringOut.consume(`${name.toString()}: contract violation\n`);
     stringOut.consume('  expected: ');
     stringOut.consume(expected.toString());
     stringOut.consume('\n');
     stringOut.consume('  given: ');
-    // TODO: handle multiple rest args
-    printNativeString(stringOut, rest[0], true, 0);
+    if (rest.length === 1) {
+        printNativeString(stringOut, rest[0], true, 0);
+    } else {
+        printNativeString(stringOut, rest[rest[0]+1], true, 0);
+        if (rest.length > 2) { // only print if there are "other" args
+            stringOut.consume('\n');
+            stringOut.consume('  argument position: ');
+            printNativeString(stringOut, toOrdinal(rest[0]+1), true, 0);
+            stringOut.consume('\n');
+            stringOut.consume('  other arguments...:');
+            for (let i = 1; i < rest.length; i++) {
+                if (i === rest[0]+1) { continue; }
+                stringOut.consume('\n   ');
+                printNativeString(stringOut, rest[i], true, 0);
+            }
+        }
+    }
+
     return racketContractError(stringOut.getOutputString());
+
+    // const stringOut = new MiniNativeOutputStringPort();
+    // stringOut.consume(`${name.toString()}: contract violation\n`);
+    // stringOut.consume('  expected: ');
+    // stringOut.consume(expected.toString());
+    // stringOut.consume('\n');
+    // stringOut.consume('  given: ');
+    // // TODO: handle multiple rest args
+    // printNativeString(stringOut, rest[0], true, 0);
+    // return racketContractError(stringOut.getOutputString());
 }
