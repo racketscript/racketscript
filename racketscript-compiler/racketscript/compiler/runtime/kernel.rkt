@@ -929,7 +929,7 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-(define+provide raise doraise)
+(define+provide raise #js.Kernel.doraise)
 
 (define+provide exn:fail? #js.Core.isErr)
 (define+provide exn:fail:contract? #js.Core.isContractErr)

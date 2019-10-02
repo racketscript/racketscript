@@ -202,7 +202,7 @@
 ;; somewhat duplicates continuation-mark-set-first in kernel.rkt
 ;; (but less general, eg ignore prompt tag for now);
 ;; this needs to be here for check/raise
-(define+provide doraise
+#;(define+provide doraise
   (v-λ (e) #:unchecked
        (let ([abort-ccp
               (let* ([mark-set (#js.Core.Marks.getContinuationMarks)]
@@ -223,7 +223,7 @@
      #`(check/raise #:who who chkfn what #,(~a (syntax->datum #'chkfn)) at)]
     [(_ #:who who chkfn what expected at)
      #'(unless (chkfn what)
-         (doraise
+         (#js.Kernel.doraise
           (#js.Core.makeContractError who expected what)))]
     ;; no #:who arg cases, keep for backwards compat for now, TODO: remove?
     [(_ (~datum #t) what at)

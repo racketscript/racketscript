@@ -1,7 +1,7 @@
 import * as Core from './core.js';
 import * as Paramz from './paramz.js';
 import { MiniNativeOutputStringPort } from './core/mini_native_output_string_port.js';
-import { displayNativeString, writeNativeString, printNativeString } from './core/print_native_string.js';
+import { printNativeString } from './core/print_native_string.js';
 
 /* --------------------------------------------------------------------------*/
 // Immutable
@@ -139,15 +139,30 @@ export function error(firstArg, ...rest) {
 }
 
 /**
+ * @param {Core.Error} e
+ */
+// somewhat duplicates continuation-mark-set-first in kernel.rkt
+// (but less general, eg ignore prompt tag for now);
+export function doraise(e) {
+    const markset = Core.Marks.getContinuationMarks();
+    const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
+    if (marks.length === 0) {
+        throw e;
+    } else {
+        marks.hd(e);
+    }
+}
+
+/**
  * @param {Core.Symbol|Core.UString|String} name
- * @param {Core.Symbol|Core.UString|String} expected
+ * @param {Core.UString} expected
  * @param {*[]} rest
  */
 // analogous to Racket raise-argument-error
 export function argerror(name, expected, ...rest) {
-    // duplicates continuation-mark-set-first
-    const markset = Core.Marks.getContinuationMarks();
-    const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
+    // // duplicates continuation-mark-set-first
+    // const markset = Core.Marks.getContinuationMarks();
+    // const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
     var theerr;
     if (Core.Symbol.check(name)) {
         if (rest.length === 0) {
@@ -161,25 +176,26 @@ export function argerror(name, expected, ...rest) {
         theerr = Core.racketContractError('error: invalid arguments');
     }
 
-    if (marks.length === 0) {
-        throw theerr;
-    } else {
-        marks.hd(theerr);
-    }
+    doraise(theerr);
+    // if (marks.length === 0) {
+    //     throw theerr;
+    // } else {
+    //     marks.hd(theerr);
+    // }
 }
 
 /**
- * @param {Core.Symbol|Core.UString|String} name
- * @param {Core.Symbol|Core.UString|String} expected
+ * @param {Core.Symbol} name
+ * @param {Core.UString} msg
  * @param {*[]} rest
  */
 // analogous to Racket raise-mismatch-error
 // usage: raise-mismatch-error name, (~seq msg v ...) ...
 // so ...rst might have additional msg, v ...
 export function mismatcherror(name, msg, ...rest) {
-    // duplicates continuation-mark-set-first
-    const markset = Core.Marks.getContinuationMarks();
-    const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
+    // // duplicates continuation-mark-set-first
+    // const markset = Core.Marks.getContinuationMarks();
+    // const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
     var theerr;
     if (Core.Symbol.check(name) || Core.UString.check(msg)) {
         if (rest.length === 0) {
@@ -202,11 +218,12 @@ export function mismatcherror(name, msg, ...rest) {
         theerr = Core.racketContractError('error: invalid arguments');
     }
 
-    if (marks.length === 0) {
-        throw theerr;
-    } else {
-        marks.hd(theerr);
-    }
+    doraise(theerr);
+    // if (marks.length === 0) {
+    //     throw theerr;
+    // } else {
+    //     marks.hd(theerr);
+    // }
 }
 
 /* --------------------------------------------------------------------------*/
