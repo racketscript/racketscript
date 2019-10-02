@@ -160,9 +160,6 @@ export function doraise(e) {
  */
 // analogous to Racket raise-argument-error
 export function argerror(name, expected, ...rest) {
-    // // duplicates continuation-mark-set-first
-    // const markset = Core.Marks.getContinuationMarks();
-    // const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
     var theerr;
     if (Core.Symbol.check(name)) {
         if (rest.length === 0) {
@@ -177,11 +174,6 @@ export function argerror(name, expected, ...rest) {
     }
 
     doraise(theerr);
-    // if (marks.length === 0) {
-    //     throw theerr;
-    // } else {
-    //     marks.hd(theerr);
-    // }
 }
 
 /**
@@ -193,9 +185,6 @@ export function argerror(name, expected, ...rest) {
 // usage: raise-mismatch-error name, (~seq msg v ...) ...
 // so ...rst might have additional msg, v ...
 export function mismatcherror(name, msg, ...rest) {
-    // // duplicates continuation-mark-set-first
-    // const markset = Core.Marks.getContinuationMarks();
-    // const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
     var theerr;
     if (Core.Symbol.check(name) || Core.UString.check(msg)) {
         if (rest.length === 0) {
@@ -219,11 +208,6 @@ export function mismatcherror(name, msg, ...rest) {
     }
 
     doraise(theerr);
-    // if (marks.length === 0) {
-    //     throw theerr;
-    // } else {
-    //     marks.hd(theerr);
-    // }
 }
 
 /* --------------------------------------------------------------------------*/

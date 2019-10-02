@@ -199,19 +199,6 @@
     (throw (#js.Core.racketContractError "expected a" type
                                          ", but given" what))))
 
-;; somewhat duplicates continuation-mark-set-first in kernel.rkt
-;; (but less general, eg ignore prompt tag for now);
-;; this needs to be here for check/raise
-#;(define+provide doraise
-  (v-λ (e) #:unchecked
-       (let ([abort-ccp
-              (let* ([mark-set (#js.Core.Marks.getContinuationMarks)]
-                     [marks (#js.Core.Marks.getMarks mark-set #js.Paramz.ExceptionHandlerKey)])
-                (if (#js.Core.Pair.isEmpty marks)
-                    (λ (x) (throw x)) ; throw unhandled exn
-                    #js.marks.hd))])  ; else get handler from mark
-         (abort-ccp e))))
-
 ;; #:who arg allows duplicating Racket error msg ala raise-argument-error
 (define-syntax (check/raise stx)
   (syntax-parse stx
@@ -236,8 +223,7 @@
      #'(unless (chkfn what)
          (throw
           (#js.Core.racketContractError "Expected:" expected ", given:" what
-           ", at:" at)))]
-))
+                                        ", at:" at)))]))
 
 
 (define-syntax-rule (check/or c1 ...)
