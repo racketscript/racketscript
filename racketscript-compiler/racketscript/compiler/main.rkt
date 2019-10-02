@@ -341,7 +341,6 @@
    #:once-any
    ["--expand" "Fully expand Racket source" (build-mode 'expand)]
    ["--ast" "Expand and print AST" (build-mode 'absyn)]
-   ["--rename" "Expand and print AST after α-renaming" (build-mode 'rename)]
    ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
    ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
    ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
