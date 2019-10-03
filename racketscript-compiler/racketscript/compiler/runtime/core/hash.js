@@ -89,6 +89,7 @@ class Hash extends PrintablePrimitive {
     hasKey(k) { return this._h.has(k); }
 
     // implements hash-ref-key
+    // error reporting moved to kernel.rkt
     refkey(k, fail) {
         for (const key of this._h.keys()) {
             if (hashConfigs[this._type].keyEq(key, k)) {

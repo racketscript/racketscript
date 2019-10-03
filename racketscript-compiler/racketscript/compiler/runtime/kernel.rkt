@@ -1075,35 +1075,13 @@
 (define+provide (arity-at-least-value p)
   (kernel:arity-at-least-value p))
 
-#;(define multi-arity-fns
-  (array (#js.String "values")
-         (#js.String "list")
-         (#js.String "equals")
-         (#js.String "lt")))
 (define+provide procedure-arity-includes?
   (v-λ (fn n) #:unchecked
-       ;; (#js.console.log fn)
-       ;; (#js.console.log n)
-       ;; (#js.console.log (procedure-arity fn))
-       ;; (#js.console.log (kernel:arity-at-least? (procedure-arity fn)))
-       ;; (when (kernel:arity-at-least? (procedure-arity fn))
-       ;;   (#js.console.log (kernel:arity-at-least-value (procedure-arity fn))))
        (let ([ar (procedure-arity fn)])
          (cond
            [(kernel:arity-at-least? ar) (<= (kernel:arity-at-least-value ar) n)]
-           [(list? ar)
-            ;; (#js.console.log "arity is a list")
-            ;; (#js.console.log ar)
-            (member n ar)] ;; TODO
-           [else (binop === n ar)]))
-       ;; first case special-cases variable-arity fns like `values`:
-       ;; for these fns, procedure-arity incorrectly returns #js.fn.length,
-       ;; which does not include "rest" arg;
-       ;; TODO: how to better handle this? see pr#153
-            #;(or (and (not (#js.Array.isArray #js.fn.__rjs_arityValue)) ; not case-lamba
-                (binop === #js.fn.__rjs_arityValue *undefined*)
-                (#js.multi-arity-fns.includes #js.fn.name))
-                (binop === n (procedure-arity fn)))))
+           [(list? ar) (member n ar)]
+           [else (binop === n ar)]))))
 
 (define+provide (procedure-arity fn)
   (if (#js.Array.isArray #js.fn.__rjs_arityValue)
@@ -1161,9 +1139,3 @@
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)
-
-;; (define values+arity
-;;   (#js.Core.attachProcedureArity
-;;    values
-;;    0 #;(array (kernel:arity-at-least 0))))
-;; (provide (rename-out [values+arity values]))
