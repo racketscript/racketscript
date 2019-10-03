@@ -152,12 +152,12 @@ export function check(v) {
     return typeof v === 'object' && v !== null && v.constructor === Pair;
 }
 
-export function cons(hd, tl) {
+export function make(hd, tl) {
     return new Pair(hd, tl);
 }
 
-export function list(...items) {
-    return items.reduceRight((result, item) => cons(item, result), EMPTY);
+export function makeList(...items) {
+    return items.reduceRight((result, item) => make(item, result), EMPTY);
 }
 
 export function listToArray(lst) {
@@ -167,7 +167,7 @@ export function listToArray(lst) {
 }
 
 export function listFromArray(lst) {
-    return list(...lst);
+    return makeList(...lst);
 }
 
 export function listForEach(lst, fn) {

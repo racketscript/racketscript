@@ -181,7 +181,7 @@ class Hash extends PrintablePrimitive {
     }
 
     iteratePair(i) {
-        return Pair.cons(i.value[0], i.value[1]);
+        return Pair.make(i.value[0], i.value[1]);
     }
 
     iterateKeyValue(i) {
@@ -291,7 +291,7 @@ export function makeEqualFromAssocs(assocs, mutable) {
 export function map(hash, proc) {
     let result = Pair.EMPTY;
     hash._h.forEach((value, key) => {
-        result = Pair.cons(proc(key, value), result);
+        result = Pair.make(proc(key, value), result);
     });
     return result;
 }

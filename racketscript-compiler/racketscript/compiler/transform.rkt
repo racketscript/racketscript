@@ -620,12 +620,12 @@
      (ILApp (name-in-module 'core 'Keyword.make)
             (list (ILValue (keyword->string d))))]
     [(list? d)
-     (ILApp (name-in-module 'core 'Pair.list)
+     (ILApp (name-in-module 'core 'Pair.makeList)
             (map absyn-value->il d))]
     [(empty? d)
      (name-in-module 'core 'Pair.EMPTY)]
     [(cons? d)
-     (ILApp (name-in-module 'core 'Pair.cons)
+     (ILApp (name-in-module 'core 'Pair.make)
             (list (absyn-value->il (car d))
                   (absyn-value->il (cdr d))))]
     [(vector? d)
@@ -897,12 +897,12 @@
 
   (: ~cons (-> ILExpr ILExpr ILExpr))
   (define (~cons a b)
-    (ILApp (name-in-module 'core 'Pair.cons) (list a b)))
+    (ILApp (name-in-module 'core 'Pair.make) (list a b)))
 
   (define ~val ILValue)
 
   (define-syntax-rule (~list v ...)
-    (ILApp (name-in-module 'core 'Pair.list) (list v ...)))
+    (ILApp (name-in-module 'core 'Pair.makeList) (list v ...)))
 
   ;; Expressions ----------------------------------------------------
 

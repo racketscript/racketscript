@@ -170,7 +170,7 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons       #js.Core.Pair.cons)
+(define+provide cons (#js.Core.attachProcedureName #js.Core.Pair.make "cons"))
 (define+provide pair?      #js.Core.Pair.check)
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
@@ -185,7 +185,10 @@
   #js.v.tl.tl.hd)
 
 (define+provide null #js.Core.Pair.EMPTY)
-(define+provide list (#js.Core.attachProcedureArity #js.Core.Pair.list 0))
+(define+provide list
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity #js.Core.Pair.makeList 0)
+   "list"))
 
 (define+provide null? #js.Core.Pair.isEmpty)
 (define+provide list? #js.Core.Pair.isList)
@@ -197,7 +200,7 @@
              [result '()])
     (if (null? lst)
         result
-        (loop #js.lst.tl (#js.Core.Pair.cons #js.lst.hd result)))))
+        (loop #js.lst.tl (#js.Core.Pair.make #js.lst.hd result)))))
 
 (define+provide list*
   (v-λ () #:unchecked
@@ -211,14 +214,14 @@
         [else
          (define next-ii (binop - ii 1))
          (loop next-ii
-               (#js.Core.Pair.cons ($ top-arguments next-ii) result))]))))
+               (#js.Core.Pair.make ($ top-arguments next-ii) result))]))))
 
 (define+provide append
   (v-λ () #:unchecked
     (define result '())
     (define lsts arguments)
     (for/array [lst lsts]
-      (set! result (foldr #js.Core.Pair.cons lst result)))
+      (set! result (foldr #js.Core.Pair.make lst result)))
     result))
 
 (define+provide for-each
@@ -571,7 +574,7 @@
              [lst lst])
     (cond
       [(null? lst) (reverse result)]
-      [(fn #js.lst.hd) (loop (#js.Core.Pair.cons #js.lst.hd result)
+      [(fn #js.lst.hd) (loop (#js.Core.Pair.make #js.lst.hd result)
                              #js.lst.tl)]
       [else (loop result #js.lst.tl)])))
 
@@ -649,7 +652,7 @@
              [i 0])
     (if (binop === i n)
         result
-        (loop (#js.Core.Pair.cons v result) (binop + i 1)))))
+        (loop (#js.Core.Pair.make v result) (binop + i 1)))))
 
 (define+provide (flatten lst)
   (cond
