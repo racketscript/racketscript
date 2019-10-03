@@ -199,7 +199,7 @@
     (throw (#js.Core.racketContractError "expected a" type
                                          ", but given" what))))
 
-;; #:who arg allows duplicating Racket error msg ala raise-argument-error
+;; #:who arg allows replicating Racket error msg ala raise-argument-error
 (define-syntax (check/raise stx)
   (syntax-parse stx
     [(_ #:who who (~datum #t) what at)

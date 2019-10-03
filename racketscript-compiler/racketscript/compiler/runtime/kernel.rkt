@@ -16,10 +16,15 @@
 ;; Values
 
 (define+provide values
-  (v-λ vals
-    (if (binop === #js.vals.length 1)
-        ($ vals 0)
-        (#js.Values.make vals))))
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity
+    (v-λ vals
+         (if (binop === #js.vals.length 1)
+             ($ vals 0)
+             (#js.Values.make vals)))
+    0)
+   "values"))
+   
 
 (define+provide (call-with-values generator receiver)
   (let ([vals (generator)])
@@ -85,15 +90,15 @@
 
 (define+provide (single-flonum-available?) #f)
 
-(define+provide *  #js.Core.Number.mul)
-(define+provide /  #js.Core.Number.div)
-(define+provide +  #js.Core.Number.add)
-(define+provide -  #js.Core.Number.sub)
-(define+provide <  #js.Core.Number.lt)
-(define+provide >  #js.Core.Number.gt)
-(define+provide <= #js.Core.Number.lte)
-(define+provide >= #js.Core.Number.gte)
-(define+provide =  #js.Core.Number.equals)
+(define+provide *  (#js.Core.attachProcedureArity #js.Core.Number.mul 1))
+(define+provide /  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
+(define+provide +  (#js.Core.attachProcedureArity #js.Core.Number.add 1))
+(define+provide -  (#js.Core.attachProcedureArity #js.Core.Number.sub 1))
+(define+provide <  (#js.Core.attachProcedureArity #js.Core.Number.lt 1))
+(define+provide >  (#js.Core.attachProcedureArity #js.Core.Number.gt 1))
+(define+provide <= (#js.Core.attachProcedureArity #js.Core.Number.lte 1))
+(define+provide >= (#js.Core.attachProcedureArity #js.Core.Number.gte 1))
+(define+provide =  (#js.Core.attachProcedureArity #js.Core.Number.equals 1))
 
 (define-checked+provide (floor [v real?])
   (#js.Math.floor v))
@@ -180,7 +185,7 @@
   #js.v.tl.tl.hd)
 
 (define+provide null #js.Core.Pair.EMPTY)
-(define+provide list #js.Core.Pair.list)
+(define+provide list (#js.Core.attachProcedureArity #js.Core.Pair.list 0))
 
 (define+provide null? #js.Core.Pair.isEmpty)
 (define+provide list? #js.Core.Pair.isList)
@@ -1067,18 +1072,32 @@
 (define+provide (arity-at-least-value p)
   (kernel:arity-at-least-value p))
 
-(define multi-arity-fns
+#;(define multi-arity-fns
   (array (#js.String "values")
          (#js.String "list")
          (#js.String "equals")
          (#js.String "lt")))
 (define+provide procedure-arity-includes?
   (v-λ (fn n) #:unchecked
+       ;; (#js.console.log fn)
+       ;; (#js.console.log n)
+       ;; (#js.console.log (procedure-arity fn))
+       ;; (#js.console.log (kernel:arity-at-least? (procedure-arity fn)))
+       ;; (when (kernel:arity-at-least? (procedure-arity fn))
+       ;;   (#js.console.log (kernel:arity-at-least-value (procedure-arity fn))))
+       (let ([ar (procedure-arity fn)])
+         (cond
+           [(kernel:arity-at-least? ar) (<= (kernel:arity-at-least-value ar) n)]
+           [(list? ar)
+            ;; (#js.console.log "arity is a list")
+            ;; (#js.console.log ar)
+            (member n ar)] ;; TODO
+           [else (binop === n ar)]))
        ;; first case special-cases variable-arity fns like `values`:
        ;; for these fns, procedure-arity incorrectly returns #js.fn.length,
        ;; which does not include "rest" arg;
        ;; TODO: how to better handle this? see pr#153
-       (or (and (not (#js.Array.isArray #js.fn.__rjs_arityValue)) ; not case-lamba
+            #;(or (and (not (#js.Array.isArray #js.fn.__rjs_arityValue)) ; not case-lamba
                 (binop === #js.fn.__rjs_arityValue *undefined*)
                 (#js.multi-arity-fns.includes #js.fn.name))
                 (binop === n (procedure-arity fn)))))
@@ -1110,7 +1129,6 @@
            (#js.v.getField 1)
            (proc v v1 v2)))]
     [else (proc v v1 v2)]))
-
 ;; --------------------------------------------------------------------------
 ;;
 
@@ -1140,3 +1158,9 @@
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)
+
+;; (define values+arity
+;;   (#js.Core.attachProcedureArity
+;;    values
+;;    0 #;(array (kernel:arity-at-least 0))))
+;; (provide (rename-out [values+arity values]))

@@ -143,6 +143,7 @@ export function error(firstArg, ...rest) {
  */
 // somewhat duplicates continuation-mark-set-first in kernel.rkt
 // (but less general, eg ignore prompt tag for now);
+// must be here to avoid circular dependency
 export function doraise(e) {
     const markset = Core.Marks.getContinuationMarks();
     const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);

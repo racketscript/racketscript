@@ -53,7 +53,8 @@ export {
 } from './core/errors.js';
 
 export {
-    attachProcedureArity
+    attachProcedureArity,
+    attachProcedureName
 } from './core/procedure.js';
 
 export {

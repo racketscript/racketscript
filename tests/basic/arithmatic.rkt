@@ -30,3 +30,23 @@
 (displayln (abs 1))
 (displayln (abs -1))
 
+;; test multiple arities
+;(displayln (+)) ;; TODO
+(displayln (+ 1))
+(displayln (- 1))
+(displayln (* 1))
+(displayln (/ 1))
+(displayln (+ 1 2 3))
+(displayln (- 1 2 3))
+(displayln (* 1 2 3))
+(displayln (/ 1 1 1))
+(displayln (= 1))
+(displayln (< 1))
+(displayln (<= 1))
+(displayln (> 1))
+(displayln (>= 1))
+(displayln (= 1 2 3))
+(displayln (< 1 2 3))
+(displayln (<= 1 2 3))
+(displayln (> 1 2 3))
+(displayln (>= 1 2 3))
