@@ -1,4 +1,5 @@
 #lang racket/base
+(require "../test-utils.rkt")
 
 ;; Division is not included in this test case
 ;; as semantics of numbers are not preserved
@@ -40,11 +41,11 @@
 (displayln (- 1 2 3))
 (displayln (* 1 2 3))
 (displayln (/ 1 1 1))
-(displayln (= 1))
-(displayln (< 1))
-(displayln (<= 1))
-(displayln (> 1))
-(displayln (>= 1))
+(run-if-version "7.0.0.13" (displayln (= 1)))
+(run-if-version "7.0.0.13" (displayln (< 1)))
+(run-if-version "7.0.0.13" (displayln (<= 1)))
+(run-if-version "7.0.0.13" (displayln (> 1)))
+(run-if-version "7.0.0.13" (displayln (>= 1)))
 (displayln (= 1 2 3))
 (displayln (< 1 2 3))
 (displayln (<= 1 2 3))

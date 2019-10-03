@@ -183,10 +183,11 @@ export function argerror(name, expected, ...rest) {
  * @param {Core.UString} field
  * @param {*[]} rest
  */
-// analogous to Racket raise-arguments-error
+// analogous to Racket raise-arguments-error,
+// so rest must be at least 1 and must be odd bc each field must have matching v
 export function argserror(name, msg, field, ...rest) {
     var theerr;
-    if (Core.Symbol.check(name) && rest.length > 0) {
+    if (Core.Symbol.check(name) && rest.length > 0 && rest.length % 2 === 1) {
         const stringOut = new MiniNativeOutputStringPort();
         stringOut.consume(`${name.toString()}: `);
         stringOut.consume(msg);
