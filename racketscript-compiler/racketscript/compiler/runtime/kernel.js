@@ -180,6 +180,37 @@ export function argerror(name, expected, ...rest) {
 /**
  * @param {Core.Symbol} name
  * @param {Core.UString} msg
+ * @param {Core.UString} field
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-arguments-error
+export function argserror(name, msg, field, ...rest) {
+    var theerr;
+    if (Core.Symbol.check(name) && rest.length > 0) {
+        const stringOut = new MiniNativeOutputStringPort();
+        stringOut.consume(`${name.toString()}: `);
+        stringOut.consume(msg);
+        stringOut.consume('\n  ');
+        stringOut.consume(field);
+        stringOut.consume(': ');
+        printNativeString(stringOut, rest[0], true, 0);
+        for (let i = 1; i < rest.length; i=i+2) {
+            stringOut.consume('\n  ');
+            stringOut.consume(rest[i]);
+            stringOut.consume(': ');
+            printNativeString(stringOut, rest[i+1], true, 0);
+        }
+        theerr = Core.racketContractError(stringOut.getOutputString());
+    } else {
+        theerr = Core.racketContractError('raise-arguments-error: invalid arguments');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {Core.Symbol} name
+ * @param {Core.UString} msg
  * @param {*[]} rest
  */
 // analogous to Racket raise-mismatch-error

@@ -884,7 +884,7 @@
 
 (define+provide error #js.Kernel.error)
 (define+provide raise-argument-error #js.Kernel.argerror)
-(define+provide raise-arguments-error #js.Kernel.argerror) ;; TODO: not quite the same formatting
+(define+provide raise-arguments-error #js.Kernel.argserror)
 (define+provide raise-mismatch-error #js.Kernel.mismatcherror)
 
 ;; --------------------------------------------------------------------------
