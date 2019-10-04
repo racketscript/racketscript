@@ -94,23 +94,6 @@ export class UString extends Primitive /* implements Printable */ {
     /**
      * @param {!number} i
      */
-    checkIndexLtLength(i) {
-        if (i >= this.length) {
-            if (this.length > 0) {
-                throw racketContractError(`string-ref: index is out of range
-  index: ${i}
-  valid range: [0, ${this.length - 1}]
-  string: `, this);
-            } else {
-                throw racketContractError(`string-ref: index is out of range for empty string
-  index: ${i}`);
-            }
-        }
-    }
-
-    /**
-     * @param {!number} i
-     */
     isValidIndex(i) { return i < this.length; }
 
     /**
