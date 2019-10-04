@@ -1,5 +1,7 @@
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { printNativeString } from './print_native_string.js';
+// this (errors.js) depends on UString, so vice versa cannot be true
+import * as UString from './unicode_string.js';
 
 function printError(out, msg, args) {
     out.consume(msg);
@@ -70,7 +72,7 @@ function toOrdinal(i) {
 }
 
 // format exn message to exactly match Racket raise-argument-error
-export function makeContractError(name, expected, ...rest) {
+export function makeArgumentError(name, expected, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
     // "other" args must be converted to string via `print`
     // (not `write` or `display`)
@@ -98,4 +100,59 @@ export function makeContractError(name, expected, ...rest) {
     }
 
     return racketContractError(stringOut.getOutputString());
+}
+
+// format exn message to exactly match Racket raise-arguments-error
+export function makeArgumentsError(name, msg, field, ...rest) {
+    const stringOut = new MiniNativeOutputStringPort();
+    stringOut.consume(`${name.toString()}: `);
+    stringOut.consume(msg);
+    stringOut.consume('\n  ');
+    stringOut.consume(field);
+    stringOut.consume(': ');
+    printNativeString(stringOut, rest[0], true, 0);
+    for (let i = 1; i < rest.length; i=i+2) {
+        stringOut.consume('\n  ');
+        stringOut.consume(rest[i]);
+        stringOut.consume(': ');
+        printNativeString(stringOut, rest[i+1], true, 0);
+    }
+    return racketContractError(stringOut.getOutputString());
+}
+
+// format exn message to exactly match Racket raise-mismatch-error
+export function makeMismatchError(name, msg, ...rest) {
+    if (rest.length === 0) {
+        return racketContractError(name.toString(), msg);
+    } else {
+        const stringOut = new MiniNativeOutputStringPort();
+        stringOut.consume(`${name.toString()}: `);
+        stringOut.consume(msg);
+        for (let i = 0; i < rest.length; i++) {
+            // //string indicates another "msg" format str, see usage above
+            // console.log("make-mismatch-err");
+            // console.log(rest[i].name);
+            if (UString.check(rest[i])) {
+            // if (true) {
+                stringOut.consume(rest[i]);
+            } else {
+                printNativeString(stringOut, rest[i], true, 0);
+            }
+        }
+        return racketContractError(stringOut.getOutputString());
+    }
+}
+
+export function makeOutOfRangeError(name, type, v, len, i) {
+    if (i >= len) {
+        if (len > 0) {
+            return racketContractError(`${name}: index is out of range
+  index: ${i}
+  valid range: [0, ${len - 1}]
+  ${type}: `, v);
+        } else {
+            return racketContractError(`${name}: index is out of range for empty ${type}
+  index: ${i}`);
+        }
+    }
 }

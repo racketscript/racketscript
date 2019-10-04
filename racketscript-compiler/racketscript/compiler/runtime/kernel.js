@@ -1,7 +1,5 @@
 import * as Core from './core.js';
 import * as Paramz from './paramz.js';
-import { MiniNativeOutputStringPort } from './core/mini_native_output_string_port.js';
-import { printNativeString } from './core/print_native_string.js';
 
 /* --------------------------------------------------------------------------*/
 // Immutable
@@ -155,23 +153,22 @@ export function doraise(e) {
 }
 
 /**
- * @param {Core.Symbol|Core.UString|String} name
- * @param {Core.UString} expected
+ * @param {Core.Symbol} name
+ * @param {Core.UString|String} expected
  * @param {*[]} rest
  */
 // analogous to Racket raise-argument-error
+// usage:
+//  (raise-argument-error name expected arg)
+//  (raise-argument-error name expected bad-pos arg ...)
 export function argerror(name, expected, ...rest) {
     var theerr;
-    if (Core.Symbol.check(name)) {
-        if (rest.length === 0) {
-            theerr = Core.racketContractError(name.toString());
-        } else {
-            theerr = Core.makeContractError(name, expected, ...rest);
-        }
-    } else if (Core.UString.check(name) || typeof name === 'string') {
-        theerr = Core.racketContractError(name.toString(), ...rest);
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1) {
+        theerr = Core.makeArgumentError(name, expected, ...rest);
     } else {
-        theerr = Core.racketContractError('error: invalid arguments');
+        theerr = Core.racketContractError('raise-argument-error: invalid arguments');
     }
 
     doraise(theerr);
@@ -179,29 +176,19 @@ export function argerror(name, expected, ...rest) {
 
 /**
  * @param {Core.Symbol} name
- * @param {Core.UString} msg
- * @param {Core.UString} field
+ * @param {Core.UString|String} msg
+ * @param {Core.UString|String} field
  * @param {*[]} rest
  */
 // analogous to Racket raise-arguments-error,
 // so rest must be at least 1 and must be odd bc each field must have matching v
 export function argserror(name, msg, field, ...rest) {
     var theerr;
-    if (Core.Symbol.check(name) && rest.length > 0 && rest.length % 2 === 1) {
-        const stringOut = new MiniNativeOutputStringPort();
-        stringOut.consume(`${name.toString()}: `);
-        stringOut.consume(msg);
-        stringOut.consume('\n  ');
-        stringOut.consume(field);
-        stringOut.consume(': ');
-        printNativeString(stringOut, rest[0], true, 0);
-        for (let i = 1; i < rest.length; i=i+2) {
-            stringOut.consume('\n  ');
-            stringOut.consume(rest[i]);
-            stringOut.consume(': ');
-            printNativeString(stringOut, rest[i+1], true, 0);
-        }
-        theerr = Core.racketContractError(stringOut.getOutputString());
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')
+        && (Core.UString.check(field) || typeof field === 'string')
+        && rest.length >= 1 && rest.length % 2 === 1) {
+        theerr = Core.makeArgumentsError(name, msg, field, ...rest);
     } else {
         theerr = Core.racketContractError('raise-arguments-error: invalid arguments');
     }
@@ -211,7 +198,7 @@ export function argserror(name, msg, field, ...rest) {
 
 /**
  * @param {Core.Symbol} name
- * @param {Core.UString} msg
+ * @param {Core.UString|String} msg
  * @param {*[]} rest
  */
 // analogous to Racket raise-mismatch-error
@@ -219,23 +206,9 @@ export function argserror(name, msg, field, ...rest) {
 // so ...rst might have additional msg, v ...
 export function mismatcherror(name, msg, ...rest) {
     var theerr;
-    if (Core.Symbol.check(name) || Core.UString.check(msg)) {
-        if (rest.length === 0) {
-            theerr = Core.racketContractError(name.toString(), msg);
-        } else {
-            const stringOut = new MiniNativeOutputStringPort();
-            stringOut.consume(`${name.toString()}: `);
-            stringOut.consume(msg);
-            for (let i = 0; i < rest.length; i++) {
-                //string indicates another "msg" format str, see usage above
-                if (Core.UString.check(rest[i])) {
-                    stringOut.consume(rest[i]);
-                } else {
-                    printNativeString(stringOut, rest[i], true, 0);
-                }
-            }
-            theerr = Core.racketContractError(stringOut.getOutputString());
-        }
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')) {
+        theerr = Core.makeMismatchError(name, msg, ...rest);
     } else {
         theerr = Core.racketContractError('error: invalid arguments');
     }

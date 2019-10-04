@@ -686,7 +686,10 @@
     #js.Core.UString.stringAppend)
 
 (define-checked+provide (string-ref [s string?] [i exact-nonnegative-integer?])
-  (#js.s.charAt i))
+  (if (#js.s.isValidIndex i)
+      (#js.s.charAt i)
+      (raise
+       (#js.Core.makeOutOfRangeError "string-ref" "string" s #js.s.length i))))
 
 (define-checked+provide (string=? [sa string?] [sb string?])
   (#js.Core.UString.eq sa sb))
@@ -807,7 +810,10 @@
                          [str (check/and string? (check/not immutable?))]
                          [k exact-nonnegative-integer?]
                          [char char?])
-  (#js.str.setCharAt k char))
+  (if (#js.str.isValidIndex k)
+      (#js.str.setCharAt k char)
+      (raise
+       (#js.Core.makeOutOfRangeError "string-set!" "string" str #js.str.length k))))
 
 ;; --------------------------------------------------------------------------
 ;; Characters

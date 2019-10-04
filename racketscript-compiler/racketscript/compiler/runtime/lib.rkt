@@ -211,7 +211,7 @@
     [(_ #:who who chkfn what expected at)
      #'(unless (chkfn what)
          (#js.Kernel.doraise
-          (#js.Core.makeContractError who expected what)))]
+          (#js.Core.makeArgumentError who expected what)))]
     ;; no #:who arg cases, keep for backwards compat for now, TODO: remove?
     [(_ (~datum #t) what at)
      #`(begin)]
