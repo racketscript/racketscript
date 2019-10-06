@@ -390,26 +390,38 @@
 (define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO: implement weak hashes
 
 (define+provide hash-ref
-  (v-λ (h k fail) #:unchecked
-    (#js.h.ref k fail)))
+  (case-lambda
+    [(h k)
+     (if (#js.h.hasKey k)
+         (#js.h._h.get k)
+         (raise (#js.Core.makeArgumentsError
+                 "hash-ref" "no value found for key" "key" k)))]
+    [(h k fail) (#js.h.ref k fail)]))
 
 (define+provide hash-has-key?
   (v-λ (h k) #:unchecked
     (#js.h.hasKey k)))
 
 (define+provide hash-ref-key
-  (v-λ (h k fail) #:unchecked
-    (if (#js.h.hasKey k)
-        (#js.h.refkey k fail)
-        (if (eq? fail *undefined*)
-            (raise
-             (#js.Core.racketContractError
-              "hash-ref-key: hash does not contain key\n  key:"
-              k))
-	    (if (typeof fail "function") (fail) fail)))))
+  (case-lambda
+    [(h k)
+     (if (#js.h.hasKey k)
+         (#js.h.refKey k)
+         (raise (#js.Core.makeArgumentsError
+                 "hash-ref-key" "hash does not contain key" "key" k)))]
+    [(h k fail) (#js.h.refKey k fail)]))
 
 (define+provide (hash-set h k v)
-  (#js.h.set k v))
+  (if (#js.h.isImmutable)
+      (#js.h.set k v)
+      (raise (#js.Core.makeArgumentError
+              "hash-set" "(and hash? immutable?)" 0 h k v))))
+
+(define+provide (hash-remove h k)
+  (if (#js.h.isImmutable)
+      (#js.h.remove k)
+      (raise (#js.Core.makeArgumentError
+              "hash-remove" "(and/c hash? immutable?)" 0 h k))))
 
 (define+provide hash-map
   (case-lambda
@@ -419,19 +431,17 @@
 (define+provide (hash-count h)
   (#js.h.size))
 
-(define+provide (hash-remove h k)
-  (#js.h.remove k))
-
 ;; mutating operations
 (define+provide (hash-remove! h k)
-  (#js.h.doremove k))
+  (if (#js.h.isImmutable h)
+      (raise (#js.Core.makeArgumentError
+              "hash-remove!" "(and/c hash? (not/c immutable?))" 0 h k))
+      (#js.h.doremove k)))
 
 (define+provide (hash-set! h k v)
   (if (#js.h.isImmutable h)
-      (raise
-       (#js.Core.racketContractError
-        "hash-set!: contract violation\n  expected: (and/c hash? (not/c immutable?))\n  given: "
-        (#js.h.toString)))
+      (raise (#js.Core.makeArgumentError
+              "hash-set!" "(and/c hash? (not/c immutable?))" 0 h k v))
       (#js.h.doset k v)))
 
 ;; iteration
@@ -455,7 +465,15 @@
 
 ;; set operations for hash tables
 (define+provide (hash-keys-subset? h1 h2)
-  (#js.h1.isKeysSubset h2))
+  (if (and (#js.Core.Hash.check h1) (#js.Core.Hash.check h2))
+      (if (#js.h1.isSameType h2)
+          (#js.h1.isKeysSubset h2)
+          (raise (#js.Core.makeArgumentsError
+                  "hash-keys-subset?"
+                  "given hash tables do not use the same key comparison"
+                  "first table" h1
+                  "second table" h2)))
+      #f))
 
 (define+provide (hash-union h1 h2)
   (#js.h1.union h2))
