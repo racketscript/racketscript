@@ -1,9 +1,8 @@
 #lang racket/base
-(require (for-syntax racket/base syntax/parse version/utils)
-         syntax/parse/define)
+(require (for-syntax racket/base syntax/parse))
 (provide (all-defined-out))
 
-;; this file mostly copied from racket-test/tests/racket/testomg.rktl
+;; this file mostly copied from racket-test/tests/racket/testing.rktl
 
 (define exn:application:mismatch? exn:fail:contract?)
 (define exn:application:type? exn:fail:contract?)

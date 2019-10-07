@@ -371,7 +371,7 @@
   (test '()              f  string? '(1 a 2 b 3 c d))
   (test '(1 a 2 b 3 c d) fn string? '(1 a 2 b 3 c d))
   (err/rt-test (f string? '(1 2 3 . 4)) exn:application:mismatch?)
-  (err/rt-test (fn string? '(1 2 3 . 4)) exn:application:mismatch? "expected: list\\?") ;; TODO: string? prints as string_p
+  (err/rt-test (fn string? '(1 2 3 . 4)) exn:application:mismatch?)
   (err/rt-test (f  2 '(1 2 3)))
   (err/rt-test (fn 2 '(1 2 3)))
   (err/rt-test (f cons '(1 2 3)))

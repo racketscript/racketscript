@@ -170,8 +170,10 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons (#js.Core.attachProcedureName #js.Core.Pair.make "cons"))
-(define+provide pair?      #js.Core.Pair.check)
+(define+provide cons
+  (#js.Core.attachProcedureName #js.Core.Pair.make "cons"))
+(define+provide pair?
+  (#js.Core.attachProcedureName #js.Core.Pair.check "pair?"))
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
   #js.v.hd.hd)
@@ -698,10 +700,15 @@
 ;; --------------------------------------------------------------------------
 ;; Strings
 
-(define+provide string #js.Core.UString.makeMutableFromCharsVarArgs)
+(define+provide string
+  (#js.Core.attachProcedureName
+   #js.Core.UString.makeMutableFromCharsVarArgs
+   "string"))
 
 (define+provide string-append
-    #js.Core.UString.stringAppend)
+  (#js.Core.attachProcedureName
+   #js.Core.UString.stringAppend
+   "string-append"))
 
 (define-checked+provide (string-ref [s string?] [i exact-nonnegative-integer?])
   (if (#js.s.isValidIndex i)
@@ -724,8 +731,8 @@
 (define-checked+provide (string>=? [sa string?] [sb string?])
   (#js.Core.UString.gte sa sb))
 
-(define+provide (string? v)
-  (#js.Core.UString.check v))
+(define+provide string?
+  (#js.Core.attachProcedureName #js.Core.UString.check "string?"))
 
 (define+provide (fprintf out form . args)
   (apply #js.Kernel.fprintf (print-as-expression) out form args))
