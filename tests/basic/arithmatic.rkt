@@ -51,3 +51,6 @@
 (displayln (<= 1 2 3))
 (displayln (> 1 2 3))
 (displayln (>= 1 2 3))
+
+(displayln (+))
+(displayln (*))
