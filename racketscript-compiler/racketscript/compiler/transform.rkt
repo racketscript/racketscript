@@ -434,7 +434,7 @@
          [(and (equal? v (ImportedIdent '/ '#%kernel #t))
                (length=? arg* 1))
           (ILBinaryOp '/ (cons (ILValue 1) arg*))]
-         [(and (ImportedIdent? v) (member v binops) (> (length arg* ) 0))
+         [(and (ImportedIdent? v) (member v binops) (= (length arg* ) 2))
           (ILBinaryOp (ImportedIdent-id v) arg*)]
          [else (ILApp v-il arg*)]))
 
