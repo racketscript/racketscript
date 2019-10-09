@@ -32,7 +32,6 @@
 (displayln (abs -1))
 
 ;; test multiple arities
-;(displayln (+)) ;; TODO
 (displayln (+ 1))
 (displayln (- 1))
 (displayln (* 1))
