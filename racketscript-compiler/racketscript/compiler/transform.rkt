@@ -434,7 +434,7 @@
          [(and (equal? v (ImportedIdent '/ '#%kernel #t))
                (length=? arg* 1))
           (ILBinaryOp '/ (cons (ILValue 1) arg*))]
-         [(and (ImportedIdent? v) (member v binops))
+         [(and (ImportedIdent? v) (member v binops) (>= (length arg* ) 2))
           (ILBinaryOp (ImportedIdent-id v) arg*)]
          [else (ILApp v-il arg*)]))
 
@@ -1007,6 +1007,12 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Identify binary operators"
+    (check-ilexpr (PlainApp (kident '+) '())
+                  '()
+                  (ILApp (ILRef 'kernel '+) '()))
+    (check-ilexpr (PlainApp (kident '/) '())
+                  '()
+                  (ILApp (ILRef 'kernel '/) '()))
     (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
                   '()
                   (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))

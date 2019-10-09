@@ -46,11 +46,18 @@ export {
 
 export {
     racketCoreError,
-    racketContractError
+    racketContractError,
+    makeArgumentError,
+    makeArgumentsError,
+    makeMismatchError,
+    makeOutOfRangeError,
+    isContractErr,
+    errMsg
 } from './core/errors.js';
 
 export {
-    attachProcedureArity
+    attachProcedureArity,
+    attachProcedureName
 } from './core/procedure.js';
 
 export {

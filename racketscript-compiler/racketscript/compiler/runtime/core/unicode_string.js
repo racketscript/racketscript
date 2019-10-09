@@ -3,7 +3,6 @@ import * as Bytes from './bytes.js';
 import * as Char from './char.js';
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { internedMake } from './lib.js';
-import { racketContractError } from './errors.js';
 import { hashIntArray } from './raw_hashing.js';
 
 // In node.js, TextEncoder is not global and needs to be imported.
@@ -53,7 +52,6 @@ export class UString extends Primitive /* implements Printable */ {
      * @return {!Char.Char}
      */
     charAt(i) {
-        this.checkIndexLtLength(i);
         return this.chars[i];
     }
 
@@ -96,19 +94,12 @@ export class UString extends Primitive /* implements Printable */ {
     /**
      * @param {!number} i
      */
-    checkIndexLtLength(i) {
-        if (i >= this.length) {
-            if (this.length > 0) {
-                throw racketContractError(`string-ref: index is out of range
-  index: ${i}
-  valid range: [0, ${this.length - 1}]
-  string: `, this);
-            } else {
-                throw racketContractError(`string-ref: index is out of range for empty string
-  index: ${i}`);
-            }
-        }
-    }
+    isValidIndex(i) { return i < this.length; }
+
+    /**
+     * @param {!number} i
+     */
+    isEmpty() { return this.length === 0; }
 
     /**
      * Warning: JavaScript string comparison does not work correctly
@@ -318,7 +309,6 @@ class MutableUString extends UString {
     }
 
     setCharAt(i, char) {
-        this.checkIndexLtLength(i);
         if (!Char.eq(char, this.chars[i])) {
             this.chars[i] = char;
             this._nativeString = null;

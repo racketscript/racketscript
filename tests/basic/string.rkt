@@ -87,3 +87,8 @@
 (string>? "aa" "a")
 (string>? "a" "aa")
 (string>? "aa" "aa")
+
+;; test printing of fn name
+string
+string?
+string-append

@@ -199,8 +199,20 @@
     (throw (#js.Core.racketContractError "expected a" type
                                          ", but given" what))))
 
+;; #:who arg allows replicating Racket error msg ala raise-argument-error
 (define-syntax (check/raise stx)
   (syntax-parse stx
+    [(_ #:who who (~datum #t) what at)
+     #`(begin)]
+    [(_ #:who who chkfn:id what at)
+     #`(check/raise #:who who chkfn what #,(symbol->string (syntax-e #'chkfn)) at)]
+    [(_ #:who who chkfn what at)
+     #`(check/raise #:who who chkfn what #,(~a (syntax->datum #'chkfn)) at)]
+    [(_ #:who who chkfn what expected at)
+     #'(unless (chkfn what)
+         (#js.Kernel.doraise
+          (#js.Core.makeArgumentError who expected what)))]
+    ;; no #:who arg cases, keep for backwards compat for now, TODO: remove?
     [(_ (~datum #t) what at)
      #`(begin)]
     [(_ chkfn:id what at)
@@ -257,7 +269,7 @@
              (syntax->list #'((n arg) ...)))
      #`(define name
          (v-λ (arg.name ...) #:unchecked
-           (check/raise c-arg-checkfn c-arg-name n*) ...
+           (check/raise #:who 'name c-arg-checkfn c-arg-name n*) ...
            body ...))]))
 
 (define-syntax (define-checked+provide stx)

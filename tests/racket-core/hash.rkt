@@ -1,5 +1,5 @@
 #lang racket/base
-(require "testing.rkt" (for-syntax racket/base) #;racket/hash)
+(require "testing.rkt" "../test-utils.rkt" (for-syntax racket/base) #;racket/hash)
 
 ;; ----------------------------------------
 ;; Hash-key sorting:
@@ -450,7 +450,7 @@
     ;; remove element, everything should error
     (hash-remove! ht 'a)
     (test #t boolean? (hash-iterate-first ht))
-;;    (err/rt-test (hash-iterate-key ht i) exn:fail:contract? err-msg)
+;;     (err/rt-test (hash-iterate-key ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-value ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-pair ht i) exn:fail:contract? err-msg)
 ;;     (err/rt-test (hash-iterate-key+value ht i) exn:fail:contract? err-msg)
@@ -545,7 +545,7 @@
 
   (define (test-hash-ref-key ht eql? expected-retained-key expected-excised-key)
     (define actual-retained-key (hash-ref-key ht expected-excised-key))
-    (define non-key (gensym 'nope))
+    (define non-key 'nope)
     (test #t eql? expected-retained-key expected-excised-key)
     ;; TODO: js hash (hamt) currently does opposite of Racket
     ;; ie, replaces key with second key, racket retains the first
@@ -557,7 +557,7 @@
     ;; (test (eq? eql? eq?) eq? actual-retained-key expected-retained-key)
     (test #t eq? (hash-ref-key ht non-key 'absent) 'absent)
     (test #t eq? (hash-ref-key ht non-key (lambda () 'absent)) 'absent)
-    #;(err/rt-test (hash-ref-key ht non-key) exn:fail:contract?))
+    (err/rt-test (hash-ref-key ht non-key) exn:fail:contract?))
 
   (define (test-hash-ref-key/mut ht eql? expected-retained-key expected-excised-key)
     (hash-set! ht expected-retained-key 'here)
@@ -588,7 +588,20 @@
   (test-hash-ref-key/mut (make-hasheqv) eq? 'foo 'foo)
   (test-hash-ref-key/mut (make-weak-hasheqv) eq? 'foo 'foo)
   (test-hash-ref-key/immut (hasheqv) eq? 'foo 'foo)
-)
+  )
+
+(err/rt-test (hash-set! (hash) 1 2) exn:fail:contract? "expected.*not.*immutable")
+(err/rt-test (hash-ref (hash) 1))
+(run-if-version "7.4.0.3" (err/rt-test (hash-ref-key (hash) 1)))
+(err/rt-test (hash-set (make-hash) 1 2))
+(err/rt-test (hash-remove (make-hash) 1))
+(err/rt-test (hash-set! (hash) 1 2))
+(err/rt-test (hash-remove! (hash) 1))
+(run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hash) (hasheqv))))
+(run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hash) (hasheq))))
+(run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hasheqv) (hasheq))))
+(run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hasheq) (hasheqv))))
+
 ;; ----------------------------------------
 ;;
 

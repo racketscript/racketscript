@@ -1,5 +1,5 @@
 #lang racket/base
-(require "testing.rkt" racket/list)
+(require "testing.rkt" "../test-utils.rkt" racket/list)
 
 (test (list 1 2 3 4) foldl cons '() (list 4 3 2 1))
 (test (list 1 2 3 4) foldr cons '() (list 1 2 3 4))
@@ -17,54 +17,51 @@
 ;; (arity-test foldl 3 -1)
 ;; (arity-test foldr 3 -1)
 
-;; TODO: err tests need with-handlers
-;; (err/rt-test (foldl 'list 0 10))
-;; (err/rt-test (foldl list 0 10))
-;; (err/rt-test (foldl add1 0 '()))
-;; (err/rt-test (foldl cons 0 '() '()))
-;; (err/rt-test (foldl list 0 '() 10))
-;; (err/rt-test (foldl list 0 '() '() 10))
+(err/rt-test (foldl 'list 0 10))
+(err/rt-test (foldl list 0 10))
+(err/rt-test (foldl add1 0 '()))
+(err/rt-test (foldl cons 0 '() '()))
+(err/rt-test (foldl list 0 '() 10))
+(run-if-version "7.5" (err/rt-test (foldl list 0 '() '() 10))) ; see racket pr#2841
 ;; (err/rt-test (let/ec k (foldl k 0 '(1 2) '(1 2 3))))
 ;; (err/rt-test (let/ec k (foldl k 0 '(1 2) '(1 2) '(1 2 3))))
-;; (err/rt-test (foldr 'list 0 10))
-;; (err/rt-test (foldr list 0 10))
-;; (err/rt-test (foldr add1 0 '()))
-;; (err/rt-test (foldr cons 0 '() '()))
-;; (err/rt-test (foldr list 0 '() 10))
-;; (err/rt-test (foldr list 0 '() '() 10))
+(err/rt-test (foldr 'list 0 10))
+(err/rt-test (foldr list 0 10))
+(err/rt-test (foldr add1 0 '()))
+(err/rt-test (foldr cons 0 '() '()))
+(err/rt-test (foldr list 0 '() 10))
+(run-if-version "7.5" (err/rt-test (foldr list 0 '() '() 10))) ; see racket pr#2831
 ;; (err/rt-test (let/ec k (foldr k 0 '(1 2) '(1 2 3))))
 ;; (err/rt-test (let/ec k (foldr k 0 '(1 2) '(1 2) '(1 2 3))))
 
 (test '(0 1 2) memf add1 '(0 1 2))
 (test '(2 (c 17)) memf number? '((a 1) (0 x) (1 w) 2 (c 17)))
 (test '("ok" (2 .7) c) memf string? '((a 0) (0 a) (1 w) "ok" (2 .7) c))
-;; (err/rt-test (memf cons '((1) (2) (3))))
-;; (err/rt-test (memf string? '((1) (2) (3) . 4)) exn:application:mismatch?)
+(err/rt-test (memf cons '((1) (2) (3))))
+(err/rt-test (memf string? '((1) (2) (3) . 4)) exn:application:mismatch?)
 
-;; (err/rt-test (assf add1 '(0 1 2)) exn:application:mismatch?)
+(err/rt-test (assf add1 '(0 1 2)) exn:application:mismatch?)
 (test '(0 x) assf number? '((a 1) (0 x) (1 w) (2 r) (c 17)))
 (test '("ok" . 10) assf string? '((a 0) (0 a) (1 w) ("ok" . 10) (2 .7) c))
-;; (err/rt-test (assf cons '((1) (2) (3))))
-;; (err/rt-test (assf string? '((1) (2) (3) . 4)) exn:application:mismatch?)
+(err/rt-test (assf cons '((1) (2) (3))))
+(err/rt-test (assf string? '((1) (2) (3) . 4)) exn:application:mismatch?)
 
 ;; ---------- last, last-pair ----------
 (let ()
   (test 3        last '(1 2 3))
   (test '(3)     last-pair '(1 2 3))
-  ;;   (err/rt-test  (last '(1 2 3 . 4)))
+  (err/rt-test  (last '(1 2 3 . 4)))
   (test '(3 . 4) last-pair '(1 2 3 . 4))
-;;   (err/rt-test  (last '()))
-;;   (err/rt-test  (last 1))
-;;   (err/rt-test  (last-pair '()))
-;;   (err/rt-test  (last-pair 1)))
-)
+  (err/rt-test  (last '()))
+  (err/rt-test  (last 1))
+  (err/rt-test  (last-pair '()))
+  (err/rt-test  (last-pair 1)))
 ;; ---------- sort ----------
 (test '("c" "d" "e" "f") sort '("d" "f" "e" "c") string<?)
 (test '("a" "b" "c" "c" "d" "e" "f")
       sort
       '("d" "f" "e" "c" "a" "c" "b")
       string<?)
-;; TODO: support kw args
 (let ()
   (define (car< x y) (< (car x) (car y)))
   (define (random-list n range)
@@ -72,10 +69,10 @@
       (if (zero? n) r (loop (sub1 n) (cons (list (random range)) r)))))
   (define (sort* lst)
     (let ([s1 (sort lst car<)]
-          #;[s2 (sort lst < #:key car)]
-          #;[s3 (sort lst < #:key car #:cache-keys? #t)])
-      #;(test #t andmap eq? s1 s2)
-      #;(test #t andmap eq? s1 s3)
+          [s2 (sort lst < #:key car)]
+          [s3 (sort lst < #:key car #:cache-keys? #t)])
+      (test #t andmap eq? s1 s2)
+      (test #t andmap eq? s1 s3)
       s1))
   (define (test-sort len times)
     (or (zero? times)
@@ -124,139 +121,138 @@
               ((3 z) (2 y) (1 x))
               ((3 z) (1 x) (2 y))
               ((1 x) (3 z) (2 y)))))
-;; TODO: impl sort kws
-;; test #:key and #:cache-keys?
-;; (let ()
-;;   (define l '((0) (9) (1) (8) (2) (7) (3) (6) (4) (5)))
-;;   (define sorted '((0) (1) (2) (3) (4) (5) (6) (7) (8) (9)))
-;;   (test sorted sort l < #:key car)
-;;   (let ([c1 0] [c2 0] [touched '()])
-;;     (test sorted
-;;           sort l (lambda (x y) (set! c1 (add1 c1)) (< x y))
-;;                  #:key (lambda (x)
-;;                          (set! c2 (add1 c2))
-;;                          (set! touched (cons x touched))
-;;                          (car x)))
-;;     ;; test that the number of key uses is half the number of comparisons
-;;     (test #t = (* 2 c1) c2)
-;;     ;; and that this is larger than the number of items in the list
-;;     (test #t < (length l) c2)
-;;     ;; and that every item was touched
-;;     (test null remove* touched l))
-;;   (let ([c 0] [touched '()])
-;;     ;; now cache the keys
-;;     (test sorted
-;;           sort l <
-;;                #:key (lambda (x)
-;;                        (set! c (add1 c))
-;;                        (set! touched (cons x touched))
-;;                        (car x))
-;;                #:cache-keys? #t)
-;;     ;; test that the number of key uses is the same as the list length
-;;     (test #t = c (length l))
-;;     ;; and that every item was touched
-;;     (test null remove* touched l))
-;;   (let* ([c 0] [getkey (lambda (x) (set! c (add1 c)) x)])
-;;     ;; either way, we never use the key proc on no arguments
-;;     (test '() sort '() < #:key getkey #:cache-keys? #f)
-;;     (test '() sort '() < #:key getkey #:cache-keys? #t)
-;;     (test #t = c 0)
-;;     ;; we also don't use it for 1-arg lists
-;;     (test '(1) sort '(1) < #:key getkey #:cache-keys? #f)
-;;     (test #t = c 0)
-;;     ;; but we do use it once if caching happens (it's a consistent interface)
-;;     (test '(1) sort '(1) < #:key getkey #:cache-keys? #t)
-;;     (test #t = c 1)
-;;     ;; check a few other short lists
-;;     (test '(1 2) sort '(2 1) < #:key getkey #:cache-keys? #t)
-;;     (test '(1 2 3) sort '(2 3 1) < #:key getkey #:cache-keys? #t)
-;;     (test '(1 2 3 4) sort '(4 2 3 1) < #:key getkey #:cache-keys? #t)
-;;     (test #t = c 10)))
+
+(let ()
+  (define l '((0) (9) (1) (8) (2) (7) (3) (6) (4) (5)))
+  (define sorted '((0) (1) (2) (3) (4) (5) (6) (7) (8) (9)))
+  (test sorted sort l < #:key car)
+  (let ([c1 0] [c2 0] [touched '()])
+    (test sorted
+          sort l (lambda (x y) (set! c1 (add1 c1)) (< x y))
+          #:key (lambda (x)
+                  (set! c2 (add1 c2))
+                  (set! touched (cons x touched))
+                  (car x)))
+    ;; test that the number of key uses is half the number of comparisons
+    (test #t = (* 2 c1) c2)
+    ;; and that this is larger than the number of items in the list
+    (test #t < (length l) c2)
+    ;; and that every item was touched
+    (test null remove* touched l))
+  (let ([c 0] [touched '()])
+    ;; now cache the keys
+    (test sorted
+          sort l <
+          #:key (lambda (x)
+                  (set! c (add1 c))
+                  (set! touched (cons x touched))
+                  (car x))
+          #:cache-keys? #t)
+    ;; test that the number of key uses is the same as the list length
+    (test #t = c (length l))
+    ;; and that every item was touched
+    (test null remove* touched l))
+  (let* ([c 0] [getkey (lambda (x) (set! c (add1 c)) x)])
+    ;; either way, we never use the key proc on no arguments
+    (test '() sort '() < #:key getkey #:cache-keys? #f)
+    (test '() sort '() < #:key getkey #:cache-keys? #t)
+    (test #t = c 0)
+    ;; we also don't use it for 1-arg lists
+    (test '(1) sort '(1) < #:key getkey #:cache-keys? #f)
+    (test #t = c 0)
+    ;; but we do use it once if caching happens (it's a consistent interface)
+    (test '(1) sort '(1) < #:key getkey #:cache-keys? #t)
+    (test #t = c 1)
+    ;; check a few other short lists
+    (test '(1 2) sort '(2 1) < #:key getkey #:cache-keys? #t)
+    (test '(1 2 3) sort '(2 3 1) < #:key getkey #:cache-keys? #t)
+    (test '(1 2 3 4) sort '(4 2 3 1) < #:key getkey #:cache-keys? #t)
+    (test #t = c 10)))
 ;; ---------- make-list ----------
 (let ()
   (test '()    make-list 0 'x)
   (test '(x)   make-list 1 'x)
   (test '(x x) make-list 2 'x)
-;;   (err/rt-test (make-list -3 'x)))
-)
+  (err/rt-test (make-list -3 'x)))
 ;; ---------- take/drop/splt-at[-right] ----------
 (test '() take '(a b c d) 0)
 (test '(a b c d) drop '(a b c d) 0)
 (test '() take-right '(a b c d) 0)
 (test '(a b c d) drop-right '(a b c d) 0)
 (test '() take '(a b c d) 0)
-;(let ()
-;;   (define (vals f)
-;;     (procedure-reduce-arity
-;;      (lambda xs (call-with-values (lambda () (apply f xs)) list))
-;;      (procedure-arity f)))
-;; ;;   (define split-at*        (vals split-at))
-;; ;;   (define split-at-right*  (vals split-at-right))
-;; ;;   (define splitf-at*       (vals splitf-at))
-;; ;;   (define splitf-at-right* (vals splitf-at-right))
-;;   (define funs (list take drop take-right drop-right))
-;; ;                     split-at* split-at-right*))
-;;   (define ffuns (list takef dropf takef-right dropf-right))
-;; ;;                       splitf-at* splitf-at-right*))
-;;   (define tests
-;;     ;; -----args------ --take--- --drop--- ---take-r---- --drop-r-
-;;     '([((a b c d) 0)   (       ) (a b c d)   (       )   (a b c d)]
-;;       [((a b c d) 1)   (a      ) (  b c d)   (      d)   (a b c  )]
-;;       [((a b c d) 2)   (a b    ) (    c d)   (    c d)   (a b    )]
-;;       [((a b c d) 3)   (a b c  ) (      d)   (  b c d)   (a      )]
-;;       [((a b c d) 4)   (a b c d) (       )   (a b c d)   (       )]
-;;       [((a b c . d) 0) (     )   (a b c . d)        d    (a b c  )]
-;;       [((a b c . d) 1) (a    )   (  b c . d) (    c . d) (a b    )]
-;;       [((a b c . d) 2) (a b  )   (    c . d) (  b c . d) (a      )]
-;;       [((a b c . d) 3) (a b c)            d  (a b c . d) (       )]
-;;       [(() 0)          ()        ()          ()          ()       ]
-;;       [(99 0)          ()        99          99          ()       ]))
-;;   (define ftests ; the predicate is always `symbol?'
-;;     ;; ---args---- --takef-- ---dropf--- --takef-r-- --dropf-r--
-;;     `([(a b c d)   (a b c d) (       )   (a b c d)   (       )  ]
-;;       [(a b c 4)   (a b c  ) (      4)   (       )   (a b c 4)  ]
-;;       [(a b 3 4)   (a b    ) (    3 4)   (       )   (a b 3 4)  ]
-;;       [(a 2 3 4)   (a      ) (  2 3 4)   (       )   (a 2 3 4)  ]
-;;       [(1 2 3 4)   (       ) (1 2 3 4)   (       )   (1 2 3 4)  ]
-;;       [(1 2 3 d)   (       ) (1 2 3 d)   (      d)   (1 2 3  )  ]
-;;       [(1 2 c d)   (       ) (1 2 c d)   (    c d)   (1 2    )  ]
-;;       [(1 b c d)   (       ) (1 b c d)   (  b c d)   (1      )  ]
-;;       [(a 2 3 d)   (a      ) (  2 3 d)   (      d)   (a 2 3  )  ]
-;;       [(1 b c 4)   (       ) (1 b c 4)   (       )   (1 b c 4)  ]
-;;       [(a b c . d) (a b c  )          d  (a b c . d) (         )]
-;;       [(a b c . 4) (a b c  )          4  (a b c . 4) (         )]
-;;       [(a b 3 . 4) (a b    ) (    3 . 4)          4  (a b 3    )]
-;;       [(a 2 3 . 4) (a      ) (  2 3 . 4)          4  (a 2 3    )]
-;;       [(1 2 3 . 4) (       ) (1 2 3 . 4)          4  (1 2 3    )]
-;;       [(1 2 3 . d) (       ) (1 2 3 . d)          d  (1 2 3    )]
-;;       [(1 2 c . d) (       ) (1 2 c . d) (    c . d) (1 2      )]
-;;       [(1 b c . d) (       ) (1 b c . d) (  b c . d) (1        )]
-;;       [(a 2 c . d) (a      ) (  2 c . d) (    c . d) (a 2      )]
-;;       [(1 b 3 . 4) (       ) (1 b 3 . 4)          4  (1 b 3    )]
-;;       [()          ()        ()          ()          ()         ]
-;;       [99          ()        99          99          ()         ]))
-;;   (for ([t tests]
-;;         #:when #t
-;;         [expect `(,@(cdr t)
-;;                   ,(list (list-ref t 1) (list-ref t 2))
-;;                   ,(list (list-ref t 4) (list-ref t 3)))]
-;;         [fun funs])
-;;     (apply test expect fun (car t)))
-;;   (for ([t ftests]
-;;         #:when #t
-;;         [expect `(,@(cdr t)
-;;                   ,(list (list-ref t 1) (list-ref t 2))
-;;                   ,(list (list-ref t 4) (list-ref t 3)))]
-;;         [fun ffuns])
-;;     (test expect fun (car t) symbol?))
-;;   (for ([fun (append funs ffuns)])
-;;     (arity-test fun 2 2)
-;;     (err/rt-test (fun 1 1) exn:application:mismatch?)
-;;     (err/rt-test (fun '(1 2 3) 2.0))
-;;     (err/rt-test (fun '(1) '(1)))
-;;     (err/rt-test (fun '(1) -1))
-;;     (err/rt-test (fun '(1) 2) exn:application:mismatch?)
-;;     (err/rt-test (fun '(1 2 . 3) 3) exn:application:mismatch?)))
+(let ()
+  (define (vals f)
+    (procedure-reduce-arity
+     (lambda xs (call-with-values (lambda () (apply f xs)) list))
+     (procedure-arity f)))
+;;   (define split-at*        (vals split-at))
+;;   (define split-at-right*  (vals split-at-right))
+;;   (define splitf-at*       (vals splitf-at))
+;;   (define splitf-at-right* (vals splitf-at-right))
+  (define funs (list take drop take-right drop-right))
+;                     split-at* split-at-right*))
+  (define ffuns (list takef dropf takef-right dropf-right))
+;;                       splitf-at* splitf-at-right*))
+  (define tests
+    ;; -----args------ --take--- --drop--- ---take-r---- --drop-r-
+    '([((a b c d) 0)   (       ) (a b c d)   (       )   (a b c d)]
+      [((a b c d) 1)   (a      ) (  b c d)   (      d)   (a b c  )]
+      [((a b c d) 2)   (a b    ) (    c d)   (    c d)   (a b    )]
+      [((a b c d) 3)   (a b c  ) (      d)   (  b c d)   (a      )]
+      [((a b c d) 4)   (a b c d) (       )   (a b c d)   (       )]
+      [((a b c . d) 0) (     )   (a b c . d)        d    (a b c  )]
+      [((a b c . d) 1) (a    )   (  b c . d) (    c . d) (a b    )]
+      [((a b c . d) 2) (a b  )   (    c . d) (  b c . d) (a      )]
+      [((a b c . d) 3) (a b c)            d  (a b c . d) (       )]
+      [(() 0)          ()        ()          ()          ()       ]
+      [(99 0)          ()        99          99          ()       ]))
+  (define ftests ; the predicate is always `symbol?'
+    ;; ---args---- --takef-- ---dropf--- --takef-r-- --dropf-r--
+    `([(a b c d)   (a b c d) (       )   (a b c d)   (       )  ]
+      [(a b c 4)   (a b c  ) (      4)   (       )   (a b c 4)  ]
+      [(a b 3 4)   (a b    ) (    3 4)   (       )   (a b 3 4)  ]
+      [(a 2 3 4)   (a      ) (  2 3 4)   (       )   (a 2 3 4)  ]
+      [(1 2 3 4)   (       ) (1 2 3 4)   (       )   (1 2 3 4)  ]
+      [(1 2 3 d)   (       ) (1 2 3 d)   (      d)   (1 2 3  )  ]
+      [(1 2 c d)   (       ) (1 2 c d)   (    c d)   (1 2    )  ]
+      [(1 b c d)   (       ) (1 b c d)   (  b c d)   (1      )  ]
+      [(a 2 3 d)   (a      ) (  2 3 d)   (      d)   (a 2 3  )  ]
+      [(1 b c 4)   (       ) (1 b c 4)   (       )   (1 b c 4)  ]
+      [(a b c . d) (a b c  )          d  (a b c . d) (         )]
+      [(a b c . 4) (a b c  )          4  (a b c . 4) (         )]
+      [(a b 3 . 4) (a b    ) (    3 . 4)          4  (a b 3    )]
+      [(a 2 3 . 4) (a      ) (  2 3 . 4)          4  (a 2 3    )]
+      [(1 2 3 . 4) (       ) (1 2 3 . 4)          4  (1 2 3    )]
+      [(1 2 3 . d) (       ) (1 2 3 . d)          d  (1 2 3    )]
+      [(1 2 c . d) (       ) (1 2 c . d) (    c . d) (1 2      )]
+      [(1 b c . d) (       ) (1 b c . d) (  b c . d) (1        )]
+      [(a 2 c . d) (a      ) (  2 c . d) (    c . d) (a 2      )]
+      [(1 b 3 . 4) (       ) (1 b 3 . 4)          4  (1 b 3    )]
+      [()          ()        ()          ()          ()         ]
+      [99          ()        99          99          ()         ]))
+  (for ([t tests]
+        #:when #t
+        [expect `(,@(cdr t)
+                  ,(list (list-ref t 1) (list-ref t 2))
+                  ,(list (list-ref t 4) (list-ref t 3)))]
+        [fun funs])
+       (apply test expect fun (car t)))
+  (for ([t ftests]
+        #:when #t
+        [expect `(,@(cdr t)
+                  ,(list (list-ref t 1) (list-ref t 2))
+                  ,(list (list-ref t 4) (list-ref t 3)))]
+        [fun ffuns])
+    (test expect fun (car t) symbol?))
+  (for ([fun (append funs ffuns)])
+;;    (arity-test fun 2 2)
+    (err/rt-test (fun 1 1) exn:application:mismatch?)
+    ;;(err/rt-test (fun '(1 2 3) 2.0) ;; TODO: RS prints 2 instead of 2.0
+    (err/rt-test (fun '(1 2 3) 2.1))
+    (err/rt-test (fun '(1) '(1)))
+    (err/rt-test (fun '(1) -1))
+    (err/rt-test (fun '(1) 2) exn:application:mismatch?)
+    (err/rt-test (fun '(1 2 . 3) 3) exn:application:mismatch?)))
 
 ;; ---------- append* ----------
 (let ()
@@ -332,7 +328,7 @@
 ;;         (test `(,@fst ,@r2 ,@lst) add-between l x
 ;;               #:splice? #t #:before-first fst #:after-last lst #:before-last y)))))
 
-;; ;; ---------- check-duplicates ----------
+;; ---------- check-duplicates ----------
 
 ;; (test #f check-duplicates '())
 ;; (test 'a check-duplicates '(a a))
@@ -373,15 +369,16 @@
   (test '(1 2 3)         f  number? '(1 a 2 b 3 c d))
   (test '(a b c d)       fn number? '(1 a 2 b 3 c d))
   (test '()              f  string? '(1 a 2 b 3 c d))
-  (test '(1 a 2 b 3 c d) fn string? '(1 a 2 b 3 c d)))
-;;   (err/rt-test (f string? '(1 2 3 . 4)) exn:application:mismatch?)
-;;   (err/rt-test (fn string? '(1 2 3 . 4)) exn:application:mismatch?)
-;;   (err/rt-test (f  2 '(1 2 3)))
-;;   (err/rt-test (fn 2 '(1 2 3)))
-;;   (err/rt-test (f cons '(1 2 3)))
-;;   (err/rt-test (fn cons '(1 2 3)))
+  (test '(1 a 2 b 3 c d) fn string? '(1 a 2 b 3 c d))
+  (err/rt-test (f string? '(1 2 3 . 4)) exn:application:mismatch?)
+  (err/rt-test (fn string? '(1 2 3 . 4)) exn:application:mismatch?)
+  (err/rt-test (f  2 '(1 2 3)))
+  (err/rt-test (fn 2 '(1 2 3)))
+  (err/rt-test (f cons '(1 2 3)))
+  (err/rt-test (fn cons '(1 2 3)))
 ;;   (arity-test f  2 2)
-;;   (arity-test fn 2 2))
+;;   (arity-test fn 2 2)
+  )
 
 ;; ---------- partition ----------
 (let ()
@@ -521,6 +518,7 @@
 
 (let ()
 
+  ;; TODO: add exn:fail?
   #;(define ((check-regs . regexps) exn)
     (and (exn:fail? exn)
          (andmap (λ (reg) (regexp-match reg (exn-message exn)))
@@ -532,7 +530,7 @@
   (test 1 argmin (lambda (x) 1) (list 1 2 3))
 
   (test 3
-;        'argmin-makes-right-number-of-calls
+        'argmin-makes-right-number-of-calls
         (let ([c 0])
           (argmin (lambda (x) (set! c (+ c 1)) 0)
                   (list 1 2 3))
@@ -554,7 +552,7 @@
   (test 1 argmax (lambda (x) 1) (list 1 2 3))
 
   (test 3
-;        'argmax-makes-right-number-of-calls
+        'argmax-makes-right-number-of-calls
         (let ([c 0])
           (argmax (lambda (x) (set! c (+ c 1)) 0)
                   (list 1 2 3))
@@ -589,20 +587,20 @@
   (test '(20 19 18 17 16 15 14 13 12 11) range 20 10 -1)
   (test '(10 11.5 13.0 14.5) range 10 15 1.5))
 
-;; ;; ---------- group-by ----------
+;; ---------- group-by ----------
 
-;; (test '((1) (4) (2 2) (56) (3)) group-by values '(1 4 2 56 2 3))
-;; (test '((1 1 1) (2 2 2 2 2) (54) (5) (43) (7) (643) (0))
-;;       group-by values '(1 2 1 2 54 2 5 43 7 2 643 1 2 0))
-;; (test '((1 3) (4 2 56 2))
-;;       group-by values '(1 4 2 56 2 3) (lambda (x y) (or (and (even? x) (even? y))
-;;                                                         (and (odd?  x) (odd?  y)))))
-;; (test '(((1 a)) ((4 b)) ((2 c) (2 e)) ((56 d)) ((3 f)))
-;;       group-by car '((1 a) (4 b) (2 c) (56 d) (2 e) (3 f)))
-;; (test '((1 3 5) (2 4 6)) group-by even? '(1 2 3 4 5 6))
-;; (err/rt-test (group-by #f))
-;; (err/rt-test (group-by '() #f))
-;; (err/rt-test (group-by '() values #f))
+(test '((1) (4) (2 2) (56) (3)) group-by values '(1 4 2 56 2 3))
+(test '((1 1 1) (2 2 2 2 2) (54) (5) (43) (7) (643) (0))
+      group-by values '(1 2 1 2 54 2 5 43 7 2 643 1 2 0))
+(test '((1 3) (4 2 56 2))
+      group-by values '(1 4 2 56 2 3) (lambda (x y) (or (and (even? x) (even? y))
+                                                        (and (odd?  x) (odd?  y)))))
+(test '(((1 a)) ((4 b)) ((2 c) (2 e)) ((56 d)) ((3 f)))
+      group-by car '((1 a) (4 b) (2 c) (56 d) (2 e) (3 f)))
+(test '((1 3 5) (2 4 6)) group-by even? '(1 2 3 4 5 6))
+;; (err/rt-test (group-by #f)) ; TODO: fix arity checking
+(err/rt-test (group-by '() #f))
+(err/rt-test (group-by '() values #f))
 
 ;; ---------- cartesian-product ----------
 
@@ -614,24 +612,25 @@
         (5 d #t) (5 d #f) (5 e #t) (5 e #f) (5 f #t) (5 f #f)
         (6 d #t) (6 d #f) (6 e #t) (6 e #f) (6 f #t) (6 f #f))
       cartesian-product '(4 5 6) '(d e f) '(#t #f))
-;; (err/rt-test (cartesian-product 3))
+(err/rt-test (cartesian-product 3))
 
 ;; ---------- list-update ----------
 
 (test '("zero" one two) list-update '(zero one two) 0 symbol->string)
 (test '(zero "one" two) list-update '(zero one two) 1 symbol->string)
-;; (err/rt-test (list-update '(zero one two) 3 symbol->string))
+(err/rt-test (list-update '(zero one two) 3 symbol->string))
+;; TODO: the following 3 tests only fail due to printing of fn name, eg symbol__gt_string
 ;; (err/rt-test (list-update '(zero one two) -1 symbol->string))
 ;; (err/rt-test (list-update '(zero one two) #f symbol->string))
 ;; (err/rt-test (list-update #f 0 symbol->string))
-;; (err/rt-test (list-update '(zero one two) 0 #f))
+(err/rt-test (list-update '(zero one two) 0 #f))
 
 ;; ---------- list-set ----------
 
 (test '(zero one "two") list-set '(zero one two) 2 "two")
-;; (err/rt-test (list-set '(zero one two) 3 "two"))
-;; (err/rt-test (list-set '(zero one two) -1 "two"))
-;; (err/rt-test (list-set '(zero one two) #f "two"))
+(err/rt-test (list-set '(zero one two) 3 "two"))
+(err/rt-test (list-set '(zero one two) -1 "two"))
+(err/rt-test (list-set '(zero one two) #f "two"))
 
 ;; ---------- list prefix functions ----------
 
@@ -639,13 +638,13 @@
 (test #f list-prefix? '(2 1) '(1 2 3 4 5))
 (test #t list-prefix? '(1 2) '(1 2 3 4 5) =)
 (test #f list-prefix? '(2 1) '(1 2 3 4 5) =)
-;; (err/rt-test (list-prefix? #t '()))
-;; (err/rt-test (list-prefix? '() #t))
+(err/rt-test (list-prefix? #t '()))
+(err/rt-test (list-prefix? '() #t))
 (test '(a b) take-common-prefix '(a b c d) '(a b x y z))
 (test '() take-common-prefix '(1 a b c d) '(a b x y z))
 (test '(a b c d) take-common-prefix '(a b c d) '(a b c d))
 (test '(1 2) take-common-prefix '(1 2 3 4) '(1 2 4 3) =)
-;; (err/rt-test (take-common-prefix '() '() #f))
+(err/rt-test (take-common-prefix '() '() #f))
 (define (drop*-list xs ys [=? equal?])
   (define-values (a b)
     (drop-common-prefix xs ys =?))
@@ -654,7 +653,7 @@
 (test '((1 a b c d) (a b x y z)) drop*-list '(1 a b c d) '(a b x y z))
 (test '(() ()) drop*-list '(a b c d) '(a b c d))
 (test '((3 4) (4 3)) drop*-list '(1 2 3 4) '(1 2 4 3) =)
-;; (err/rt-test (drop*-list '() '() #f))
+(err/rt-test (drop*-list '() '() #f))
 (define (split*-list xs ys [=? equal?])
   (define-values (a b c)
     (split-common-prefix xs ys =?))
@@ -663,8 +662,8 @@
 (test '(() (1 a b c d) (a b x y z)) split*-list '(1 a b c d) '(a b x y z))
 (test '((a b c d) () ()) split*-list '(a b c d) '(a b c d))
 (test '((1 2) (3 4) (4 3)) split*-list '(1 2 3 4) '(1 2 4 3) =)
-;; (err/rt-test (split*-list '() '() #f))
-;; (err/rt-test (take-common-prefix 1 1))
+(err/rt-test (split*-list '() '() #f))
+(err/rt-test (take-common-prefix 1 1))
 
 ;; ---------- remf / remf* ----------
 

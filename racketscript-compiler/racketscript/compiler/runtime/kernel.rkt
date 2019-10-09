@@ -16,10 +16,15 @@
 ;; Values
 
 (define+provide values
-  (v-λ vals
-    (if (binop === #js.vals.length 1)
-        ($ vals 0)
-        (#js.Values.make vals))))
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity
+    (v-λ vals
+         (if (binop === #js.vals.length 1)
+             ($ vals 0)
+             (#js.Values.make vals)))
+    0)
+   "values"))
+   
 
 (define+provide (call-with-values generator receiver)
   (let ([vals (generator)])
@@ -53,9 +58,6 @@
 (define-checked+provide (zero? [v number?])
   (binop === v 0))
 
-(define+provide (raise-mismatch-error e)
-  (error 'boo))
-
 (define-checked+provide (positive? [v real?])
   (binop > v 0))
 
@@ -88,15 +90,15 @@
 
 (define+provide (single-flonum-available?) #f)
 
-(define+provide *  #js.Core.Number.mul)
-(define+provide /  #js.Core.Number.div)
-(define+provide +  #js.Core.Number.add)
-(define+provide -  #js.Core.Number.sub)
-(define+provide <  #js.Core.Number.lt)
-(define+provide >  #js.Core.Number.gt)
-(define+provide <= #js.Core.Number.lte)
-(define+provide >= #js.Core.Number.gte)
-(define+provide =  #js.Core.Number.equals)
+(define+provide *  (#js.Core.attachProcedureArity #js.Core.Number.mul 0))
+(define+provide /  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
+(define+provide +  (#js.Core.attachProcedureArity #js.Core.Number.add 0))
+(define+provide -  (#js.Core.attachProcedureArity #js.Core.Number.sub 1))
+(define+provide <  (#js.Core.attachProcedureArity #js.Core.Number.lt 1))
+(define+provide >  (#js.Core.attachProcedureArity #js.Core.Number.gt 1))
+(define+provide <= (#js.Core.attachProcedureArity #js.Core.Number.lte 1))
+(define+provide >= (#js.Core.attachProcedureArity #js.Core.Number.gte 1))
+(define+provide =  (#js.Core.attachProcedureArity #js.Core.Number.equals 1))
 
 (define-checked+provide (floor [v real?])
   (#js.Math.floor v))
@@ -168,8 +170,10 @@
 
 (define-checked+provide (car [pair pair?]) #js.pair.hd)
 (define-checked+provide (cdr [pair pair?]) #js.pair.tl)
-(define+provide cons       #js.Core.Pair.make)
-(define+provide pair?      #js.Core.Pair.check)
+(define+provide cons
+  (#js.Core.attachProcedureName #js.Core.Pair.make "cons"))
+(define+provide pair?
+  (#js.Core.attachProcedureName #js.Core.Pair.check "pair?"))
 
 (define-checked+provide (caar [v (check/pair-of? pair? #t)])
   #js.v.hd.hd)
@@ -183,7 +187,10 @@
   #js.v.tl.tl.hd)
 
 (define+provide null #js.Core.Pair.EMPTY)
-(define+provide list #js.Core.Pair.makeList)
+(define+provide list
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity #js.Core.Pair.makeList 0)
+   "list"))
 
 (define+provide null? #js.Core.Pair.isEmpty)
 (define+provide list? #js.Core.Pair.isList)
@@ -385,15 +392,38 @@
 (define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO: implement weak hashes
 
 (define+provide hash-ref
-  (v-λ (h k fail) #:unchecked
-    (#js.h.ref k fail)))
+  (case-lambda
+    [(h k)
+     (if (#js.h.hasKey k)
+         (#js.h._h.get k)
+         (raise (#js.Core.makeArgumentsError
+                 "hash-ref" "no value found for key" "key" k)))]
+    [(h k fail) (#js.h.ref k fail)]))
+
+(define+provide hash-has-key?
+  (v-λ (h k) #:unchecked
+    (#js.h.hasKey k)))
 
 (define+provide hash-ref-key
-  (v-λ (h k fail) #:unchecked
-    (#js.h.refkey k fail)))
+  (case-lambda
+    [(h k)
+     (if (#js.h.hasKey k)
+         (#js.h.refKey k)
+         (raise (#js.Core.makeArgumentsError
+                 "hash-ref-key" "hash does not contain key" "key" k)))]
+    [(h k fail) (#js.h.refKey k fail)]))
 
 (define+provide (hash-set h k v)
-  (#js.h.set k v))
+  (if (#js.h.isImmutable)
+      (#js.h.set k v)
+      (raise (#js.Core.makeArgumentError
+              "hash-set" "(and hash? immutable?)" 0 h k v))))
+
+(define+provide (hash-remove h k)
+  (if (#js.h.isImmutable)
+      (#js.h.remove k)
+      (raise (#js.Core.makeArgumentError
+              "hash-remove" "(and/c hash? immutable?)" 0 h k))))
 
 (define+provide hash-map
   (case-lambda
@@ -403,15 +433,18 @@
 (define+provide (hash-count h)
   (#js.h.size))
 
-(define+provide (hash-remove h k)
-  (#js.h.remove k))
-
 ;; mutating operations
 (define+provide (hash-remove! h k)
-  (#js.h.doremove k))
+  (if (#js.h.isImmutable h)
+      (raise (#js.Core.makeArgumentError
+              "hash-remove!" "(and/c hash? (not/c immutable?))" 0 h k))
+      (#js.h.doremove k)))
 
 (define+provide (hash-set! h k v)
-  (#js.h.doset k v))
+  (if (#js.h.isImmutable h)
+      (raise (#js.Core.makeArgumentError
+              "hash-set!" "(and/c hash? (not/c immutable?))" 0 h k v))
+      (#js.h.doset k v)))
 
 ;; iteration
 (define+provide (hash-iterate-first h)
@@ -434,7 +467,15 @@
 
 ;; set operations for hash tables
 (define+provide (hash-keys-subset? h1 h2)
-  (#js.h1.isKeysSubset h2))
+  (if (and (#js.Core.Hash.check h1) (#js.Core.Hash.check h2))
+      (if (#js.h1.isSameType h2)
+          (#js.h1.isKeysSubset h2)
+          (raise (#js.Core.makeArgumentsError
+                  "hash-keys-subset?"
+                  "given hash tables do not use the same key comparison"
+                  "first table" h1
+                  "second table" h2)))
+      #f))
 
 (define+provide (hash-union h1 h2)
   (#js.h1.union h2))
@@ -659,13 +700,21 @@
 ;; --------------------------------------------------------------------------
 ;; Strings
 
-(define+provide string #js.Core.UString.makeMutableFromCharsVarArgs)
+(define+provide string
+  (#js.Core.attachProcedureName
+   #js.Core.UString.makeMutableFromCharsVarArgs
+   "string"))
 
 (define+provide string-append
-    #js.Core.UString.stringAppend)
+  (#js.Core.attachProcedureName
+   #js.Core.UString.stringAppend
+   "string-append"))
 
 (define-checked+provide (string-ref [s string?] [i exact-nonnegative-integer?])
-  (#js.s.charAt i))
+  (if (#js.s.isValidIndex i)
+      (#js.s.charAt i)
+      (raise
+       (#js.Core.makeOutOfRangeError "string-ref" "string" s #js.s.length i))))
 
 (define-checked+provide (string=? [sa string?] [sb string?])
   (#js.Core.UString.eq sa sb))
@@ -682,13 +731,16 @@
 (define-checked+provide (string>=? [sa string?] [sb string?])
   (#js.Core.UString.gte sa sb))
 
-(define+provide (string? v)
-  (#js.Core.UString.check v))
+(define+provide string?
+  (#js.Core.attachProcedureName #js.Core.UString.check "string?"))
 
 (define+provide (fprintf out form . args)
   (apply #js.Kernel.fprintf (print-as-expression) out form args))
 
 (define+provide (eprintf form . args)
+  (apply #js.Kernel.fprintf (print-as-expression) (current-error-port) form args))
+
+(define+provide (printf form . args)
   (apply #js.Kernel.fprintf (print-as-expression) (current-output-port) form args))
 
 (define+provide (format form . args)
@@ -783,7 +835,10 @@
                          [str (check/and string? (check/not immutable?))]
                          [k exact-nonnegative-integer?]
                          [char char?])
-  (#js.str.setCharAt k char))
+  (if (#js.str.isValidIndex k)
+      (#js.str.setCharAt k char)
+      (raise
+       (#js.Core.makeOutOfRangeError "string-set!" "string" str #js.str.length k))))
 
 ;; --------------------------------------------------------------------------
 ;; Characters
@@ -859,6 +914,9 @@
 ;; Errors
 
 (define+provide error #js.Kernel.error)
+(define+provide raise-argument-error #js.Kernel.argerror)
+(define+provide raise-arguments-error #js.Kernel.argserror)
+(define+provide raise-mismatch-error #js.Kernel.mismatcherror)
 
 ;; --------------------------------------------------------------------------
 ;; Bytes
@@ -910,11 +968,13 @@
 (define+provide default-continuation-prompt-tag
   #js.Core.Marks.defaultContinuationPromptTag)
 
-(define+provide raise
-  (v-λ (e) #:unchecked
-    (let ([abort-ccp (continuation-mark-set-first (current-continuation-marks)
-                                                  #js.Paramz.ExceptionHandlerKey)])
-      (abort-ccp e))))
+(define+provide raise #js.Kernel.doraise)
+
+(define+provide exn:fail? #js.Core.isErr)
+(define+provide exn:fail:contract? #js.Core.isContractErr)
+(define+provide exn:fail:contract:arity? #js.Core.isContractErr)
+(define+provide (exn-message e)
+  (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -959,25 +1019,45 @@
 ;;      lambdas.
 (define+provide (display datum [out (current-output-port)])
   (#js.Core.display out datum))
+(define+provide (displayln datum [out (current-output-port)])
+  (display datum out)
+  (newline out))
 (define+provide (write datum [out (current-output-port)])
   (#js.Core.write out datum))
+(define+provide (writeln datum [out (current-output-port)])
+  (write datum out)
+  (newline out))
 (define+provide (print datum [out (current-output-port)] [quote-depth 0])
   (#js.Core.print out datum (print-as-expression) quote-depth))
+(define+provide (println datum [out (current-output-port)])
+  (print datum out)
+  (newline out))
 
 (define+provide (newline [out (current-output-port)])
-  (display "\n" out))
+  (display "\n" out)) ; TODO: should be write-char, but write doesnt work either
 
 ;; --------------------------------------------------------------------------
 ;; Not implemented/Unorganized/Dummies
 
 (define+provide current-inspector (v-λ () #:unchecked #t))
-(define+provide raise-argument-error error)
 (define+provide (check-method) #f)
 
 (define+provide random #js.Kernel.random)
 
 (define+provide (current-seconds)
   (#js.Math.floor (binop / (#js.Date.now) 1000)))
+
+(define+provide (object-name fn) ;; TODO: what if not fn?
+  #js.fn.name)
+(define+provide (unquoted-printing-string s) s) ;; TODO
+(define+provide (error-print-width) 42)
+(define+provide (error-value->string-handler)
+  (v-λ (x n)
+       "str" #;(#js.x.toString)))
+
+(define+provide (procedure-arity-mask fn) (procedure-arity fn))
+(define+provide (bitwise-bit-set? mask n) #t)
+(define+provide (procedure-extract-target f) #f)
 
 ;; --------------------------------------------------------------------------
 ;; Regexp
@@ -1027,8 +1107,12 @@
   (kernel:arity-at-least-value p))
 
 (define+provide procedure-arity-includes?
-  (v-λ (f) #:unchecked
-    #t))
+  (v-λ (fn n) #:unchecked
+       (let ([ar (procedure-arity fn)])
+         (cond
+           [(kernel:arity-at-least? ar) (<= (kernel:arity-at-least-value ar) n)]
+           [(list? ar) (member n ar)]
+           [else (binop === n ar)]))))
 
 (define+provide (procedure-arity fn)
   (if (#js.Array.isArray #js.fn.__rjs_arityValue)
@@ -1038,8 +1122,6 @@
       (if (binop === #js.fn.__rjs_arityValue *undefined*)
           #js.fn.length
           (kernel:arity-at-least (or #js.fn.__rjs_arityValue #js.fn.length)))))
-
-(define+provide (procedure-arity-mask fn) (procedure-arity fn))
 
 (define+provide (procedure-arity? v)
   (or (exact-nonnegative-integer? v)
@@ -1084,7 +1166,7 @@
   (v-λ (system-type mod) #:unchecked
     'javascript))
 
-;; TODO: manually implement weak references? or ES6 WeakMap?
+;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)

@@ -1,4 +1,5 @@
 import * as Core from './core.js';
+import * as Paramz from './paramz.js';
 
 /* --------------------------------------------------------------------------*/
 // Immutable
@@ -24,7 +25,7 @@ const NO_ARG_FORM_RE = /^~[\s~n%]/;
 export function fprintf(isPrintAsExpression, out, form, ...args) {
     // TODO: Missing forms: ~.[asv], ~e, ~c.
     // TODO: The ~whitespace form should match Unicode whitespace.
-    const regex = /~(?:[aAsSvVbBoOxX~n%]|\s+)/g;
+    const regex = /~(?:[aAeEsSvVbBoOxX~n%]|\s+)/g;
     const formStr = form.toString();
     let reExecResult;
     let currentMatchIndex = 0;
@@ -59,6 +60,10 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
         switch (lastMatch.charAt(1)) {
         case 'a':
         case 'A':
+            Core.display(out, v);
+            break;
+        case 'e': // FIXME: should use error-value->string-handler
+        case 'E':
             Core.display(out, v);
             break;
         case 's':
@@ -129,6 +134,86 @@ export function error(firstArg, ...rest) {
     } else {
         throw Core.racketContractError('error: invalid arguments');
     }
+}
+
+/**
+ * @param {Core.Error} e
+ */
+// somewhat duplicates continuation-mark-set-first in kernel.rkt
+// (but less general, eg ignore prompt tag for now);
+// must be here to avoid circular dependency
+export function doraise(e) {
+    const markset = Core.Marks.getContinuationMarks();
+    const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
+    if (marks.length === 0) {
+        throw e;
+    } else {
+        marks.hd(e);
+    }
+}
+
+/**
+ * @param {Core.Symbol} name
+ * @param {Core.UString|String} expected
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-argument-error
+// usage:
+//  (raise-argument-error name expected arg)
+//  (raise-argument-error name expected bad-pos arg ...)
+export function argerror(name, expected, ...rest) {
+    var theerr;
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1) {
+        theerr = Core.makeArgumentError(name, expected, ...rest);
+    } else {
+        theerr = Core.racketContractError('raise-argument-error: invalid arguments');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {Core.Symbol} name
+ * @param {Core.UString|String} msg
+ * @param {Core.UString|String} field
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-arguments-error,
+// so rest must be at least 1 and must be odd bc each field must have matching v
+export function argserror(name, msg, field, ...rest) {
+    var theerr;
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')
+        && (Core.UString.check(field) || typeof field === 'string')
+        && rest.length >= 1 && rest.length % 2 === 1) {
+        theerr = Core.makeArgumentsError(name, msg, field, ...rest);
+    } else {
+        theerr = Core.racketContractError('raise-arguments-error: invalid arguments');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {Core.Symbol} name
+ * @param {Core.UString|String} msg
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-mismatch-error
+// usage: raise-mismatch-error name, (~seq msg v ...) ...
+// so ...rst might have additional msg, v ...
+export function mismatcherror(name, msg, ...rest) {
+    var theerr;
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')) {
+        theerr = Core.makeMismatchError(name, msg, ...rest);
+    } else {
+        theerr = Core.racketContractError('error: invalid arguments');
+    }
+
+    doraise(theerr);
 }
 
 /* --------------------------------------------------------------------------*/
