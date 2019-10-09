@@ -74,6 +74,7 @@
      (emit-args args ",")
      (emit ")")]
     [(ILBinaryOp oper args)
+     (assert (>= (length args) 2)) ;; TODO: Update the type of ILBinaryOp
      (for/last? ([arg last? args])
        (when (ILBinaryOp? arg) (emit "("))
        (assemble-expr arg out)
