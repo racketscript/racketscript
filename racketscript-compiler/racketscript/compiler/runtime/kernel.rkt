@@ -90,9 +90,9 @@
 
 (define+provide (single-flonum-available?) #f)
 
-(define+provide *  (#js.Core.attachProcedureArity #js.Core.Number.mul 1))
+(define+provide *  (#js.Core.attachProcedureArity #js.Core.Number.mul 0))
 (define+provide /  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
-(define+provide +  (#js.Core.attachProcedureArity #js.Core.Number.add 1))
+(define+provide +  (#js.Core.attachProcedureArity #js.Core.Number.add 0))
 (define+provide -  (#js.Core.attachProcedureArity #js.Core.Number.sub 1))
 (define+provide <  (#js.Core.attachProcedureArity #js.Core.Number.lt 1))
 (define+provide >  (#js.Core.attachProcedureArity #js.Core.Number.gt 1))
