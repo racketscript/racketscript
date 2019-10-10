@@ -16,7 +16,7 @@
 	"url": "https://github.com/vishesh/racketscript/issues"
     },
     "dependencies": {
-	"gulp": "^4.0.0",
+	"gulp": "^4.0.2",
 	"gulp-concat": "*",
 	"gulp-traceur-cmdline": "*",
         "gulp-replace": "*",
