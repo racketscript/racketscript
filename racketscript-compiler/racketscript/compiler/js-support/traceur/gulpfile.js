@@ -20,4 +20,6 @@ gulp.task('build', gulp.series('copy-hamt', function() {
 	.pipe(gulp.dest('dist'));
 }));
 
-gulp.task('default', gulp.series('build', function () {}));
+gulp.task('default', gulp.series('build', function (done) {
+    done();
+}));
