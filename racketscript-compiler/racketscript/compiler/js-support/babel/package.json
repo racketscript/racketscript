@@ -4,25 +4,26 @@
     "description": "Package JavaScript compiled from RacketScript (Racket->JS compiler)",
     "main": "./dist/compiled.js",
     "repository": {
-	"type": "git",
-	"url": "https://github.com/vishesh/racketscript"
+        "type": "git",
+        "url": "https://github.com/vishesh/racketscript"
     },
     "keywords": [
-	"racket",
-	"compiler"
+        "racket",
+        "compiler"
     ],
     "author": "Vishesh Yadav",
     "bugs": {
-	"url": "https://github.com/vishesh/racketscript/issues"
+        "url": "https://github.com/vishesh/racketscript/issues"
     },
     "dependencies": {
-	"gulp": "^4.0.2",
-	"gulp-replace": "*",
-	"gulp-babel": "*",
+        "gulp": "^4.0.2",
+        "gulp-replace": "*",
+        "gulp-babel": "^8.0.0",
         "gulp-uglify": "*",
-	"hamt_plus": "*",
-	"babel-core": "*",
-	"babel-preset-env": "*",
-	"babel-plugin-transform-runtime": "*"
+        "hamt_plus": "*",
+        "@babel/core": "^7.9.0",
+        "@babel/runtime": "^7.9.0",
+        "@babel/preset-env": "^7.9.5",
+        "@babel/plugin-transform-runtime": "^7.9.0"
     }
 }
