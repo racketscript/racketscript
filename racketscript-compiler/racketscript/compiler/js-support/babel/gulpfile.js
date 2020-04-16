@@ -17,13 +17,17 @@ gulp.task('transform', gulp.series('copy-hamt', function() {
 		     '!./dist/**',
 		     '!./*.js'])
 	.pipe(babel({
-	    presets: ["env"],
-	    plugins: ["transform-runtime"]
+	    presets: ["@babel/preset-env"],
+	    plugins: ["@babel/plugin-transform-runtime"]
 	}))
-        .pipe(uglify())
-        .pipe(gulp.dest('dist'));
+    .pipe(uglify())
+    .pipe(gulp.dest('dist'));
 }));
 
-gulp.task('build', gulp.series('transform', function () {}));
+gulp.task('build', gulp.series('transform', function (done) {
+    done();
+}));
 
-gulp.task('default', gulp.series('build', function () {}));
+gulp.task('default', gulp.series('build', function (done) {
+    done();
+}));
