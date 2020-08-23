@@ -44,6 +44,79 @@
 (println #\a)
 (println #\tab)
 (println #\߆)
+(println #\🎂)
 
-; This test requires a full implementation of isGraphicCodepoint to pass.
-; (println #\🎂)
+(println (char-upcase #\a))
+(println (char-upcase #\ß))
+(println (char-upcase #\ﬁ))  ; upper case is longer than 1 character (FI).
+(println (char-downcase #\A))
+(println (char-downcase #\ẞ))
+
+;; Not implemented:
+; (println (char-titlecase #\a))
+; (println (char-foldcase #\A))
+; (println (char-foldcase #\ß))
+; (println (char-foldcase #\ß))
+
+(displayln "char-alphabetic-case?")
+(println (char-alphabetic? #\A))
+(println (char-alphabetic? #\Я))
+(println (char-alphabetic? #\tab))
+
+(displayln "char-lower-case?")
+(println (char-lower-case? #\A))
+(println (char-lower-case? #\a))
+(println (char-lower-case? #\Я))
+(println (char-lower-case? #\я))
+(println (char-lower-case? #\5))
+
+(displayln "char-upper-case?")
+(println (char-upper-case? #\A))
+(println (char-upper-case? #\a))
+(println (char-upper-case? #\Я))
+(println (char-upper-case? #\Я))
+(println (char-upper-case? #\5))
+
+(displayln "char-title-case?")
+(println (char-title-case? #\A))
+(println (char-title-case? #\a))
+(println (char-title-case? #\Я))
+(println (char-title-case? #\Я))
+(println (char-title-case? #\5))
+
+(displayln "char-numeric?")
+(println (char-numeric? #\5))  ; Nd
+(println (char-numeric? #\Ⅻ))  ; Nl
+(println (char-numeric? #\㊲))  ; No
+
+(displayln "char-symbolic?")
+(println (char-symbolic? #\A))
+(println (char-symbolic? #\∄))
+
+(displayln "char-punctuation?")
+(println (char-punctuation? #\A))
+(println (char-punctuation? #\;))
+
+(displayln "char-graphic?")
+(println (char-graphic? #\A))
+(println (char-graphic? #\🎂))
+(println (char-graphic? #\㊲))
+(println (char-graphic? #\tab))
+
+(displayln "char-whitespace?")
+(println (char-whitespace? #\A))
+(println (char-whitespace? #\space))
+(println (char-whitespace? #\newline))
+(println (char-whitespace? #\tab))
+
+(displayln "char-blank?")
+(println (char-blank? #\A))
+(println (char-blank? #\space))
+(println (char-blank? #\newline))
+(println (char-blank? #\tab))
+
+(displayln "char-iso-control?")
+(println (char-iso-control? #\A))
+(println (char-iso-control? #\nul))
+(println (char-iso-control? #\rubout))
+(println (char-iso-control? #\u9F))

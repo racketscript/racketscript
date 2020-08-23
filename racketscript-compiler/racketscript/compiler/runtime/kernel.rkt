@@ -855,6 +855,45 @@
 (define-checked+provide (char-utf-8-length [c char?])
   (#js.Core.Char.charUtf8Length c))
 
+(define-checked+provide (char-upcase [c char?])
+  (#js.Core.Char.upcase c))
+
+(define-checked+provide (char-downcase [c char?])
+  (#js.Core.Char.downcase c))
+
+(define-checked+provide (char-alphabetic? [c char?])
+  (#js.Core.Char.isAlphabetic c))
+
+(define-checked+provide (char-lower-case? [c char?])
+  (#js.Core.Char.isLowerCase c))
+
+(define-checked+provide (char-upper-case? [c char?])
+  (#js.Core.Char.isUpperCase c))
+
+(define-checked+provide (char-title-case? [c char?])
+  (#js.Core.Char.isTitleCase c))
+
+(define-checked+provide (char-numeric? [c char?])
+  (#js.Core.Char.isNumeric c))
+
+(define-checked+provide (char-symbolic? [c char?])
+  (#js.Core.Char.isSymbolic c))
+
+(define-checked+provide (char-punctuation? [c char?])
+  (#js.Core.Char.isPunctuation c))
+
+(define-checked+provide (char-graphic? [c char?])
+  (#js.Core.Char.isGraphic c))
+
+(define-checked+provide (char-whitespace? [c char?])
+  (#js.Core.Char.isWhitespace c))
+
+(define-checked+provide (char-blank? [c char?])
+  (#js.Core.Char.isBlank c))
+
+(define-checked+provide (char-iso-control? [c char?])
+  (#js.Core.Char.isIsoControl c))
+
 ; TODO: Add varargs support for the comparison methods below.
 
 (define-checked+provide (char<? [a char?] [b char?])

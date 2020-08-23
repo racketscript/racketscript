@@ -187,7 +187,7 @@ export class UString extends Primitive /* implements Printable */ {
                 out.consume('\\\\');
                 break;
             default:
-                if (Char.isGraphicCodepoint(c) || Char.isBlankCodepoint(c)) {
+                if (Char.isGraphic(char) || Char.isBlank(char)) {
                     out.consume(char.toString());
                 } else {
                     out.consume(c > 0xFFFF

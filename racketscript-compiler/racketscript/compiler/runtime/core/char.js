@@ -110,7 +110,7 @@ export class Char extends Primitive /* implements Printable */ {
             out.consume('#\\rubout');
             break;
         default:
-            if (isGraphicCodepoint(c)) {
+            if (isGraphic(this)) {
                 out.consume(`#\\${this.toString()}`);
             } else {
                 out.consume(c > 0xFFFF
@@ -228,62 +228,132 @@ export function charUtf8Length(c) {
     return 6;
 }
 
-// The Unicode property testing methods below were generated with:
-// https://gist.github.com/glebm/2749c75b4fc4fed4dc5911925bb8f8b9
-
 /**
- * A graphic codepoint in Racket is in one the following General Categories:
- *
- *   Letter, Mark, Number, Punctuation, Symbol.
- *
- * WARNING: This method currently always returns `false` for codepoints >= 2048,
- * even if they are graphic.
- *
- * @param {!number} c a Unicode codepoint
- * @return {!boolean} Whether the codepoint is graphic
- * @api private
+  * @param {!string} str 
+  * @return {!boolean}
  */
-export function isGraphicCodepoint(c) {
-    // This is just a quick hack to have sensible output in European locales.
-    // TODO: If we implement Unicode property testing, use it here instead.
-    /* eslint-disable no-mixed-operators */
-    return (
-        c > 32 && c < 127 ||
-        (c > 160 && c < 896 && !(c === 173 || c > 887 && c < 890)) ||
-        (c > 899 && c < 1480 && !(c === 1328 || c > 1366 && c < 1369 ||
-            c === 1376 || c === 1416 || c > 1418 && c < 1421 || c === 1424 ||
-            (c > 906 && c < 910 && c !== 908) || c === 930)) ||
-        c > 1487 && c < 1515 || c > 1519 && c < 1525 ||
-        (c > 1541 && c < 1970 && !(c > 1563 && c < 1566 || c === 1757 ||
-            c > 1805 && c < 1808 || c > 1866 && c < 1869)) ||
-        c > 1983 && c < 2043);
-    /* eslint-enable no-mixed-operators */
+function isSingleCodePoint(str) {
+    return str.length === 1 || (str.length === 2 && str.codePointAt(0) > 0xFFFF);
 }
 
 /**
- * @param {!number} c a Unicode codepoint
- * @return {!boolean} Whether the codepoint's Unicode general category
- * is "Zs" ("Space_Separator") or if char is #\tab.
- * @api private
- */
-export function isBlankCodepoint(c) {
-    /* eslint-disable no-mixed-operators */
-    return (
-        c === 9 || c === 32 || c === 160 || c === 5760 ||
-        c > 8191 && c < 8203 || c === 8239 || c === 8287 || c === 12288);
-    /* eslint-enable no-mixed-operators */
+* @param {!Char} c
+* @return {!Char}
+*/
+export function upcase(c) {
+    const upper = c.toString().toUpperCase();
+    if (!isSingleCodePoint(upper)) return c;
+    return charFromNativeString(upper);
 }
 
 /**
- * @param {!number} c a Unicode codepoint
- * @return {!boolean} Whether the codepoint has the Unicode "White_Space" property.
- * @api private
- */
-export function isWhitespaceCodepoint(c) {
-    /* eslint-disable no-mixed-operators */
-    return (
-        c > 8 && c < 14 || c === 32 || c === 133 || c === 160 || c === 5760 ||
-        c > 8191 && c < 8203 || c > 8231 && c < 8234 || c === 8239 ||
-        c === 8287 || c === 12288);
-    /* eslint-enable no-mixed-operators */
+* @param {!Char} c
+* @return {!Char}
+*/
+export function downcase(c) {
+    const lower = c.toString().toLowerCase();
+    if (!isSingleCodePoint(lower)) return c;
+    return charFromNativeString(lower);
+}
+
+// Unicode property testing regexps.
+// We use `new RegExp` because traceur crashes on `/u` RegExp literals.
+const IS_ALPHABETIC = new RegExp('\\p{Alphabetic}', 'u');
+const IS_LOWER_CASE = new RegExp('\\p{Lowercase}', 'u');
+const IS_UPPER_CASE = new RegExp('\\p{Uppercase}', 'u');
+const IS_TITLE_CASE = new RegExp('\\p{Lt}', 'u');
+const IS_NUMERIC = new RegExp('\\p{Nd}', 'u');
+const IS_SYMBOLIC = new RegExp('\\p{S}', 'u');
+const IS_PUNCTUATION = new RegExp('\\p{P}', 'u');
+const IS_GRAPHIC = new RegExp('[\\p{L}\\p{N}\\p{M}\\p{S}\\p{P}\\p{Alphabetic}]', 'u');
+const IS_WHITESPACE = new RegExp('\\p{White_Space}', 'u');
+const IS_BLANK = new RegExp('[\\p{Zs}\\t]', 'u');
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isAlphabetic(c) {
+    return IS_ALPHABETIC.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isLowerCase(c) {
+    return IS_LOWER_CASE.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isUpperCase(c) {
+    return IS_UPPER_CASE.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isTitleCase(c) {
+    return IS_TITLE_CASE.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isNumeric(c) {
+    return IS_NUMERIC.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isSymbolic(c) {
+    return IS_SYMBOLIC.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isPunctuation(c) {
+    return IS_PUNCTUATION.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isGraphic(c) {
+    return IS_GRAPHIC.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isWhitespace(c) {
+    return IS_WHITESPACE.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isBlank(c) {
+    return IS_BLANK.test(c.toString());
+}
+
+/**
+* @param {!Char} c
+* @return {!boolean}
+*/
+export function isIsoControl(c) {
+    const cp = c.codepoint;
+    return (cp >= 0 && cp <= 0x1F) || (cp >= 0x7F && cp <= 0x9F);
 }
