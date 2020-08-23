@@ -14,7 +14,7 @@ gulp.task('copy-hamt', function() {
 
 gulp.task('build', gulp.series('copy-hamt', function() {
     return gulp.src('modules/' + target)
-	.pipe(traceur({modules: 'inline'}))
+	.pipe(traceur({modules: 'inline', outputLanguage: 'es6'}))
         .pipe(concat('compiled.js'))
         //.pipe(uglify())
 	.pipe(gulp.dest('dist'));
