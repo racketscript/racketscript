@@ -34,7 +34,7 @@ setup:
 
 setup-extra:
 	npm install -g traceur js-beautify eslint jshint gulp
-	raco pkg install --auto cover glob
+	raco pkg install --auto cover
 
 clean:
 	raco pkg remove racketscript-extras

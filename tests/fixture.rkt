@@ -2,7 +2,7 @@
 #lang racket
 
 (require rackunit
-         glob
+         file/glob
          racket/runtime-path
          racketscript/compiler/main
          racketscript/compiler/util
@@ -101,6 +101,7 @@
     (if (absolute-path? fpath)
         (string->path fpath)
         (normalize-path (build-path (current-directory) fpath))))
+
   (parameterize ([main-source-file test-path]
                  [global-export-graph (get-cached-export-tree test-path)]
                  [current-source-file test-path]
@@ -165,19 +166,27 @@
 
   (define skipped-tests (mutable-set))
 
-  (define testcases
-    (filter-not
-     (λ (t)
-       ;; Filter tests whose names start with "__"
-       (let ([skip? (string-prefix? (last (string-split t "/")) "__")])
-         (when skip? (set-add! skipped-tests t))
-         skip?))
-     (append-map (λ (pattern)
-                   (if (string-suffix? pattern ".rkt")
-                       (glob pattern)
-                       (glob (~a pattern "/*.rkt"))))
-                 tc-search-patterns)))
+  ;; skip-test? : String Path -> Bool
+  ;; Filter tests whose names start with "__"
+  (define (skip-test? path)
+    (define skip?
+      (string-prefix? (last (string-split path "/")) "__"))
+    (when skip? (set-add! skipped-tests path))
+    skip?)
 
+  (define testcases ; rest of fixture assumes list of string paths
+    (filter-not
+     skip-test?
+     (map
+      path->string ; file/glob returns paths not strings, but rest of fixture expects strs
+      (apply
+       append
+       (for/list ([pat tc-search-patterns])
+         ; test all rkt files in dir, unless given single file
+         (if (string-suffix? pat ".rkt")
+             (glob pat) 
+             (glob (~a pat "/*.rkt"))))))))
+  
   (define failed-tests '())
 
   ;; Handler when exception is raised by check failures. Gather
@@ -294,9 +303,7 @@
   (define fixture-module-dir (path-only fixture-module))
 
   (define (fixture-path-patterns . paths)
-    (map (λ (p)
-           (~a (build-path fixture-module-dir p) "/*.rkt"))
-         paths))
+    (for/list ([p paths]) (~a (build-path fixture-module-dir p) "/*.rkt")))
 
   (run (fixture-path-patterns "racket-core"
                               "test-the-test"
