@@ -88,6 +88,10 @@
 (println (char-numeric? #\5))  ; Nd
 (println (char-numeric? #\Ⅻ))  ; Nl
 (println (char-numeric? #\㊲))  ; No
+;; TODO: the following should return #t but returns #f
+;; see comments in runtime/core/char.js
+;; and https://github.com/vishesh/racketscript/issues/176
+;; (println (char-numeric? #\六))  ; Lo
 
 (displayln "char-symbolic?")
 (println (char-symbolic? #\A))
