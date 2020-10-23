@@ -1,18 +1,18 @@
 language: node_js
 
 node_js:
-  # TODO: Once Node 8 LTS has been released, switch to it here.
-  - "8.4"
+  - "14.14"
 
 sudo: false
 
 env:
   global:
     - RACKET_DIR=~/racket
-    - RACKET_RUN_COVERAGE=6.10
+    - RACKET_RUN_COVERAGE=7.5
   matrix:
     - RACKET_VERSION=HEAD
     - RACKET_VERSION=RELEASE
+    - RACKET_VERSION=7.5
     - RACKET_VERSION=7.4
     - RACKET_VERSION=7.0
     - RACKET_VERSION=6.12

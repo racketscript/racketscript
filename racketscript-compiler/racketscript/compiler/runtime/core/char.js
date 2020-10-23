@@ -262,7 +262,13 @@ const IS_ALPHABETIC = new RegExp('\\p{Alphabetic}', 'u');
 const IS_LOWER_CASE = new RegExp('\\p{Lowercase}', 'u');
 const IS_UPPER_CASE = new RegExp('\\p{Uppercase}', 'u');
 const IS_TITLE_CASE = new RegExp('\\p{Lt}', 'u');
-const IS_NUMERIC = new RegExp('\\p{Nd}', 'u');
+// TODO: IS_NUMERIC should use \\p{Numeric_Value},
+// but js regexp errs with "Invalid property name".
+// Fix this when js regexps become more compliant with unicode standard
+// see also:
+// - https://stackoverflow.com/questions/5562835/split-and-replace-unicode-words-in-javascript-with-regex
+// - https://github.com/vishesh/racketscript/issues/176
+const IS_NUMERIC = new RegExp('[\\p{Nd}\\p{Nl}\\p{No}]', 'u');
 const IS_SYMBOLIC = new RegExp('\\p{S}', 'u');
 const IS_PUNCTUATION = new RegExp('\\p{P}', 'u');
 const IS_GRAPHIC = new RegExp('[\\p{L}\\p{N}\\p{M}\\p{S}\\p{P}\\p{Alphabetic}]', 'u');
