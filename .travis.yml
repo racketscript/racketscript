@@ -16,7 +16,7 @@ env:
     - RACKET_VERSION=7.4
     - RACKET_VERSION=7.0
     - RACKET_VERSION=6.12
-    - RACKET_VERSION=6.10
+    - RACKET_VERSION=6.9
 
 matrix:
   allow_failures:
