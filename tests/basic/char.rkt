@@ -1,5 +1,7 @@
 #lang racket/base
 
+(require "../test-utils.rkt")
+
 (define v #\u5c)
 (displayln v)
 
@@ -85,9 +87,10 @@
 (println (char-title-case? #\5))
 
 (displayln "char-numeric?")
-(println (char-numeric? #\5))  ; Nd
-(println (char-numeric? #\Ⅻ))  ; Nl
-(println (char-numeric? #\㊲))  ; No
+(println (char-numeric? #\5))     ; Nd
+(run-if-version "6.10"
+  (println (char-numeric? #\Ⅻ))   ; Nl
+  (println (char-numeric? #\㊲))) ; No
 ;; TODO: the following should return #t but returns #f
 ;; see comments in runtime/core/char.js
 ;; and https://github.com/vishesh/racketscript/issues/176
