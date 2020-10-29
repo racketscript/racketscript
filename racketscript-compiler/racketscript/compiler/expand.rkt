@@ -52,6 +52,8 @@
 (define current-phase (make-parameter 0))
 (define quoted? (make-parameter #f))
 (define lexical-bindings (make-parameter #f)) ;; Free-Id-Table
+(define defined-names (make-parameter #f)) ;; set of symbols, rkt prog can have defs with same name
+(define dup-names (make-parameter #f)) ;; free-id-table, rkt prog can have defs with same name
 (define skip-freshening? (make-parameter #f))
 
 ;;;----------------------------------------------------------------------------
@@ -71,6 +73,25 @@
 
 ;;;-----------------------------------------------------------------------------
 ;;;; Conversion and expansion
+
+;; record all (symbolic) names defined via define-values
+;; - need to track these because Racket progs can have multiple defs with same name
+(define (register-defined-names! stx)
+  (cond
+    [(stx-list? stx)
+     (for-each register-defined-names! (syntax->list stx))]
+    [(identifier? stx)
+     (if (set-member? (defined-names) (syntax-e stx))
+         (register-dup-name! stx)
+         (set-add! (defined-names) (syntax-e stx)))]
+    [(stx-pair? stx)
+     (register-defined-names! (stx-car stx))
+     (register-defined-names! (stx-cdr stx))]
+    [else (error 'register-defined-names "unexpected ~a" stx)]))
+
+;; registers duplicate names that need to be freshened in the next pass
+(define (register-dup-name! id)
+  (dict-set! (dup-names) id (generate-temporary id)))
 
 (define (register-lexical-bindings! stx)
   (cond
@@ -365,8 +386,26 @@
        (pretty-print (syntax->datum v))
        (error 'expand)]))
 
+(define (freshen-form v)
+  (syntax-parse v
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote mod:str)))
+     ;; HACK: Special case for JSRequire
+;;     (JSRequire (syntax-e #'name) (syntax-e #'mod) 'default)]
+     this-syntax]
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote *) (quote mod:str)))
+     ;; HACK: Special case for JSRequire
+     ;;     (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
+     this-syntax]
+    [(define-values (id ...) b)
+     (register-defined-names! #'(id ...))
+     this-syntax]
+    [_ this-syntax]))
+
 (define (convert mod path)
-  (syntax-parse mod
+  (syntax-parse (freshen-mod-forms mod) ; Racket can have 2+ defs with same name
     #:literal-sets ((kernel-literals #:phase (current-phase)))
     [(module name:id lang:expr (#%plain-module-begin forms ...))
      (parameterize ([current-module path]
@@ -395,6 +434,33 @@
                  ast)))]
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
+
+(define (freshen-mod-forms mod)
+  (syntax-parse mod
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [(module name:id lang:expr (#%plain-module-begin forms ...))
+     (parameterize ([defined-names (mutable-set)]
+                    [dup-names (make-free-id-table)])
+       (define mod-id (syntax-e #'name))
+       (log-rjs-info "[freshening module forms] ~a" mod-id)
+       (for-each freshen-form (syntax->list #'(forms ...)))
+       (replace-dup-names this-syntax))]
+    [_
+     (error 'freshen-mod-forms "bad ~a ~a" mod (syntax->datum mod))]))
+
+;; replace all ids in (dup-names) with fresh name;
+;; handles modules that have multiple defs with the same symbolic name
+(define (replace-dup-names stx)
+  (cond
+    [(pair? stx) (cons (replace-dup-names (car stx))
+                       (replace-dup-names (cdr stx)))]
+    [(stx-pair? stx)
+     (datum->syntax stx (cons (replace-dup-names (stx-car stx))
+                              (replace-dup-names (stx-cdr stx)))
+                    stx stx stx)]
+    [(and (identifier? stx) (dict-has-key? (dup-names) stx))
+     (dict-ref (dup-names) stx)]
+    [else stx]))
 
 (define (to-absyn/top stx)
   (to-absyn stx))
@@ -555,8 +621,7 @@
 
   ;; Check imported ident
 
-  ;;TODO: We rename library modules, so ignore this test for now
-  #;(check-equal? (to-absyn/expand #'displayln)
+  (check-equal? (to-absyn/expand #'displayln)
                 (ident #'displayln))
 
   ;; Check lambdas
@@ -565,13 +630,19 @@
                 (PlainLambda '(x) (list (LocalIdent 'x)) #f))
   (check-equal? (to-absyn/expand #`(λ x x))
                 (PlainLambda 'x (list (LocalIdent 'x)) #f))
+
+  ;; if we start with empty global-export-graph (above),
+  ;; src of prims, e.g., #'+, will be #%runtime (from src-mod part of identifier-binding);
+  ;; - but loading global-export-graph to be racket/base and following it for #'+
+  ;;   leadsx to #%kernel
+  (displayln (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c)))))
   (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c))))
                 (PlainLambda
                  '((a b) . c)
                  (list
                   (PlainApp (ident #'+)
                             (list (LocalIdent 'a) (LocalIdent'b)
-                                  (PlainApp (TopId'reduce)
+                                  (PlainApp (TopId 'reduce)
                                             (list (ident #'+) (LocalIdent 'c))))))
                  #f))
   ;; Check application
@@ -931,3 +1002,4 @@
 
     (check-equal? (map syntax-e (get-quoted-bindings test-mod-1))
                   '(internal-func))))
+
