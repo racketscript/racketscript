@@ -691,7 +691,7 @@
 (define+provide memq #js.Kernel.memq)
 (define+provide memf #js.Kernel.memf)
 (define+provide findf #js.Kernel.findf)
-(define+provide sort9 #js.Kernel.sort9)
+;(define+provide sort9 #js.Kernel.sort9)
 (define+provide assv #js.Kernel.assv)
 (define+provide assq #js.Kernel.assq)
 (define+provide assf #js.Kernel.assf)
