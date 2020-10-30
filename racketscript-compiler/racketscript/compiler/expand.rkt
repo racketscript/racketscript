@@ -82,8 +82,8 @@
      (for-each register-defined-names! (syntax->list stx))]
     [(identifier? stx)
      (if (set-member? (defined-names) (syntax-e stx))
-         (register-dup-name! stx)
-         (set-add! (defined-names) (syntax-e stx)))]
+         (register-dup-name! stx) ; add to dup-names set if already seen
+         (set-add! (defined-names) (syntax-e stx)))] ; else add to defined-names
     [(stx-pair? stx)
      (register-defined-names! (stx-car stx))
      (register-defined-names! (stx-cdr stx))]
@@ -389,17 +389,10 @@
 (define (freshen-form v)
   (syntax-parse v
     #:literal-sets ((kernel-literals #:phase (current-phase)))
-    [(define-values (name)
-       (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote mod:str)))
+    [(define-values (name) (#%plain-app (~datum #%js-ffi) . _))
      ;; HACK: Special case for JSRequire
-;;     (JSRequire (syntax-e #'name) (syntax-e #'mod) 'default)]
      this-syntax]
-    [(define-values (name)
-       (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote *) (quote mod:str)))
-     ;; HACK: Special case for JSRequire
-     ;;     (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
-     this-syntax]
-    [(define-values (id ...) b)
+    [(define-values (id ...) . _)
      (register-defined-names! #'(id ...))
      this-syntax]
     [_ this-syntax]))
@@ -445,8 +438,7 @@
        (log-rjs-info "[freshening module forms] ~a" mod-id)
        (for-each freshen-form (syntax->list #'(forms ...)))
        (replace-dup-names this-syntax))]
-    [_
-     (error 'freshen-mod-forms "bad ~a ~a" mod (syntax->datum mod))]))
+    [_ (error 'freshen-mod-forms "bad ~a ~a" mod (syntax->datum mod))]))
 
 ;; replace all ids in (dup-names) with fresh name;
 ;; handles modules that have multiple defs with the same symbolic name
@@ -635,7 +627,6 @@
   ;; src of prims, e.g., #'+, will be #%runtime (from src-mod part of identifier-binding);
   ;; - but loading global-export-graph to be racket/base and following it for #'+
   ;;   leadsx to #%kernel
-  (displayln (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c)))))
   (check-equal? (to-absyn/expand #`(λ (a b . c) (+ a b (reduce + c))))
                 (PlainLambda
                  '((a b) . c)
