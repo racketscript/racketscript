@@ -285,25 +285,6 @@ export function findf(f, lst) {
     return false;
 }
 
-
-// TODO: more faithfully reproduce Racket sort?
-// this implements raw-sort from #%kernel, see racket/private/list
-export function sort9(lst, cmp) {
-    const arr = Core.Pair.listToArray(lst);
-    const x2i = new Map();
-    arr.forEach((x, i) => { x2i.set(x, i); });
-    const srted = arr.sort((x, y) => {
-        if (cmp(x, y)) {
-            return -1;
-        } else if (cmp(y, x)) {
-            return 1;
-        } // x = y, simulate stable sort by comparing indices
-        return x2i.get(x) - x2i.get(y);
-    });
-
-    return Core.Pair.listFromArray(srted);
-}
-
 export function assv(k, lst) {
     while (Core.Pair.isEmpty(lst) === false) {
         if (Core.isEqv(k, lst.hd.hd)) {

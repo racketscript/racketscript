@@ -8,10 +8,13 @@ sudo: false
 env:
   global:
     - RACKET_DIR=~/racket
-    - RACKET_RUN_COVERAGE=7.5
+    - RACKET_RUN_COVERAGE=7.6
   matrix:
     - RACKET_VERSION=HEAD
     - RACKET_VERSION=RELEASE
+    - RACKET_VERSION=7.8
+    - RACKET_VERSION=7.7
+    - RACKET_VERSION=7.6
     - RACKET_VERSION=7.5
     - RACKET_VERSION=7.4
     - RACKET_VERSION=7.0
