@@ -277,7 +277,7 @@ export function memf(f, lst) {
 export function findf(f, lst) {
     while (Core.Pair.isEmpty(lst) == false) {
         if (f(lst.hd)) {
-            return list.hd;
+            return lst.hd;
         }
         lst = lst.tl;
         continue;

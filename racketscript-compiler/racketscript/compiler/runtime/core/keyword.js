@@ -25,7 +25,6 @@ class Keyword extends PrintablePrimitive {
         } else {
             return this.v < v.v;
         }
-        return false;
     }
 }
 
