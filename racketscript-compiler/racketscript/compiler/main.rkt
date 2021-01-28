@@ -309,7 +309,7 @@
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (~a (find-executable-path "js-beautify"))))
-  (fprintf out-p-in js-str)
+  (print js-str  out-p-in)
   (close-output-port out-p-in)
   (control 'wait)
   (port->string in-p-out))
