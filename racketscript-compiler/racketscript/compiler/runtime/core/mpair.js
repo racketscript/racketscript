@@ -104,7 +104,7 @@ class MPair extends PrintablePrimitive {
     setCdr(v) {
         if (this.tl !== v) {
             this.tl = v;
-            this._listLength = isList(tl) ? tl.length + 1 : -1;
+            this._listLength = isList(this.tl) ? this.tl.length + 1 : -1;
             this._cachedHashCode = null;
         }
     }
