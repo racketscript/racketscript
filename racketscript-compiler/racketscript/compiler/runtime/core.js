@@ -83,3 +83,51 @@ export {
 export function bitwiseNot(a) {
     return ~a;
 }
+
+class UnsafeUndefined extends PrintablePrimitive {
+    constructor () {
+        super();
+    }
+
+    equals(v) {
+        return (v === this);
+    }
+
+    /**
+     * @return {!number} a 32-bit integer
+     */
+    hashForEqual() {
+        return 0;
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    displayNativeString(out) {
+        out.consume('#<unsafe-undefined>');
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    displayUString(out) {
+        out.consume('#<unsafe-undefined>');
+    }
+
+    /**
+     * @param {!Ports.NativeStringOutputPort} out
+     */
+    writeNativeString(out) {
+        out.consume('#<unsafe-undefined>');
+    }
+
+    /**
+     * @param {!Ports.UStringOutputPort} out
+     */
+    writeUString(out) {
+        out.consume('#<unsafe-undefined>');
+    }
+
+}
+
+const the_unsafe_undefined = new UnsafeUndefined();
