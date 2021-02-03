@@ -128,6 +128,7 @@
        '#%boot
        '#%foreign
        '#%place
+       '#%linklet-primitive
        (build-path racketscript-runtime-dir "lib.rkt")))
 
 ;;; ---------------------------------------------------------------------------

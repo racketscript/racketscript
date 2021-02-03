@@ -581,7 +581,8 @@
           (list (ILApp (name-in-module 'core 'Marks.updateFrame)
                        (list old-context-id new-context-id))))))
      (values stms result-id)]
-
+    [(VarRef _)  (values '() (absyn-value->il '#%variable-reference))]
+    
     [_ (error (~a "unsupported expr " expr))]))
 
 
