@@ -1,5 +1,6 @@
 // Exports classes for creating basic data types and operation on them
 
+import { PrintablePrimitive } from './core/printable_primitive.js';
 import * as Box from './core/box.js';
 import * as Bytes from './core/bytes.js';
 import * as Char from './core/char.js';
