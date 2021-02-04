@@ -55,7 +55,7 @@
 
   [Expr    Ident
            (TopId             [id       : Symbol])
-           (VarRef            [var      : (Option (U Symbol TopId))])
+           (VarRef            [var      : (Option (U Symbol TopId Ident))])
            (Quote             [datum    : Any])
 
 
