@@ -944,9 +944,15 @@
 (define-property+provide prop:incomplete-arity)
 (define-property+provide prop:method-arity-error)
 (define-property+provide prop:exn:srclocs)
+(define-property+provide prop:authentic)
+(define-property+provide prop:serialize)
+(define-property+provide prop:custom-write)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 (define+provide prop:equal+hash #js.Core.Struct.propEqualHash)
+
+(define+provide (equal-hash-code v) 0)
+(define+provide (equal-secondary-hash-code v) 1)
 
 ;; --------------------------------------------------------------------------
 ;; Errors
@@ -1191,7 +1197,6 @@
 (define+provide (eval-jit-enabled) #f)
 
 (define+provide (variable-reference-constant? x) #f)
-(define+provide (variable-reference-from-unsafe? x) #f)
 
 (define+provide (inspector? p)
   #t)
@@ -1208,3 +1213,8 @@
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)
+
+
+(define+provide (current-environment-variables) null)
+(define+provide (environment-variables-ref e n) #f)
+(define+provide (environment-variables-set! e n v [fail #f]) (void))

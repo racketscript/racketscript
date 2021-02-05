@@ -1,3 +1,3 @@
 #lang racketscript/boot
 
-(require racketscript/interop)
+(require racketscript/interop "lib.rkt")

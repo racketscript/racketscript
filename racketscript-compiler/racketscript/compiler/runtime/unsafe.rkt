@@ -131,3 +131,8 @@
   (#js.h.iteratePair i))
 
 (define+provide unsafe-undefined #js.Core.the_unsafe_undefined)
+
+;; stubs
+(define+provide (unsafe-make-place-local v) v)
+
+(define+provide (variable-reference-from-unsafe? v) #f)
