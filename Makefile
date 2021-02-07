@@ -33,7 +33,7 @@ setup:
 		    raco pkg update --link racketscript-extras/
 
 setup-extra:
-	npm install -g traceur js-beautify eslint jshint gulp
+	npm install -g js-beautify eslint jshint gulp
 	raco pkg install --auto cover
 
 clean:

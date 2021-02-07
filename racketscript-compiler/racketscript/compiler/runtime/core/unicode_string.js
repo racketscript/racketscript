@@ -4,11 +4,7 @@ import * as Char from './char.js';
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { internedMake } from './lib.js';
 import { hashIntArray } from './raw_hashing.js';
-
-// In node.js, TextEncoder is not global and needs to be imported.
-const TextEncoder = (typeof window === 'undefined')
-    ? require('util').TextEncoder
-    : window.TextEncoder; // eslint-disable-line no-undef
+import { TextEncoder } from 'util';
 
 /**
  * A sequence of {Char.Char}s.

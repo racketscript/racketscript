@@ -74,15 +74,15 @@
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
 ;; stdout and stderr produced
-(define (run-in-nodejs fpath)
+[define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* (build-path (output-directory) "node_modules" ".bin" "traceur")
+    (process* "/opt/homebrew/bin/node"
               (module-output-file (if (absolute-path? fpath)
                                       (string->path fpath)
                                       (build-path (current-directory) fpath)))))
   (control 'wait)
   (list (port->string in-p-out)
-        (port->string in-p-err)))
+        (port->string in-p-err))]
 
 ;; String String -> Boolean
 ;; Compare the outputs produced
@@ -144,13 +144,15 @@
 ;; 2. Always skip-npm-install to save time
 ;; [3. Always remove old compiled module outputs)]
 (define (setup)
+  (skip-gulp-build #t)
+
   (when (clean-output-before-test)
     (delete-directory/files (output-directory)))
 
   (prepare-build-directory "") ;; We don't care about bootstrap file
   (unless (skip-npm-install)
     (parameterize ([current-directory (output-directory)])
-      (system "npm install")
+      ;; (system "npm install")
       (skip-npm-install #t))))
 
 ;; (Listof Glob-Pattern) -> Void
@@ -218,12 +220,7 @@
     (flush-output)
 
     (parameterize ([current-test-name test])
-      (check-racketscript test))
-
-    ;; Disable Gulp build as soon as we have run it once, as all we
-    ;; need is HAMT built in runtime.1
-    (unless (skip-gulp-build)
-      (skip-gulp-build #t)))
+      (check-racketscript test)))
 
   (unless (empty? failed-tests)
     (displayln (format "\nFailed tests (~a/~a) => "

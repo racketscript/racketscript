@@ -54,15 +54,14 @@
 (define *browser-index-file* "index.html")
 
 ;; Compiler for ES6 to ES5 compilation.
+;; - "plain"
 ;; - "babel"
-;; - "traceur"
 ;; - "webpack" ;;TODO
-(define *targets* (list "traceur"
-                        "traceur-browser"
+(define *targets* (list "plain"
                         "babel"
                         "babel-webpack"
                         "closure-compiler"))
-(define js-target (make-parameter "traceur"))
+(define js-target (make-parameter "plain"))
 
 ;; Path-String -> Path
 ;; Return path of support file named f
@@ -139,17 +138,6 @@
   (copy-directory (build-path racketscript-dir "compiler" "runtime")
                   (output-directory)))
 
-;; -> Void
-(define (copy-support-files)
-  (match (js-target)
-    ["traceur"
-     (copy-file+ (support-file *js-bootstrap-file*)
-                 (output-directory))]
-    ["traceur-browser"
-     (copy-file+ (support-file *browser-index-file*)
-                 (output-directory))]
-    [_ (void)]))
-
 ;; String -> Void
 ;; Create output build directory tree with all NPM, Gulp. Runtime and
 ;; other support files
@@ -167,8 +155,7 @@
     (make-directory* (build-path dir "modules")))
 
   (copy-build-files default-module-name)
-  (copy-runtime-files)
-  (copy-support-files))
+  (copy-runtime-files))
 
 ;; -> Void
 ;; Install and build dependenciese to translate ES5 to ES5
@@ -334,7 +321,7 @@
    ["--lift-returns" "Translate self tail calls to loops"
     (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
    #:multi
-   [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser|closure-compiler|babel-webpack]"
+   [("-t" "--target") target "ES6 to ES5 compiler [plain|babel|closure-compiler|babel-webpack]"
     (if (member target *targets*)
         (js-target target)
         (error "`~a` is not a supported target."))]

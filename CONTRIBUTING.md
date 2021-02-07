@@ -67,8 +67,7 @@ make build  # From RacketScript codebase root
 ```
 
 *Get familiar* with the various command line options provided by the
-RacketScript CLI `racks` and Node. Traceur or Babel CLI often come in
-handy to run ES6 modules directly.
+RacketScript CLI `racks` and Node.
 
 ### Testing
 
@@ -205,7 +204,7 @@ to your `PATH`.
 
 #### Get familiar with the tools
 
-Get familiar with the tools used for development such as `racks`, `traceur`,
+Get familiar with the tools used for development such as `racks`, `nodejs`,
 `babel`, `make`, `fixture.rkt` etc. See the various targets available in
 `Makefile` for usage examples.
 
