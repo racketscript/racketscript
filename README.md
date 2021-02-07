@@ -1,7 +1,7 @@
 # RacketScript
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING.md)
-[![Build Status](https://travis-ci.org/vishesh/racketscript.svg?branch=master)](https://travis-ci.org/vishesh/racketscript)
+[![Build Status](https://travis-ci.com/vishesh/racketscript.svg?branch=master)](https://travis-ci.org/vishesh/racketscript)
 [![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
 [![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://rapture.twistedplane.com:8080)
 
