@@ -289,7 +289,8 @@
       [(false? next)
        (dump-module-timestamps! timestamps)
        (log-rjs-info "Compiling ES6 to ES5.")
-       (es6->es5)
+       (unless (string=? (js-target) "plain")
+         (es6->es5))
        (log-rjs-info "Finished.")])))
 
 ;; String -> String
