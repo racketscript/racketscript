@@ -288,8 +288,8 @@
        (loop)]
       [(false? next)
        (dump-module-timestamps! timestamps)
-       (log-rjs-info "Compiling ES6 to ES5.")
-       (unless (string=? (js-target) "plain")
+       (unless (equal? (js-target) "plain")
+         (log-rjs-info "Compiling ES6 to ES5.")
          (es6->es5))
        (log-rjs-info "Finished.")])))
 
@@ -297,10 +297,16 @@
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (~a (find-executable-path "js-beautify"))))
-  (print js-str  out-p-in)
-  (close-output-port out-p-in)
+  (print js-str out-p-in)
+
   (control 'wait)
-  (port->string in-p-out))
+  (define result (port->string in-p-out))
+
+  (close-output-port out-p-in)
+  (close-input-port in-p-out)
+  (close-input-port in-p-err)
+
+  result)
 
 (define (parse-command-line)
   (command-line

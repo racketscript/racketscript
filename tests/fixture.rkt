@@ -79,6 +79,7 @@
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
 ;; stdout and stderr produced
+;; TODO: Handle error if we are unable to start process.
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (nodejs-executable-path)
@@ -86,8 +87,15 @@
                                       (string->path fpath)
                                       (build-path (current-directory) fpath)))))
   (control 'wait)
-  (list (port->string in-p-out)
-        (port->string in-p-err)))
+  (define result (list (port->string in-p-out)
+                       (port->string in-p-err)))
+
+  (close-output-port out-p-in)
+  (close-input-port in-p-out)
+  (close-input-port in-p-err)
+
+  result)
+
 
 ;; String String -> Boolean
 ;; Compare the outputs produced
@@ -153,9 +161,7 @@
   (skip-npm-install #t)
 
   (when (clean-output-before-test)
-    (delete-directory/files (output-directory)))
-
-  (prepare-build-directory ""))
+    (delete-directory/files (output-directory))))
 
 ;; (Listof Glob-Pattern) -> Void
 ;; If tc-search-patterns is simply a path to directory, run all test
