@@ -1,4 +1,4 @@
-export { hamt } from '../third-party/hamt.js';
+export { hamt } from './hamt.js';
 
 /* --------------------------------------------------------------------------*/
 /* Other Helpers */

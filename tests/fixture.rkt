@@ -18,6 +18,11 @@
 ;; tests.
 (define clean-output-before-test (make-parameter #f))
 
+;; Find path to NodeJS excecutable.
+(define nodejs-executable-path (make-parameter (or (find-executable-path "node")
+                                                   (find-executable-path "nodejs")
+                                                   (error "NodeJS executable not found in PATH!"))))
+
 ;; Turning if false would ignore all standard output
 ;; produced by compiler
 (define racketscript-stdout? (make-parameter #f))
@@ -74,15 +79,23 @@
 ;; Path-String -> (list String String)
 ;; Runs module in file fpath in Racket interpreter and return
 ;; stdout and stderr produced
+;; TODO: Handle error if we are unable to start process.
 (define (run-in-nodejs fpath)
   (match-define (list in-p-out out-p-in pid in-p-err control)
-    (process* (build-path (output-directory) "node_modules" ".bin" "traceur")
+    (process* (nodejs-executable-path)
               (module-output-file (if (absolute-path? fpath)
                                       (string->path fpath)
                                       (build-path (current-directory) fpath)))))
   (control 'wait)
-  (list (port->string in-p-out)
-        (port->string in-p-err)))
+  (define result (list (port->string in-p-out)
+                       (port->string in-p-err)))
+
+  (close-output-port out-p-in)
+  (close-input-port in-p-out)
+  (close-input-port in-p-err)
+
+  result)
+
 
 ;; String String -> Boolean
 ;; Compare the outputs produced
@@ -144,14 +157,11 @@
 ;; 2. Always skip-npm-install to save time
 ;; [3. Always remove old compiled module outputs)]
 (define (setup)
-  (when (clean-output-before-test)
-    (delete-directory/files (output-directory)))
+  (skip-gulp-build #t)
+  (skip-npm-install #t)
 
-  (prepare-build-directory "") ;; We don't care about bootstrap file
-  (unless (skip-npm-install)
-    (parameterize ([current-directory (output-directory)])
-      (system "npm install")
-      (skip-npm-install #t))))
+  (when (clean-output-before-test)
+    (delete-directory/files (output-directory))))
 
 ;; (Listof Glob-Pattern) -> Void
 ;; If tc-search-patterns is simply a path to directory, run all test
@@ -205,8 +215,7 @@
      (λ (test-thunk)
        (with-handlers ([exn:test:check? (λ (e)
                                           (displayln* "✘")
-                                          ((current-check-handler) e)
-                                          #f)])
+                                          ((current-check-handler) e))])
          (test-thunk)
          (displayln* "✔")))))
 
@@ -218,12 +227,7 @@
     (flush-output)
 
     (parameterize ([current-test-name test])
-      (check-racketscript test))
-
-    ;; Disable Gulp build as soon as we have run it once, as all we
-    ;; need is HAMT built in runtime.1
-    (unless (skip-gulp-build)
-      (skip-gulp-build #t)))
+      (check-racketscript test)))
 
   (unless (empty? failed-tests)
     (displayln (format "\nFailed tests (~a/~a) => "
@@ -275,7 +279,6 @@
     (displayln "-------------------------------")
     (run-tests tc-search-patterns)))
 
-(skip-npm-install #f) ;; For setup we need to install packages
 (module+ main
   ;; For setup we keep this on by default, and later turned off
 
@@ -288,8 +291,6 @@
       (clean-output-before-test #t)]
      [("-o" "--compiler-out") "Show RacketScript output"
       (racketscript-stdout? #t)]
-     [("-n" "--skip-npm") "Skip NPM install on setup"
-      (skip-npm-install #t)]
      [("-v" "--verbose") "Show exceptions when running tests."
       (racketscript-stdout? #t)
       (verbose? #t)]

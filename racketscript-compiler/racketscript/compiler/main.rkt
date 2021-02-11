@@ -54,15 +54,14 @@
 (define *browser-index-file* "index.html")
 
 ;; Compiler for ES6 to ES5 compilation.
+;; - "plain"
 ;; - "babel"
-;; - "traceur"
 ;; - "webpack" ;;TODO
-(define *targets* (list "traceur"
-                        "traceur-browser"
+(define *targets* (list "plain"
                         "babel"
                         "babel-webpack"
                         "closure-compiler"))
-(define js-target (make-parameter "traceur"))
+(define js-target (make-parameter "plain"))
 
 ;; Path-String -> Path
 ;; Return path of support file named f
@@ -139,17 +138,6 @@
   (copy-directory (build-path racketscript-dir "compiler" "runtime")
                   (output-directory)))
 
-;; -> Void
-(define (copy-support-files)
-  (match (js-target)
-    ["traceur"
-     (copy-file+ (support-file *js-bootstrap-file*)
-                 (output-directory))]
-    ["traceur-browser"
-     (copy-file+ (support-file *browser-index-file*)
-                 (output-directory))]
-    [_ (void)]))
-
 ;; String -> Void
 ;; Create output build directory tree with all NPM, Gulp. Runtime and
 ;; other support files
@@ -167,8 +155,7 @@
     (make-directory* (build-path dir "modules")))
 
   (copy-build-files default-module-name)
-  (copy-runtime-files)
-  (copy-support-files))
+  (copy-runtime-files))
 
 ;; -> Void
 ;; Install and build dependenciese to translate ES5 to ES5
@@ -301,18 +288,25 @@
        (loop)]
       [(false? next)
        (dump-module-timestamps! timestamps)
-       (log-rjs-info "Compiling ES6 to ES5.")
-       (es6->es5)
+       (unless (equal? (js-target) "plain")
+         (log-rjs-info "Compiling ES6 to ES5.")
+         (es6->es5))
        (log-rjs-info "Finished.")])))
 
 ;; String -> String
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (~a (find-executable-path "js-beautify"))))
-  (print js-str  out-p-in)
-  (close-output-port out-p-in)
+  (print js-str out-p-in)
+
   (control 'wait)
-  (port->string in-p-out))
+  (define result (port->string in-p-out))
+
+  (close-output-port out-p-in)
+  (close-input-port in-p-out)
+  (close-input-port in-p-err)
+
+  result)
 
 (define (parse-command-line)
   (command-line
@@ -334,7 +328,7 @@
    ["--lift-returns" "Translate self tail calls to loops"
     (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
    #:multi
-   [("-t" "--target") target "ES6 to ES5 compiler [traceur|babel|traceur-browser|closure-compiler|babel-webpack]"
+   [("-t" "--target") target "ES6 to ES5 compiler [plain|babel|closure-compiler|babel-webpack]"
     (if (member target *targets*)
         (js-target target)
         (error "`~a` is not a supported target."))]

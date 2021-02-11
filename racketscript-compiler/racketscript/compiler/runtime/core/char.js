@@ -257,7 +257,7 @@ export function downcase(c) {
 }
 
 // Unicode property testing regexps.
-// We use `new RegExp` because traceur crashes on `/u` RegExp literals.
+// TODO (Deprecated): We use `new RegExp` because traceur crashes on `/u` RegExp literals.
 const IS_ALPHABETIC = new RegExp('\\p{Alphabetic}', 'u');
 const IS_LOWER_CASE = new RegExp('\\p{Lowercase}', 'u');
 const IS_UPPER_CASE = new RegExp('\\p{Uppercase}', 'u');

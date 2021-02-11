@@ -4,13 +4,7 @@ var closureCompiler = require('google-closure-compiler').gulp();
 
 const target = "~a" + ".rkt.js";
 
-gulp.task('copy-hamt', function() {
-    return gulp.src('node_modules/hamt_plus/hamt.js')
-        .pipe(replace(/\/\* Export(.*\n)*/m, "\nexport {hamt}"))
-	.pipe(gulp.dest("runtime/third-party/"));
-});
-
-gulp.task('build', gulp.series('copy-hamt', function() {
+gulp.task('build',  function() {
     return gulp.src(['./**/*.js',
 		     '!./node_modules/**',
 		     '!./dist/**',
@@ -24,8 +18,6 @@ gulp.task('build', gulp.series('copy-hamt', function() {
             js_output_file: 'compiled.js'
         }))
         .pipe(gulp.dest('dist'));
-}));
+});
 
 gulp.task('default', gulp.series('build', function () {}));
-
-

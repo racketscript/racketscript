@@ -1,16 +1,14 @@
 # RacketScript
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING.md)
-[![Build Status](https://travis-ci.org/vishesh/racketscript.svg?branch=master)](https://travis-ci.org/vishesh/racketscript)
+[![Build Status](https://travis-ci.com/vishesh/racketscript.svg?branch=master)](https://travis-ci.org/vishesh/racketscript)
 [![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
 [![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://rapture.twistedplane.com:8080)
 
-RacketScript is an **experimental** lightweight Racket to JavaScript
-compiler. The generated code is ES6, which can be translated to ES5
-using [Babel](https://babeljs.io/)
-or [Traceur](https://github.com/google/traceur-compiler). RacketScript
-aims to leverage both JavaScript and Racket's ecosystem, and make
-interoperability between them clean and smooth.
+RacketScript is an **experimental** lightweight Racket to JavaScript compiler.
+The generated code is ES6, which can be translated to ES5 using
+[Babel](https://babeljs.io/). RacketScript aims to leverage both JavaScript and
+Racket's ecosystem, and make interoperability between them clean and smooth.
 
 RacketScript takes in Racket source files, uses Racket's macro
 expander to
@@ -75,21 +73,10 @@ Once RacketScript is cloned in your machine -
 2. Execute `make setup` to install RacketScript compiler and all its
    dependencies.
 
-Although not required, it is strongly recommeded that you install
-Traceur, and Gulp as global packages.
-
-```sh
-npm install -g traceur gulp
-```
-
 If you do not wish to pollute your root NPM directory, you can set a
 custom global location by changing your `npmrc` (eg.  `echo "prefix =
 $HOME/.npm-packages" >> ~/.npmrc`. Then add `/prefix/path/above/bin`
 to your `PATH`.
-
-RacketScript will generate Gulpfiles to compile ES6 to ES5 using
-Traceur or Babel.  If you wish to run ES6 modules directly, install
-Traceur using NPM. Babel is recommended for writing NodeJS programs.
 
 ## Basic Usage
 
@@ -137,9 +124,7 @@ racks -d /path/to/output/dir /path/to/source.rkt
 # Print JavaScript output to stdout
 racks --js --js-beautify /path/to/source.rkt
 
-# By default RacketScript uses Traceur. Run `js-build/bootstrap.js`
-# to execute the compiled JavaScript program.
-node js-build/bootstrap.js
+node js-build/modules/source.rkt.js
 ```
 		
 By default tail call optimization is turned off. To enable translation
@@ -148,32 +133,6 @@ of self recursive tail calls to loop, pass `--enable-self-tail` flag.
 ```sh
 racks --enable-self-tail /path/to/source.rkt
 ```
-
-### Traceur
-
-By default RacketScript will use Traceur and produce
-`dist/compiled.js`. To execute inside NodeJS, execute `bootstrap.js`
-in output directory. For running in browser, either use
-`traceur-browser` target, or include the Traceur runtime along with
-`dist/compiled.js`.
-
-```sh
-# Use `--target` or `-t` flag.
-
-# For command line. You can ignore this flag.
-racks --target traceur /path/to/source.rkt
-
-# To run the compiled JavaScript program.
-node js-build/bootstrap.js
-
-# For targeting browser.
-racks --target traceur-browser /path/to/source.rkt
-```
-
-A more robust (and less portable) way, is to run the ES6 modules
-generated in `modules` directly from Traceur. Goto `modules` output
-directory and execute `$ traceur /path/to/source.js`.
-
 ### Babel
 
 RacketScript could also use `Babel`. It will compile each assembled ES6
