@@ -43,7 +43,9 @@
          check/not
          check/pair-of?
          define-checked
-         define-checked+provide)
+         define-checked+provide
+         define-nyi
+         define-nyi+provide)
 
 ;; ----------------------------------------------------------------------------
 
@@ -277,3 +279,13 @@
     [(_ (name:id e ...) body ...)
      #`(begin (define-checked (name e ...) body ...)
               (provide name))]))
+
+
+(define-syntax (define-nyi stx)
+  (syntax-parse stx
+    [(_ n:id)
+     #'(define name (lambda _ (throw (#js.Core.racketCoreError 'name " is not yet implemented"))))]))
+
+
+(define-syntax-rule (define-nyi+provide id)
+  (begin (define-nyi id) (provide id)))

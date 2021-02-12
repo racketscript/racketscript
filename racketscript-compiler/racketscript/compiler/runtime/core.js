@@ -19,6 +19,8 @@ import * as Vector from './core/vector.js';
 import * as Marks from './core/marks.js';
 import * as MPair from './core/mpair.js';
 import * as Correlated from './core/correlated.js';
+import * as Linklet from './core/linklet.js';
+import * as Path from './core/path.js';
 
 
 export {
@@ -38,7 +40,10 @@ export {
     Ports,
     UString,
     Regexp,
-    MPair
+    MPair,
+    Correlated,
+    Linklet,
+    Path
 };
 
 export {

@@ -35,14 +35,17 @@
     [(false? (should-rename? ss)) ss]
     [(reserved-keyword? s)
      (~a "r" ss)]
-   [else
+    [else
+     
      (match-define (cons ch-first ch-rest) (string->list ss))
-     (string-append
-      (normalize-symbol-atom ch-first #t ignores)
       (apply string-append
-             (map (λ ([ch : Char])
-                    (normalize-symbol-atom ch #f ignores))
-                  ch-rest)))]))
+             (cons (normalize-symbol-atom ch-first #t ignores)
+                   (let loop : (Listof String) ([ss : (Listof Char) ch-rest])
+                        (match ss
+                          [(list) null]
+                          [(list* "-" ">" rst) (cons "_to_" (loop rst))]
+                          [(list* c rst) (cons (normalize-symbol-atom c #f ignores) (loop rst))]))))]))
+
 (module+ test
   (check-equal? (normalize-symbol '7am) "_7am")
   (check-equal? (normalize-symbol 'foobar) "foobar")

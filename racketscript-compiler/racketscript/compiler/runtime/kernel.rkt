@@ -1240,8 +1240,11 @@
 
 (define+provide (prefab-struct-key v) #f)
 
-(define+provide (path? v) #f)
+(define+provide path? #js.Core.Path.check)
 
+(define+provide (version) "99.0") ;; fake
+
+(define+provide string->path #js.Core.Path.from_string)
 
 ;; --------------------------------------------------------------------------
 
