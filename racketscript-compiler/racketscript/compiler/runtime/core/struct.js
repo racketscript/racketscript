@@ -152,7 +152,7 @@ class Struct extends PrintablePrimitive {
         const p = this._desc._options.props.get(propEqualHash);
         if (p !== undefined) {
             const eqhashfn = p.car();
-            return eqhashfn(this, v, null); // TODO: prop:equal+hash rec arg?
+            return eqhashfn(this, v, function(a,b) { return a.equals(b); }); // TODO: handle cycles
         }
 
         if (this._desc._options.inspector) {

@@ -18,6 +18,7 @@ import * as Values from './core/values.js';
 import * as Vector from './core/vector.js';
 import * as Marks from './core/marks.js';
 import * as MPair from './core/mpair.js';
+import * as Correlated from './core/correlated.js';
 
 
 export {

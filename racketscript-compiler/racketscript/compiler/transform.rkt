@@ -533,13 +533,19 @@
         ;; Probably a macro-introduced binding.
         ;; TODO: If its unimplemented primitive, we reach here. For
         ;;   primitive modules, filter unimplemented bindings.
-        (define mod-obj-name (hash-ref (module-object-name-map) src))
+        (define mod-obj-name (hash-ref (module-object-name-map) src
+                                       (lambda ()
+                                         (log-rjs-warning "missing unreachable binding ~s ~s" id* src)
+                                         src)))
         (values '()
                 (ILRef (ILRef (assert mod-obj-name symbol?)
                               *quoted-binding-ident-name*)
                        id*))]
        [else
-        (define mod-obj-name (hash-ref (module-object-name-map) src))
+        (define mod-obj-name (hash-ref (module-object-name-map) src
+                                       (lambda ()
+                                         (log-rjs-warning "missing reachable binding ~s ~s" id* src)
+                                         src)))
         (values '() (ILRef (assert mod-obj-name symbol?) id*))])]
 
     [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))

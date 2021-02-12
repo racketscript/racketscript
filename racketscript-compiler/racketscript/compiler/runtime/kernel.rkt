@@ -43,7 +43,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Void
 
-(define+provide (void) *null*)
+(define+provide (void . _) *null*)
 
 (define+provide (void? v)
   (or (binop === v *null*) (binop === v *undefined*)))
@@ -921,6 +921,21 @@
 (define+provide (set-box! b v)
   (#js.b.set v))
 
+(define+provide box? #js.Core.Box.check)
+
+;; FIXME below here
+(define+provide (box-cas! loc old new)
+  ;; doesn't handle threads
+  (and (eq? old (unbox loc)) (set-box! loc new) #t))
+
+(define+provide box-immutable #js.Core.Box.make)
+
+(define+provide make-weak-box #js.Core.Box.make)
+(define+provide (weak-box-value v) (#js.v.get))
+
+(define+provide (set-box*! b v) (#js.b.set v))
+(define+provide (unbox* v) (#js.v.get))
+
 ;; --------------------------------------------------------------------------
 ;; Properties
 
@@ -982,6 +997,9 @@
 
 (define-checked+provide (bytes>? [bstr1 bytes?] [bstr2 bytes?])
   (#js.Core.Bytes.gt bstr1 bstr2))
+
+(define-checked+provide (bytes-length [bs bytes?])
+  #js.bs.length)
 
 ;; --------------------------------------------------------------------------
 ;; Continuation Marks
@@ -1084,6 +1102,8 @@
 ;; Not implemented/Unorganized/Dummies
 
 (define+provide current-inspector (v-λ () #:unchecked #t))
+(define+provide current-code-inspector (v-λ () #:unchecked #t))
+(define+provide (make-inspector . _) #f)
 (define+provide (check-method) #f)
 
 (define+provide random #js.Kernel.random)
@@ -1196,8 +1216,6 @@
 
 (define+provide (eval-jit-enabled) #f)
 
-(define+provide (variable-reference-constant? x) #f)
-
 (define+provide (inspector? p)
   #t)
 
@@ -1218,3 +1236,11 @@
 (define+provide (current-environment-variables) null)
 (define+provide (environment-variables-ref e n) #f)
 (define+provide (environment-variables-set! e n v [fail #f]) (void))
+
+(define+provide (prefab-struct-key v) #f)
+
+(define+provide (path? v) #f)
+
+
+;; --------------------------------------------------------------------------
+

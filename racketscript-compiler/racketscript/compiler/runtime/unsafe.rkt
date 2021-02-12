@@ -133,6 +133,12 @@
 (define+provide unsafe-undefined #js.Core.the_unsafe_undefined)
 
 ;; stubs
-(define+provide (unsafe-make-place-local v) v)
+(define+provide unsafe-make-place-local #js.Core.Box.make)
+(define+provide (unsafe-place-local-set! b v) (#js.b.set v))
+(define+provide (unsafe-place-local-ref b) (#js.b.get))
 
 (define+provide (variable-reference-from-unsafe? v) #f)
+
+(define+provide (unsafe-root-continuation-prompt-tag)
+  (#js.Core.Marks.defaultContinuationPromptTag))
+

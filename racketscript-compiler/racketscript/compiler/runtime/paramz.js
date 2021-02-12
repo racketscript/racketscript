@@ -26,6 +26,7 @@ const Box = Core.Box;
 // ffi's "=>$" form.
 
 export const ParameterizationKey = {}; /* a unique reference that can act as key */
+export const BreakEnabledKey = {}; /* a unique reference that can act as key */
 export const ExceptionHandlerKey = {}; /* a unique reference that can act as key */
 let __top;
 

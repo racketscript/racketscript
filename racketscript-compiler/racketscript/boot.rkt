@@ -16,6 +16,8 @@
              for-syntax
              for-template
              rename-out
+             only-in all-from-out
+             prefix-in
 
              begin-for-syntax
              quote
