@@ -216,6 +216,8 @@ class StructTypeDescriptor extends PrintablePrimitive {
         // struct are not added here and will have to be followed.
         const props = options.props && Pair.listToArray(options.props);
         this._options.props = new Map();
+	console.log(options);
+	console.log(props);
         if (props) {
             // TODO: If prop is already added, then check associated
             // values with eq?, else raise contract-errorx
