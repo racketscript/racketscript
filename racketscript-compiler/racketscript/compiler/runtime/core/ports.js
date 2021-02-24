@@ -12,6 +12,19 @@ class Port extends PrintablePrimitive {
     }
 }
 
+
+/** @abstract */
+class InputPort extends PrintablePrimitive {
+
+    isInputPort() {
+        return true;
+    }
+
+    constructor() {
+	super();
+    }
+}
+
 /**
  * @abstract
  * @api private
@@ -82,6 +95,7 @@ class NewlineFlushingOutputPort extends OutputPort {
 }
 
 export const standardOutputPort = new NewlineFlushingOutputPort(str => console.log(str), 'stdout');
+export const standardInputPort = new InputPort();
 export const standardErrorPort = new NewlineFlushingOutputPort(str => console.log(str), 'stderr');
 
 /**

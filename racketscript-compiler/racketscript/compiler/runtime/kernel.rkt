@@ -1045,6 +1045,9 @@
 (define+provide current-output-port
   (make-parameter #js.Core.Ports.standardOutputPort))
 
+(define+provide current-input-port
+  (make-parameter #js.Core.Ports.standardInputPort))
+
 (define+provide current-error-port
   (make-parameter #js.Core.Ports.standardErrorPort))
 
@@ -1224,10 +1227,14 @@
 
 (define __count 1000)
 
-(define+provide system-type
-  (v-λ (system-type mod) #:unchecked
-    'javascript))
-
+(define+provide (system-type mode)
+  (case mode
+    [(os) 'unix]
+    [(vm) 'javascript]
+    [(gc) 'javascript]
+    [(fs-change) (#js.Core.Vector.make (array #false #false #false #false) #false)]
+    [else #false])
+  )
 ;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
@@ -1248,3 +1255,7 @@
 
 ;; --------------------------------------------------------------------------
 
+(define+provide (dynamic-wind f g h)
+  (f) (g) (h))
+
+(define+provide (datum-intern-literal v) v)

@@ -35,5 +35,6 @@
           instance-variable-value
           instance-data
           instance-name
-          linklet-virtual-machine-bytes))
+          linklet-virtual-machine-bytes
+          primitive-table))
   
