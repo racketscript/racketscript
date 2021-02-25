@@ -1,10 +1,10 @@
-#lang typed/racket
+#lang typed/racket/base
 
 (provide define-language)
 
 (require racket/struct
-         (for-syntax syntax/parse
-                     syntax/parse/experimental/template
+         (for-syntax racket/base
+                     syntax/parse
                      racket/syntax
                      syntax/stx))
 

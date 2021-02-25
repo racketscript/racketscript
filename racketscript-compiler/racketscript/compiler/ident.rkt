@@ -8,9 +8,6 @@
          typed/rackunit
          "config.rkt")
 
-(require/typed racket/string
-  [string-prefix? (-> String String Boolean)])
-
 (provide fresh-id
          fresh-id-counter
          reserved-keyword?

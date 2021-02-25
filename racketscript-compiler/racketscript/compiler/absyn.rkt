@@ -13,6 +13,11 @@
                  [forms   : (Listof ModuleLevelForm)])
   #:transparent)
 
+(struct Linklet ([imports : (Listof (Listof Symbol))]
+                 [exports : (Listof Symbol)]
+                 [forms : (Listof GeneralTopLevelForm)])
+  #:transparent)
+
 (define-language Absyn
   #:alias
   [Program      TopLevelForm]
@@ -24,6 +29,7 @@
   [TopLevelForm             GeneralTopLevelForm
                             Expr
                             Module
+                            Linklet
                             Begin]
 
   [GeneralTopLevelForm      Expr
@@ -84,7 +90,9 @@
 
   [Ident  (LocalIdent         [id : Symbol])
           (ImportedIdent      [id : Symbol] [src-mod : Module-Path] [reachable? : Boolean])
-          (TopLevelIdent      [id : Symbol])]
+          (TopLevelIdent      [id : Symbol])
+          (PrimitiveIdent     [id : Symbol])
+          (LinkletImportIdent [id : Symbol] [position : Integer])]
 
   [Begin   (Listof TopLevelForm)]
 
