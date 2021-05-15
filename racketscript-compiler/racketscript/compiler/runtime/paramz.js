@@ -1,11 +1,5 @@
-import * as Core from './core.js';
+import { Marks, Box } from './core.js';
 import { hamt } from './core/lib.js';
-
-/* --------------------------------------------------------------------------*/
-// All exports go in exports
-
-const Marks = Core.Marks;
-const Box = Core.Box;
 
 /* --------------------------------------------------------------------------*/
 // Parameterization data structure is a HAMT Map keyed by parameter

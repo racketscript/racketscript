@@ -1,10 +1,10 @@
+import { TextEncoder } from 'util';
 import { Primitive } from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Char from './char.js';
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { internedMake } from './lib.js';
 import { hashIntArray } from './raw_hashing.js';
-import { TextEncoder } from 'util';
 
 /**
  * A sequence of {Char.Char}s.
@@ -228,21 +228,20 @@ export class UString extends Primitive /* implements Printable */ {
      * @return {!boolean}
      */
     isValidInteger(radix) {
-        const chars = this.chars;
-        const startFrom = chars[0].codepoint === /* '-' */ 45 ? 1 : 0;
+        const startFrom = this.chars[0].codepoint === /* '-' */ 45 ? 1 : 0;
         if (radix > 10) {
             const maxLowercase = /* 'a' - 11 */ 86 + radix;
             const maxUppercase = maxLowercase - 32;
-            for (let i = startFrom; i < chars.length; ++i) {
-                let cp = chars[i].codepoint;
+            for (let i = startFrom; i < this.chars.length; ++i) {
+                const cp = this.chars[i].codepoint;
                 if (cp < /* '0' */ 48 || cp > maxLowercase ||
                     cp > maxUppercase && cp < /* 'a' */ 97 ||
                     cp > /* '9' */ 57 && cp < /* 'A' */ 65) return false;
             }
         } else {
             const max = /* '0' - 1 */ 47 + radix;
-            for (let i = startFrom; i < chars.length; ++i) {
-                let cp = chars[i].codepoint;
+            for (let i = startFrom; i < this.chars.length; ++i) {
+                const cp = this.chars[i].codepoint;
                 if (cp < /* '0' */ 48 || cp > max) return false;
             }
         }

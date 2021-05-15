@@ -13,11 +13,12 @@ export function falsy(val, exp, msg = '') {
     return truthy(val === false, exp, msg);
 }
 
-export function type(val, type, msg = '') {
-    if (val instanceof type) {
+// TODO: rename the function
+export function type(val, typeParam, msg = '') {
+    if (val instanceof typeParam) {
         return true;
     }
-    raise(TypeError, `${msg}(${val} : ${typeof (val)} != ${type.name})`);
+    raise(TypeError, `${msg}(${val} : ${typeof (val)} != ${typeParam.name})`);
 }
 
 export function eq(val1, val2, exp, msg) {

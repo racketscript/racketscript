@@ -5,8 +5,6 @@ import * as Pair from './pair.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 import { displayNativeString, writeNativeString, printNativeString } from './print_native_string.js';
 import { isEqual } from './equality.js';
-import { hashArray } from './raw_hashing.js';
-import { hashForEqual } from './hashing.js';
 import * as Values from './values.js';
 
 // This module implements Racket structs via three classes which
@@ -58,7 +56,7 @@ class Struct extends PrintablePrimitive {
               this._desc._options.name;
         if (guardLambda) {
             const guardFields = fields.concat(finalCallerName);
-            let new_fields = guardLambda(...guardFields);
+            const new_fields = guardLambda(...guardFields);
             if (Values.check(new_fields)) {
                 fields = new_fields.getAll();
             } else {
@@ -79,8 +77,8 @@ class Struct extends PrintablePrimitive {
         }
 
         // Auto fields
-        const autoV = this._desc._options.autoV; /* Initial value for auto fields */
-        for (let i = 0; i < this._desc._options.autoFieldCount; i++) {
+        const { autoV, autoFieldCount } = this._desc._options; /* Initial value for auto fields */
+        for (let i = 0; i < autoFieldCount; i++) {
             this._fields.push(autoV);
         }
     }
@@ -149,10 +147,11 @@ class Struct extends PrintablePrimitive {
         }
 
         // check for prop:equal+hash must come before transparent check
+        // eslint-disable-next-line no-use-before-define
         const p = this._desc._options.props.get(propEqualHash);
         if (p !== undefined) {
             const eqhashfn = p.car();
-            return eqhashfn(this, v, function(a,b) { return a.equals(b); }); // TODO: handle cycles
+            return eqhashfn(this, v, (a, b) => a.equals(b)); // TODO: handle cycles
         }
 
         if (this._desc._options.inspector) {
@@ -223,6 +222,7 @@ class StructTypeDescriptor extends PrintablePrimitive {
                 prop.hd.attachToStructTypeDescriptor(this, prop.tl);
             }
         }
+        // eslint-disable-next-line no-use-before-define
         this._propProcedure = this._findProperty(propProcedure);
 
         // Value for auto fields
@@ -295,7 +295,6 @@ class StructTypeDescriptor extends PrintablePrimitive {
     }
 
     maybeStructObject(s) {
-        let structObject;
         if (s instanceof Struct) {
             return s;
         } else if (s instanceof Function &&
@@ -438,10 +437,11 @@ class StructTypeProperty extends PrintablePrimitive {
 
     getPropertyPredicate() {
         return (v) => {
+            let desc;
             if (v instanceof StructTypeDescriptor) {
-                var desc = v;
+                desc = v;
             } else if (v instanceof Struct) {
-                var desc = v._desc;
+                desc = v._desc;
             } else {
                 return false;
             }
@@ -452,10 +452,11 @@ class StructTypeProperty extends PrintablePrimitive {
 
     getPropertyAccessor() {
         return (v) => { /* property acccessor */
+            let desc;
             if (v instanceof StructTypeDescriptor) {
-                var desc = v;
+                desc = v;
             } else if (v instanceof Struct) {
-                var desc = v._desc;
+                desc = v._desc;
             } else {
                 C.raise(racketCoreError, 'invalid argument to accessor');
             }
@@ -533,16 +534,19 @@ export function isStructInstance(v) {
 }
 
 export function check(v, desc) {
-    return isStructInstance(v) && v._desc == desc;
+    return isStructInstance(v) && v._desc === desc;
 }
 
 /** ************************************************************************** */
 // Properties
 
+// TODO: find out why changing let to const and moving them to the top breaks tests
+// eslint-disable-next-line import/no-mutable-exports
 export let propProcedure = makeStructTypeProperty({
     name: 'prop:procedure'
 }).getAt(0);
 
+// eslint-disable-next-line import/no-mutable-exports
 export let propEqualHash = makeStructTypeProperty({
     name: 'prop:equal+hash'
 }).getAt(0);

@@ -25,11 +25,11 @@ export function displayUString(out, v) {
     } else if (Bytes.check(v)) {
         out.consume(UString.makeMutable(Bytes.toString(v)));
     } else if (Procedure.check(v)) {
-	if (v.__rjs_struct_object) {
-	    v.__rjs_struct_object.displayUString(out);
-	} else {
+        if (v.__rjs_struct_object) {
+            v.__rjs_struct_object.displayUString(out);
+        } else {
             out.consume(UString.makeMutable(Procedure.toString(v)));
-	}
+        }
     } else /* if (typeof v === 'number' || typeof v === 'string') */ {
         out.consume(UString.makeMutable(v.toString()));
     }

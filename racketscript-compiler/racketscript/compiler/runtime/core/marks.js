@@ -120,7 +120,9 @@ export function updateFrame(newFrames, oldFrames) {
     if (__frames !== oldFrames) {
         throw new Error("current frame doesn't match with old frame");
     }
-    return __frames = newFrames;
+
+    __frames = newFrames;
+    return __frames;
 }
 
 export function enterFrame() {
@@ -184,7 +186,7 @@ export function getFirstMark(frames, key, noneV) {
 }
 
 export function wrapWithContext(fn) {
-    return (function (currentFrames) {
+    return (function () {
         const state = {};
         __async_callback_wrappers.forEach(w => w.onCreate(state));
         return function (...args) {

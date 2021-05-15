@@ -22,9 +22,8 @@ class Keyword extends PrintablePrimitive {
     lt(v) {
         if (v === this) {
             return false;
-        } else {
-            return this.v < v.v;
         }
+        return this.v < v.v;
     }
 }
 

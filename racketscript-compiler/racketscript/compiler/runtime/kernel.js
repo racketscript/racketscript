@@ -162,7 +162,7 @@ export function doraise(e) {
 //  (raise-argument-error name expected arg)
 //  (raise-argument-error name expected bad-pos arg ...)
 export function argerror(name, expected, ...rest) {
-    var theerr;
+    let theerr;
     if (Core.Symbol.check(name)
         && (Core.UString.check(expected) || typeof expected === 'string')
         && rest.length >= 1) {
@@ -183,7 +183,7 @@ export function argerror(name, expected, ...rest) {
 // analogous to Racket raise-arguments-error,
 // so rest must be at least 1 and must be odd bc each field must have matching v
 export function argserror(name, msg, field, ...rest) {
-    var theerr;
+    let theerr;
     if (Core.Symbol.check(name)
         && (Core.UString.check(msg) || typeof msg === 'string')
         && (Core.UString.check(field) || typeof field === 'string')
@@ -205,7 +205,7 @@ export function argserror(name, msg, field, ...rest) {
 // usage: raise-mismatch-error name, (~seq msg v ...) ...
 // so ...rst might have additional msg, v ...
 export function mismatcherror(name, msg, ...rest) {
-    var theerr;
+    let theerr;
     if (Core.Symbol.check(name)
         && (Core.UString.check(msg) || typeof msg === 'string')) {
         theerr = Core.makeMismatchError(name, msg, ...rest);
@@ -227,22 +227,25 @@ export function random(...args) {
             return Math.floor(Math.random() * args[0]);
         }
         error('random: argument should be positive');
+        break;
 
     case 2:
         if (args[0] > 0 && args[1] > args[0]) {
             return Math.floor(args[0] + Math.random() * (args[1] - args[0]));
         }
         error('random: invalid arguments');
+        break;
 
     default:
         error('random: invalid number of arguments');
+        break;
     }
 }
 
 // TODO: add optional equal? pred
 
 export function memv(v, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (Core.Pair.isEmpty(lst) === false) {
         if (Core.isEqv(v, lst.hd)) {
             return lst;
         }
@@ -253,7 +256,7 @@ export function memv(v, lst) {
 }
 
 export function memq(v, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (Core.Pair.isEmpty(lst) === false) {
         if (Core.isEq(v, lst.hd)) {
             return lst;
         }
@@ -264,7 +267,7 @@ export function memq(v, lst) {
 }
 
 export function memf(f, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (Core.Pair.isEmpty(lst) === false) {
         if (f(lst.hd)) {
             return lst;
         }
@@ -275,7 +278,7 @@ export function memf(f, lst) {
 }
 
 export function findf(f, lst) {
-    while (Core.Pair.isEmpty(lst) == false) {
+    while (Core.Pair.isEmpty(lst) === false) {
         if (f(lst.hd)) {
             return lst.hd;
         }
