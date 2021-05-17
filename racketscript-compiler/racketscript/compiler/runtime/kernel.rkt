@@ -1220,6 +1220,9 @@
 
 (define+provide (eval-jit-enabled) #f)
 
+(define+provide (variable-reference-constant? x) #f)
+(define+provide (variable-reference-from-unsafe? x) #f)
+
 (define+provide (inspector? p)
   #t)
 
