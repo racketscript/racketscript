@@ -1,9 +1,6 @@
 import { PrintablePrimitive } from './printable_primitive.js';
 import { isEqual } from './equality.js';
 import { hashForEqual } from './hashing.js';
-import { displayNativeString, writeNativeString } from './print_native_string.js';
-import { displayUString, writeUString } from './print_ustring.js';
-import * as UString from './unicode_string.js';
 
 class Correlated extends PrintablePrimitive {
     constructor(v) {
@@ -12,7 +9,7 @@ class Correlated extends PrintablePrimitive {
     }
 
     equals(v) {
-	return isEqual(v.value, this.value);
+        return isEqual(v.value, this.value);
     }
 
     get() { return this.value; }

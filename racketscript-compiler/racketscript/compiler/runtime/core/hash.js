@@ -81,9 +81,8 @@ class Hash extends PrintablePrimitive {
         const result = this._h.get(k);
         if (result !== undefined) {
             return result;
-        } else {
-            return typeof fail === 'function' ? fail() : fail;
         }
+        return typeof fail === 'function' ? fail() : fail;
     }
 
     hasKey(k) { return this._h.has(k); }
@@ -126,14 +125,14 @@ class Hash extends PrintablePrimitive {
 
     // iteration operations, eg hash-iterate-first/next
     iterateFirst() {
-        if (this._h.size == 0) return false;
+        if (this._h.size === 0) return false;
         // must save iterator since next() is stateful
         this._iterator = this._h.entries();
         return this._iterator.next();
     }
 
-    iterateNext(i) {
-        if (this._iterator == undefined) {
+    iterateNext() {
+        if (this._iterator === undefined) {
             return false;
         }
         const j = this._iterator.next();
@@ -274,6 +273,6 @@ export function isEqHash(h) {
     return check(h) && h._type === 'eq';
 }
 
-export function isWeakHash(h) {
+export function isWeakHash() {
     return false; // TODO: implement weak hashes
 }

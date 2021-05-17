@@ -15,13 +15,8 @@ class Port extends PrintablePrimitive {
 
 /** @abstract */
 class InputPort extends PrintablePrimitive {
-
     isInputPort() {
         return true;
-    }
-
-    constructor() {
-	super();
     }
 }
 

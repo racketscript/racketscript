@@ -1,7 +1,5 @@
-import * as Primitive from './primitive.js';
 import { displayNativeString, writeNativeString, printNativeString } from './print_native_string.js';
 import { displayUString, writeUString, printUString } from './print_ustring.js';
-import * as Ports from './ports.js';
 
 // TODO: All of these functions can be migrated to kernel.rkt after fprintf is.
 

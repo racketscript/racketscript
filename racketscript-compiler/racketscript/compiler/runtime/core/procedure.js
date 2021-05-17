@@ -34,9 +34,13 @@ export function check(v) {
  * @return {!String} A string representation similar to Racket's `display`.
  */
 export function toString(f) {
-    return f.__rjs_name ?
-        `#<procedure:${f.__rjs_name}>` :
-        (f.name ? `#<procedure:${f.name}>` : '#<procedure>');
+    const notRjsName = f.name
+        ? `#<procedure:${f.name}>`
+        : '#<procedure>';
+
+    return f.__rjs_name
+        ? `#<procedure:${f.__rjs_name}>`
+        : notRjsName;
 }
 
 /**

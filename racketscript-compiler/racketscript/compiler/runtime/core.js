@@ -92,10 +92,6 @@ export function bitwiseNot(a) {
 }
 
 class UnsafeUndefined extends PrintablePrimitive {
-    constructor () {
-        super();
-    }
-
     equals(v) {
         return (v === this);
     }
@@ -134,7 +130,7 @@ class UnsafeUndefined extends PrintablePrimitive {
     writeUString(out) {
         out.consume('#<unsafe-undefined>');
     }
-
 }
 
+// eslint-disable-next-line no-unused-vars
 const the_unsafe_undefined = new UnsafeUndefined();

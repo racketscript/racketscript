@@ -229,7 +229,7 @@ export function charUtf8Length(c) {
 }
 
 /**
-  * @param {!string} str 
+  * @param {!string} str
   * @return {!boolean}
  */
 function isSingleCodePoint(str) {

@@ -1,7 +1,7 @@
 import { PrintablePrimitive } from './printable_primitive.js';
 import { displayNativeString, writeNativeString } from './print_native_string.js';
 import { isEqual } from './equality.js';
-import { EMPTY, isEmpty, isList } from './pair.js';
+import { isEmpty, isList } from './pair.js';
 
 class MPair extends PrintablePrimitive {
     /** @private */

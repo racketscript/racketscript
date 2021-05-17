@@ -77,7 +77,7 @@ class Vector extends PrintablePrimitive {
         const items1 = this.items;
         const items2 = v.items;
 
-        if (items1.length != items2.length) {
+        if (items1.length !== items2.length) {
             return false;
         }
 
