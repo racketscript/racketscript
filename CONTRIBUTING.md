@@ -154,7 +154,7 @@ the information that you would otherwise provide in the issue ticket.
 - Make sure the test suite passes and your changes are covered. Note
   that for runtime changes it is not possible to get coverage report
   (see [Coverage](#coverage)). We use
-  [Travis](https://travis-ci.org/vishesh/racketscript) for continuous
+  [GH Actions](https://github.com/vishesh/racketscript/actions) for continuous
   integration.
 - Adhere to the [style guide](#style-guide) (you can use linters for
   JavaScript).

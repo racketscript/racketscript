@@ -1,0 +1,26 @@
+name: Racket CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false 
+      matrix:
+        racket-version: [ '6.9', '6.12', '7.0', '7.4', '7.5', '7.6', '7.7', '7.8', 'stable' ]
+    name: Racket ${{ matrix.racket-version }}
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Racket
+        uses: Bogdanp/setup-racket@v1.3.1
+        with:
+          architecture: 'x64'
+          version: ${{ matrix.racket-version }}
+      - run: raco pkg install --auto -t dir racketscript-compiler/
+      - run: make unit-test
+      - run: make integration-test
