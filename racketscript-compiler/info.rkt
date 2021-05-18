@@ -19,6 +19,7 @@
 
 (define pkg-authors '(vishesh))
 (define pkg-desc "Racket to JavaScript compiler")
+(define post-install-collection "")
 
 ;; Test configuration
 
