@@ -481,6 +481,8 @@
 (define+provide (hash-union h1 h2)
   (#js.h1.union h2))
 
+(define+provide (hash-strong? h) #t)
+
 ;; --------------------------------------------------------------------------
 ;; Higher Order Functions
 
