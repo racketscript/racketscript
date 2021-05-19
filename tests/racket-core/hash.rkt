@@ -593,7 +593,9 @@
 (err/rt-test (hash-set! (hash) 1 2) exn:fail:contract? "expected.*not.*immutable")
 (err/rt-test (hash-ref (hash) 1))
 (run-if-version "7.4.0.3" (err/rt-test (hash-ref-key (hash) 1)))
-(err/rt-test (hash-set (make-hash) 1 2))
+;; hash-set err changed to use and/c instead of and in 8.0
+(run-if-version "8.0" (err/rt-test (hash-set (make-hash) 1 2)))
+(err/rt-test (hash-set (make-hash) 1 2) exn:fail:contract? "expected.*immutable")
 (err/rt-test (hash-remove (make-hash) 1))
 (err/rt-test (hash-set! (hash) 1 2))
 (err/rt-test (hash-remove! (hash) 1))
@@ -601,6 +603,9 @@
 (run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hash) (hasheq))))
 (run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hasheqv) (hasheq))))
 (run-if-version "6.5.0.8" (err/rt-test (hash-keys-subset? (hasheq) (hasheqv))))
+
+(run-if-version "8.1" (hash-strong? (hash)))
+(run-if-version "8.1" (hash-strong? (make-hash)))
 
 ;; ----------------------------------------
 ;;
