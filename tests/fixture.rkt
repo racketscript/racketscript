@@ -163,9 +163,10 @@
   (when (clean-output-before-test)
     (delete-directory/files (output-directory))))
 
-;; (Listof Glob-Pattern) -> Void
+;; (Listof Glob-Pattern) -> Boolean
 ;; If tc-search-patterns is simply a path to directory, run all test
-;; cases in that directory otherwise use glob pattern
+;; cases in that directory otherwise use glob pattern. 
+;; Returns #t or #f depending on test results
 (define (run-tests tc-search-patterns)
   ;; First clean the compiled modules always, to avoid cases where
   ;; compilation fails but it anyway proceeds with last module output
@@ -239,11 +240,17 @@
   (unless (set-empty? skipped-tests)
     (displayln (format "\nSkipped tests [~a] => " (set-count skipped-tests)))
     (for ([t (sort (set->list skipped-tests) string<?)])
-      (displayln (format "  □ ~a" t)))))
+      (displayln (format "  □ ~a" t))))
+
+  (empty? failed-tests))
+  
 
 ;; Runs tests with each kind of option
 (define (run tc-search-patterns)
   (setup)
+  (define passed #t)
+  (define (set-passed! new-value)
+    (set! passed (and passed new-value)))
 
   (displayln "-> RacketScript Fixtures Runner <-\n")
   (when coverage-mode? (displayln "Running in coverage mode."))
@@ -253,9 +260,9 @@
       (displayln "---------------------------------")
       (displayln "::: Optimizations on ::: none :::")
       (displayln "---------------------------------")
-      (run-tests (filter-not
-                  (λ (s) (string-contains? s "optimize"))
-                  tc-search-patterns))))
+      (set-passed! (run-tests (filter-not
+                      (λ (s) (string-contains? s "optimize"))
+                      tc-search-patterns)))))
 
   ;; (displayln "")
   ;; (parameterize ([enabled-optimizations (set self-tail->loop)])
@@ -277,7 +284,9 @@
     (displayln "--------------------------------")
     (displayln "::: Optimizations on ::: All :::")
     (displayln "-------------------------------")
-    (run-tests tc-search-patterns)))
+    (set-passed! (run-tests tc-search-patterns)))
+
+  (unless passed (exit 1)))
 
 (module+ main
   ;; For setup we keep this on by default, and later turned off
