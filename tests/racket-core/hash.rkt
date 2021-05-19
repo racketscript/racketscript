@@ -595,7 +595,7 @@
 (run-if-version "7.4.0.3" (err/rt-test (hash-ref-key (hash) 1)))
 ;; hash-set err changed to use and/c instead of and in 8.0
 (run-if-version "8.0" (err/rt-test (hash-set (make-hash) 1 2)))
-(err/rt-test (hash-set (make-hash) 1 2) exn:fail:contract? "expected.*immutable")
+(err/rt-test (hash-set (make-hash) 1 2) exn:fail:contract? "hash\\? immutable")
 (err/rt-test (hash-remove (make-hash) 1))
 (err/rt-test (hash-set! (hash) 1 2))
 (err/rt-test (hash-remove! (hash) 1))
