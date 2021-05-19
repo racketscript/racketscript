@@ -418,7 +418,7 @@
   (if (#js.h.isImmutable)
       (#js.h.set k v)
       (raise (#js.Core.makeArgumentError
-              "hash-set" "(and hash? immutable?)" 0 h k v))))
+              "hash-set" "(and/c hash? immutable?)" 0 h k v))))
 
 (define+provide (hash-remove h k)
   (if (#js.h.isImmutable)
