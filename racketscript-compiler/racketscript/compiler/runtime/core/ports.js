@@ -89,8 +89,10 @@ class NewlineFlushingOutputPort extends OutputPort {
     }
 }
 
+// eslint-disable-next-line no-console
 export const standardOutputPort = new NewlineFlushingOutputPort(str => console.log(str), 'stdout');
 export const standardInputPort = new InputPort();
+// eslint-disable-next-line no-console
 export const standardErrorPort = new NewlineFlushingOutputPort(str => console.log(str), 'stderr');
 
 /**

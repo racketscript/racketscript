@@ -93,6 +93,7 @@ export function makeArgumentError(name, expected, ...rest) {
             stringOut.consume('\n');
             stringOut.consume('  other arguments...:');
             for (let i = 1; i < rest.length; i++) {
+                // eslint-disable-next-line no-continue
                 if (i === rest[0] + 1) { continue; }
                 stringOut.consume('\n   ');
                 printNativeString(stringOut, rest[i], true, 0);
