@@ -9,9 +9,8 @@
 .PHONY: build setup setup-extra clean
 .PHONY: test unit-test integration-test test
 .PHONY: coverage coverage-unit-test
-.PHONY: eslint eslint-fix jshint tscheck
+.PHONY: eslint eslint-fix
 
-TSC=node_modules/typescript/bin/tsc
 ESLINT=node_modules/eslint/bin/eslint.js
 
 ## Compile recipes
@@ -33,7 +32,7 @@ setup:
 		    raco pkg update --link racketscript-extras/
 
 setup-extra:
-	npm install -g js-beautify eslint jshint gulp
+	npm install -g js-beautify eslint gulp
 	raco pkg install --auto cover
 
 clean:
@@ -62,16 +61,6 @@ eslint: | node_modules
 
 eslint-fix: | node_modules
 	$(ESLINT) --fix ./racketscript-compiler/racketscript/compiler/runtime/
-
-jshint:
-	@echo "    RACKETSCRIPT RUNTIME LINT    "
-	@echo "++++++++++++++++++++++++++++"
-	jshint ./racketscript-compiler/racketscript/compiler/runtime/ || true
-
-# Typecheck JavaScript
-tscheck: node_modules
-	$(TSC) --noEmit --allowJs --checkJs --strict --lib es2017 --target es2017 \
-	racketscript-compiler/racketscript/compiler/runtime/kernel.js
 
 node_modules: package.json
 	npm install
