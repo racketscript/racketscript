@@ -1256,7 +1256,7 @@
 
 (define+provide (version) "99.0") ;; fake
 
-(define+provide string->path #js.Core.Path.from_string)
+(define+provide string->path #js.Core.Path.fromString)
 
 ;; --------------------------------------------------------------------------
 

@@ -9,7 +9,6 @@
         "import/extensions": ["error", "always"],
         "comma-dangle": ["error", "never"],
         "no-bitwise": 0,
-        "camelcase": 1,
         "no-underscore-dangle": 0,
         "import/prefer-default-export": 0,
         "no-param-reassign": 0,

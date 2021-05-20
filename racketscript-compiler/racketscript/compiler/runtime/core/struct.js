@@ -56,11 +56,11 @@ class Struct extends PrintablePrimitive {
               this._desc._options.name;
         if (guardLambda) {
             const guardFields = fields.concat(finalCallerName);
-            const new_fields = guardLambda(...guardFields);
-            if (Values.check(new_fields)) {
-                fields = new_fields.getAll();
+            const newFields = guardLambda(...guardFields);
+            if (Values.check(newFields)) {
+                fields = newFields.getAll();
             } else {
-                fields = [new_fields];
+                fields = [newFields];
             }
         }
 

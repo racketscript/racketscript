@@ -130,7 +130,7 @@
 (define+provide (unsafe-mutable-hash-iterate-pair h i)
   (#js.h.iteratePair i))
 
-(define+provide unsafe-undefined #js.Core.the_unsafe_undefined)
+(define+provide unsafe-undefined #js.Core.theUnsafeUndefined)
 
 ;; stubs
 (define+provide unsafe-make-place-local #js.Core.Box.make)

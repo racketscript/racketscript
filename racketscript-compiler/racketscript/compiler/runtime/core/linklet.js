@@ -13,7 +13,7 @@ class LinkletInstance extends PrintablePrimitive {
     }
 }
 
-export function make_instance(name, _data, _mode, ...args) {
+export function makeInstance(name, _data, _mode, ...args) {
     const m = new Map();
     const data = _data || false;
     const mode = _mode || false;
@@ -24,13 +24,13 @@ export function make_instance(name, _data, _mode, ...args) {
 }
 
 
-export function instance_name(i) { return i.name; }
-export function instance_data(i) { return i.data; }
-export function instance_variable_value(i, s) { return i.m.get(s); }
-export function instance_variable_names(i) { return i.keys(); }
-export function instance_set_variable_value(i, s, v) {
+export function instanceName(i) { return i.name; }
+export function instanceData(i) { return i.data; }
+export function instanceVariableValue(i, s) { return i.m.get(s); }
+export function instanceVariableNames(i) { return i.keys(); }
+export function instanceSetVariableValue(i, s, v) {
     return i.m.set(s, v);
 }
-export function instance_unset_variable(i, s) { return i.m.remove(s); }
-export function instance_describe_variable() { }
+export function instanceUnsetVariable(i, s) { return i.m.remove(s); }
+export function instanceDescribeVariable() { }
 

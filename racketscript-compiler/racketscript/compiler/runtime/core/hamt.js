@@ -198,7 +198,7 @@ const Leaf = function Leaf(edit, hash, key, value) {
         key,
         value,
         // eslint-disable-next-line no-use-before-define
-        _modify: Leaf__modify
+        _modify: LeafModify
     };
 };
 
@@ -216,7 +216,7 @@ const Collision = function Collision(edit, hash, children) {
         hash,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: Collision__modify
+        _modify: CollisionModify
     };
 };
 
@@ -236,7 +236,7 @@ const IndexedNode = function IndexedNode(edit, mask, children) {
         mask,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: IndexedNode__modify
+        _modify: IndexedNodeModify
     };
 };
 
@@ -254,7 +254,7 @@ const ArrayNode = function ArrayNode(edit, size, children) {
         size,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: ArrayNode__modify
+        _modify: ArrayNodeModify
     };
 };
 
@@ -371,7 +371,7 @@ const canEditNode = function canEditNode(edit, node) {
 
 /* Editing
  ***************************************************************************** */
-let Leaf__modify = function Leaf__modify(edit, keyEq, shift, f, h, k, size) {
+let LeafModify = function LeafModify(edit, keyEq, shift, f, h, k, size) {
     if (keyEq(k, this.key)) {
         const _v = f(this.value);
         if (_v === this.value) return this; else if (_v === nothing) {
@@ -390,7 +390,7 @@ let Leaf__modify = function Leaf__modify(edit, keyEq, shift, f, h, k, size) {
     return mergeLeaves(edit, shift, this.hash, this, h, Leaf(edit, h, k, v));
 };
 
-let Collision__modify = function Collision__modify(edit, keyEq, shift, f, h, k, size) {
+let CollisionModify = function CollisionModify(edit, keyEq, shift, f, h, k, size) {
     if (h === this.hash) {
         const canEdit = canEditNode(edit, this);
         const list = updateCollisionList(canEdit, edit, keyEq, this.hash, this.children, f, k, size);
@@ -404,7 +404,7 @@ let Collision__modify = function Collision__modify(edit, keyEq, shift, f, h, k, 
     return mergeLeaves(edit, shift, this.hash, this, h, Leaf(edit, h, k, v));
 };
 
-let IndexedNode__modify = function IndexedNode__modify(edit, keyEq, shift, f, h, k, size) {
+let IndexedNodeModify = function IndexedNodeModify(edit, keyEq, shift, f, h, k, size) {
     const { children, mask } = this;
     const frag = hashFragment(shift, h);
     const bit = toBitmap(frag);
@@ -444,7 +444,7 @@ let IndexedNode__modify = function IndexedNode__modify(edit, keyEq, shift, f, h,
     return IndexedNode(edit, bitmap, newChildren);
 };
 
-let ArrayNode__modify = function ArrayNode__modify(edit, keyEq, shift, f, h, k, size) {
+let ArrayNodeModify = function ArrayNodeModify(edit, keyEq, shift, f, h, k, size) {
     let count = this.size;
     const { children } = this;
     const frag = hashFragment(shift, h);
