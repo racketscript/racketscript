@@ -31,7 +31,9 @@
 ;; else return false.
 (define (links-module? mod-path)
   (define links-file (find-links-file))
-  (for/or ([link-path (links #:file links-file #:root? #t)])
+  (for*/or ([links-file (current-library-collection-links)]
+            #:when links-file
+            [link-path (links #:file links-file #:root? #t)])
     (and (subpath? link-path mod-path)
          (let-values ([(base link-name dir?) (split-path link-path)])
            (list (~a link-name) link-path)))))
