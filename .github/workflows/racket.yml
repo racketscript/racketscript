@@ -21,6 +21,8 @@ jobs:
             experimental: true
           - racket-version: '8.1'
             experimental: true
+          - racket-version: 'current'
+            experimental: true
     name: Racket ${{ matrix.racket-version }}
     steps:
       - uses: actions/checkout@master
