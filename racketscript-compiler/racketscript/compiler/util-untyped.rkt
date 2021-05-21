@@ -1,14 +1,15 @@
 #lang racket
 
-(require "logging.rkt")
-
 (provide links-module?
          improper->proper
          *jsident-pattern*
          js-identifier?)
 
+(require setup/link
+         setup/dirs
+         "logging.rkt")
 
-;; Path-String Path-String -> Boolean
+;; Path Path -> Boolean
 ;; Returns true if path has base as prefix
 (define (subpath? base path)
   (define base* (explode-path base))
@@ -20,12 +21,34 @@
                [p path*])
        (equal? b p))]))
 
-;; Module-Path -> (Maybe (list Symbol Path))
-;; Is mod-path belongs to a module listed in links file. If yes
-;; return the link name in links.rktd file and path to root of
-;; of that links module.
+;; Module-Path -> (Maybe (list String Path))
+;; If `mod-path` belongs to a module listed in (find-links-file),
+;; return a list containing:
+;; - the link name,
+;; - and path to root of the module
+;; e.g., '("racketscript-compiler"
+;;         #<path:/home/username/racketscript/racketscript-compiler>)
+;; else return false.
 (define (links-module? mod-path)
+;  (printf "links-module? mod-path: ~v\n" mod-path)
+  (define links-file (find-links-file))
+  (for/or ([link-path (links #:file links-file #:root? #t)])
+    ;; (printf "link: ~v\n" link)
+    ;; (define link-name
+    ;;   (~a (let-values ([(base last dir?) (split-path link-path)]) last)))
+    ;; (printf "link-name: ~v\n" link-name)
+    ;; (printf "link-path: ~v\n" link-path)
+    (and (subpath? link-path mod-path)
+#;         (printf "link result: ~v\n" 
+                   (list link-name link-path))
+         (let-values ([(base link-name dir?) (split-path link-path)])
+           (list (~a link-name) link-path)))))
+
+#;(define (links-module? mod-path)
+  (printf "links-module? mod-path: ~v\n" mod-path)
   (define (match-link? dir link)
+    (printf "match-link?: ~v\n" dir)
+    (printf "match-link?: ~v\n" link)
     (match link
       [(list 'root path) #:when (absolute-path? path)
        ;; Links.rktd may have point to root package which is not at current
@@ -34,6 +57,8 @@
        (subpath? (~a (simplify-path path))
                  (~a mod-path))]
       [(list name path)
+       (printf "match-link? link name: ~v\n" name)
+       (printf "match-link? link path: ~v\n" path)
        (subpath? (~a (simplify-path (build-path dir path)))
                  (~a mod-path))]
       [(list name path re) #f]))
@@ -42,6 +67,8 @@
   ;; Returns (list link-name pkg-root-dir)
   ;; WHERE: LinkEntry is  an entry in links.rktd file
   (define (link->result link-fpath link)
+    (printf "link->result: ~a\n" link-fpath)
+    (printf "link->result: ~a\n" link)
     ;; HACK: If the link path is relative path, then we pick
     ;; the last component
     (define (fix-relative-path p)
@@ -71,6 +98,7 @@
        (call-with-input-file link-fpath
          (λ (p-links-in)
            (let loop ([links (read p-links-in)])
+             (printf "links: ~v\n" links)
              (match links
                ['() #f]
                [(cons hd tl) (if (match-link? links-dir hd)
