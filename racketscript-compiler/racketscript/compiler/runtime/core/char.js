@@ -183,6 +183,12 @@ export function check(char) {
         char.constructor === Char;
 }
 
+// NOTE:
+//   "The Racket documentation only promises `eq?` for characters with
+//    scalar values in the range 0 to 255, but Chez Scheme characters
+//    are always `eq?` when they are `eqv?`."
+// see: https://groups.google.com/g/racket-users/c/LFFV-xNq1SU/m/s6eoC35qAgAJ
+//      https://docs.racket-lang.org/reference/characters.html
 /**
  * @param {!Char} a
  * @param {!Char} b

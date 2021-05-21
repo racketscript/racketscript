@@ -88,8 +88,17 @@
 (equal? (hash-ref (hash-set h1 p1 (list (posn 0 0) 'origin)) p1)
         (list (posn 0 0) 'origin))
 
-;; check eqv-ness
-;; hasheqv should return 1, hasheq should return 2
-(hash-ref (hasheq (integer->char 955) 1)
+;; check eq-ness
+;; hasheq should return 1
+;; Racket documentation promises `eq?` for characters with
+;; scalar values in the range 0 to 255
+(hash-ref (hasheq (integer->char 255) 1)
+          (integer->char 255)
+          2)
+;; for chars > 255, eq behavior is actually undefined??
+;; eg, the following test returns 2 for < racket 8, but 1 for racket 8+ (chez)
+;; so skip the test
+;; see: https://groups.google.com/g/racket-users/c/LFFV-xNq1SU/m/s6eoC35qAgAJ
+#;(hash-ref (hasheq (integer->char 955) 1)
           (integer->char 955)
           2)

@@ -89,7 +89,10 @@
         (list (posn 0 0) 'origin))
 
 ;; check eqv-ness
-;; hasheqv should return 1, hasheq should return 2
+;; hasheqv should return 1
+(hash-ref (hasheqv (integer->char 255) 1)
+          (integer->char 255)
+          2)
 (hash-ref (hasheqv (integer->char 955) 1)
           (integer->char 955)
           2)
