@@ -6,7 +6,7 @@ import { hashForEq as HASH } from './hashing.js';
 
 let __frames;
 const __prompts = new Map();
-const __async_callback_wrappers = [];
+const __asyncCallbackWrappers = [];
 const __defaultContinuationPromptTag
     = makeContinuationPromptTag(Symbol.make('default'));
 
@@ -19,7 +19,7 @@ export function init() {
 }
 
 export function registerAsynCallbackWrapper(w) {
-    __async_callback_wrappers.push(w);
+    __asyncCallbackWrappers.push(w);
 }
 
 export function defaultContinuationPromptTag() {
@@ -188,10 +188,10 @@ export function getFirstMark(frames, key, noneV) {
 export function wrapWithContext(fn) {
     return (function () {
         const state = {};
-        __async_callback_wrappers.forEach(w => w.onCreate(state));
+        __asyncCallbackWrappers.forEach(w => w.onCreate(state));
         return function (...args) {
             init();
-            __async_callback_wrappers.forEach(w => w.onInvoke(state));
+            __asyncCallbackWrappers.forEach(w => w.onInvoke(state));
             try {
                 return fn(...args);
             } finally {

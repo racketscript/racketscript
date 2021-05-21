@@ -29,7 +29,7 @@ class Correlated extends PrintablePrimitive {
     }
 }
 
-export function datum_to_syntax(v) { return new Correlated(v); }
+export function datumToSyntax(v) { return new Correlated(v); }
 
-export function syntax_p(v) { return (v instanceof Correlated); }
+export function syntaxP(v) { return (v instanceof Correlated); }
 

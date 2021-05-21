@@ -7,6 +7,6 @@ class Path extends PrintablePrimitive {
     }
 }
 
-export function from_string(s) { return new Path(s); }
+export function fromString(s) { return new Path(s); }
 export function check(s) { return (s instanceof Path); }
 

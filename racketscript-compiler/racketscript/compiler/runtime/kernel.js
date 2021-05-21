@@ -250,7 +250,6 @@ export function memv(v, lst) {
             return lst;
         }
         lst = lst.tl;
-        continue;
     }
     return false;
 }
@@ -261,7 +260,6 @@ export function memq(v, lst) {
             return lst;
         }
         lst = lst.tl;
-        continue;
     }
     return false;
 }
@@ -272,7 +270,6 @@ export function memf(f, lst) {
             return lst;
         }
         lst = lst.tl;
-        continue;
     }
     return false;
 }
@@ -283,7 +280,6 @@ export function findf(f, lst) {
             return lst.hd;
         }
         lst = lst.tl;
-        continue;
     }
     return false;
 }

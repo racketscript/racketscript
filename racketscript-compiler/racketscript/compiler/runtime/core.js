@@ -133,4 +133,4 @@ class UnsafeUndefined extends PrintablePrimitive {
 }
 
 // eslint-disable-next-line no-unused-vars
-const the_unsafe_undefined = new UnsafeUndefined();
+const theUnsafeUndefined = new UnsafeUndefined();

@@ -17,8 +17,8 @@
                      (-syntax-property syntax-property)
                      (-syntax-property-symbol-keys syntax-property-symbol-keys)))
 
-(define (-syntax? v) (#js.Core.Correlated.syntax_p v))
-(define (-datum->syntax v) (#js.Core.Correlated.datum_to_syntax v))
+(define (-syntax? v) (#js.Core.Correlated.syntaxP v))
+(define (-datum->syntax v) (#js.Core.Correlated.datumToSyntax v))
 (define (-syntax-e v) (#js.v.get))
 (define (-syntax->datum v) (#js.v.get))
 (define (-syntax-source v) #f)

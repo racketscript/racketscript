@@ -43,7 +43,7 @@ const constant = function constant(x) {
     Based on:
     http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
 */
-const calcHash = hamt.hash = function (str) {
+hamt.hash = function (str) {
     const type = typeof str === 'undefined' ? 'undefined' : _typeof(str);
     if (type === 'number') return str;
     if (type !== 'string') str += '';
@@ -120,7 +120,8 @@ const arraySpliceOut = function arraySpliceOut(mutate, at, arr) {
     let g = 0;
     let out = arr;
     if (mutate) {
-        i = g = at;
+        i = at;
+        g = at;
     } else {
         out = new Array(newLen);
         while (i < at) {
@@ -198,7 +199,7 @@ const Leaf = function Leaf(edit, hash, key, value) {
         key,
         value,
         // eslint-disable-next-line no-use-before-define
-        _modify: Leaf__modify
+        _modify: LeafModify
     };
 };
 
@@ -216,7 +217,7 @@ const Collision = function Collision(edit, hash, children) {
         hash,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: Collision__modify
+        _modify: CollisionModify
     };
 };
 
@@ -236,7 +237,7 @@ const IndexedNode = function IndexedNode(edit, mask, children) {
         mask,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: IndexedNode__modify
+        _modify: IndexedNodeModify
     };
 };
 
@@ -254,7 +255,7 @@ const ArrayNode = function ArrayNode(edit, size, children) {
         size,
         children,
         // eslint-disable-next-line no-use-before-define
-        _modify: ArrayNode__modify
+        _modify: ArrayNodeModify
     };
 };
 
@@ -371,7 +372,7 @@ const canEditNode = function canEditNode(edit, node) {
 
 /* Editing
  ***************************************************************************** */
-let Leaf__modify = function Leaf__modify(edit, keyEq, shift, f, h, k, size) {
+let LeafModify = function LeafModify(edit, keyEq, shift, f, h, k, size) {
     if (keyEq(k, this.key)) {
         const _v = f(this.value);
         if (_v === this.value) return this; else if (_v === nothing) {
@@ -390,7 +391,7 @@ let Leaf__modify = function Leaf__modify(edit, keyEq, shift, f, h, k, size) {
     return mergeLeaves(edit, shift, this.hash, this, h, Leaf(edit, h, k, v));
 };
 
-let Collision__modify = function Collision__modify(edit, keyEq, shift, f, h, k, size) {
+let CollisionModify = function CollisionModify(edit, keyEq, shift, f, h, k, size) {
     if (h === this.hash) {
         const canEdit = canEditNode(edit, this);
         const list = updateCollisionList(canEdit, edit, keyEq, this.hash, this.children, f, k, size);
@@ -404,7 +405,7 @@ let Collision__modify = function Collision__modify(edit, keyEq, shift, f, h, k, 
     return mergeLeaves(edit, shift, this.hash, this, h, Leaf(edit, h, k, v));
 };
 
-let IndexedNode__modify = function IndexedNode__modify(edit, keyEq, shift, f, h, k, size) {
+let IndexedNodeModify = function IndexedNodeModify(edit, keyEq, shift, f, h, k, size) {
     const { children, mask } = this;
     const frag = hashFragment(shift, h);
     const bit = toBitmap(frag);
@@ -444,7 +445,7 @@ let IndexedNode__modify = function IndexedNode__modify(edit, keyEq, shift, f, h,
     return IndexedNode(edit, bitmap, newChildren);
 };
 
-let ArrayNode__modify = function ArrayNode__modify(edit, keyEq, shift, f, h, k, size) {
+let ArrayNodeModify = function ArrayNodeModify(edit, keyEq, shift, f, h, k, size) {
     let count = this.size;
     const { children } = this;
     const frag = hashFragment(shift, h);
@@ -510,7 +511,7 @@ Map.prototype.setTree = function (newRoot, newSize) {
 
     Returns the value or `alt` if none.
 */
-const tryGetHash = hamt.tryGetHash = function (alt, hash, key, map) {
+hamt.tryGetHash = (alt, hash, key, map) => {
     let node = map._root;
     let shift = 0;
     const { keyEq } = map._config;
@@ -557,7 +558,7 @@ const tryGetHash = hamt.tryGetHash = function (alt, hash, key, map) {
 };
 
 Map.prototype.tryGetHash = function (alt, hash, key) {
-    return tryGetHash(alt, hash, key, this);
+    return hamt.tryGetHash(alt, hash, key, this);
 };
 
 /**
@@ -565,12 +566,11 @@ Map.prototype.tryGetHash = function (alt, hash, key) {
 
     @see `tryGetHash`
 */
-const tryGet = hamt.tryGet = function (alt, key, map) {
-    return tryGetHash(alt, map._config.hash(key), key, map);
-};
+hamt.tryGet = (alt, key, map) =>
+    hamt.tryGetHash(alt, map._config.hash(key), key, map);
 
 Map.prototype.tryGet = function (alt, key) {
-    return tryGet(alt, key, this);
+    return hamt.tryGet(alt, key, this);
 };
 
 /**
@@ -578,12 +578,11 @@ Map.prototype.tryGet = function (alt, key) {
 
     Returns the value or `undefined` if none.
 */
-const getHash = hamt.getHash = function (hash, key, map) {
-    return tryGetHash(undefined, hash, key, map);
-};
+hamt.getHash = (hash, key, map) =>
+    hamt.tryGetHash(undefined, hash, key, map);
 
 Map.prototype.getHash = function (hash, key) {
-    return getHash(hash, key, this);
+    return hamt.getHash(hash, key, this);
 };
 
 /**
@@ -591,31 +590,28 @@ Map.prototype.getHash = function (hash, key) {
 
     @see `get`
 */
-hamt.get = function (key, map) {
-    return tryGetHash(undefined, map._config.hash(key), key, map);
-};
+hamt.get = (key, map) =>
+    hamt.tryGetHash(undefined, map._config.hash(key), key, map);
 
 Map.prototype.get = function (key, alt) {
-    return tryGet(alt, key, this);
+    return hamt.tryGet(alt, key, this);
 };
 
 /**
     Does an entry exist for `key` in `map`? Uses custom `hash`.
 */
-const hasHash = hamt.has = function (hash, key, map) {
-    return tryGetHash(nothing, hash, key, map) !== nothing;
-};
+hamt.hasHash = (hash, key, map) => hamt.tryGetHash(nothing, hash, key, map) !== nothing;
+
 
 Map.prototype.hasHash = function (hash, key) {
-    return hasHash(hash, key, this);
+    return hamt.hasHash(hash, key, this);
 };
 
 /**
     Does an entry exist for `key` in `map`? Uses internal hash function.
 */
-const has = hamt.has = function (key, map) {
-    return hasHash(map._config.hash(key), key, map);
-};
+const has = (key, map) => hamt.hasHash(map._config.hash(key), key, map);
+
 
 Map.prototype.has = function (key) {
     return has(key, this);
@@ -633,7 +629,7 @@ const defKeyCompare = function defKeyCompare(x, y) {
 hamt.make = function (config) {
     return new Map(0, 0, {
         keyEq: config && config.keyEq || defKeyCompare,
-        hash: config && config.hash || calcHash
+        hash: config && config.hash || hamt.hash
     }, empty, 0);
 };
 
@@ -645,12 +641,12 @@ hamt.empty = hamt.make();
 /**
     Does `map` contain any elements?
 */
-const isEmpty = hamt.isEmpty = function (map) {
+hamt.isEmpty = function (map) {
     return map && !!isEmptyNode(map._root);
 };
 
 Map.prototype.isEmpty = function () {
-    return isEmpty(this);
+    return hamt.isEmpty(this);
 };
 
 /* Updates
@@ -665,14 +661,15 @@ Map.prototype.isEmpty = function () {
 
     Returns a map with the modified value. Does not alter `map`.
 */
-const modifyHash = hamt.modifyHash = function (f, hash, key, map) {
+hamt.modifyHash = function (f, hash, key, map) {
     const size = { value: map._size };
     const newRoot = map._root._modify(map._editable ? map._edit : NaN, map._config.keyEq, 0, f, hash, key, size);
+
     return map.setTree(newRoot, size.value);
 };
 
 Map.prototype.modifyHash = function (hash, key, f) {
-    return modifyHash(f, hash, key, this);
+    return hamt.modifyHash(f, hash, key, this);
 };
 
 /**
@@ -681,12 +678,10 @@ Map.prototype.modifyHash = function (hash, key, f) {
 
     @see `modifyHash`
 */
-const modify = hamt.modify = function (f, key, map) {
-    return modifyHash(f, map._config.hash(key), key, map);
-};
+hamt.modify = (f, key, map) => hamt.modifyHash(f, map._config.hash(key), key, map);
 
 Map.prototype.modify = function (key, f) {
-    return modify(f, key, this);
+    return hamt.modify(f, key, this);
 };
 
 /**
@@ -694,12 +689,10 @@ Map.prototype.modify = function (key, f) {
 
     Returns a map with the modified value. Does not alter `map`.
 */
-const setHash = hamt.setHash = function (hash, key, value, map) {
-    return modifyHash(constant(value), hash, key, map);
-};
+hamt.setHash = (hash, key, value, map) => hamt.modifyHash(constant(value), hash, key, map);
 
 Map.prototype.setHash = function (hash, key, value) {
-    return setHash(hash, key, value, this);
+    return hamt.setHash(hash, key, value, this);
 };
 
 /**
@@ -707,12 +700,10 @@ Map.prototype.setHash = function (hash, key, value) {
 
     @see `setHash`
 */
-const set = hamt.set = function (key, value, map) {
-    return setHash(map._config.hash(key), key, value, map);
-};
+hamt.set = (key, value, map) => hamt.setHash(map._config.hash(key), key, value, map);
 
 Map.prototype.set = function (key, value) {
-    return set(key, value, this);
+    return hamt.set(key, value, this);
 };
 
 /**
@@ -721,50 +712,48 @@ Map.prototype.set = function (key, value) {
     Returns a map with the value removed. Does not alter `map`.
 */
 const del = constant(nothing);
-const removeHash = hamt.removeHash = function (hash, key, map) {
-    return modifyHash(del, hash, key, map);
+hamt.removeHash = (hash, key, map) => hamt.modifyHash(del, hash, key, map);
+
+Map.prototype.removeHash = function (hash, key) {
+    return hamt.removeHash(hash, key, this);
 };
 
-Map.prototype.removeHash = Map.prototype.deleteHash = function (hash, key) {
-    return removeHash(hash, key, this);
-};
+Map.prototype.deleteHash = Map.prototype.removeHash;
 
 /**
     Remove the entry for `key` in `map` using internal hash function.
 
     @see `removeHash`
 */
-const remove = hamt.remove = function (key, map) {
-    return removeHash(map._config.hash(key), key, map);
+hamt.remove = (key, map) => hamt.removeHash(map._config.hash(key), key, map);
+
+Map.prototype.remove = function (key) {
+    return hamt.remove(key, this);
 };
 
-Map.prototype.remove = Map.prototype.delete = function (key) {
-    return remove(key, this);
-};
+Map.prototype.delete = Map.prototype.remove;
 
 /* Mutation
  ***************************************************************************** */
 /**
     Mark `map` as mutable.
  */
-const beginMutation = hamt.beginMutation = function (map) {
-    return new Map(map._editable + 1, map._edit + 1, map._config, map._root, map._size);
-};
+hamt.beginMutation = map => new Map(map._editable + 1, map._edit + 1, map._config, map._root, map._size);
 
 Map.prototype.beginMutation = function () {
-    return beginMutation(this);
+    return hamt.beginMutation(this);
 };
 
 /**
     Mark `map` as immutable.
  */
-const endMutation = hamt.endMutation = function (map) {
+hamt.endMutation = function (map) {
     map._editable = map._editable && map._editable - 1;
     return map;
 };
 
 Map.prototype.endMutation = function () {
-    return endMutation(this);
+    return hamt.endMutation(this);
 };
 
 /**
@@ -772,14 +761,14 @@ Map.prototype.endMutation = function () {
     @param f
     @param map HAMT
 */
-const mutate = hamt.mutate = function (f, map) {
-    const transient = beginMutation(map);
+hamt.mutate = function (f, map) {
+    const transient = hamt.beginMutation(map);
     f(transient);
-    return endMutation(transient);
+    return hamt.endMutation(transient);
 };
 
 Map.prototype.mutate = function (f) {
-    return mutate(f, this);
+    return hamt.mutate(f, this);
 };
 
 /* Traversal
@@ -859,31 +848,23 @@ const visit = function visit(map, f) {
 
     Iterates over `[key, value]` arrays.
 */
-const buildPairs = function buildPairs(x) {
-    return [x.key, x.value];
-};
-const entries = hamt.entries = function (map) {
-    return visit(map, buildPairs);
+hamt.entries = map => visit(map, x => [x.key, x.value]);
+
+Map.prototype.entries = function () {
+    return hamt.entries(this);
 };
 
-Map.prototype.entries = Map.prototype[Symbol.iterator] = function () {
-    return entries(this);
-};
+Map.prototype[Symbol.iterator] = Map.prototype.entries;
 
 /**
     Get array of all keys in `map`.
 
     Order is not guaranteed.
 */
-const buildKeys = function buildKeys(x) {
-    return x.key;
-};
-const keys = hamt.keys = function (map) {
-    return visit(map, buildKeys);
-};
+hamt.keys = map => visit(map, x => x.key);
 
 Map.prototype.keys = function () {
-    return keys(this);
+    return hamt.keys(this);
 };
 
 /**
@@ -891,15 +872,10 @@ Map.prototype.keys = function () {
 
     Order is not guaranteed, duplicates are preserved.
 */
-const buildValues = function buildValues(x) {
-    return x.value;
-};
-const values = hamt.values = Map.prototype.values = function (map) {
-    return visit(map, buildValues);
-};
+hamt.values = map => visit(map, x => x.value);
 
 Map.prototype.values = function () {
-    return values(this);
+    return hamt.values(this);
 };
 
 /* Fold
@@ -913,7 +889,7 @@ Map.prototype.values = function () {
     @param z Starting value.
     @param m HAMT
 */
-const fold = hamt.fold = function (f, z, m) {
+hamt.fold = function (f, z, m) {
     const root = m._root;
     if (root.type === LEAF) return f(z, root.value, root.key);
 
@@ -933,7 +909,7 @@ const fold = hamt.fold = function (f, z, m) {
 };
 
 Map.prototype.fold = function (f, z) {
-    return fold(f, z, this);
+    return hamt.fold(f, z, this);
 };
 
 /**
@@ -944,12 +920,10 @@ Map.prototype.fold = function (f, z) {
     @param f Function invoked with value and key
     @param map HAMT
 */
-const forEach = hamt.forEach = function (f, map) {
-    return fold((_, value, key) => f(value, key, map), null, map);
-};
+hamt.forEach = (f, map) => hamt.fold((_, value, key) => f(value, key, map), null, map);
 
 Map.prototype.forEach = function (f) {
-    return forEach(f, this);
+    return hamt.forEach(f, this);
 };
 
 /* Aggregate
@@ -957,12 +931,10 @@ Map.prototype.forEach = function (f) {
 /**
     Get the number of entries in `map`.
 */
-const count = hamt.count = function (map) {
-    return map._size;
-};
+hamt.count = map => map._size;
 
 Map.prototype.count = function () {
-    return count(this);
+    return hamt.count(this);
 };
 
 Object.defineProperty(Map.prototype, 'size', {

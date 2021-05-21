@@ -9,7 +9,6 @@
         "import/extensions": ["error", "always"],
         "comma-dangle": ["error", "never"],
         "no-bitwise": 0,
-        "camelcase": 1,
         "no-underscore-dangle": 0,
         "import/prefer-default-export": 0,
         "no-param-reassign": 0,
@@ -17,13 +16,12 @@
         "class-methods-use-this": 0,
         "func-names": 0,
         "consistent-return": 0,
-        "no-continue": 1,
+        "no-constant-condition": 0,
         "max-len": ["error", {
             "code": 120,
             "ignoreComments": true
         }],
         "no-plusplus": 0,
-        "no-multi-assign": 1,
         "no-use-before-define": [
             "error",
             {
