@@ -88,7 +88,7 @@
 
 (displayln "char-numeric?")
 (println (char-numeric? #\5))     ; Nd
-(run-if-version "6.10"
+(run-if-version "7.0.0.1"
   (println (char-numeric? #\Ⅻ))   ; Nl
   (println (char-numeric? #\㊲))) ; No
 ;; TODO: the following should return #t but returns #f
