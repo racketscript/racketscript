@@ -15,19 +15,19 @@ jobs:
       fail-fast: false 
       matrix:
         racket-version: [ '6.12', '7.0', '7.4', '7.5', '7.6', '7.7', '7.8' ]
-	racket-variant: [ 'BC' ]
+        racket-variant: [ 'BC' ]
         experimental: [false]
         include:
           - racket-version: '8.0'
-	    racket-variant: 'CS'
+            racket-variant: 'CS'
             experimental: true
           - racket-version: '8.1'
-	    racket-variant: 'CS'
+            racket-variant: 'CS'
             experimental: true
           - racket-version: 'current'
-	    racket-variant: 'CS'
+            racket-variant: 'CS'
             experimental: true
-    name: Racket ${{ matrix.racket-variant }} ${{ matrix.racket-version }}
+    name: Racket ${{ matrix.racket-version }} ${{ matrix.racket-variant }}
     steps:
       - uses: actions/checkout@master
       - name: Setup Racket
