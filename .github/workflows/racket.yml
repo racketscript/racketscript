@@ -15,22 +15,27 @@ jobs:
       fail-fast: false 
       matrix:
         racket-version: [ '6.12', '7.0', '7.4', '7.5', '7.6', '7.7', '7.8' ]
+        racket-variant: [ 'BC' ]
         experimental: [false]
         include:
           - racket-version: '8.0'
+            racket-variant: 'CS'
             experimental: true
           - racket-version: '8.1'
+            racket-variant: 'CS'
             experimental: true
           - racket-version: 'current'
+            racket-variant: 'CS'
             experimental: true
-    name: Racket ${{ matrix.racket-version }}
+    name: Racket ${{ matrix.racket-version }} ${{ matrix.racket-variant }}
     steps:
       - uses: actions/checkout@master
       - name: Setup Racket
-        uses: Bogdanp/setup-racket@v1.3.1
+        uses: Bogdanp/setup-racket@v1.4
         with:
           architecture: 'x64'
           version: ${{ matrix.racket-version }}
+          variant: ${{ matrix.racket-variant }}
       - run: raco pkg install --auto -t dir racketscript-compiler/
       - run: make unit-test
       - run: make integration-test
