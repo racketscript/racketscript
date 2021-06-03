@@ -1,0 +1,25 @@
+name: changelog
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout branch
+      uses: actions/checkout@v1
+    - name: Use Node.js 10
+      uses: actions/setup-node@v1
+    - name: Install github-release-notes and generate changelog
+      run: |
+        npx github-release-notes@0.17.1 changelog --generate --override --token=${{ secrets.CHANGELOG_TOKEN }} --changelog-filename=TEMP_CHANGELOG.md
+      env:
+        CI: true
+    - name: Create and publish realese
+      uses: ncipollo/release-action@v1
+      with:
+        bodyFile: 'TEMP_CHANGELOG.md'
+        token: ${{ secrets.CHANGELOG_TOKEN }}
