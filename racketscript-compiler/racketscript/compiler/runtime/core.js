@@ -43,7 +43,8 @@ export {
     MPair,
     Correlated,
     Linklet,
-    Path
+    Path,
+    theUnsafeUndefined,
 };
 
 export {
@@ -59,6 +60,7 @@ export {
     makeMismatchError,
     makeOutOfRangeError,
     isContractErr,
+    isErr,
     errMsg
 } from './core/errors.js';
 
