@@ -1,4 +1,6 @@
-import { TextDecoder } from "./util-loader.cjs";
+import pkg from './util-loader.cjs';
+const { TextEncoder } = pkg;
+
 import { hashIntArray } from './raw_hashing.js';
 
 /**

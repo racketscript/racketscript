@@ -44,7 +44,7 @@ export {
     Correlated,
     Linklet,
     Path,
-    theUnsafeUndefined,
+    theUnsafeUndefined
 };
 
 export {

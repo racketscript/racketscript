@@ -1,4 +1,6 @@
-import { TextEncoder } from "./util-loader.cjs";
+import pkg from './util-loader.cjs';
+const { TextEncoder } = pkg;
+
 import { Primitive } from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Char from './char.js';
