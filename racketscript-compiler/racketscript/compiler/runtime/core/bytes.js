@@ -1,5 +1,9 @@
-import { TextDecoder } from 'util';
 import { hashIntArray } from './raw_hashing.js';
+
+// In node.js, TextDecoder is not global and needs to be imported.
+const TextDecoder = (typeof window === 'undefined')
+    ? require('util').TextDecoder
+    : window.TextDecoder; // eslint-disable-line no-undef
 
 /**
  * @param {*} bs
