@@ -1,24 +1,8 @@
 {
     "name": "racketscript",
     "version": "0.0.1",
-    "description": "Package JavaScript compiled from RacketScript (Racket->JS compiler)",
-    "main": "./dist/compiled.js",
-    "repository": {
-	"type": "git",
-	"url": "https://github.com/vishesh/racketscript"
-    },
-    "keywords": [
-	"racket",
-	"compiler"
-    ],
-    "author": "Vishesh Yadav",
-    "bugs": {
-	"url": "https://github.com/vishesh/racketscript/issues"
-    },
     "dependencies": {
-	"gulp": "^4.0.2",
-	"gulp-replace": "*",
-	"hamt_plus": "*",
-	"google-closure-compiler": "*"
+        "gulp": "^4.0.2",
+        "google-closure-compiler": "*"
     }
 }
