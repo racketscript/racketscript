@@ -1,0 +1,12 @@
+{
+    "name": "racketscript",
+    "version": "0.0.1",
+    "type": "module",
+    "dependencies": {
+        "util": "*"
+    },
+    "devDependencies": {
+        "webpack": "^5.38.1",
+        "webpack-cli": "^4.7.2"
+    }
+}
