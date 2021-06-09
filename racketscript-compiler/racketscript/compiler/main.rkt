@@ -36,22 +36,17 @@
          prepare-build-directory
          racket->js
          racketscript-dir
-         skip-gulp-build
          skip-npm-install
          enabled-optimizations
          recompile-all-modules?)
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
-(define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
 (define recompile-all-modules? (make-parameter #f))
-
-(define *js-bootstrap-file* "bootstrap.js")
-(define *browser-index-file* "index.html")
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "plain"
@@ -121,8 +116,8 @@
   (format-copy-file src (build-path dest-dir name) args))
 
 ;; String -> Void
-;; Puts a NPM and Gulp related files in output directory
-;; with default-module set as the entry point module
+;; Puts a NPM related files in output directory with default-module set as the
+;; entry point module
 ;;
 ;; default-module is just the name of module excluding any file
 ;; extensions.
@@ -139,7 +134,7 @@
                   (output-directory)))
 
 ;; String -> Void
-;; Create output build directory tree with all NPM, Gulp. Runtime and
+;; Create output build directory tree with all NPM, runtime and
 ;; other support files
 ;;
 ;; default-module-name: is just the name of entry point module with
@@ -163,12 +158,7 @@
   ;; TODO: Use NPM + some build tool to do this cleanly
   (parameterize ([current-directory (output-directory)])
     (unless (skip-npm-install)
-      (system "npm install"))
-    (unless (skip-gulp-build)
-      (system (~a "./"
-                  (build-path "node_modules"
-                              ".bin"
-                              "gulp"))))))
+      (system "npm install"))))
 
 ;;;; Generate stub module
 
@@ -315,7 +305,6 @@
    #:once-each
    [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
    [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
-   [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
    [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
    ["--skip-arity-checks" "Skip arity checks in beginning of functions" (skip-arity-checks? #t)]
