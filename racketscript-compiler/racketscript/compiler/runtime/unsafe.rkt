@@ -51,6 +51,21 @@
 (define+provide (unsafe-fxmax a b)
   (if ($/binop > a b) b a))
 
+;; TODO: is this correct?
+(define+provide (unsafe-fl= a b)
+  (binop === a b))
+(define+provide (unsafe-fl< a b)
+  (binop < a b))
+(define+provide (unsafe-fl<= a b)
+  (binop <= a b))
+(define+provide (unsafe-fl> a b)
+  (binop > a b))
+(define+provide (unsafe-fl>= a b)
+  (binop >= a b))
+(define+provide (unsafe-flmin a b)
+  (if ($/binop < a b) a b))
+(define+provide (unsafe-flmax a b)
+  (if ($/binop > a b) b a))
 
 (define-unsafe-fx-binop+provide unsafe-fxrshift  >>)
 (define-unsafe-fx-binop+provide unsafe-fxlshift  <<)

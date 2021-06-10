@@ -33,3 +33,14 @@ export function datumToSyntax(v) { return new Correlated(v); }
 
 export function syntaxP(v) { return (v instanceof Correlated); }
 
+// TODO: implement these stubs
+export function syntaxSource(v) { return false; }
+
+export function syntaxLine(v) { return false; }
+
+export function syntaxColumn(v) { return false; }
+
+export function syntaxPosition(v) { return false; }
+
+export function syntaxSpan(v) { return false; }
+

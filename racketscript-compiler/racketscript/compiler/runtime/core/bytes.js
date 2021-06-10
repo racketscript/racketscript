@@ -11,6 +11,42 @@ export function check(bs) {
 }
 
 /**
+ * @param {!number} non-negative int length
+ * @param {!number} non-negative int less than 256
+ * @return {!Uint8Array}
+ */
+export function make(len, init) {
+    return new Uint8Array(len).fill(init);
+}
+
+/**
+ *
+ * @param {!Uint8Array} bs
+ * @param {!number}
+ * @return {!number}
+ */
+export function ref(bs, i) {
+    if (i < 0 || i > bs.length) {
+        throw racketCoreError(`bytes-ref: index out of range\n  index: ${i}`);
+    }
+    return bs[i];
+}
+
+/**
+ *
+ * @param {!Uint8Array} bs
+ * @param {!number}
+ * @param {!number} non-negative int less than 256
+ * @return {!number}
+ */
+export function set(bs, i, b) {
+    if (i < 0 || i > bs.length) {
+        throw racketCoreError(`bytes-ref: index out of range\n  index: ${i}`);
+    }
+    bs[i] = b;
+}
+
+/**
  *
  * @param {!Uint8Array} a
  * @param {!Uint8Array} b

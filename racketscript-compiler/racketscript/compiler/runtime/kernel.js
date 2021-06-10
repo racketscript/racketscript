@@ -176,6 +176,28 @@ export function argerror(name, expected, ...rest) {
 
 /**
  * @param {Core.Symbol} name
+ * @param {Core.UString|String} expected
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-result-error
+// usage:
+//  (raise-result-error name expected arg)
+//  (raise-result-error name expected bad-pos arg ...)
+export function resulterror(name, expected, ...rest) {
+    let theerr;
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1) {
+        theerr = Core.makeResultError(name, expected, ...rest);
+    } else {
+        theerr = Core.racketContractError('raise-result-error: invalid result');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {Core.Symbol} name
  * @param {Core.UString|String} msg
  * @param {Core.UString|String} field
  * @param {*[]} rest

@@ -89,7 +89,10 @@
 (define+provide (exact? v)
   (#js.Number.isInteger v))
 
+;; single-flonum not implemented
 (define+provide (single-flonum-available?) #f)
+(define+provide (single-flonum?) #f)
+(define+provide (real->single-flonum v) v)
 
 (define+provide *  (#js.Core.attachProcedureArity #js.Core.Number.mul 0))
 (define+provide /  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
@@ -127,6 +130,9 @@
 (define-checked+provide (log [v real?])
   (#js.Math.log v))
 
+(define-checked+provide (exp [w number?])
+  (#js.Math.exp w))
+
 (define-checked+provide (expt [w number?] [z number?])
   (#js.Math.pow w z))
 
@@ -135,6 +141,9 @@
 
 (define-checked+provide (sqr [v number?])
   (* v v))
+
+(define-checked+provide (truncate [v number?])
+  (#js.Math.trunc v))
 
 (define-checked+provide (remainder [a integer?] [b integer?])
   (binop % a b))
@@ -151,6 +160,20 @@
 ;;TODO: Support bignums
 (define+provide (inexact->exact x) x)
 (define+provide (exact->inexact x) x)
+
+;; complex Numbers
+;; for now, use pair (wont print like Racket)
+(define-checked+provide (make-rectangular [x real?] [y real?])
+  (#js.Core.Pair.make x y))
+
+(define-checked+provide (real-part [z pair?]) #js.z.hd)
+(define-checked+provide (imag-part [z pair?]) #js.z.tl)
+
+;; assume only ints are rational
+(define+provide rational? #js.Number.isInteger)
+(define-checked+provide (numerator [x number?]) x)
+(define-checked+provide (denominator [x number?]) 1)
+
 
 ;; ----------------------------------------------------------------------------
 ;; Booleans
@@ -184,8 +207,14 @@
   #js.v.hd.tl)
 (define-checked+provide (cddr [v (check/pair-of? #t pair?)])
   #js.v.tl.tl)
+(define-checked+provide (cdddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
+  #js.v.tl.tl.tl)
 (define-checked+provide (caddr [v (check/pair-of? #t (check/pair-of? #t pair?))])
   #js.v.tl.tl.hd)
+(define-checked+provide (cadddr [v (check/pair-of? #t (check/pair-of? #t (check/pair-of? #t pair?)))])
+  #js.v.tl.tl.tl.hd)
+(define-checked+provide (cddddr [v (check/pair-of? #t (check/pair-of? #t (check/pair-of? #t pair?)))])
+  #js.v.tl.tl.tl.tl)
 
 (define+provide null #js.Core.Pair.EMPTY)
 (define+provide list
@@ -340,13 +369,16 @@
 (define-checked+provide (vector->list [vec vector?])
   (#js.Core.Pair.listFromArray #js.vec.items))
 
+(define-checked+provide (list->vector [lst list?])
+  (#js.Core.Vector.make (#js.Core.Pair.listToArray lst) #t))
+
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
 
-(define-syntax-rule (make-hash-contructor make)
+(define-syntax-rule (make-hash-constructor make)
   (v-λ () #:unchecked
     (define kv* arguments)
     (when (binop !== (binop % #js.kv*.length 2) 0)
@@ -356,9 +388,9 @@
              (#js.items.push (array ($ kv* i) ($ kv* (+ i 1)))))
       (make items #f))))
 
-(define+provide hash    (make-hash-contructor #js.Core.Hash.makeEqual))
-(define+provide hasheqv (make-hash-contructor #js.Core.Hash.makeEqv))
-(define+provide hasheq  (make-hash-contructor #js.Core.Hash.makeEq))
+(define+provide hash    (make-hash-constructor #js.Core.Hash.makeEqual))
+(define+provide hasheqv (make-hash-constructor #js.Core.Hash.makeEqv))
+(define+provide hasheq  (make-hash-constructor #js.Core.Hash.makeEq))
 
 (define+provide make-hash
   (v-λ (assocs) #:unchecked
@@ -978,6 +1010,7 @@
 (define+provide error #js.Kernel.error)
 (define+provide raise-argument-error #js.Kernel.argerror)
 (define+provide raise-arguments-error #js.Kernel.argserror)
+(define+provide raise-result-error #js.Kernel.resulterror)
 (define+provide raise-mismatch-error #js.Kernel.mismatcherror)
 
 ;; --------------------------------------------------------------------------
@@ -985,6 +1018,16 @@
 
 (define+provide (bytes? bs)
   (#js.Core.Bytes.check bs))
+
+;; init val `b` is optional
+(define+provide (make-bytes len [b 0])
+  (#js.Core.Bytes.make len b))
+
+(define-checked+provide (bytes-ref [bs bytes?] [i integer?])
+  (#js.Core.Bytes.ref bs i))
+
+(define-checked+provide (bytes-set! [bs bytes?] [i integer?] [b integer?])
+  (#js.Core.Bytes.set bs i b))
 
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))
@@ -1264,3 +1307,14 @@
   (f) (g) (h))
 
 (define+provide (datum-intern-literal v) v)
+
+;; ----------------------------------------------------------------------------
+;; Syntax
+
+;; TODO: implement these stubs
+
+(define+provide syntax-source #js.Core.Correlated.syntaxSource)
+(define+provide syntax-line #js.Core.Correlated.syntaxLine)
+(define+provide syntax-column #js.Core.Correlated.syntaxColumn)
+(define+provide syntax-position #js.Core.Correlated.syntaxPosition)
+(define+provide syntax-span #js.Core.Correlated.syntaxSpan)
