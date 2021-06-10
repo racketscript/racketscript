@@ -1,4 +1,4 @@
-import webpack from 'webpack'
+import webpack from 'webpack';
 const target = "./modules/~a" + ".rkt.js";
 
 export default {
