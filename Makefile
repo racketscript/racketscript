@@ -57,7 +57,7 @@ coverage:
 eslint: | node_modules
 	@echo "    RACKETSCRIPT RUNTIME LINT    "
 	@echo "++++++++++++++++++++++++++++"
-	$(ESLINT) ./racketscript-compiler/racketscript/compiler/runtime/ || true
+	$(ESLINT) ./racketscript-compiler/racketscript/compiler/runtime/
 
 eslint-fix: | node_modules
 	$(ESLINT) --fix ./racketscript-compiler/racketscript/compiler/runtime/
