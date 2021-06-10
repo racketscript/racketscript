@@ -12,7 +12,7 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 20
     strategy:
-      fail-fast: false 
+      fail-fast: false
       matrix:
         racket-version: [ '6.12', '7.0', '7.4', '7.5', '7.6', '7.7', '7.8' ]
         racket-variant: [ 'BC' ]
@@ -39,3 +39,24 @@ jobs:
       - run: raco pkg install --auto -t dir racketscript-compiler/
       - run: make unit-test
       - run: make integration-test
+  coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Racket Coverage
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Racket
+        uses: Bogdanp/setup-racket@v1.4
+        with:
+          architecture: 'x64'
+          variant: 'CS'
+          version: 'stable'
+      - name: Install package and its dependencies
+        run: |
+          raco pkg install --auto cover cover-codecov
+          raco pkg install --auto -t dir racketscript-compiler/
+      - name: Generate coverage report
+        run: |
+          COVERAGE_MODE=1 raco cover -f codecov -b \
+              racketscript-compiler/racketscript/ \
+              tests/fixture.rkt

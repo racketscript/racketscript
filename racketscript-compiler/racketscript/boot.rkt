@@ -2,7 +2,7 @@
 ;; really needed.
 
 (module boot '#%kernel
-  (#%require racket/base
+  (#%require (all-except racket/base #%app lambda)
              (for-syntax racket/base)
              (only "interop.rkt"))
 
