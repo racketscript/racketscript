@@ -43,8 +43,7 @@ export {
     MPair,
     Correlated,
     Linklet,
-    Path,
-    theUnsafeUndefined
+    Path
 };
 
 export {
@@ -135,4 +134,4 @@ class UnsafeUndefined extends PrintablePrimitive {
 }
 
 // eslint-disable-next-line no-unused-vars
-const theUnsafeUndefined = new UnsafeUndefined();
+export const theUnsafeUndefined = new UnsafeUndefined();
