@@ -52,6 +52,8 @@ export function writeNativeString(out, v) {
 export function printNativeString(out, v, printAsExpression, quoteDepth) {
     if (printAsExpression && quoteDepth !== 1 && Primitive.check(v)) {
         v.printNativeString(out);
+    } else if (Bytes.check(v)) {
+        Bytes.printNativeString(out, v);
     } else {
         writeNativeString(out, v);
     }

@@ -104,6 +104,38 @@ export function makeArgumentError(name, expected, ...rest) {
     return racketContractError(stringOut.getOutputString());
 }
 
+// format exn message to exactly match Racket raise-result-error
+export function makeResultError(name, expected, ...rest) {
+    const stringOut = new MiniNativeOutputStringPort();
+    // "other" args must be converted to string via `print`
+    // (not `write` or `display`)
+    stringOut.consume(`${name.toString()}: contract violation\n`);
+    stringOut.consume('  expected: ');
+    stringOut.consume(expected.toString());
+    stringOut.consume('\n');
+    stringOut.consume('  given: ');
+    if (rest.length === 1) {
+        printNativeString(stringOut, rest[0], true, 0);
+    } else {
+        printNativeString(stringOut, rest[rest[0] + 1], true, 0);
+        if (rest.length > 2) { // only print if there are "other" args
+            stringOut.consume('\n');
+            stringOut.consume('  argument position: ');
+            printNativeString(stringOut, toOrdinal(rest[0] + 1), true, 0);
+            stringOut.consume('\n');
+            stringOut.consume('  other arguments...:');
+            for (let i = 1; i < rest.length; i++) {
+                // eslint-disable-next-line no-continue
+                if (i === rest[0] + 1) { continue; }
+                stringOut.consume('\n   ');
+                printNativeString(stringOut, rest[i], true, 0);
+            }
+        }
+    }
+
+    return racketContractError(stringOut.getOutputString());
+}
+
 // format exn message to exactly match Racket raise-arguments-error
 export function makeArgumentsError(name, msg, field, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
@@ -145,14 +177,24 @@ export function makeMismatchError(name, msg, ...rest) {
 }
 
 export function makeOutOfRangeError(name, type, v, len, i) {
-    if (i >= len) {
-        if (len > 0) {
-            return racketContractError(`${name}: index is out of range
-  index: ${i}
-  valid range: [0, ${len - 1}]
-  ${type}: `, v);
-        }
-        return racketContractError(`${name}: index is out of range for empty ${type}
-  index: ${i}`);
+    const stringOut = new MiniNativeOutputStringPort();
+    // "other" args must be converted to string via `print`
+    // (not `write` or `display`)
+    if (len > 0) {
+        stringOut.consume(`${name.toString()}: index is out of range\n`);
+        stringOut.consume('  index: ');
+        stringOut.consume(i.toString());
+        stringOut.consume('\n');
+        stringOut.consume('  valid range: [0, ');
+        stringOut.consume((len - 1).toString());
+        stringOut.consume(']\n');
+        stringOut.consume('  ');
+        stringOut.consume(type);
+        stringOut.consume(': ');
+        printNativeString(stringOut, v, true, 0);
+    } else {
+        stringOut.consume(`${name.toString()}: index is out of range for empty ${type}\n`);
     }
+
+    return racketContractError(stringOut.getOutputString());
 }

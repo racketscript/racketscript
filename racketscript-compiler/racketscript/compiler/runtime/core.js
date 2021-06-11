@@ -55,6 +55,7 @@ export {
     racketCoreError,
     racketContractError,
     makeArgumentError,
+    makeResultError,
     makeArgumentsError,
     makeMismatchError,
     makeOutOfRangeError,

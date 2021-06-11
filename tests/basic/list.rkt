@@ -37,3 +37,12 @@
 
 ;; anything larger will blow the stack
 (build-list 1000 add1)
+
+(remove 1 '(1 2 3))
+(remove 4 '(1 2 3))
+(remove 1 '())
+(remove 4 '(1 2 3 4) equal?)
+(remove 5 '(1 2 3 4) <)
+
+(list->vector '())
+(list->vector '(1 2 3 4))

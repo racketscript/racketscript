@@ -12,6 +12,25 @@
 (define+provide fl>= (#js.Core.attachProcedureArity #js.Core.Number.gte 1))
 (define+provide fl=  (#js.Core.attachProcedureArity #js.Core.Number.equals 1))
 
+(define+provide flabs #js.Math.abs)
+(define+provide flmin #js.Math.min)
+(define+provide flmax #js.Math.max)
+(define+provide flround #js.Math.round)
+(define+provide flfloor #js.Math.floor)
+(define+provide flceiling #js.Math.ceil)
+(define+provide fltruncate #js.Math.trunc)
+
+(define+provide flsin #js.Math.sin)
+(define+provide flcos #js.Math.cos)
+(define+provide fltan #js.Math.tan)
+(define+provide flasin #js.Math.asin)
+(define+provide flacos #js.Math.acos)
+(define+provide flatan #js.Math.atan)
+(define+provide fllog #js.Math.log)
+(define+provide flexp #js.Math.exp)
+(define+provide flsqrt #js.Math.sqrt)
+(define+provide flexpt #js.Math.pow)
+  
 (define-binop bitwise-or \|)
 
 (define-syntax (define-fx-binop+provide stx)

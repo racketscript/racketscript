@@ -274,7 +274,7 @@
                (current-module-imports (set-add (current-module-imports) src-mod-path)))
 
            ;;HACK: See test/struct/import-struct.rkt. Somehow, the
-           ;;  struct contructor has different src-id returned by
+           ;;  struct constructor has different src-id returned by
            ;;  identifier-binding than the actual identifier name used
            ;;  at definition site. Implicit renaming due to macro
            ;;  expansion?

@@ -11,6 +11,36 @@ export function check(bs) {
 }
 
 /**
+ * @param {!number} non-negative int length
+ * @param {!number} non-negative int less than 256
+ * @return {!Uint8Array}
+ */
+export function make(len, init) {
+    return new Uint8Array(len).fill(init);
+}
+
+/**
+ *
+ * @param {!Uint8Array} bs
+ * @param {!number}
+ * @return {!number}
+ */
+export function ref(bs, i) {
+    return bs[i];
+}
+
+/**
+ *
+ * @param {!Uint8Array} bs
+ * @param {!number}
+ * @param {!number} non-negative int less than 256
+ * @return {!number}
+ */
+export function set(bs, i, b) {
+    bs[i] = b;
+}
+
+/**
  *
  * @param {!Uint8Array} a
  * @param {!Uint8Array} b
@@ -100,6 +130,18 @@ export function toString(bytes) {
  */
 export function displayNativeString(out, bytes) {
     out.consume(toString(bytes));
+}
+
+/**
+ * Writes a string representation similar to Racket's `print` to the given port.
+ *
+ * @param {!Ports.NativeStringOutputPort} out
+ * @param {!Uint8Array} bytes
+ */
+export function printNativeString(out, bytes) {
+    out.consume('#"');
+    out.consume(toString(bytes));
+    out.consume('"');
 }
 
 /**

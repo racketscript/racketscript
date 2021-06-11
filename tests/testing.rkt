@@ -1,9 +1,9 @@
 #lang racket/base
-(require (for-syntax racket/base syntax/parse))
+(require (for-syntax racket/base syntax/parse version/utils)
+         syntax/parse/define)
 (provide (all-defined-out))
 
-;; test forms here are duplicated from test-utils.rkt, but
-;; for some reason requiring test-utils.rkt doesnt work for racket-core tests
+;; test forms copied from racket-test/tests/racket/testing.rktl
 
 (define exn:application:mismatch? exn:fail:contract?)
 (define exn:application:type? exn:fail:contract?)

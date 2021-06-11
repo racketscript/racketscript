@@ -176,6 +176,28 @@ export function argerror(name, expected, ...rest) {
 
 /**
  * @param {Core.Symbol} name
+ * @param {Core.UString|String} expected
+ * @param {*[]} rest
+ */
+// analogous to Racket raise-result-error
+// usage:
+//  (raise-result-error name expected arg)
+//  (raise-result-error name expected bad-pos arg ...)
+export function resulterror(name, expected, ...rest) {
+    let theerr;
+    if (Core.Symbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1) {
+        theerr = Core.makeResultError(name, expected, ...rest);
+    } else {
+        theerr = Core.racketContractError('raise-result-error: invalid result');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {Core.Symbol} name
  * @param {Core.UString|String} msg
  * @param {Core.UString|String} field
  * @param {*[]} rest
@@ -209,6 +231,27 @@ export function mismatcherror(name, msg, ...rest) {
     if (Core.Symbol.check(name)
         && (Core.UString.check(msg) || typeof msg === 'string')) {
         theerr = Core.makeMismatchError(name, msg, ...rest);
+    } else {
+        theerr = Core.racketContractError('error: invalid arguments');
+    }
+
+    doraise(theerr);
+}
+
+/**
+ * @param {String} name
+ * @param {String} type
+ * @param {*} v
+ * @param {!number} length
+ * @param {!number} index
+ */
+// analogous to Racket raise-range-error
+// usage: raise-range-error name, type, v len, i
+export function outofrangeerror(name, type, v, len, i) {
+    let theerr;
+    if (typeof name === 'string' && typeof type === 'string' &&
+        typeof len === 'number' && typeof i === 'number') {
+        theerr = Core.makeOutOfRangeError(name, type, v, len, i);
     } else {
         theerr = Core.racketContractError('error: invalid arguments');
     }
