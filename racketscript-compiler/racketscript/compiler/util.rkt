@@ -209,7 +209,9 @@
       mod))
 
 (: module-output-file (-> (U Path Symbol) Path))
+;; NOTE: returns simplified path, which is required by fns like find-relative-path
 (define (module-output-file mod)
+ (simple-form-path
   (match (module-kind mod)
     [(list 'primitive mod-path)
      ;; Eg. #%kernel, #%utils ...
@@ -235,7 +237,7 @@
      (let* ([main (assert (main-source-file) path?)]
             [rel-path (find-relative-path (path-parent main) mod-path)])
        (path->complete-path
-        (build-path (output-directory) "modules" (~a rel-path ".js"))))]))
+        (build-path (output-directory) "modules" (~a rel-path ".js"))))])))
 
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
