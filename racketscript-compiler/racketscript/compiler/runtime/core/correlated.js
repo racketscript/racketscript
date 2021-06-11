@@ -34,18 +34,18 @@ export function datumToSyntax(v) { return new Correlated(v); }
 export function syntaxP(v) { return (v instanceof Correlated); }
 
 // TODO: implement these stubs
-/*eslint no-unused-vars: ["error", { "args": "none" }]*/
+/* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxSource(v) { return false; }
 
-/*eslint no-unused-vars: ["error", { "args": "none" }]*/
+/* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxLine(v) { return false; }
 
-/*eslint no-unused-vars: ["error", { "args": "none" }]*/
+/* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxColumn(v) { return false; }
 
-/*eslint no-unused-vars: ["error", { "args": "none" }]*/
+/* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxPosition(v) { return false; }
 
-/*eslint no-unused-vars: ["error", { "args": "none" }]*/
+/* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxSpan(v) { return false; }
 
