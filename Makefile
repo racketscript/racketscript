@@ -32,7 +32,7 @@ setup:
 		raco pkg update --link racketscript-extras/
 
 setup-extra:
-	npm install -g js-beautify eslint gulp
+	npm install -g js-beautify
 	raco pkg install --auto cover
 
 clean:
@@ -49,7 +49,7 @@ coverage-unit-test:
 coverage:
 	@echo "    RACKETSCRIPT COVERAGE    "
 	@echo "++++++++++++++++++++++++"
-	COVERAGE_MODE=1 raco cover -d ./coverage/all -b racketscript-compiler/racketscript/ \
+	COVERAGE_MODE=1 raco cover -d ./coverage/all -b racketscript-compiler \
 		tests/fixture.rkt
 
 ## JavaScript

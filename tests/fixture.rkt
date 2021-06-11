@@ -157,7 +157,6 @@
 ;; 2. Always skip-npm-install to save time
 ;; [3. Always remove old compiled module outputs)]
 (define (setup)
-  (skip-gulp-build #t)
   (skip-npm-install #t)
 
   (when (clean-output-before-test)
@@ -165,7 +164,7 @@
 
 ;; (Listof Glob-Pattern) -> Boolean
 ;; If tc-search-patterns is simply a path to directory, run all test
-;; cases in that directory otherwise use glob pattern. 
+;; cases in that directory otherwise use glob pattern.
 ;; Returns #t or #f depending on test results
 (define (run-tests tc-search-patterns)
   ;; First clean the compiled modules always, to avoid cases where
@@ -195,9 +194,9 @@
        (for/list ([pat tc-search-patterns])
          ; test all rkt files in dir, unless given single file
          (if (string-suffix? pat ".rkt")
-             (glob pat) 
+             (glob pat)
              (glob (~a pat "/*.rkt"))))))))
-  
+
   (define failed-tests '())
 
   ;; Handler when exception is raised by check failures. Gather
@@ -243,7 +242,7 @@
       (displayln (format "  □ ~a" t))))
 
   (empty? failed-tests))
-  
+
 
 ;; Runs tests with each kind of option
 (define (run tc-search-patterns)
@@ -324,4 +323,3 @@
                               "modules"
                               "optimize"
                               "experimental")))
-
