@@ -1,6 +1,6 @@
 #lang racket
 
-(require "../testing.rkt" "../test-utils.rkt")
+(require "../test-utils.rkt")
 
 (displayln (bytes->string/utf-8 #"Hello World"))
 (displayln (string->bytes/utf-8 "Hello World"))
