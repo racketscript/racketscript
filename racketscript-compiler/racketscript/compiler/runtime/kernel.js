@@ -238,6 +238,27 @@ export function mismatcherror(name, msg, ...rest) {
     doraise(theerr);
 }
 
+/**
+ * @param {String} name
+ * @param {String} type
+ * @param {*} v
+ * @param {!number} length
+ * @param {!number} index
+ */
+// analogous to Racket raise-range-error
+// usage: raise-range-error name, type, v len, i
+export function outofrangeerror(name, type, v, len, i) {
+    let theerr;
+    if (typeof name === 'string' && typeof type === 'string' &&
+	typeof len === 'number' && typeof i === 'number') {
+        theerr = Core.makeOutOfRangeError(name, type, v, len, i);
+    } else {
+        theerr = Core.racketContractError('error: invalid arguments');
+    }
+
+    doraise(theerr);
+}
+
 /* --------------------------------------------------------------------------*/
 // Not Implemented/Unorganized/Dummies
 

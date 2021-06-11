@@ -1024,10 +1024,16 @@
   (#js.Core.Bytes.make len b))
 
 (define-checked+provide (bytes-ref [bs bytes?] [i integer?])
-  (#js.Core.Bytes.ref bs i))
+  (if (or (< i 0) (> i #js.bs.length))
+      (raise
+       (#js.Core.makeOutOfRangeError "bytes-ref" "byte string" bs #js.bs.length i))
+      (#js.Core.Bytes.ref bs i)))
 
 (define-checked+provide (bytes-set! [bs bytes?] [i integer?] [b integer?])
-  (#js.Core.Bytes.set bs i b))
+  (if (or (< i 0) (> i #js.bs.length))
+      (raise
+       (#js.Core.makeOutOfRangeError "bytes-set!" "byte string" bs #js.bs.length i))
+      (#js.Core.Bytes.set bs i b)))
 
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))

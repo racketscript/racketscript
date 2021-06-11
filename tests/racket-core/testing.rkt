@@ -2,7 +2,8 @@
 (require (for-syntax racket/base syntax/parse))
 (provide (all-defined-out))
 
-;; this file mostly copied from racket-test/tests/racket/testing.rktl
+;; test forms here are duplicated from test-utils.rkt, but
+;; for some reason requiring test-utils.rkt doesnt work for racket-core tests
 
 (define exn:application:mismatch? exn:fail:contract?)
 (define exn:application:type? exn:fail:contract?)
@@ -33,7 +34,7 @@
                          (displayln (exn-message ex)))])
         e)]
     [(_ e e? msg-rx)
-     #'(with-handlers ([(λ (x) #t)
+     #'(with-handlers ([e?
                         (λ (ex)
                           (displayln
                            (regexp-match msg-rx (exn-message ex))))])

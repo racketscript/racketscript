@@ -177,14 +177,24 @@ export function makeMismatchError(name, msg, ...rest) {
 }
 
 export function makeOutOfRangeError(name, type, v, len, i) {
-    if (i >= len) {
-        if (len > 0) {
-            return racketContractError(`${name}: index is out of range
-  index: ${i}
-  valid range: [0, ${len - 1}]
-  ${type}: `, v);
-        }
-        return racketContractError(`${name}: index is out of range for empty ${type}
-  index: ${i}`);
+    const stringOut = new MiniNativeOutputStringPort();
+    // "other" args must be converted to string via `print`
+    // (not `write` or `display`)
+    if (len > 0) {
+	stringOut.consume(`${name.toString()}: index is out of range\n`);
+	stringOut.consume('  index: ');
+	stringOut.consume(i.toString());
+	stringOut.consume('\n');
+	stringOut.consume('  valid range: [0, ');
+	stringOut.consume((len - 1).toString());
+	stringOut.consume(']\n');
+	stringOut.consume('  ');
+	stringOut.consume(type);
+	stringOut.consume(': ');
+	printNativeString(stringOut, v, true, 0);
+    } else {
+	stringOut.consume(`${name.toString()}: index is out of range for empty ${type}\n`);
     }
+
+    return racketContractError(stringOut.getOutputString());
 }

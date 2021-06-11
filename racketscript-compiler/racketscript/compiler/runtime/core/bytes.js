@@ -26,9 +26,6 @@ export function make(len, init) {
  * @return {!number}
  */
 export function ref(bs, i) {
-    if (i < 0 || i > bs.length) {
-        throw racketCoreError(`bytes-ref: index out of range\n  index: ${i}`);
-    }
     return bs[i];
 }
 
@@ -40,9 +37,6 @@ export function ref(bs, i) {
  * @return {!number}
  */
 export function set(bs, i, b) {
-    if (i < 0 || i > bs.length) {
-        throw racketCoreError(`bytes-ref: index out of range\n  index: ${i}`);
-    }
     bs[i] = b;
 }
 
@@ -136,6 +130,18 @@ export function toString(bytes) {
  */
 export function displayNativeString(out, bytes) {
     out.consume(toString(bytes));
+}
+
+/**
+ * Writes a string representation similar to Racket's `print` to the given port.
+ *
+ * @param {!Ports.NativeStringOutputPort} out
+ * @param {!Uint8Array} bytes
+ */
+export function printNativeString(out, bytes) {
+    out.consume('#"');
+    out.consume(toString(bytes));
+    out.consume('"');
 }
 
 /**
