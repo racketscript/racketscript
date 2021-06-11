@@ -22,9 +22,10 @@
 (define post-install-collection "")
 
 ;; Test configuration
-
 (define test-omit-paths '("racketscript/browser.rkt"
                           "racketscript/compiler/runtime/"))
+
+;; Coverage
 (define cover-omit-paths '("racketscript/browser.rkt"
                            "racketscript/compiler/runtime/kernel.rkt"
                            "racketscript/compiler/runtime/paramz.rkt"
