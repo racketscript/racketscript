@@ -235,7 +235,8 @@
      (path->complete-path output-path)]
     [(list 'general mod-path)
      (let* ([main (assert (main-source-file) path?)]
-            [rel-path (find-relative-path (path-parent main) mod-path)])
+            [rel-path (find-relative-path (simple-form-path (path-parent main))
+                                          (simple-form-path mod-path))])
        (path->complete-path
         (build-path (output-directory) "modules" (~a rel-path ".js"))))])))
 
