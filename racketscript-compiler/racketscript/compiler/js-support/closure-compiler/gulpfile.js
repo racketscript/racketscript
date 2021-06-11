@@ -1,15 +1,14 @@
 const gulp = require('gulp');
-const replace = require('gulp-replace');
 var closureCompiler = require('google-closure-compiler').gulp();
 
 const target = "~a" + ".rkt.js";
 
 gulp.task('build',  function() {
     return gulp.src(['./**/*.js',
-		     '!./node_modules/**',
-		     '!./dist/**',
-		     '!./*.js'])
-	.pipe(closureCompiler({
+                     '!./node_modules/**',
+                     '!./dist/**',
+                     '!./*.js'])
+        .pipe(closureCompiler({
             compilation_level: 'SIMPLE',
             warning_level: 'VERBOSE',
             language_in: 'ECMASCRIPT6_STRICT',

@@ -10,6 +10,10 @@ class Port extends PrintablePrimitive {
     isInputPort() {
         return false;
     }
+
+    isStringPort() {
+        return false;
+    }
 }
 
 
@@ -49,6 +53,10 @@ export function isInputPort(v) {
 
 export function isOutputPort(v) {
     return check(v) && v.isOutputPort();
+}
+
+export function isStringPort(v) {
+    return check(v) && v.isStringPort();
 }
 
 // Only consumes output via the given `consumeFn` when encountering a newline,
@@ -130,6 +138,9 @@ export class NativeOutputStringPort extends OutputPort {
         return 'js-string';
     }
 
+    isStringPort() {
+        return true;
+    }
 
     isUStringPort() {
         return false;
@@ -164,6 +175,10 @@ class OutputStringPort extends OutputPort {
 
     get name() {
         return 'string';
+    }
+
+    isStringPort() {
+        return true;
     }
 
     isUStringPort() {

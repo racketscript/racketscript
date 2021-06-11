@@ -59,6 +59,7 @@ export {
     makeMismatchError,
     makeOutOfRangeError,
     isContractErr,
+    isErr,
     errMsg
 } from './core/errors.js';
 
@@ -133,4 +134,4 @@ class UnsafeUndefined extends PrintablePrimitive {
 }
 
 // eslint-disable-next-line no-unused-vars
-const theUnsafeUndefined = new UnsafeUndefined();
+export const theUnsafeUndefined = new UnsafeUndefined();

@@ -36,22 +36,17 @@
          prepare-build-directory
          racket->js
          racketscript-dir
-         skip-gulp-build
          skip-npm-install
          enabled-optimizations
          recompile-all-modules?)
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
-(define skip-gulp-build (make-parameter #f))
 (define js-output-file (make-parameter "compiled.js"))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))
 (define recompile-all-modules? (make-parameter #f))
-
-(define *js-bootstrap-file* "bootstrap.js")
-(define *browser-index-file* "index.html")
 
 ;; Compiler for ES6 to ES5 compilation.
 ;; - "plain"
@@ -59,7 +54,7 @@
 ;; - "webpack" ;;TODO
 (define *targets* (list "plain"
                         "babel"
-                        "babel-webpack"
+                        "webpack"
                         "closure-compiler"))
 (define js-target (make-parameter "plain"))
 
@@ -121,17 +116,18 @@
   (format-copy-file src (build-path dest-dir name) args))
 
 ;; String -> Void
-;; Puts a NPM and Gulp related files in output directory
-;; with default-module set as the entry point module
+;; Puts a NPM related files in output directory with default-module set as the
+;; entry point module
 ;;
 ;; default-module is just the name of module excluding any file
 ;; extensions.
 (define (copy-build-files default-module)
   (copy-file+ (support-file "package.json")
               (output-directory))
-  (format-copy-file+ (support-file "gulpfile.js")
-                     (output-directory)
-                     (list default-module)))
+  (when (equal? (js-target) "webpack")
+    (format-copy-file+ (support-file "webpack.config.js")
+                       (output-directory)
+                       (list default-module))))
 
 ;; -> Void
 (define (copy-runtime-files)
@@ -139,7 +135,7 @@
                   (output-directory)))
 
 ;; String -> Void
-;; Create output build directory tree with all NPM, Gulp. Runtime and
+;; Create output build directory tree with all NPM, runtime and
 ;; other support files
 ;;
 ;; default-module-name: is just the name of entry point module with
@@ -158,17 +154,12 @@
   (copy-runtime-files))
 
 ;; -> Void
-;; Install and build dependenciese to translate ES5 to ES5
-(define (es6->es5)
+;; Install and build dependencies
+(define (npm-install-build)
   ;; TODO: Use NPM + some build tool to do this cleanly
   (parameterize ([current-directory (output-directory)])
     (unless (skip-npm-install)
-      (system "npm install"))
-    (unless (skip-gulp-build)
-      (system (~a "./"
-                  (build-path "node_modules"
-                              ".bin"
-                              "gulp"))))))
+      (system "npm install"))))
 
 ;;;; Generate stub module
 
@@ -289,8 +280,8 @@
       [(false? next)
        (dump-module-timestamps! timestamps)
        (unless (equal? (js-target) "plain")
-         (log-rjs-info "Compiling ES6 to ES5.")
-         (es6->es5))
+         (log-rjs-info "Running NPM [Install/Build].")
+         (npm-install-build))
        (log-rjs-info "Finished.")])))
 
 ;; String -> String
@@ -315,7 +306,6 @@
    #:once-each
    [("-d" "--build-dir") dir "Output directory" (output-directory (simplify-path dir))]
    [("-n" "--skip-npm-install") "Skip NPM install phase" (skip-npm-install #t)]
-   [("-g" "--skip-gulp-build") "Skip Gulp build phase" (skip-gulp-build #t)]
    [("-b" "--js-beautify") "Beautify JS output" (js-output-beautify? #t)]
    [("-r" "--force-recompile") "Re-compile all modules" (recompile-all-modules? #t)]
    ["--skip-arity-checks" "Skip arity checks in beginning of functions" (skip-arity-checks? #t)]
@@ -328,10 +318,10 @@
    ["--lift-returns" "Translate self tail calls to loops"
     (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
    #:multi
-   [("-t" "--target") target "ES6 to ES5 compiler [plain|babel|closure-compiler|babel-webpack]"
+   [("-t" "--target") target "Build target environment [plain|webpack|closure-compiler|babel]"
     (if (member target *targets*)
         (js-target target)
-        (error "`~a` is not a supported target."))]
+        (error "Unexpected target: " target))]
    #:once-any
    ["--expand" "Fully expand Racket source" (build-mode 'expand)]
    ["--ast" "Expand and print AST" (build-mode 'absyn)]
