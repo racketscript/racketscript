@@ -53,10 +53,18 @@ jobs:
           version: 'stable'
       - name: Install package and its dependencies
         run: |
-          raco pkg install --auto cover cover-codecov
+          raco pkg install --auto cover https://github.com/vishesh/cover-codecov.git
           raco pkg install --auto -t dir racketscript-compiler/
       - name: Generate coverage report
         run: |
           COVERAGE_MODE=1 raco cover -f codecov -b \
               racketscript-compiler/racketscript/ \
               tests/fixture.rkt
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.json
+          name: codecov-racketscript
+          fail_ci_if_error: false
+          verbose: true
