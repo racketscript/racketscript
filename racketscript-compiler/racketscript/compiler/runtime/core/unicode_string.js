@@ -1,5 +1,4 @@
 import { Primitive } from './primitive.js';
-import { TextEncoder } from './util-loader.cjs';
 import * as Bytes from './bytes.js';
 import * as Char from './char.js';
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';

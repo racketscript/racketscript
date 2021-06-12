@@ -1,5 +1,4 @@
 import { hashIntArray } from './raw_hashing.js';
-import { TextDecoder } from './util-loader.cjs';
 
 /**
  * @param {*} bs
