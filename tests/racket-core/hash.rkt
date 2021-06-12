@@ -1,5 +1,5 @@
 #lang racket/base
-(require "testing.rkt" "../test-utils.rkt" (for-syntax racket/base) #;racket/hash)
+(require "../test-utils.rkt" (for-syntax racket/base))
 
 ;; ----------------------------------------
 ;; Hash-key sorting:
