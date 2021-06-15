@@ -310,7 +310,7 @@
                                             nom-src-mod-path-orig
                                             mod-src-id))]))
 
-           ;; If the moduele is renamed use the id name used at the importing
+           ;; If the module is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
            ;; are #%kernel which we write ourselves in JS we prefer original name.
            ;; TODO: We potentially might have clashes, but its unlikely.
@@ -329,7 +329,6 @@
                [else
                 (match-let ([(cons (app last mod) (? symbol? id)) path-to-symbol])
                   (values id mod #t))]))
-
            (ImportedIdent effective-id effective-mod reachable?)])])]
     [(define-syntaxes (i ...) b) #f]
     [(set! s e)

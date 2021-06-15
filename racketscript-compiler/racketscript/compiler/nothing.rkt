@@ -1,3 +1,6 @@
-#lang racket
+#lang racketscript/base
 
-(require "../interop.rkt")
+(require racketscript/htdp/image
+         racketscript/htdp/universe
+         racketscript/browser
+         racketscript/interop)
