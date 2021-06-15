@@ -105,7 +105,7 @@
 ;; Path-String -> ExportTree
 (define get-cached-export-tree
   (memoized-λ (test-fpath)
-    (get-export-tree test-fpath)))
+    (get-export-tree (list test-fpath))))
 
 ;; Path-String -> Void
 ;; Compile test-case in `fpath` to JavaScript

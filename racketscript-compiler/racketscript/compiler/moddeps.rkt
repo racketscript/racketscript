@@ -71,12 +71,12 @@
            [#f (result src* id*)]
            ['() #f]))))
 
-;; ModulePath -> ExportTree
+;; (Listof ModulePath) -> ExportTree
 ;; Return whole tree of exports with its source starting
-;; from mod-name (ModulePath)
-(define (get-export-tree mod-name)
+;; with given list of modules 'mods'.
+(define (get-export-tree mods)
   (define modules (filter-not symbol? (module-deps/tsort-inv
-                                       (get-module-deps mod-name))))
+                                       (get-module-deps mods))))
   (for/hash ([m (append (set->list primitive-modules) modules)])
     (values m (get-exports/modpath m))))
 
@@ -129,9 +129,9 @@
       (transpose _)
       (tsort _)))
 
-;; Path -> (Map Path (Listof Path))
-;; Returns a adjecency map of module imports
-(define (get-module-deps mod-path)
+;; (Listof Path) -> (Map Path (Listof Path))
+;; Returns a adjacency map of module imports.
+(define (get-module-deps mod-paths)
   (define graph (make-hash))
   (define (build-graph mod-path)
     (define path (resolve-module-path mod-path #f))
@@ -150,5 +150,7 @@
                            (hash-update! graph path (λ (v) (cons new-mod v)))
                            (unless (hash-ref graph new-mod #f)
                              (build-graph new-mod))]))))
-  (build-graph mod-path)
+  (for ([path mod-paths])
+    (build-graph path))
+
   graph)
