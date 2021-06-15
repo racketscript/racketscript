@@ -288,12 +288,13 @@
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
     (process* (~a (find-executable-path "js-beautify"))))
-  (print js-str out-p-in)
+
+  (display js-str out-p-in)
+  (close-output-port out-p-in)
 
   (control 'wait)
   (define result (port->string in-p-out))
 
-  (close-output-port out-p-in)
   (close-input-port in-p-out)
   (close-input-port in-p-err)
 
