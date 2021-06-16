@@ -4,7 +4,7 @@
 [![Tests](https://github.com/vishesh/racketscript/actions/workflows/racket.yml/badge.svg)](https://github.com/vishesh/racketscript/actions/workflows/racket.yml)
 [![ESLint](https://github.com/vishesh/racketscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/vishesh/racketscript/actions/workflows/node.js.yml)
 [![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
-[![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://rapture.twistedplane.com:8080)
+[![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://161.35.54.145:8080/)
 
 RacketScript is an **experimental** lightweight Racket to JavaScript compiler.
 The generated code is ES6, which can be translated to ES5 using
@@ -22,7 +22,7 @@ expensive, for example proper tail calls and continuations.
 ## Try RacketScript
 
 You can try RacketScript in your browser
-at [RacketScript Playground](http://rapture.twistedplane.com:8080/).
+at [RacketScript Playground](http://161.35.54.145:8080/).
 
 ## Disclaimer
 
