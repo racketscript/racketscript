@@ -368,25 +368,30 @@
     (log-rjs-info "RacketScript root directory: ~a" racketscript-dir))
 
   (unless (input-from-stdin?)
-    ;; Initialize global-export-graph so that we can import each
-    ;; module as an object and follow identifier's from there.
-    ;; For stdin builds, we have to defer this operation.
+    ;; Initialize global-export-graph so that we can import each module as an
+    ;; object and follow identifier's from there. For stdin builds, we have to
+    ;; defer this operation.
     (unless (equal? (build-mode) 'js)
       ;; As 'js mode prints output to stdout, we don't want to mix
       (log-rjs-info "Resolving module dependencies and identifiers... "))
-    (global-export-graph (get-export-tree source)))
+    (global-export-graph (get-export-tree (list source))))
 
   (define (expanded-module)
     (cond
       [(input-from-stdin?)
-       ;; HACK: Just make an stupid guess that all that we will
-       ;; ever use will come from standard library. Since we
-       ;; need stdin from playground, its fine for now.
-       ;; TODO: Figure out a way to compile this syntax to
-       ;; module code bytecode
-       (global-export-graph (get-export-tree (build-path racketscript-compiler-dir
-                                                         "nothing.rkt")))
-       (read-and-expand-module (current-input-port))]
+       (parameterize ([current-namespace (make-base-namespace)])
+         (define expanded-mod (read-and-expand-module (current-input-port)))
+         (eval expanded-mod)
+
+         ;; Prepare the module graph for each import. We don't care about, exports
+         ;; from here, as this module will never be imported.
+         (match (module->imports ''anonymous-module)
+           [`((0 ,mods ...) rst ...)
+            ;; TODO: Do we need to look at other phase imports?
+            (global-export-graph (get-export-tree (map resolve-module-path-index mods)))]
+           [_ (error "unexpected form returned by module->imports")])
+
+         expanded-mod)]
       [else
        (quick-expand source)]))
 

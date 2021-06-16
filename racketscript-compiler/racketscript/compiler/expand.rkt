@@ -310,7 +310,7 @@
                                             nom-src-mod-path-orig
                                             mod-src-id))]))
 
-           ;; If the moduele is renamed use the id name used at the importing
+           ;; If the module is renamed use the id name used at the importing
            ;; module rather than defining module. Since renamed, module currently
            ;; are #%kernel which we write ourselves in JS we prefer original name.
            ;; TODO: We potentially might have clashes, but its unlikely.
@@ -458,7 +458,7 @@
 (define (to-absyn/top stx)
   (to-absyn stx))
 
-(define (do-expand stx in-path)
+(define (do-expand stx)
   ;; error checking
   (syntax-parse stx
     [((~and mod-datum (~datum module)) n:id lang:expr . rest)
@@ -490,21 +490,12 @@
   (read-accept-lang #t)
   (define full-path (path->complete-path (actual-module-path in-path)))
   (parameterize ([current-directory (path-only full-path)])
-    (do-expand (open-read-module in-path) in-path)))
+    (do-expand (open-read-module in-path))))
 
 (define (read-and-expand-module input)
   (read-accept-reader #t)
   (read-accept-lang #t)
-  ;; Just give it any name for now
-  (define full-path
-    (match (object-name input)
-      ['stdin (main-source-file)]
-      [v (path->complete-path v)]))
-  (define new-cwd (if full-path
-                      (path-only full-path)
-                      (current-directory)))
-  (parameterize ([current-directory new-cwd])
-    (do-expand (read-syntax (object-name input) input) full-path)))
+  (do-expand (read-syntax (object-name input) input)))
 
 ;;;----------------------------------------------------------------------------
 ;;; Flatten Phases in Module
@@ -994,4 +985,3 @@
 
     (check-equal? (map syntax-e (get-quoted-bindings test-mod-1))
                   '(internal-func))))
-
