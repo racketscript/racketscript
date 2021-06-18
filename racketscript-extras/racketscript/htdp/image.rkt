@@ -45,10 +45,12 @@
          flip-horizontal
 
          bitmap/data
+         bitmap/url
          freeze
 
          print-image
          color
+         (rename-out [color make-color])
          (struct-out posn))
 
 ;;-----------------------------------------------------------------------------
@@ -461,6 +463,7 @@
   (λ (data)
     #:with-this this
     (define image (new #js*.Image))
+    (:= #js.image.crossOrigin #js"anonymous")
     (:= #js.image.src (js-string data))
     (set-object! this
                  [image  image]
@@ -673,6 +676,9 @@
 
 (define (bitmap/data data)
   (new (Bitmap data)))
+
+(define (bitmap/url url)
+  (new (Bitmap url)))
 
 (define (frame img)
   (color-frame "black" img))
