@@ -12,7 +12,8 @@
          stop-when
          big-bang
 
-         key=?)
+         key=?
+         mouse=?)
 
 (define *default-frames-per-second* 70)
 
@@ -220,7 +221,7 @@
           (λ (evt)
             (define posn (canvas-posn-δ canvas evt))
             (#js.bb.queue-event ($/obj [type #js"on-mouse"]
-                                       [evt  r-evt-name]
+                                       [evt  (racket-string r-evt-name)]
                                        [x    ($ posn 'x)]
                                        [y    ($ posn 'y)]))))
 
@@ -376,3 +377,5 @@
 
 (define (key=? k1 k2)
   (equal? k1 k2))
+(define (mouse=? m1 m2)
+  (equal? m1 m2))
