@@ -26,6 +26,7 @@
          (rename-out [*in-js-array in-js-array]
                      [*in-js-object in-js-object])
          for/js-array
+         js-array?
          for/js-object
          js-object?)
 
@@ -253,7 +254,7 @@
   ($ arr 'length i))
 
 (define (js-array? v)
-  ($/instanceof v ($ 'Array)))
+  (($ ($ 'Array) 'isArray) v))
 
 (define (in-js-array arr)
   (check-array arr)
