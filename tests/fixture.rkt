@@ -32,6 +32,9 @@
 (define coverage-mode? (let ([mod (getenv "COVERAGE_MODE")])
                          (and mod (equal? (string->number mod) 1))))
 
+;; For running tests that don't need Racket, e.g. ffi tests
+(define js-only? (make-parameter #f))
+
 (define (displayln* v)
   (if coverage-mode?
       (displayln "")
@@ -127,12 +130,18 @@
                                    ((error-display-handler) "racket->js failed" e))
                                  #f)])
       (racket->js)
-      (if (false? coverage-mode?)
-          (list (log-and-return 'racket (run-in-racket fpath))
-                (log-and-return 'nodejs (run-in-nodejs fpath)))
-          (list (list "" "")
-                (list "" ""))))))
-
+      (cond [coverage-mode? (list (list "" "") (list "" ""))]
+            [(js-only?)
+             (define expected-file (path-add-extension fpath ".expected" "."))
+             (define expected
+               (if (file-exists? expected-file)
+                   (file->string expected-file)
+                   ""))
+             (list (list expected "")
+                   (log-and-return 'nodejs (run-in-nodejs fpath)))]
+            [else
+             (list (log-and-return 'racket (run-in-racket fpath))
+                   (log-and-return 'nodejs (run-in-nodejs fpath)))]))))
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
@@ -322,4 +331,6 @@
                               "wcm"
                               "modules"
                               "optimize"
-                              "experimental")))
+                              "experimental"))
+  (parameterize ([js-only? #t])
+    (run (fixture-path-patterns "ffi"))))
