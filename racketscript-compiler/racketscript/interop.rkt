@@ -26,7 +26,9 @@
          (rename-out [*in-js-array in-js-array]
                      [*in-js-object in-js-object])
          for/js-array
-         for/js-object)
+         js-array?
+         for/js-object
+         js-object?)
 
 (require syntax/parse/define
          (for-syntax syntax/parse
@@ -252,7 +254,7 @@
   ($ arr 'length i))
 
 (define (js-array? v)
-  ($/instanceof v ($ 'Array)))
+  (($ ($ 'Array) 'isArray) v))
 
 (define (in-js-array arr)
   (check-array arr)
@@ -300,7 +302,7 @@
   (for/list ([(k v) (*in-js-object obj)]) (values k v)))
 
 (define (js-object? v)
-  ($/typeof v "object"))
+  (and ($/typeof v "object") (not (eq? v $/null))))
 
 (define (check-object v)
   (unless (js-object? v)
