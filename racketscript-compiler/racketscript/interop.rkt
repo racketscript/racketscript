@@ -26,7 +26,8 @@
          (rename-out [*in-js-array in-js-array]
                      [*in-js-object in-js-object])
          for/js-array
-         for/js-object)
+         for/js-object
+         js-object?)
 
 (require syntax/parse/define
          (for-syntax syntax/parse
@@ -300,7 +301,7 @@
   (for/list ([(k v) (*in-js-object obj)]) (values k v)))
 
 (define (js-object? v)
-  ($/typeof v "object"))
+  (and ($/typeof v "object") (not (eq? v $/null))))
 
 (define (check-object v)
   (unless (js-object? v)
