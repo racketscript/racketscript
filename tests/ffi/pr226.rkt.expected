@@ -1,0 +1,26 @@
+[object Object] is a js object?: #t
+[object Object] is a js array?: #f
+raw js array 1,2,3 is a js object?: #t
+raw js array 1,2,3 is a js array?: #t
+'#hash() is a js object?: #t
+'#hash() is a js array?: #f
+'#(1 2 3) is a js object?: #t
+'#(1 2 3) is a js array?: #f
+racket bytestring #"ABC" is a js object?: #t
+racket bytestring #"ABC" is a js array?: #f
+racket char #\D is a js object?: #t
+racket char #\D is a js array?: #f
+"a racket string" is a js object?: #t
+"a racket string" is a js array?: #f
+a js string is a js object?: #f
+a js string is a js array?: #f
+'() is a js object?: #t
+'() is a js array?: #f
+'(1 2 3) is a js object?: #t
+'(1 2 3) is a js array?: #f
+1 is a js object?: #f
+1 is a js array?: #f
+#f is a js object?: #f
+#f is a js array?: #f
+#<void> is a js object?: #f
+#<void> is a js array?: #f
