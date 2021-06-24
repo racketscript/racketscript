@@ -6,18 +6,15 @@
 [![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
 [![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://play.racketscript.org)
 
-RacketScript is an **experimental** lightweight Racket to JavaScript compiler.
-The generated code is ES6, which can be translated to ES5 using
-[Babel](https://babeljs.io/). RacketScript aims to leverage both JavaScript and
-Racket's ecosystem, and make interoperability between them clean and smooth.
+RacketScript is an **experimental** lightweight Racket to JavaScript (ECMAScript 6)
+compiler. RacketScript aims to leverage both JavaScript and Racket's ecosystem,
+and make interoperability between them clean and smooth.
 
-RacketScript takes in Racket source files, uses Racket's macro
-expander to
-produce
-[Fully Expanded Programs](https://docs.racket-lang.org/reference/syntax-model.html#%28part._fully-expanded%29),
-and then compile these fully expanded programs to
-JavaScript. RacketScript doesn't support Racket features which are
-expensive, for example proper tail calls and continuations.
+RacketScript takes in Racket source files, uses Racket's macro expander to
+produce [Fully Expanded
+Programs](https://docs.racket-lang.org/reference/syntax-model.html#%28part._fully-expanded%29),
+and then compile these fully expanded programs to JavaScript. RacketScript
+currently supports only a subset of Racket.
 
 ## Try RacketScript
 
@@ -26,53 +23,40 @@ at [RacketScript Playground](http://play.racketscript.org).
 
 ## Disclaimer
 
-RacketScript is **work-in-progress** and is not mature and stable.
-Several Racket features and libraries are not yet implemeted
-(eg. number pyramid, contracts, tail calls, primitives). That said,
-we encourage experimentation, user feedback, discussions, bug reports
-and pull requests.
+RacketScript is **work-in-progress** and is not mature and stable. Several
+Racket features and libraries are not yet implemented (eg. number pyramid,
+contracts, proper tail calls, continuations). There are also quite a few missing
+primitive functions. That said, we encourage experimentation, user feedback,
+discussions, bug reports and pull requests.
 
 ## Installation
 
 Following system packages are required -
 
-- [Racket](http://www.racket-lang.org/) 6.4 or higher
-- [NodeJS](https://nodejs.org/) (4.0 or higher) and NPM
+- [Racket](http://www.racket-lang.org/) 6.12 or higher
+- [NodeJS](https://nodejs.org/) (14.0 or higher) and NPM
 - Make
 
 ### Quick Install
 
-RacketScript can be installed by running one of the following commands
-in your terminal.
-
-For installation via `raco`
+RacketScript can be installed using the Racket package manager `raco`:
 
 ```sh
 raco pkg install racketscript
-```
-
-For installation via `curl`
-
-```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/vishesh/racketscript/master/install.sh)"
-```
-
-Or, for installation via `wget`
-
-```sh
-sh -c "$(wget https://raw.githubusercontent.com/vishesh/racketscript/master/install.sh -O -)"
 ```
 
 See [Basic Usage](#basic-usage) to get started.
 
 ### Install from Github
 
-Once RacketScript is cloned in your machine -
+```
+# Clone RacketScript
+git clone git@github.com:vishesh/racketscript.git`
+cd racketscript
 
-1. Fire up your terminal and goto the root directory of the
-   repository.
-2. Execute `make setup` to install RacketScript compiler and all its
-   dependencies.
+# Build and install
+make setup
+```
 
 If you do not wish to pollute your root NPM directory, you can set a
 custom global location by changing your `npmrc` (eg.  `echo "prefix =
@@ -98,7 +82,7 @@ The above command will create a output build directory named
 `js-build`, copy RacketScript runtime, copy other support files,
 install NPM dependencies, compile `file.rkt` and its dependencies.
 
-The compiled ES6 modules typically goto one of following three
+The compiled JavaScript modules typically goto one of following three
 folders:
 
 - "modules": The normal Racket files.
@@ -134,21 +118,26 @@ of self recursive tail calls to loop, pass `--enable-self-tail` flag.
 ```sh
 racks --enable-self-tail /path/to/source.rkt
 ```
-### Babel
 
-RacketScript could also use `Babel`. It will compile each assembled ES6
-module to ES5, and put it in `dist` directory, persevering original
-directory structure. Replace above command with following -
+### Browser
+
+Most browsers can load RacketScript modules directly without any external
+dependencies `<script type="module" src="path/to/module.rkt.js"></script>`.
+
+### Module Bundler (Webpack)
+
+For deployment, you may want to bundle all generated modules into single
+JavaScript file. RacketScript can generate some boiler-plate for using
+Webpack/Babel, however we recommend you to use your own configuration.
 
 ```sh
 # Use `--target` or `-t` flag.
-racks --target babel /path/to/source.rkt
-```
+racks --target webpack /path/to/source.rkt
 
-This will compile each ES6 module generated by RacketScript, and put
-in `js-build/dist` with same directory structure. The JavaScript
-script file produced by Babel in `dist` can be executed directly using
-Node. Babel is highly recommended if your target is NodeJS.
+# Call webpack to bundle in `js-build` directory. Will produce
+# single JavaScript bundle in `js-build/dist` directory.
+npx webpack
+```
 
 ## Contributing to RacketScript
 
