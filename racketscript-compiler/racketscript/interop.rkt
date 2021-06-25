@@ -302,7 +302,11 @@
   (for/list ([(k v) (*in-js-object obj)]) (values k v)))
 
 (define (js-object? v)
-  (and ($/typeof v "object") (not (eq? v $/null))))
+  ($/binop &&
+    ($/binop &&
+      ($/typeof v "object")
+      ($/binop !== v $/null))
+    (not (($ ($ '$rjs_core) 'Primitive 'check) v))))
 
 (define (check-object v)
   (unless (js-object? v)
