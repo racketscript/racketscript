@@ -221,7 +221,7 @@
           (λ (evt)
             (define posn (canvas-posn-δ canvas evt))
             (#js.bb.queue-event ($/obj [type #js"on-mouse"]
-                                       [evt  (racket-string r-evt-name)]
+                                       [evt  (js-string->string r-evt-name)]
                                        [x    ($ posn 'x)]
                                        [y    ($ posn 'y)]))))
 
@@ -366,7 +366,7 @@
         k))
   (let ([key-table-code ($ key-table code)])
        (if (void? key-table-code)
-           (racket-string code)
+           (js-string->string code)
            key-table-code)))
 
 (define (canvas-posn-δ canvas evt)
