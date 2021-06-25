@@ -21,7 +21,7 @@
          $/this
          =>$
          js-string
-         racket-string
+         js-string->string
          js-array->list
          assoc->object
          (rename-out [*in-js-array in-js-array]
@@ -194,7 +194,7 @@
 (define (js-string e)
   ($$ e.toString))
 
-(define (racket-string e)
+(define (js-string->string e)
   (($ ($ '$rjs_core) 'UString 'makeImmutable) e))
 
 (define (js-array->list e)
