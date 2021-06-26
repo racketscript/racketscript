@@ -1,30 +1,27 @@
 #lang racket/base
 
-(require racket/bool
+(require data/queue
+         racket/bool
          racket/cmdline
          racket/file
          racket/format
-         racket/match
          racket/list
+         racket/match
          racket/path
          racket/port
          racket/pretty
-         racket/runtime-path
+         racket/serialize
          racket/set
          racket/system
-         racket/serialize
          syntax/moddep
-
-         data/queue
          threading
-
          "absyn.rkt"
-         "il.rkt"
-         "il-analyze.rkt"
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
          "global.rkt"
+         "il-analyze.rkt"
+         "il.rkt"
          "logging.rkt"
          "moddeps.rkt"
          "transform.rkt"
@@ -42,7 +39,6 @@
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
-(define js-output-file (make-parameter "compiled.js"))
 (define js-output-beautify? (make-parameter #f))
 (define enabled-optimizations (make-parameter (set)))
 (define input-from-stdin? (make-parameter #f))

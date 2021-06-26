@@ -2,8 +2,7 @@
 
 (require racket/format
          racket/match
-         "config.rkt"
-         "util.rkt")
+         "config.rkt")
 
 (provide name-in-module
          *quoted-binding-ident-name*)

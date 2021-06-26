@@ -9,11 +9,9 @@
          racket/path
          racket/sequence
          racket/set
-         racket/string
          typed/rackunit
          "config.rkt"
-         "ident.rkt"
-         "util-untyped.rkt")
+         "ident.rkt")
 
 (require/typed racket/string
   [string-prefix? (-> String String Boolean)])

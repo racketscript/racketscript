@@ -4,7 +4,6 @@
          racket/format
          racket/match
          racket/set
-         racket/string
          typed/rackunit
          "config.rkt")
 
@@ -36,7 +35,7 @@
     [(reserved-keyword? s)
      (~a "r" ss)]
     [else
-     
+
      (match-define (cons ch-first ch-rest) (string->list ss))
       (apply string-append
              (cons (normalize-symbol-atom ch-first #t ignores)

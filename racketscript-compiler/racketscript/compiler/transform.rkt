@@ -3,25 +3,19 @@
 ;;; Generate IL code from abstract syntax. Each binding name
 ;;; in assumed to be fresh, to enforce lexical scope rules of Racket
 
-(require racket/match
-         racket/function
-         racket/bool
-         racket/list
+(require racket/bool
          racket/format
-         racket/path
+         racket/list
+         racket/match
          racket/set
-         racket/syntax
-         typed/racket/unsafe
          threading
-         anaphoric
-         "config.rkt"
-         "global.rkt"
-         "logging.rkt"
-         "util.rkt"
-         "environment.rkt"
          "absyn.rkt"
+         "config.rkt"
+         "environment.rkt"
+         "il-analyze.rkt"
          "il.rkt"
-         "il-analyze.rkt")
+         "logging.rkt"
+         "util.rkt")
 
 (require/typed racket/syntax
   [format-symbol (-> String Any * Symbol)])
@@ -588,7 +582,7 @@
                        (list old-context-id new-context-id))))))
      (values stms result-id)]
     [(VarRef _)  (values '() (absyn-value->il '#%variable-reference))]
-    
+
     [_ (error (~a "unsupported expr " expr))]))
 
 

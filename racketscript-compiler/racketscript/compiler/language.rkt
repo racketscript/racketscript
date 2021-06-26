@@ -2,10 +2,8 @@
 
 (provide define-language)
 
-(require racket/struct
-         (for-syntax syntax/parse
-                     syntax/parse/experimental/template
-                     racket/syntax
+(require (for-syntax racket/syntax
+                     syntax/parse
                      syntax/stx))
 
 ;; Identifier -> Identifer

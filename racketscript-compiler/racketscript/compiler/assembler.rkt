@@ -4,17 +4,15 @@
 ;;; in assumed to be fresh, to enforce lexical scope rules of Racket
 ;;; in JavaScript
 
-(require racket/string
-         racket/format
-         racket/match
-         racket/list
+(require racket/format
          racket/function
+         racket/list
+         racket/match
+         racket/string
          "config.rkt"
-         "environment.rkt"
+         "il.rkt"
          "logging.rkt"
-         "util.rkt"
-         "absyn.rkt"
-         "il.rkt")
+         "util.rkt")
 
 (provide assemble
          assemble-module

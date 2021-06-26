@@ -1,9 +1,7 @@
 #lang racketscript/boot
 
-(require racketscript/interop
-         racket/stxparam
-         (for-syntax syntax/parse)
-         ;(only-in racket/base all-from-out)
+(require (for-syntax syntax/parse)
+         racketscript/interop
          "lib.rkt")
 
 ;; ----------------------------------------------------------------------------
@@ -25,7 +23,7 @@
              (#js.Values.make vals)))
     0)
    "values"))
-   
+
 
 (define+provide (call-with-values generator receiver)
   (let ([vals (generator)])

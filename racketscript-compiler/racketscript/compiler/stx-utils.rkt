@@ -1,5 +1,7 @@
 #lang racket/base
-(require racket/match syntax/stx)
+(require racket/match
+         syntax/stx)
+
 (provide (all-defined-out))
 
 (define (stx-foldl f b . lsts)
