@@ -30,15 +30,13 @@
          for/js-object
          js-object?)
 
-(require syntax/parse/define
-         (for-syntax syntax/parse
-                     racket/string
+(require (for-syntax (for-template "private/interop.rkt")
                      racket/base
-                     racket/sequence
+                     racket/string
                      syntax/stx
                      threading
-                     (for-template "private/interop.rkt")
-                     "private/interop.rkt"))
+                     "private/interop.rkt")
+         syntax/parse/define)
 
 (begin-for-syntax
   (require (only-in "compiler/util-untyped.rkt" js-identifier?))

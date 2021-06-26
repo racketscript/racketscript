@@ -2,8 +2,6 @@
 
 (require racket/match
          racket/string
-         racket/syntax
-         syntax/readerr
          (only-in racketscript/compiler/util-untyped
                   js-identifier?))
 

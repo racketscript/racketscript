@@ -1,7 +1,7 @@
 #lang racket
 
-(require syntax/moddep
-         graph
+(require graph
+         syntax/moddep
          threading
          "config.rkt"
          "util.rkt")

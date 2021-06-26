@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
-(require "language.rkt"
-         "ident.rkt")
+(require "ident.rkt"
+         "language.rkt")
 
 (provide (all-defined-out))
 

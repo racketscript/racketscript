@@ -1,13 +1,13 @@
 #lang typed/racket/base
 
-(require racket/match
+(require racket/bool
          racket/list
+         racket/match
          racket/set
-         racket/bool
          "environment.rkt"
+         "il.rkt"
          "language.rkt"
-         "util.rkt"
-         "il.rkt")
+         "util.rkt")
 
 (provide self-tail->loop
          lift-returns

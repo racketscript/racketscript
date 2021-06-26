@@ -5,9 +5,8 @@
          *jsident-pattern*
          js-identifier?)
 
-(require setup/link
-         setup/dirs
-         "logging.rkt")
+(require setup/dirs
+         setup/link)
 
 ;; Path Path -> Boolean
 ;; Returns true if path has base as prefix

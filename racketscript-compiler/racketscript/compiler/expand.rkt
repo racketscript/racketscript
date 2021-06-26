@@ -6,34 +6,27 @@
 ;;
 ;; Copyright (c) 2013 Sam Tobin-Hochstadt, Jeremy Siek, Carl Friedrich Bolz
 
-(require racket/bool
-         racket/dict racket/match
-         racket/extflonum
-         racket/format
-         racket/function
-         racket/list
-         racket/path
-         racket/pretty
-         racket/set
-         racket/sequence
-         racket/syntax
-         racket/vector
-         syntax/modresolve
-         syntax/stx
-         syntax/parse
-         syntax/id-table
-         version/utils
+(require (for-syntax racket/base)
+         racket/bool
+         racket/dict
          (only-in racket/list
                   append-map
                   last-pair
                   filter-map
                   first
                   add-between)
-
-         (for-syntax racket/base)
-
+         racket/list
+         racket/match
+         racket/path
+         racket/pretty
+         racket/set
+         racket/syntax
+         racket/vector
+         syntax/id-table
+         syntax/parse
+         syntax/stx
+         version/utils
          "absyn.rkt"
-         "case-lambda.rkt"
          "config.rkt"
          "global.rkt"
          "logging.rkt"

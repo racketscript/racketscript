@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require "config.rkt"
-         (for-syntax syntax/parse
-                     racket/base
-                     racket/syntax)
-         (for-meta 2 syntax/parse))
+(require (for-syntax racket/base
+                     racket/syntax
+                     syntax/parse)
+         (for-meta 2 syntax/parse)
+         "config.rkt")
 
 (provide log-rjs-info
          log-rjs-debug

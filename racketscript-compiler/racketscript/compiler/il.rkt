@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
-(require racket/match
-         racket/list
+(require racket/list
+         racket/match
          "absyn.rkt"
          "language.rkt")
 

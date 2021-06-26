@@ -1,12 +1,11 @@
 #lang typed/racket/base
 
-(require racket/match
-         racket/function
+(require racket/function
+         racket/match
          racket/path
          racket/runtime-path
          racket/set
          threading
-
          "../private/interop.rkt")
 
 (provide output-directory

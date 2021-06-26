@@ -1,9 +1,8 @@
 #lang racket
 
-(require syntax/parse
-         syntax/stx
-         (for-syntax syntax/parse
-                     racket/stxparam))
+(require (for-syntax syntax/parse)
+         syntax/parse
+         syntax/stx)
 
 (provide s-case-lambda
          module-replace-case-lambda)
