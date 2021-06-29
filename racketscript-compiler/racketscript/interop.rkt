@@ -212,7 +212,7 @@
        (define key
          (let ([k (car p)])
            (cond
-             [(string? k) k]
+             [(or ($/typeof k "string") (string? k)) k] ; allow both js and racket string keys
              [(symbol? k) (symbol->string k)]
              [else (error 'assoc->object "invalid key value")])))
        ($/:= ($ result key) (car (cdr p)))
