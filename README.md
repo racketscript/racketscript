@@ -96,20 +96,20 @@ Here are few other examples that would come in handy:
 ```sh
 # To skip `npm install` step. Useful when building
 # for second time.
-racks -n /path/to/source.rkt
+racks -n /path/to/module-name.rkt
+
+# Run the assembled JavaScript module.
+node js-build/modules/module-name.rkt.js
 	
-# To beautify assembled modules use `-b`. Make sure
-# `js-beautify` is installed from NPM or your
-# package manager.
-racks -b /path/to/source.rkt
+# Use `-b` to format the assembled JavaScript code use `-b`. Assumes
+# `js-beautify` is available in `$PATH`.
+racks -b /path/to/module-name.rkt
 
 # Override default output directory
-racks -d /path/to/output/dir /path/to/source.rkt
+racks -d /path/to/output/dir /path/to/module-name.rkt
 	
 # Print JavaScript output to stdout
-racks --js --js-beautify /path/to/source.rkt
-
-node js-build/modules/source.rkt.js
+racks --js --js-beautify /path/to/module-name.rkt
 ```
 		
 By default tail call optimization is turned off. To enable translation
