@@ -1,13 +1,13 @@
-#lang racket
+#lang racketscript/base
 
-(require racketscript/ffi)
+(require racketscript/interop)
 
 (define document ($$ 'window.document))
 
 (define (onload)
-  (define canvas ($ document 'getElementById <$> "main_canvas"))
-  (define ctx ($ canvas 'getContext <$> "2d"))
-  ($ ctx 'fillStyle <:=> "blue")
+  (define canvas ($$ document.getElementById #js"main_canvas"))
+  (define ctx ($$ canvas.getContext #js"2d"))
+  ($/:= #js.ctx.fillStyle #js"blue")
   ($$ ctx.fillRect 10 20 200 100)
   ($$ ctx.strokeStyle "#fa00ff")
   ($$ ctx.lineWidth 5)

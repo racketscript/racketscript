@@ -1,0 +1,4 @@
+(name John)
+(city San Jose)
+(occupation Driver)
+#hash((occupation . Driver) (city . San Jose) (name . John))
