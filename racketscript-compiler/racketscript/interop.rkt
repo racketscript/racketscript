@@ -17,6 +17,7 @@
          $/instanceof
          $/arguments
          $/binop
+         $/+
          $/str
          $/this
          =>$
@@ -188,6 +189,11 @@
   (syntax-parse stx
     [(_ oper:id operand0:expr operand1:expr)
      #'(#%js-ffi 'operator 'oper operand0 operand1)]))
+
+(define-syntax ($/+ stx)
+  (syntax-parse stx
+    [(_ e) #'e]
+    [(_ e . rst) #'($/binop + e ($/+ . rst))]))
 
 (define (js-string e)
   ($$ e.toString))
