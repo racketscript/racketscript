@@ -67,26 +67,30 @@
   (require rackunit
            racketscript/interop)
 
-  (define-simple-check (check-reader str first-id? result)
-    (equal? (syntax->datum
-             (read-racketscript #f (open-input-string
-                                    (string-append
-                                     (if first-id? "s." "s*.")
-                                     str))))
-            result))
+  (define-simple-check (check-reader str expected)
+    (let ([actual (read-racketscript #f (open-input-string (substring str 1)))])
+      (equal?
+        (if actual
+          (syntax->datum actual)
+          actual)
+        expected)))
 
-  (check-reader "window" #t 'window)
-  (check-reader "window" #f '(#%js-ffi 'var 'window))
+  (check-reader "js.window" 'window)
+  (check-reader "js*.window" '(#%js-ffi 'var 'window))
 
-  (check-reader "window.document" #t `(#%js-ffi 'ref window 'document))
-  (check-reader "window.document.write" #t
+  (check-reader "js.window.document" `(#%js-ffi 'ref window 'document))
+  (check-reader "js.window.document.write"
                 `(#%js-ffi 'ref (#%js-ffi 'ref window 'document) 'write))
 
-  (check-reader "window.document" #f
+  (check-reader "js*.window.document"
                 `(#%js-ffi 'ref (#%js-ffi 'var 'window) 'document))
-  (check-reader "window.document.write" #f
+  (check-reader "js*.window.document.write"
                 `(#%js-ffi 'ref
                            (#%js-ffi 'ref
                                      (#%js-ffi 'var 'window)
                                      'document)
-                           'write)))
+                           'write))
+
+  (check-reader "js\"body\"" `(#%js-ffi 'string "body"))
+  
+  (check-reader "jQuery" #f))
