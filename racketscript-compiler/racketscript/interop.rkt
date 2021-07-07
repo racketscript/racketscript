@@ -394,6 +394,47 @@
   (check-interop #'($ window 'document "write")
                  #'(#%js-ffi 'index (#%js-ffi 'ref window 'document) "write"))
 
+  ;; Check `$$`
+  (check-interop #'($$ 'window.document write)
+                 #'((#%js-ffi 'ref 'window 'document) write))
+
+  (check-interop #'($$ window.parent location)
+                 #'((#%js-ffi 'ref window 'parent) location))
+
+  (check-interop #'($$ 'window document write)
+                 #'((#%js-ffi 'var 'window) document write))
+
+  ;; Check $/new
+  (check-interop #'($/new (Img "foo.jpeg")) #'(#%js-ffi 'new (Img "foo.jpeg")))
+
+  ;; Check $/throw
+  (check-interop #'($/throw '42) #'(#%js-ffi 'throw '42))
+
+  ;; Check $/undefined
+  (check-interop #'($/undefined) #'(#%js-ffi 'undefined))
+
+  ;; Check $/null
+  (check-interop #'($/null) #'(#%js-ffi 'null))
+
+  ;; Check $/this
+  (check-interop #'($/this) #'(#%js-ffi 'this))
+
+  ;; Check $/arguments
+  (check-interop #'($/arguments) #'(#%js-ffi 'arguments))
+
+  ;; Check $/:=
+  (check-interop #'($/:= ($ window document width) '42)
+                 #'(#%js-ffi 'assign (#%js-ffi 'ref (#%js-ffi 'ref window document) width) '42))
+
+  ;; Check $/array
+  (check-interop #'($/array 42 'foobar ($/new ($/this)))
+                 #'(#%js-ffi 'array 42 'foobar 
+
+
+
+
+
+
   ;; Check '$>'
 
   (check-interop #'($> foo bar (baz 'a 'b))
