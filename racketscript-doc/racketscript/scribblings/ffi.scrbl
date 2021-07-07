@@ -1,8 +1,7 @@
 #lang scribble/manual
 
-@(require
-   ;; use @$js-ffi from private/interop
-   racketscript/private/interop)
+@(require (for-label racket/base
+                     racketscript/interop))
 
 @title[#:tag "rs-js-ffi"]{The RacketScript-JavaScript FFI}
 
@@ -10,8 +9,6 @@ RacketScript supports full interoperability with JavaScript. This section explai
 
 @section[#:tag "js-ffi"]{The Main FFI Form}
 
-All JavaScript FFI calls begin with @racket[#%js-ffi], followed by a
-symbol indicating the JavaScript grammar production to be generated.
 
 @defform*[((#%js-ffi 'ref . rest)
            (#%js-ffi 'index . rest)
@@ -20,15 +17,23 @@ symbol indicating the JavaScript grammar production to be generated.
            (#%js-ffi 'new . rest)
            (#%js-ffi 'object . rest)
            (#%js-ffi 'array . rest)
+           (#%js-ffi 'this)
+           (#%js-ffi 'arguments)
            (#%js-ffi 'require . rest))
           #:grammar
           ([type symbol?])]{
 
-@bold{Note}: Users most likely should not be using this form. Instead, use the appropriate forms in the subsequent sections.}
+@bold{Note}: Users most likely should not be using this form. Instead, use the appropriate forms in the subsequent sections.
                             
 All JavaScript FFI calls begin with @racket[#%js-ffi], followed by a
 symbol indicating the JavaScript grammar production to be generated.
                                     }
+
+@section[#:tag "main"]{Main FFI Forms}
+
+@defform[($/this)]{Equivalent to @racket[(#%js-ffi 'this)]}
+@defform[($/arguments)]{Equivalent to @racket[(#%js-ffi 'arguments)]}
+@defform[($/null)]{Equivalent to @racket[(#%js-ffi 'null)]}
 
 @section[#:tag "reader"]{Reader Extensions}
 

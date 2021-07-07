@@ -1,19 +1,17 @@
 #lang scribble/manual
 
-@(require (for-label racket/base))
+@title[#:style '(toc)]{The RacketScript Language and Compiler}
 
-@title[#:style '(toc)]{The @racketmodname[racketscript] Language and Compiler}
-
-@defmodule[racketscript #:lang #:use-sources (racketscript)]
+@defmodule[racketscript/base #:lang #:use-sources (racketscript/interop)]
 
 @(author
   (author+email "Vishesh Yadav" "vishesh3y@gmail.com" #:obfuscate? #t)
   (author+email "Stephen Chang" "stchang@racket-lang.org" #:obfuscate? #t))
 
-RacketScript is an experimental lightweight Racket to JavaScript (ES6)
-compiler. It allows programmers to use both JavaScript's and
-Racket's ecosystem, and makes interoperability between them clean and
-smooth.
+RacketScript is an experimental Racket to JavaScript (ES6)
+compiler. It allows programmers to use both JavaScript's and Racket's
+ecosystem and aims to make this interoperability as smooth as
+possible.
 
 @local-table-of-contents[]
 
