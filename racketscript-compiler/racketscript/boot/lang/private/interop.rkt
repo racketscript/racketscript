@@ -68,29 +68,29 @@
            racketscript/interop)
 
   (define-simple-check (check-reader str expected)
-    (let ([actual (read-racketscript #f (open-input-string (substring str 1)))])
+    (let ([actual (read-racketscript #f (open-input-string (substring str 2)))])
       (equal?
         (if actual
           (syntax->datum actual)
           actual)
         expected)))
 
-  (check-reader "js.window" 'window)
-  (check-reader "js*.window" '(#%js-ffi 'var 'window))
+  (check-reader "#js.window" 'window)
+  (check-reader "#js*.window" '(#%js-ffi 'var 'window))
 
-  (check-reader "js.window.document" `(#%js-ffi 'ref window 'document))
-  (check-reader "js.window.document.write"
+  (check-reader "#js.window.document" `(#%js-ffi 'ref window 'document))
+  (check-reader "#js.window.document.write"
                 `(#%js-ffi 'ref (#%js-ffi 'ref window 'document) 'write))
 
-  (check-reader "js*.window.document"
+  (check-reader "#js*.window.document"
                 `(#%js-ffi 'ref (#%js-ffi 'var 'window) 'document))
-  (check-reader "js*.window.document.write"
+  (check-reader "#js*.window.document.write"
                 `(#%js-ffi 'ref
                            (#%js-ffi 'ref
                                      (#%js-ffi 'var 'window)
                                      'document)
                            'write))
 
-  (check-reader "js\"body\"" `(#%js-ffi 'string "body"))
+  (check-reader "#js\"body\"" `(#%js-ffi 'string "body"))
   
-  (check-reader "jQuery" #f))
+  (check-reader "#jQuery" #f))
