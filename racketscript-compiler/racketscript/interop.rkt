@@ -423,20 +423,40 @@
   (check-interop #'($/arguments) #'(#%js-ffi 'arguments))
 
   ;; Check $/:=
-  (check-interop #'($/:= ($ window document width) '42)
-                 #'(#%js-ffi 'assign (#%js-ffi 'ref (#%js-ffi 'ref window document) width) '42))
+  (check-interop #'($/:= ($ window 'document 'width) '42)
+                 #'(#%js-ffi 'assign (#%js-ffi 'ref (#%js-ffi 'ref window 'document) 'width) '42))
 
   ;; Check $/array
   (check-interop #'($/array 42 'foobar ($/new ($/this)))
-                 #'(#%js-ffi 'array 42 'foobar 
+                 #'(#%js-ffi 'array 42 'foobar (#%js-ffi 'new (#%js-ffi 'this))))
 
+  ;; Check $/require
+  (check-interop #'($/require "foo.rkt") #'(#%js-ffi 'require "foo.rkt"))
+  (check-interop #'($/require "bar.rkt" *) #'(#%js-ffi 'require '* "bar.rkt"))
 
+  ;; Check $/require/*
+  (check-interop #'($/require/* "foo.rkt") #'(#%js-ffi 'require '* "foo.rkt"))
 
+  ;; Check $/typeof
+  (check-interop #'($/typeof '42) #'(#%js-ffi 'typeof '42))
+  (check-interop #'($/typeof '42 "function")
+                 #'(#%js-ffi 'operator '=== (#%js-ffi 'typeof '42) (#%js-ffi 'string "function")))
 
+  ;; Check $/instanceof
+  (check-interop #'($/instanceof '42 'Object) #'(#%js-ffi 'instanceof '42 'Object))
 
+  ;; Check $/binop
+  (check-interop #'($/binop * '33 '67) #'(#%js-ffi 'operator '* '33 '67))
+
+  ;; Check $/+
+  (check-interop #'($/+ '5) #'5)
+  (check-interop #'($/+ '5 '6 '7) #'(#%js-ffi 'operator '+ '5 (#%js-ffi 'operator '+ '6 '7)))
+
+  ;; Check $/str
+  (check-interop #'($/str "foobar") #'(#%js-ffi 'string "foobar"))
+  (check-interop #'($/str (make-string)) #'(js-string (make-string)))
 
   ;; Check '$>'
-
   (check-interop #'($> foo bar (baz 'a 'b))
                  #'((#%js-ffi 'ref (#%js-ffi 'ref foo 'bar) 'baz) 'a 'b))
 
