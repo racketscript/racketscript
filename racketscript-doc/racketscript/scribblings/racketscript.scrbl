@@ -17,4 +17,5 @@ smooth.
 
 @local-table-of-contents[]
 
+@include-section{start.scrbl}
 @include-section{ffi.scrbl}
