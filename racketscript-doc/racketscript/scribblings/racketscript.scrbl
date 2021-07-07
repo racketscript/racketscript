@@ -11,8 +11,8 @@
   (author+email "Stephen Chang" "stchang@racket-lang.org" #:obfuscate? #t))
 
 RacketScript is an experimental lightweight Racket to JavaScript (ES6)
-compiler. It aim to enable users to leverage both JavaScript's and
-Racket's ecosystem, and make interoperability between clean and
+compiler. It allows programmers to use both JavaScript's and
+Racket's ecosystem, and makes interoperability between them clean and
 smooth.
 
 @local-table-of-contents[]

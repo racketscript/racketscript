@@ -1,15 +1,10 @@
 #lang scribble/manual
 
-@(require scribble/example
-          racketscript/interop
-          (for-label racket/base
-                     racketscript/interop))
-
-@title{RacketScript-JavaScript FFI}
+@title[#:tag "rs-js-ffi"]{The RacketScript-JavaScript FFI}
 
 RacketScript supports full interoperability with JavaScript. This section explains how JavaScript code is invoked in a RacketScript program.
 
-@section[#:tag "raw"]{The Main FFI Form}
+@section[#:tag "js-ffi"]{The Main FFI Form}
 
 All JavaScript FFI calls begin with @racket[#%js-ffi], followed by a
 symbol indicating the JavaScript grammar production to be generated.
