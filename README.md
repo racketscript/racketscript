@@ -3,9 +3,9 @@
 # RacketScript
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING.md)
-[![Tests](https://github.com/vishesh/racketscript/actions/workflows/racket.yml/badge.svg)](https://github.com/vishesh/racketscript/actions/workflows/racket.yml)
-[![ESLint](https://github.com/vishesh/racketscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/vishesh/racketscript/actions/workflows/node.js.yml)
-[![Coverage Status](https://codecov.io/gh/vishesh/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/vishesh/racketscript?branch=master)
+[![Tests](https://github.com/racketscript/racketscript/actions/workflows/racket.yml/badge.svg)](https://github.com/racketscript/racketscript/actions/workflows/racket.yml)
+[![ESLint](https://github.com/racketscript/racketscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/racketscript/racketscript/actions/workflows/node.js.yml)
+[![Coverage Status](https://codecov.io/gh/racketscript/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/racketscript/racketscript?branch=master)
 [![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://play.racketscript.org)
 
 RacketScript is an **experimental** lightweight Racket to JavaScript (ECMAScript 6)
@@ -53,7 +53,7 @@ See [Basic Usage](#basic-usage) to get started.
 
 ```sh
 # Clone RacketScript
-git clone git@github.com:vishesh/racketscript.git`
+git clone git@github.com:racketscript/racketscript.git`
 cd racketscript
 
 # Build and install
@@ -147,7 +147,7 @@ Please read [Contribution Guidelines](CONTRIBUTING.md).
 
 ## Troubleshooting
 
-Please read the [Troubleshooting Wiki](https://github.com/vishesh/racketscript/wiki/Troubleshooting).
+Please read the [Troubleshooting Wiki](https://github.com/racketscript/racketscript/wiki/Troubleshooting).
 
 ## Related Work
 
