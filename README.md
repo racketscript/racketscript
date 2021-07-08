@@ -1,4 +1,4 @@
-<img src="logo.svg" align="right" height="80" />
+<img src="logo.svg" align="right" height="110" />
 
 # RacketScript
 
