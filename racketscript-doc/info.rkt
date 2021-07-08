@@ -7,6 +7,7 @@
 (define build-deps
   '("racket-doc"
     "scribble-lib"
+    "scribble-enhanced"
     "racketscript-compiler"))
 
 (define pkg-desc "Documentation for the RacketScript compiler")
