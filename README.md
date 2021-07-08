@@ -61,13 +61,13 @@ make setup
 ```
 
 If you do not wish to pollute your root NPM directory, you can set a
-custom global location by changing your `npmrc` (eg.  `echo "prefix =
+custom global location by changing your `npmrc` (eg. `echo "prefix =
 $HOME/.npm-packages" >> ~/.npmrc`. Then add `/prefix/path/above/bin`
 to your `PATH`.
 
 ## Basic Usage
 
-RacketScript compiler is named `racks`. 
+RacketScript compiler is named `racks`.
 
 ```sh
 racks -h # show help
@@ -91,7 +91,7 @@ folders:
 - "collects": Racket collects source files.
 - "links": Other third party packages.
 - "dist": Contains sources compiled to ES6 or bundled JavaScript ready
-  for distribution.
+for distribution.
 
 Here are few other examples that would come in handy:
 
