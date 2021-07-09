@@ -1,3 +1,5 @@
+<img src="logo.svg" align="right" height="110" />
+
 # RacketScript
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](COPYING.md)
@@ -31,7 +33,7 @@ discussions, bug reports and pull requests.
 
 ## Installation
 
-Following system packages are required -
+Following system packages are required:
 
 - [Racket](http://www.racket-lang.org/) 6.12 or higher
 - [NodeJS](https://nodejs.org/) (14.0 or higher) and NPM
@@ -49,7 +51,7 @@ See [Basic Usage](#basic-usage) to get started.
 
 ### Install from Github
 
-```
+```sh
 # Clone RacketScript
 git clone git@github.com:racketscript/racketscript.git`
 cd racketscript
@@ -59,25 +61,25 @@ make setup
 ```
 
 If you do not wish to pollute your root NPM directory, you can set a
-custom global location by changing your `npmrc` (eg.  `echo "prefix =
+custom global location by changing your `npmrc` (eg. `echo "prefix =
 $HOME/.npm-packages" >> ~/.npmrc`. Then add `/prefix/path/above/bin`
 to your `PATH`.
 
 ## Basic Usage
 
-RacketScript compiler is named `racks`. 
+RacketScript compiler is named `racks`.
 
 ```sh
 racks -h # show help
 ```
-	
+
 To compile a Racket source file:
 
 ```sh
 # Installs all NPM dependencies and compile file.rkt
 racks /path/to/file.rkt
 ```
-	
+
 The above command will create a output build directory named
 `js-build`, copy RacketScript runtime, copy other support files,
 install NPM dependencies, compile `file.rkt` and its dependencies.
@@ -89,7 +91,7 @@ folders:
 - "collects": Racket collects source files.
 - "links": Other third party packages.
 - "dist": Contains sources compiled to ES6 or bundled JavaScript ready
-  for distribution.
+for distribution.
 
 Here are few other examples that would come in handy:
 
@@ -100,18 +102,18 @@ racks -n /path/to/module-name.rkt
 
 # Run the assembled JavaScript module.
 node js-build/modules/module-name.rkt.js
-	
+
 # Use `-b` to format the assembled JavaScript code use `-b`. Assumes
 # `js-beautify` is available in `$PATH`.
 racks -b /path/to/module-name.rkt
 
 # Override default output directory
 racks -d /path/to/output/dir /path/to/module-name.rkt
-	
+
 # Print JavaScript output to stdout
 racks --js --js-beautify /path/to/module-name.rkt
 ```
-		
+
 By default tail call optimization is turned off. To enable translation
 of self recursive tail calls to loop, pass `--enable-self-tail` flag.
 
