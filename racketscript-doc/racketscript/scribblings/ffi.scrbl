@@ -11,11 +11,20 @@
 
 @defmodule[racketscript/interop #:use-sources (racketscript/interop)]
 
-RacketScript supports near-complete interoperability with all
-JavaScript features. This section explains how to invoke plain
-JavaScript operations in a RacketScript program.
+RacketScript supports direct interoperability with most JavaScript
+features. This section explains how to invoke plain JavaScript in a
+RacketScript program.
 
 @section[#:tag "js-ffi"]{RacketScript's JavaScript FFI Primitive}
+
+RacketScript's @racket[#%js-ffi] form compiles directly to various
+JavaScript features. The first argument is a symbol that indicates the
+kind of JavaScript code to be generated and the rest are the arguments
+for that kind of operation.
+
+@bold{NOTE}: Users most likely @bold{should not} be using this
+form. Instead, use the API described in the @secref{mainapi} section,
+which will expand to the appropriate call to @racket[#%js-ffi].
 
 
 @enhanced:defform*[((#%js-ffi 'var)
@@ -35,18 +44,10 @@ JavaScript operations in a RacketScript program.
            (#%js-ffi 'string str)
            (#%js-ffi 'require mod)
            (#%js-ffi 'operator 'op operand ...))
-]{
-
-@bold{NOTE}: Users most likely @bold{should not} be using this form. Instead,
-use the API in @secref{mainapi}, which will expand to the
-appropriate call to @racket[#%js-ffi].
-
-The @racket[#%js-ffi] form in RacketScript compiles diretly to various
-JavaScript features. A symbol follows the initial @racket[#%js-ffi],
-indicating the kind of JavaScript code to be generated, followed by
-any arguments.}
+]{}
 
 Summary of JavaScript operations supported by @racket[#%js-ffi]:
+
 @itemlist[@item{@racket['var]: Use to access variable in the JavaScript namespace}
           @item{@racket['ref]: JavaScript object property reference, i.e., dot notation}
           @item{@racket['index]: JavaScript index operation, i.e., bracket notation}
@@ -77,33 +78,41 @@ Summary of JavaScript operations supported by @racket[#%js-ffi]:
           #:contracts
            ([sym symbol?])]{
 
-Syntax for accessing Javascript variables, and referencing and indexing properties.
+Syntax for accessing Javascript variables and properties.
 
- @itemlist[@item{A single identifier argument corresponds to a JavaScript variable.
+ @itemlist[@item{Using the @racket[$] operator with a single identifier references a JavaScript variable.
 
-                 @bold{Note}: the identifier be a @bold{valid JavaScript identifier} (underscore, dollar, numbers, and letters only), and not Racket or RacketScript.
+                       @bold{Example}: @racket[($ JSON)]
+                 
+                 @bold{Note}: the identifier be a @bold{valid JavaScript identifier} (underscore, dollar, and alphanumeric characters only), and not Racket or RacketScript one.
 
            Equivalent to @racket[(#%js-ffi 'var jsid)].}
 
-           @item{Supplying a second argument that is a symbol correponds to a JavaScript object reference, i.e., dot notation, where the second argument is the property name.
+           @item{Supplying a second argument that is a symbol corresponds to accessing a JavaScript object property using dot notation, where the symbol name is the property name.
 
-                 @bold{Example}: When handling a web request @racket[req], getting the body of a request could be written @racket[($ req 'body)] which compiles to @tt{req.body} in JavaScript.
+                 @bold{Example}: If handling a web request named @racket[req], getting the body of the request could be written @racket[($ req 'body)] which compiles to @tt{req.body} in JavaScript.
 
                  Equivalent to @racket[(#%js-ffi 'ref req 'body)].
 
-                 @bold{Note}: The above assumes that @racket[req] is a RacketScript variable. If the variable is in the JavaScript namespace only, then an additional @racket[$] is needed, e.g., @racket[($ ($ window) 'document)], which is equivalent to @racket[(#%js-ffi 'ref (#%js-ffi 'var window) 'body)], compiles to @tt{window.document} in JavaScript.}
+                 @bold{Note}: The above assumes that @racket[req] is a RacketScript variable. If the variable is in the JavaScript namespace only, then an additional @racket[$] is needed to first access the variable (see first @racket[$] case above).
+
+                 @bold{Example}: @racket[($ ($ JSON) 'parse)]  compiles to the JavaScript @tt{JSON.parse} function.
+
+                 Equivalent to @racket[(#%js-ffi 'ref (#%js-ffi 'var JSON) 'parse)].}
            
-           @item{A second argument that is an arbitrary expression is treated as JavaScript bracket index notation, e.g., @racket[($ req "body")] compiles to @tt{req["body"]} in JavaScript.
+           @item{A second argument that is an arbitrary expression is treated as JavaScript bracket notation.
+
+                 @bold{Example}: @racket[($ req "body")] compiles to @tt{req["body"]} in JavaScript.
 
 
                  Equivalent to @racket[(#%js-ffi 'index req "body")].}
-           @item{Supplying multiple arguments is compiled to a series of bracket index lookups}]
+           @item{Supplying more than two arguments corresponds to a series of bracket lookups.}]}
 
 @defform[($$ dot-chain e ...)
          #:grammar
          ([dot-chain (code:line symbol or identifier consisting of multiple dot-separated names)])]{
-Shorthand for multiple @racket[$]s. Allows more direct use of dot notation in RacketScript. E.g., @racket[($$ window.document write)]}                                  
-                                                    }
+Shorthand for multiple @racket[$]s. Allows more direct use of dot notation in RacketScript. E.g., @racket[($$ window.document.write)] corresponds to @tt{window.document.write} in JavaScript.}
+                                                    
 
 @defform[($/new constructor-expr)]{JavaScript object construction. Equivalent to @racket[(#%js-ffi 'new constructor-expr)].}
 @defform[($/throw exn)]{Throw a JavaScript exception. Equivalent to @racket[(#%js-ffi 'throw exn)].}
@@ -115,9 +124,9 @@ Shorthand for multiple @racket[$]s. Allows more direct use of dot notation in Ra
 @defform[($/obj [fld v] ...)
          #:grammar ([fld identifier])]{JavaScript object literal notation, i.e., brace notation, where @tt{fld} are identifiers representing the object's properties, and @tt{v ...} are values assigned to those properties. Equivalent to @racket[(#%js-ffi 'object fld ... v ...)]}
 
-@defform[($/:= e v)]{JavaScript assignment statement. Equivalent to @racket[(#%js-ffi 'assign e v)]. @racket[e] should be a ref, index, or symbol}
+@defform[($/:= e v)]{JavaScript assignment statement. Equivalent to @racket[(#%js-ffi 'assign e v)]. @racket[e] should be a symbol, or a @racket[#%js-ffi] @racket['var], @racket['ref], or @racket['index] call.}
 
-@defform[($/array e ...)]{JavaScript array literal notation, where @racket[($/array 1 2 3)] is equivalent to @tt{[1,2,3]}. Equivalent to @racket[(#%js-ffi 'array e ...)]}
+@defform[($/array e ...)]{JavaScript array literal notation, where @racket[($/array 1 2 3)] compiles to @tt{[1,2,3]}. Equivalent to @racket[(#%js-ffi 'array e ...)]}
 
 @defform*[#:literals (*)
           (($/require mod)
@@ -181,7 +190,7 @@ Equivalent to @racket[($/binop === (#%js-ffi 'typeof e) ($/str v))]
 Equivalent to @racket[(#%js-ffi 'operator 'op operand1 operand2)]}
 
 @defform[($/+ operand ...)]{Multi-argument infix calls to JavaScript @tt{+} (can be used as either concat or addition).
-                  Equivalent to multiple nested calls to @racket[$/binop]}
+                  Equivalent to multiple nested calls to @racket[$/binop].}
 
 @defproc[(js-string->string [jsstr JSstring]) string?]{Converts a JS string to a RacketScript string.}
 
@@ -191,13 +200,13 @@ Equivalent to @racket[(#%js-ffi 'operator 'op operand1 operand2)]}
 
 @section[#:tag "reader"]{Reader Extensions}
 
-Using @tt{#lang racketscript/base} includes reader extensions that makes it easier to make
-certain JavaScript calls. Specifically, RacketScript's reader
-recognizes three delimiters:
+@tt{#lang racketscript/base} includes reader extensions that
+make it easier to interoperate with JavaScript. Specifically,
+RacketScript's reader recognizes three delimiters:
 
 @itemlist[@item{@verbatim|{#js}|
 
-                Used to make a series of references using dot notation.
+                Used to access JavaScript object properties via dot notation.
 
                 @bold{Example}: @verbatim|{#js.req.body}| where @racket[req] is a RacketScript variable.
 
@@ -205,14 +214,14 @@ recognizes three delimiters:
 
           @item{@verbatim|{#js*}|
 
-                Used to make a series of references using dot notation. The difference with @racket{#js} is that @racket{#js*} wraps the first identifier in a @racket[#%js-ffi] @racket['var] form, i.e., it is used to call methods on JavaScript variables instead of RacketScript variables.
+                Used to access JavaScript object properties via dot notation. The difference with @racket{#js} is that @racket{#js*} wraps the first identifier in a @racket[#%js-ffi] @racket['var] form, i.e., it is used to access properties of @bold{JavaScript} variables rather than RacketScript variables.
                                         
 
                 @bold{Example}: @verbatim|{#js*.JSON.parse}| where @racket[JSON] is a JavaScript variable.
 
                 Equivalent to a series of @racket[#%js-ffi] @racket['ref] calls where the first id is wrapped in a @racket[#%js-ffi] @racket['var].}
 
-          @item{@verbatim|{#js"js string"}|
+          @item{@verbatim|{#js"some js string"}|
 
                 Used to create JS strings.
 
