@@ -22,6 +22,11 @@
                   [body     : ILStatement*])
   #:transparent)
 
+(struct ILLinklet ([imports : (Listof (Listof Symbol))]
+                   [exports : (Listof Symbol)]
+                   [body    : ILStatement*])
+  #:transparent)
+
 (struct ILRequire ([mod         : ILModuleName]
                    [name        : Symbol]
                    [import-mode : (U 'default '*)]) #:transparent)

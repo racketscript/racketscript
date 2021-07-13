@@ -23,6 +23,9 @@
          "il.rkt"
          "il-analyze.rkt")
 
+(require/typed "linklet-expand.rkt"
+  [parse-linklet (-> Any Linklet)])
+
 (require/typed racket/syntax
   [format-symbol (-> String Any * Symbol)])
 
@@ -53,6 +56,31 @@
     [(Begin? form) (absyn-expr->il form #f)]
     [else (error "only modules supported at top level")]))
 
+
+(: absyn-linklet->il : Linklet -> ILLinklet)
+(define (absyn-linklet->il l)
+  (match-define (Linklet importss exports forms) l)
+  ;; Since we get identifiers directly from defining module, we keep
+  ;; track of defines, use this for exporting all defines or exclude
+  ;; re-exports here
+  (: top-level-defines (Setof Symbol))
+  (define top-level-defines
+    (list->set
+     (append
+      (append-map DefineValues-ids
+                  (filter DefineValues? forms))
+      (map JSRequire-alias
+           (filter JSRequire? forms)))))
+  (define forms* : (Listof ILStatement*)
+    (for/list ([form : GeneralTopLevelForm (in-list forms)])
+      (absyn-gtl-form->il form)))
+
+  (ILLinklet importss exports (apply append forms*)))
+
+
+(module+ main
+  (define l (parse-linklet `(linklet () () (lambda (x) (+ x 3)))))
+  (absyn-linklet->il l))
 
 (: absyn-module->il (-> Module ILModule))
 (define (absyn-module->il mod)

@@ -73,7 +73,8 @@
      #:when (eq? 'lexical (hash-ref bindings i #f))
      (LocalIdent i)]
     [(? symbol? i)
-     (PrimitiveIdent i)]
+     ;; FIXME: not really always '#%kernel
+     (ImportedIdent i '#%kernel #t)]
     [`(set! ,s ,e)
      (Set! s (t e))]
     [`(with-continuation-mark ,key ,value ,result)

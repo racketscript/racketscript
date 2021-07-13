@@ -17,6 +17,7 @@
          "il.rkt")
 
 (provide assemble
+         assemble-linklet
          assemble-module
          assemble-statement*
          assemble-statement)
@@ -251,6 +252,14 @@
         (call-with-output-file (module-output-file (assert id path?))
           #:exists 'replace
           cb))))
+
+(: assemble-linklet (-> ILLinklet Output-Port Void))
+(define (assemble-linklet mod out)
+  (match-define (ILLinklet importss exports body) mod)
+  (log-rjs-info "[assemble-linklet] ~s" #f)
+  (for ([b (in-list body)])
+    (assemble-statement b out)))
+
 
 (: assemble-requires* (-> ILRequire* Output-Port Void))
 (define (assemble-requires* reqs* out)

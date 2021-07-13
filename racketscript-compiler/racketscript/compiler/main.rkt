@@ -234,6 +234,11 @@
        (= (get-module-timestamp ts mod)
           (file-or-directory-modify-seconds (actual-module-path mod)))))
 
+
+;; compile and convert a linklet s-exp
+(define (linklet->js s)
+  )
+
 ;; -> Void
 ;; For given global parameters starts build process starting
 ;; with entry point module and all its dependencies
