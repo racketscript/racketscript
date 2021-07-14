@@ -1,4 +1,6 @@
-
+// Copyright (C) 2016-2021 Matt Bierner, RacketScript Authors
+//
+// Original source and copyright clause: https://github.com/mattbierner/hamt_plus
 
 const _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol'
     ? function (obj) { return typeof obj; }
