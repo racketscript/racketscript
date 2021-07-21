@@ -32,12 +32,11 @@
          for/js-object
          js-object?)
 
-(require (for-syntax (for-template "private/interop.rkt")
-                     racket/base
+(require (for-syntax racket/base
                      racket/string
                      syntax/stx
-                     threading
-                     "private/interop.rkt")
+                     threading)
+         "private/interop.rkt"
          syntax/parse/define)
 
 (begin-for-syntax

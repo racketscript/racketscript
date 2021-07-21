@@ -15,6 +15,12 @@
   ;;   + 'object
   ;;   + 'array
   ;;   + 'require
+  ;;   + 'this
+  ;;   + 'typeof
+  ;;   + 'instanceof
+  ;;   + 'string
+  ;;   + 'arguments
+  ;;   + 'operator
   (define-values (#%js-ffi)
     (lambda _
       (#%app error 'racketscript "can't make JS ffi calls in Racket"))))
