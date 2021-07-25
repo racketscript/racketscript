@@ -1,53 +1,36 @@
-import { PrintablePrimitive } from './printable_primitive.js';
-import { internedMake } from './lib.js';
+// Create interned Symbol (Symbol.for)
+export const make = v => Symbol.for(v ? v.toString() : '');
 
-class Symbol extends PrintablePrimitive {
-    constructor(v) {
-        super();
-        this.v = v;
-        this._cachedHashCode = null;
-    }
-
-    /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
-    displayNativeString(out) {
-        out.consume(this.v);
-    }
-
-    equals(v) {
-        // Symbols are interned by default, and two symbols
-        // with same name can't be unequal.
-        // Eg. (define x (gensym)) ;;=> 'g60
-        //     (equal? x 'g60)     ;;=> #f
-        // TODO: does this handle uninterned symbols?
-        return v === this;
-    }
-
-    lt(v) {
-        if (v === this) {
-            return false;
-        }
-        return this.v < v.v;
-    }
-
-    /**
-     * @return {!number}
-     */
-    hashForEqual() {
-        if (this._cachedHashCode === null) {
-            this._cachedHashCode = super.hashForEqual();
-        }
-        return this._cachedHashCode;
-    }
-}
-
-
-export const make = internedMake(v => new Symbol(v.toString()));
-
-// TODO: is it correct to convert toString()?
-export const makeUninterned = v => new Symbol(v.toString());
+// Create uninterned Symbol
+export const makeUninterned = v => Symbol(v ? v.toString() : '');
 
 export function check(v) {
-    return (v instanceof Symbol);
+    return typeof v === 'symbol';
+}
+
+// Only interned Symbols (Symbol.for) will have a keyFor
+export function isInterned(v) {
+    return Boolean(Symbol.keyFor(v));
+}
+
+// Compares that two Symbols are equal. Only interned symbols
+// will pass.
+export function equals(s, v) {
+    if (check(s) && check(v)) {
+        return s === v;
+    }
+    return false;
+}
+
+// Can only get the value of interned Symbols (Symbol.for)
+// Ex: Symbol.keyFor(Symbol.for("foo")) === "foo"
+export function getValue(s) {
+    return Symbol.keyFor(s);
+}
+
+export function lt(s, v) {
+    if (check(s) && check(v)) {
+        return getValue(s) < getValue(v);
+    }
+    return false;
 }

@@ -2,6 +2,7 @@ import * as Primitive from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Procedure from './procedure.js';
 import * as UString from './unicode_string.js';
+import * as Sym from './symbol.js';
 
 const TRUE_USTRING = UString.makeInternedImmutable('#t');
 const FALSE_USTRING = UString.makeInternedImmutable('#f');
@@ -20,6 +21,8 @@ export function displayUString(out, v) {
         out.consume(VOID_USTRING);
     } else if (typeof v === 'number' || typeof v === 'string') {
         out.consume(UString.makeMutable(v.toString()));
+    } else if (Sym.check(v)) {
+        out.consume(UString.makeMutable(Sym.getValue(v).toString()));
     } else if (Primitive.check(v)) {
         v.displayUString(out);
     } else if (Bytes.check(v)) {
@@ -30,7 +33,7 @@ export function displayUString(out, v) {
         } else {
             out.consume(UString.makeMutable(Procedure.toString(v)));
         }
-    } else /* if (typeof v === 'number' || typeof v === 'string') */ {
+    } /* if (typeof v === 'number' || typeof v === 'string') */ else {
         out.consume(UString.makeMutable(v.toString()));
     }
 }
@@ -41,8 +44,8 @@ export function displayUString(out, v) {
  */
 export function writeUString(out, v) {
     if (Primitive.check(v)) {
-        // Assume `v` implements Printable, as only Values does not,
-        // and it cannot be passed here.
+    // Assume `v` implements Printable, as only Values does not,
+    // and it cannot be passed here.
         v.writeUString(out);
     } else {
         displayUString(out, v);

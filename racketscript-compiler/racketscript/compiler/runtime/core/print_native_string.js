@@ -1,6 +1,7 @@
 import * as Primitive from './primitive.js';
 import * as Bytes from './bytes.js';
 import * as Procedure from './procedure.js';
+import * as Sym from './symbol.js';
 
 /**
  * @param {!Ports.NativeStringOutputPort} out
@@ -13,6 +14,8 @@ export function displayNativeString(out, v) {
         out.consume('#f');
     } else if (v === undefined || v === null) {
         out.consume('#<void>');
+    } else if (Sym.check(v)) {
+        out.consume(Sym.getValue(v).toString());
     } else if (Primitive.check(v)) {
         v.displayNativeString(out);
     } else if (Bytes.check(v)) {
@@ -23,7 +26,7 @@ export function displayNativeString(out, v) {
         } else {
             Procedure.displayNativeString(out, v);
         }
-    } else /* if (typeof v === 'number' || typeof v === 'string') */ {
+    } /* if (typeof v === 'number' || typeof v === 'string') */ else {
         out.consume(v.toString());
     }
 }
@@ -34,14 +37,13 @@ export function displayNativeString(out, v) {
  */
 export function writeNativeString(out, v) {
     if (Primitive.check(v)) {
-        // Assume `v` implements Printable, as only Values does not,
-        // and it cannot be passed here.
+    // Assume `v` implements Printable, as only Values does not,
+    // and it cannot be passed here.
         v.writeNativeString(out);
     } else {
         displayNativeString(out, v);
     }
 }
-
 
 /**
  * @param {!Ports.NativeStringOutputPort} out

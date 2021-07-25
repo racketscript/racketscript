@@ -820,15 +820,13 @@
       result)))
 
 (define-checked+provide (symbol-interned? [sym symbol?])
-  ;;NOTE: We simply check if given symbol is equal to an
-  ;; interned symbol.
-  (binop === sym (#js.Core.Symbol.make #js.sym.v)))
+  (#js.Core.Symbol.isInterned sym))
 
 (define+provide (symbol=? s v)
-  (#js.s.equals v))
+  (#js.Core.Symbol.equals s v))
 
 (define+provide (symbol<? s v)
-  (#js.s.lt v))
+  (#js.Core.Symbol.lt s v))
 
 (define+provide (keyword<? s v)
   (#js.s.lt v))
