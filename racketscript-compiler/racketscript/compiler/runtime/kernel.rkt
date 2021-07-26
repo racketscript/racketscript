@@ -793,7 +793,7 @@
   (#js.Core.UString.stringToImmutableString s))
 
 (define-checked+provide (symbol->string [v symbol?])
-  (#js.Core.UString.makeMutable (#js.v.toString)))
+  (#js.Core.UString.makeMutable (#js.Core.Symbol.getValue v)))
 
 (define-checked+provide (string->symbol [s string?])
   (#js.Core.Symbol.make s))
