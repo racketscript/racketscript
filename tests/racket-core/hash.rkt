@@ -82,8 +82,9 @@
                          #"apple" 'a #"banana" 'b #"coconut" 'c
                          u/apple 'a u/banana 'b u/coconut 'c
                          ;; TODO: properly implement unreadable symbols
+                         'apple 'banana 'coconut 'coconut+
                          ; apple 'a banana 'b coconut 'c
-                         'apple 'a 'banana 'b 'coconut 'c 'coconut+ '+
+                         ;'apple 'a 'banana 'b 'coconut 'c 'coconut+ '+
                          '#:apple 'a '#:banana 'b '#:coconut 'c
                          null 'one
                          (void) 'one
@@ -405,7 +406,7 @@
     
     ;; everything ok
     ;; TODO: iterator in javascript is not currently number index
-;;    (test #t number? i)
+    ;;    (test #t number? i)
     (test #t list? (hash-iterate-key ht i))
     (test #t equal? (hash-iterate-value ht i) 'val)
     (run-if-version "6.4.0.5"

@@ -3,7 +3,11 @@ import * as $ from './lib.js';
 import { racketCoreError } from './errors.js';
 import * as Pair from './pair.js';
 import { PrintablePrimitive } from './printable_primitive.js';
-import { displayNativeString, writeNativeString, printNativeString } from './print_native_string.js';
+import {
+    displayNativeString,
+    writeNativeString,
+    printNativeString
+} from './print_native_string.js';
 import { isEqual } from './equality.js';
 import * as Values from './values.js';
 
@@ -51,9 +55,10 @@ class Struct extends PrintablePrimitive {
         // called in its constructor, hence maintaining the required
         // order
         const guardLambda = this._desc._options.guard;
-        const finalCallerName = callerName ||
-            this._desc._options.constructorName ||
-              this._desc._options.name;
+        const finalCallerName =
+      callerName ||
+      this._desc._options.constructorName ||
+      this._desc._options.name;
         if (guardLambda) {
             const guardFields = fields.concat(finalCallerName);
             const newFields = guardLambda(...guardFields);
@@ -70,23 +75,25 @@ class Struct extends PrintablePrimitive {
         if (superType !== false) {
             const superInitFields = fields.slice(0, superType._totalInitFields);
             this._fields = fields.slice(superType._totalInitFields);
-            this._superStructInstance = superType
-                .getStructConstructor(finalCallerName)(...superInitFields);
+            this._superStructInstance = superType.getStructConstructor(finalCallerName)(...superInitFields);
         } else {
             this._fields = fields;
         }
 
         // Auto fields
-        const { autoV, autoFieldCount } = this._desc._options; /* Initial value for auto fields */
+        const {
+            autoV,
+            autoFieldCount
+        } = this._desc._options; /* Initial value for auto fields */
         for (let i = 0; i < autoFieldCount; i++) {
             this._fields.push(autoV);
         }
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     * @param {function(Ports.NativeStringOutputPort, *)} itemFn
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   * @param {function(Ports.NativeStringOutputPort, *)} itemFn
+   */
     writeToPort(out, itemFn) {
         if (this._desc._options.inspector) {
             // Not a transparent inspector
@@ -106,22 +113,22 @@ class Struct extends PrintablePrimitive {
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     displayNativeString(out) {
         this.writeToPort(out, displayNativeString);
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     writeNativeString(out) {
         this.writeToPort(out, writeNativeString);
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     printNativeString(out) {
         if (this._desc._options.inspector) {
             // Not a transparent inspector
@@ -133,8 +140,10 @@ class Struct extends PrintablePrimitive {
             for (const field of this._fields) {
                 out.consume(' ');
                 printNativeString(
-                    out, field,
-                    /* printAsExpression */ true, /* quoteDepth */ 0
+                    out,
+                    field,
+                    /* printAsExpression */ true,
+                    /* quoteDepth */ 0
                 );
             }
             out.consume(')');
@@ -177,11 +186,13 @@ class Struct extends PrintablePrimitive {
 
     setField(n, v) {
         C.truthy(
-            n < this._fields.length, racketCoreError,
+            n < this._fields.length,
+            racketCoreError,
             'invalid field at position'
         );
         C.falsy(
-            this._desc.isFieldImmutable(n), racketCoreError,
+            this._desc.isFieldImmutable(n),
+            racketCoreError,
             'field is immutable'
         );
         this._fields[n] = v;
@@ -250,8 +261,8 @@ class StructTypeDescriptor extends PrintablePrimitive {
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     displayNativeString(out) {
         out.consume('#<struct-type:');
         out.consume(this._options.name);
@@ -259,8 +270,8 @@ class StructTypeDescriptor extends PrintablePrimitive {
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     printNativeString(out) {
         this.writeNativeString(out);
     }
@@ -277,7 +288,7 @@ class StructTypeDescriptor extends PrintablePrimitive {
         const structfn = function (...args) {
             // Struct object is also a procedure
             let proc;
-            if (typeof (procSpec) === 'function') {
+            if (typeof procSpec === 'function') {
                 proc = procSpec;
                 // Structure object is sent only when procSpec is
                 // function, not when we get procedure from field.
@@ -285,8 +296,7 @@ class StructTypeDescriptor extends PrintablePrimitive {
             } else if (Number.isInteger(procSpec)) {
                 proc = structObject.getField(procSpec);
             } else {
-                throw new Error(`ValueError: invalid field at position ${
-                    procSpec}`);
+                throw new Error(`ValueError: invalid field at position ${procSpec}`);
             }
             return proc(...args);
         };
@@ -297,84 +307,102 @@ class StructTypeDescriptor extends PrintablePrimitive {
     maybeStructObject(s) {
         if (s instanceof Struct) {
             return s;
-        } else if (s instanceof Function &&
-            (s.__rjs_struct_object instanceof Struct)) {
+        } else if (
+            s instanceof Function &&
+      s.__rjs_struct_object instanceof Struct
+        ) {
             return s.__rjs_struct_object;
         }
         return false;
     }
 
     getStructConstructor(subtype = false) {
-        // subtype: Name of subtype which is used to call the constructor
-        //   returned here.
-        return $.attachReadOnlyProperty((...args) => {
-            const structObject = new Struct(this, args, subtype);
-            const hasPropProc = this._propProcedure !== undefined &&
-                this._propProcedure !== false;
-            const hasProcSpec = this._options.procSpec !== undefined &&
-                this._options.procSpec !== false;
+    // subtype: Name of subtype which is used to call the constructor
+    //   returned here.
+        return $.attachReadOnlyProperty(
+            (...args) => {
+                const structObject = new Struct(this, args, subtype);
+                const hasPropProc =
+          this._propProcedure !== undefined && this._propProcedure !== false;
+                const hasProcSpec =
+          this._options.procSpec !== undefined &&
+          this._options.procSpec !== false;
 
-            if (!hasPropProc && !hasProcSpec) {
-                return structObject;
-            } else if (hasPropProc) {
+                if (!hasPropProc && !hasProcSpec) {
+                    return structObject;
+                } else if (hasPropProc) {
+                    return this.getApplicableStructObject(
+                        structObject,
+                        this._propProcedure
+                    );
+                }
                 return this.getApplicableStructObject(
                     structObject,
-                    this._propProcedure
+                    this._options.procSpec
                 );
-            }
-            return this.getApplicableStructObject(
-                structObject,
-                this._options.procSpec
-            );
-        }, 'racketProcedureType', 'struct-constructor');
+            },
+            'racketProcedureType',
+            'struct-constructor'
+        );
     }
 
     getStructPredicate() {
-        return $.attachReadOnlyProperty((s) => {
-            const structObject = this.maybeStructObject(s);
-            return structObject &&
-                structObject._maybeFindSuperInstance(this) && true;
-        }, 'racketProcedureType', 'struct-predicate');
+        return $.attachReadOnlyProperty(
+            (s) => {
+                const structObject = this.maybeStructObject(s);
+                return (
+                    structObject && structObject._maybeFindSuperInstance(this) && true
+                );
+            },
+            'racketProcedureType',
+            'struct-predicate'
+        );
     }
 
     getStructAccessor() {
-        return $.attachReadOnlyProperty((s, pos) => {
-            const structObject = this.maybeStructObject(s);
-            if (!structObject) {
-                C.raise(
-                    TypeError,
-                    `(${s} : ${typeof (s)} != ${
-                        this._options.name} object)`
-                );
-            }
+        return $.attachReadOnlyProperty(
+            (s, pos) => {
+                const structObject = this.maybeStructObject(s);
+                if (!structObject) {
+                    C.raise(
+                        TypeError,
+                        `(${s} : ${typeof s} != ${this._options.name} object)`
+                    );
+                }
 
-            const sobj = structObject._maybeFindSuperInstance(this);
-            if (sobj === false) {
-                C.raise(racketCoreError, 'accessor applied to invalid type');
-            }
+                const sobj = structObject._maybeFindSuperInstance(this);
+                if (sobj === false) {
+                    C.raise(racketCoreError, 'accessor applied to invalid type');
+                }
 
-            return sobj.getField(pos);
-        }, 'racketProcedureType', 'struct-accessor');
+                return sobj.getField(pos);
+            },
+            'racketProcedureType',
+            'struct-accessor'
+        );
     }
 
     getStructMutator() {
-        return $.attachReadOnlyProperty((s, pos, v) => {
-            const structObject = this.maybeStructObject(s);
-            if (!structObject) {
-                C.raise(
-                    TypeError,
-                    `(${s} : ${typeof (s)} != ${
-                        this._options.name} object)`
-                );
-            }
+        return $.attachReadOnlyProperty(
+            (s, pos, v) => {
+                const structObject = this.maybeStructObject(s);
+                if (!structObject) {
+                    C.raise(
+                        TypeError,
+                        `(${s} : ${typeof s} != ${this._options.name} object)`
+                    );
+                }
 
-            const sobj = structObject._maybeFindSuperInstance(this);
-            if (sobj === false) {
-                C.raise(racketCoreError, 'mutator applied to invalid type');
-            }
+                const sobj = structObject._maybeFindSuperInstance(this);
+                if (sobj === false) {
+                    C.raise(racketCoreError, 'mutator applied to invalid type');
+                }
 
-            return sobj.setField(pos, v);
-        }, 'racketProcedureType', 'struct-mutator');
+                return sobj.setField(pos, v);
+            },
+            'racketProcedureType',
+            'struct-mutator'
+        );
     }
 
     // Find value associated with property `prop` or return `undefined`
@@ -420,8 +448,8 @@ class StructTypeProperty extends PrintablePrimitive {
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     displayNativeString(out) {
         out.consume('#<struct-type-property:');
         out.consume(this._name);
@@ -429,8 +457,8 @@ class StructTypeProperty extends PrintablePrimitive {
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     printNativeString(out) {
         this.writeNativeString(out);
     }
@@ -451,7 +479,8 @@ class StructTypeProperty extends PrintablePrimitive {
     }
 
     getPropertyAccessor() {
-        return (v) => { /* property acccessor */
+        return (v) => {
+            /* property acccessor */
             let desc;
             if (v instanceof StructTypeDescriptor) {
                 desc = v;
@@ -461,8 +490,10 @@ class StructTypeProperty extends PrintablePrimitive {
                 C.raise(racketCoreError, 'invalid argument to accessor');
             }
 
-            return desc._findProperty(this) ||
-                C.raise(racketCoreError, 'property not in struct');
+            return (
+                desc._findProperty(this) ||
+        C.raise(racketCoreError, 'property not in struct')
+            );
         };
     }
 
@@ -529,8 +560,10 @@ export function structTypeInfo(desc) {
 }
 
 export function isStructInstance(v) {
-    return (v instanceof Struct) ||
-        (v instanceof Function) && (v.__rjs_struct_object instanceof Struct);
+    return (
+        v instanceof Struct ||
+    (v instanceof Function && v.__rjs_struct_object instanceof Struct)
+    );
 }
 
 export function check(v, desc) {

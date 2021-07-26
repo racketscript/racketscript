@@ -22,7 +22,7 @@ export function displayUString(out, v) {
     } else if (typeof v === 'number' || typeof v === 'string') {
         out.consume(UString.makeMutable(v.toString()));
     } else if (Sym.check(v)) {
-        out.consume(UString.makeMutable(Sym.getValue(v).toString()));
+        out.consume(UString.makeMutable(Sym.getValue(v)));
     } else if (Primitive.check(v)) {
         v.displayUString(out);
     } else if (Bytes.check(v)) {
@@ -61,6 +61,8 @@ export function writeUString(out, v) {
 export function printUString(out, v, printAsExpression, quoteDepth) {
     if (printAsExpression && quoteDepth !== 1 && Primitive.check(v)) {
         v.printUString(out);
+    } else if (printAsExpression && quoteDepth !== 1 && Sym.check(v)) {
+        writeUString(out, `'${Sym.getValue(v)}`);
     } else {
         writeUString(out, v);
     }

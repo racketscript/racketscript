@@ -15,7 +15,7 @@ export function displayNativeString(out, v) {
     } else if (v === undefined || v === null) {
         out.consume('#<void>');
     } else if (Sym.check(v)) {
-        out.consume(Sym.getValue(v).toString());
+        out.consume(Sym.getValue(v));
     } else if (Primitive.check(v)) {
         v.displayNativeString(out);
     } else if (Bytes.check(v)) {
@@ -54,6 +54,8 @@ export function writeNativeString(out, v) {
 export function printNativeString(out, v, printAsExpression, quoteDepth) {
     if (printAsExpression && quoteDepth !== 1 && Primitive.check(v)) {
         v.printNativeString(out);
+    } else if (printAsExpression && quoteDepth !== 1 && Sym.check(v)) {
+        writeNativeString(out, `'${Sym.getValue(v)}`);
     } else if (Bytes.check(v)) {
         Bytes.printNativeString(out, v);
     } else {

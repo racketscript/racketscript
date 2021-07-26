@@ -1,3 +1,4 @@
+import { safeToString } from './primitive.js';
 import { MiniNativeOutputStringPort } from './mini_native_output_string_port.js';
 import { printNativeString } from './print_native_string.js';
 // this (errors.js) depends on UString, so vice versa cannot be true
@@ -10,16 +11,21 @@ function printError(out, msg, args) {
         if (typeof arg === 'string') {
             out.consume(arg);
         } else {
-            printNativeString(out, arg, /* printAsExpression */ true, /* quoteDepth */ 0);
+            printNativeString(
+                out,
+                arg,
+                /* printAsExpression */ true,
+                /* quoteDepth */ 0
+            );
         }
     }
 }
 
 function makeError(name) {
     /**
-     * The "(error msg v ...)" form.
-     * Besides Racket values, also allows native strings.
-     */
+   * The "(error msg v ...)" form.
+   * Besides Racket values, also allows native strings.
+   */
     const e = function (msg, ...args) {
         this.name = name;
 
@@ -27,11 +33,11 @@ function makeError(name) {
         printError(stringOut, msg, args);
         this.message = stringOut.getOutputString();
 
-        this.stack = (new Error()).stack;
+        this.stack = new Error().stack;
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, this.constructor);
         } else {
-            this.stack = (new Error()).stack;
+            this.stack = new Error().stack;
         }
     };
     e.prototype = Object.create(Error.prototype);
@@ -50,8 +56,12 @@ export function isContractErr(e) {
 export function isErr(e) {
     return e.name !== undefined && e.name === 'RacketCoreError';
 }
-export function errName(e) { return e.name; }
-export function errMsg(e) { return e.message; }
+export function errName(e) {
+    return e.name;
+}
+export function errMsg(e) {
+    return e.message;
+}
 
 // this must be here to avoid circular dependency with numbers.js
 // copied from internet:
@@ -77,7 +87,7 @@ export function makeArgumentError(name, expected, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
     // "other" args must be converted to string via `print`
     // (not `write` or `display`)
-    stringOut.consume(`${name.toString()}: contract violation\n`);
+    stringOut.consume(`${safeToString(name)}: contract violation\n`);
     stringOut.consume('  expected: ');
     stringOut.consume(expected.toString());
     stringOut.consume('\n');
@@ -86,15 +96,18 @@ export function makeArgumentError(name, expected, ...rest) {
         printNativeString(stringOut, rest[0], true, 0);
     } else {
         printNativeString(stringOut, rest[rest[0] + 1], true, 0);
-        if (rest.length > 2) { // only print if there are "other" args
+        if (rest.length > 2) {
+            // only print if there are "other" args
             stringOut.consume('\n');
             stringOut.consume('  argument position: ');
             printNativeString(stringOut, toOrdinal(rest[0] + 1), true, 0);
             stringOut.consume('\n');
             stringOut.consume('  other arguments...:');
             for (let i = 1; i < rest.length; i++) {
-                // eslint-disable-next-line no-continue
-                if (i === rest[0] + 1) { continue; }
+                if (i === rest[0] + 1) {
+                    // eslint-disable-next-line no-continue
+                    continue;
+                }
                 stringOut.consume('\n   ');
                 printNativeString(stringOut, rest[i], true, 0);
             }
@@ -109,7 +122,7 @@ export function makeResultError(name, expected, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
     // "other" args must be converted to string via `print`
     // (not `write` or `display`)
-    stringOut.consume(`${name.toString()}: contract violation\n`);
+    stringOut.consume(`${safeToString(name)}: contract violation\n`);
     stringOut.consume('  expected: ');
     stringOut.consume(expected.toString());
     stringOut.consume('\n');
@@ -118,15 +131,18 @@ export function makeResultError(name, expected, ...rest) {
         printNativeString(stringOut, rest[0], true, 0);
     } else {
         printNativeString(stringOut, rest[rest[0] + 1], true, 0);
-        if (rest.length > 2) { // only print if there are "other" args
+        if (rest.length > 2) {
+            // only print if there are "other" args
             stringOut.consume('\n');
             stringOut.consume('  argument position: ');
             printNativeString(stringOut, toOrdinal(rest[0] + 1), true, 0);
             stringOut.consume('\n');
             stringOut.consume('  other arguments...:');
             for (let i = 1; i < rest.length; i++) {
-                // eslint-disable-next-line no-continue
-                if (i === rest[0] + 1) { continue; }
+                if (i === rest[0] + 1) {
+                    // eslint-disable-next-line no-continue
+                    continue;
+                }
                 stringOut.consume('\n   ');
                 printNativeString(stringOut, rest[i], true, 0);
             }
@@ -139,7 +155,7 @@ export function makeResultError(name, expected, ...rest) {
 // format exn message to exactly match Racket raise-arguments-error
 export function makeArgumentsError(name, msg, field, ...rest) {
     const stringOut = new MiniNativeOutputStringPort();
-    stringOut.consume(`${name.toString()}: `);
+    stringOut.consume(`${safeToString(name)}: `);
     stringOut.consume(msg);
     stringOut.consume('\n  ');
     stringOut.consume(field);
@@ -160,12 +176,12 @@ export function makeMismatchError(name, msg, ...rest) {
         return racketContractError(name.toString(), msg);
     }
     const stringOut = new MiniNativeOutputStringPort();
-    stringOut.consume(`${name.toString()}: `);
+    stringOut.consume(`${safeToString(name)}: `);
     stringOut.consume(msg);
     for (let i = 0; i < rest.length; i++) {
-        // //string indicates another "msg" format str, see usage above
-        // console.log("make-mismatch-err");
-        // console.log(rest[i].name);
+    // //string indicates another "msg" format str, see usage above
+    // console.log("make-mismatch-err");
+    // console.log(rest[i].name);
         if (UString.check(rest[i])) {
             // if (true) {
             stringOut.consume(rest[i]);
@@ -181,7 +197,7 @@ export function makeOutOfRangeError(name, type, v, len, i) {
     // "other" args must be converted to string via `print`
     // (not `write` or `display`)
     if (len > 0) {
-        stringOut.consume(`${name.toString()}: index is out of range\n`);
+        stringOut.consume(`${safeToString(name)}: index is out of range\n`);
         stringOut.consume('  index: ');
         stringOut.consume(i.toString());
         stringOut.consume('\n');
@@ -193,7 +209,7 @@ export function makeOutOfRangeError(name, type, v, len, i) {
         stringOut.consume(': ');
         printNativeString(stringOut, v, true, 0);
     } else {
-        stringOut.consume(`${name.toString()}: index is out of range for empty ${type}\n`);
+        stringOut.consume(`${safeToString(name)}: index is out of range for empty ${type}\n`);
     }
 
     return racketContractError(stringOut.getOutputString());

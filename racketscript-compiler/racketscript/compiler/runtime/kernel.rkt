@@ -300,7 +300,7 @@
         constructor-name) #:unchecked
     ;;TODO: Add arity check
     (#js.Core.Struct.makeStructType
-     {object [name (#js.name.toString)]
+     {object [name (#js.Core.Primitive.safeToString name)]
              [superType super-type]
              [initFieldCount init-field-count]
              [autoFieldCount auto-field-count]
@@ -325,7 +325,7 @@
 (define+provide make-struct-type-property
   (v-λ (name guard supers can-impersonate?) #:unchecked
     (#js.Core.Struct.makeStructTypeProperty
-     {object [name name]
+     {object [name (#js.Core.Primitive.safeToString name)]
              [guard guard]
              [supers supers]
              [canImpersonate can-impersonate?]})))
