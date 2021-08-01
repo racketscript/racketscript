@@ -12,8 +12,8 @@ import * as Number from './core/numbers.js';
 import * as Pair from './core/pair.js';
 import * as Ports from './core/ports.js';
 import * as Primitive from './core/primitive.js';
+import * as PrimitiveSymbol from './core/primitive_symbol.js';
 import * as Struct from './core/struct.js';
-import * as Symbol from './core/symbol.js';
 import * as Values from './core/values.js';
 import * as Vector from './core/vector.js';
 import * as Marks from './core/marks.js';
@@ -22,7 +22,6 @@ import * as Correlated from './core/correlated.js';
 import * as Linklet from './core/linklet.js';
 import * as Path from './core/path.js';
 
-
 export {
     Bytes,
     Number,
@@ -30,7 +29,7 @@ export {
     Pair,
     Primitive,
     Struct,
-    Symbol,
+    PrimitiveSymbol,
     Keyword,
     Values,
     Vector,
@@ -46,10 +45,7 @@ export {
     Path
 };
 
-export {
-    argumentsToArray,
-    argumentsSlice
-} from './core/lib.js';
+export { argumentsToArray, argumentsSlice } from './core/lib.js';
 
 export {
     racketCoreError,
@@ -64,28 +60,13 @@ export {
     errMsg
 } from './core/errors.js';
 
-export {
-    attachProcedureArity,
-    attachProcedureName
-} from './core/procedure.js';
+export { attachProcedureArity, attachProcedureName } from './core/procedure.js';
 
-export {
-    isEq,
-    isEqv,
-    isEqual
-} from './core/equality.js';
+export { isEq, isEqv, isEqual } from './core/equality.js';
 
-export {
-    hashForEq,
-    hashForEqv,
-    hashForEqual
-} from './core/hashing.js';
+export { hashForEq, hashForEqv, hashForEqual } from './core/hashing.js';
 
-export {
-    display,
-    write,
-    print
-} from './core/printing.js';
+export { display, write, print } from './core/printing.js';
 
 // ;-----------------------------------------------------------------------------
 
@@ -95,40 +76,40 @@ export function bitwiseNot(a) {
 
 class UnsafeUndefined extends PrintablePrimitive {
     equals(v) {
-        return (v === this);
+        return v === this;
     }
 
     /**
-     * @return {!number} a 32-bit integer
-     */
+   * @return {!number} a 32-bit integer
+   */
     hashForEqual() {
         return 0;
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     displayNativeString(out) {
         out.consume('#<unsafe-undefined>');
     }
 
     /**
-     * @param {!Ports.UStringOutputPort} out
-     */
+   * @param {!Ports.UStringOutputPort} out
+   */
     displayUString(out) {
         out.consume('#<unsafe-undefined>');
     }
 
     /**
-     * @param {!Ports.NativeStringOutputPort} out
-     */
+   * @param {!Ports.NativeStringOutputPort} out
+   */
     writeNativeString(out) {
         out.consume('#<unsafe-undefined>');
     }
 
     /**
-     * @param {!Ports.UStringOutputPort} out
-     */
+   * @param {!Ports.UStringOutputPort} out
+   */
     writeUString(out) {
         out.consume('#<unsafe-undefined>');
     }

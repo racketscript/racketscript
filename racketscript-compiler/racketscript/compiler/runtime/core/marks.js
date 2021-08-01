@@ -1,14 +1,13 @@
 // Continuation Marks
 import * as Pair from './pair.js';
-import * as Symbol from './symbol.js';
+import * as PrimitiveSymbol from './primitive_symbol.js';
 import { racketCoreError } from './errors.js';
 import { hashForEq as HASH } from './hashing.js';
 
 let __frames;
 const __prompts = new Map();
 const __asyncCallbackWrappers = [];
-const __defaultContinuationPromptTag
-    = makeContinuationPromptTag(Symbol.make('default'));
+const __defaultContinuationPromptTag = makeContinuationPromptTag(PrimitiveSymbol.make('default'));
 
 /* --------------------------------------------------------------------------*/
 
@@ -46,11 +45,11 @@ export function AbortCurrentContinuation(promptTag, handlerArgs) {
     this.promptTag = promptTag;
     this.handlerArgs = handlerArgs;
 
-    this.stack = (new Error()).stack;
+    this.stack = new Error().stack;
     if (Error.captureStackTrace) {
         Error.captureStackTrace(this, this.constructor);
     } else {
-        this.stack = (new Error()).stack;
+        this.stack = new Error().stack;
     }
 }
 AbortCurrentContinuation.prototype = Object.create(Error.prototype);
@@ -82,8 +81,7 @@ function getPromptFrame(promptTag) {
         return promptTag;
     }
     const result = __prompts.get(promptTag);
-    return (result && result[result.length - 1])
-            || undefined;
+    return (result && result[result.length - 1]) || undefined;
 }
 
 export function makeContinuationPromptTag(sym) {
@@ -100,8 +98,7 @@ export function callWithContinuationPrompt(proc, promptTag, handler, ...args) {
         savePrompt(promptTag);
         return proc(...args);
     } catch (e) {
-        if (e instanceof AbortCurrentContinuation &&
-            e.promptTag === promptTag) {
+        if (e instanceof AbortCurrentContinuation && e.promptTag === promptTag) {
             return handler(...e.handlerArgs);
         }
         throw e;
@@ -139,8 +136,10 @@ export function getContinuationMarks(promptTag) {
     promptTag = promptTag || __defaultContinuationPromptTag;
     let frames = __frames;
     const promptFrame = getPromptFrame(promptTag);
-    if (promptFrame === undefined &&
-        promptTag !== __defaultContinuationPromptTag) {
+    if (
+        promptFrame === undefined &&
+    promptTag !== __defaultContinuationPromptTag
+    ) {
         throw racketCoreError('No corresponding tag in continuation!');
     }
 
@@ -162,7 +161,7 @@ export function getMarks(framesArr, key, promptTag) {
 
     const result = [];
     for (let ii = 0; ii < framesArr.length; ++ii) {
-        // FIXME: for-of requires polyfill
+    // FIXME: for-of requires polyfill
         const fr = framesArr[ii];
         if (keyHash in fr) {
             if (fr === promptFrame) {
@@ -178,11 +177,13 @@ export function getMarks(framesArr, key, promptTag) {
 // and parameterization and check if that if this needs
 export function getFirstMark(frames, key, noneV) {
     const keyHash = HASH(key);
-    return Pair.listFind(frames, (fr) => {
-        if (keyHash in fr) {
-            return fr[keyHash];
-        }
-    }) || noneV;
+    return (
+        Pair.listFind(frames, (fr) => {
+            if (keyHash in fr) {
+                return fr[keyHash];
+            }
+        }) || noneV
+    );
 }
 
 export function wrapWithContext(fn) {
