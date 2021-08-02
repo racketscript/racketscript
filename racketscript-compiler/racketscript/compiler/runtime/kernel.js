@@ -7,14 +7,11 @@ import * as Paramz from './paramz.js';
 export function isImmutable(v) {
     if (Core.Primitive.check(v)) {
         return v.isImmutable();
-    } else if (Core.Bytes.check(v) || typeof v === 'string') {
+    }
+    if (Core.Bytes.check(v) || typeof v === 'string') {
         return true;
-    } else if (
-        typeof v === 'number' ||
-    typeof v === 'boolean' ||
-    typeof v === 'undefined' ||
-    v === null
-    ) {
+    }
+    if (typeof v === 'number' || typeof v === 'boolean' || typeof v === 'undefined' || v === null) {
         return false;
     }
     throw Core.racketCoreError('isImmutable not implemented for', v);
@@ -38,12 +35,12 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
 
     const matches = formStr.match(regex);
     const numExpected = matches
-        ? matches.filter(m => !NO_ARG_FORM_RE.test(m)).length
+        ? matches.filter((m) => !NO_ARG_FORM_RE.test(m)).length
         : 0;
     if (numExpected !== args.length) {
         throw Core.racketContractError(
-            `fprintf: format string requires ${numExpected} arguments, ` +
-        `given ${args.length}; arguments were:`,
+            `fprintf: format string requires ${numExpected} arguments, `
+            + `given ${args.length}; arguments were:`,
             out,
             form,
             ...args
@@ -59,8 +56,9 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
         prevIndex = reExecResult.index;
         lastMatch = reExecResult[0]; // eslint-disable-line prefer-destructuring
         if (/^~\s/.test(lastMatch)) continue; // eslint-disable-line no-continue
+        // eslint-disable-next-line default-case
         switch (
-            lastMatch.charAt(1) // eslint-disable-line default-case
+            lastMatch.charAt(1)
         ) {
         case '~':
             Core.display(out, '~');
@@ -179,9 +177,9 @@ export function doraise(e) {
 export function argerror(name, expected, ...rest) {
     let theerr;
     if (
-        Core.PrimitiveSymbol.check(name) &&
-    (Core.UString.check(expected) || typeof expected === 'string') &&
-    rest.length >= 1
+        Core.PrimitiveSymbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1
     ) {
         theerr = Core.makeArgumentError(name, expected, ...rest);
     } else {
@@ -203,9 +201,9 @@ export function argerror(name, expected, ...rest) {
 export function resulterror(name, expected, ...rest) {
     let theerr;
     if (
-        Core.PrimitiveSymbol.check(name) &&
-    (Core.UString.check(expected) || typeof expected === 'string') &&
-    rest.length >= 1
+        Core.PrimitiveSymbol.check(name)
+        && (Core.UString.check(expected) || typeof expected === 'string')
+        && rest.length >= 1
     ) {
         theerr = Core.makeResultError(name, expected, ...rest);
     } else {
@@ -226,11 +224,10 @@ export function resulterror(name, expected, ...rest) {
 export function argserror(name, msg, field, ...rest) {
     let theerr;
     if (
-        Core.PrimitiveSymbol.check(name) &&
-    (Core.UString.check(msg) || typeof msg === 'string') &&
-    (Core.UString.check(field) || typeof field === 'string') &&
-    rest.length >= 1 &&
-    rest.length % 2 === 1
+        Core.PrimitiveSymbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')
+        && (Core.UString.check(field) || typeof field === 'string')
+        && rest.length >= 1 && rest.length % 2 === 1
     ) {
         theerr = Core.makeArgumentsError(name, msg, field, ...rest);
     } else {
@@ -251,8 +248,8 @@ export function argserror(name, msg, field, ...rest) {
 export function mismatcherror(name, msg, ...rest) {
     let theerr;
     if (
-        Core.PrimitiveSymbol.check(name) &&
-    (Core.UString.check(msg) || typeof msg === 'string')
+        Core.PrimitiveSymbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')
     ) {
         theerr = Core.makeMismatchError(name, msg, ...rest);
     } else {
@@ -274,10 +271,10 @@ export function mismatcherror(name, msg, ...rest) {
 export function outofrangeerror(name, type, v, len, i) {
     let theerr;
     if (
-        typeof name === 'string' &&
-    typeof type === 'string' &&
-    typeof len === 'number' &&
-    typeof i === 'number'
+        typeof name === 'string'
+        && typeof type === 'string'
+        && typeof len === 'number'
+        && typeof i === 'number'
     ) {
         theerr = Core.makeOutOfRangeError(name, type, v, len, i);
     } else {
