@@ -37,8 +37,7 @@ function makeError(name) {
     e.prototype = Object.create(Error.prototype);
     e.prototype.constructor = e;
 
-    return (...args) =>
-        new (Function.prototype.bind.apply(e, [this].concat(args)))();
+    return (...args) => new (Function.prototype.bind.apply(e, [this].concat(args)))();
 }
 
 export const racketCoreError = makeError('RacketCoreError');
@@ -193,9 +192,7 @@ export function makeOutOfRangeError(name, type, v, len, i) {
         stringOut.consume(': ');
         printNativeString(stringOut, v, true, 0);
     } else {
-        stringOut.consume(
-            `${name.toString()}: index is out of range for empty ${type}\n`
-        );
+        stringOut.consume(`${name.toString()}: index is out of range for empty ${type}\n`);
     }
 
     return racketContractError(stringOut.getOutputString());
