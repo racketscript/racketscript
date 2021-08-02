@@ -1,4 +1,5 @@
 import * as Primitive from './primitive.js';
+import * as PrimitiveSymbol from './primitive_symbol.js';
 import * as Char from './char.js';
 import * as Bytes from './bytes.js';
 
@@ -8,6 +9,10 @@ import * as Bytes from './bytes.js';
  * @return {!boolean}
  */
 export function isEq(v1, v2) {
+    // Handle Symbols
+    if (PrimitiveSymbol.check(v1)) {
+        return v1.equals(v2);
+    }
     return v1 === v2;
 }
 
@@ -17,12 +22,13 @@ export function isEq(v1, v2) {
  * @return {!boolean}
  */
 export function isEqv(v1, v2) {
-    // NOTE: We are not handling special case for Symbol.
-    // Symbols and keywords are interned, so that's ok.
+    // Handle Symbols
+    if (PrimitiveSymbol.check(v1)) {
+        return v1.equals(v2);
+    }
 
     // TODO: Handle numbers correctly.
-    return v1 === v2 ||
-        Char.check(v1) && Char.check(v2) && Char.eq(v1, v2);
+    return v1 === v2 || (Char.check(v1) && Char.check(v2) && Char.eq(v1, v2));
 }
 
 /**

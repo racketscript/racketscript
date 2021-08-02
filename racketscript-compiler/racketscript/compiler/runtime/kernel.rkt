@@ -820,9 +820,7 @@
       result)))
 
 (define-checked+provide (symbol-interned? [sym symbol?])
-  ;;NOTE: We simply check if given symbol is equal to an
-  ;; interned symbol.
-  (#js.sym.isInterned))
+  (#js.Core.PrimitiveSymbol.isInterned sym))
 
 (define+provide (symbol=? s v)
   (#js.s.equals v))

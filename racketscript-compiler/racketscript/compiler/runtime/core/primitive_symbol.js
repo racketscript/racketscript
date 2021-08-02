@@ -51,19 +51,23 @@ class PrimitiveSymbol extends PrintablePrimitive {
         return Symbol.keyFor(this.sym);
     }
 
+    displayUString(out) {
+        out.consume(Symbol.keyFor(this.sym));
+    }
+
     displayNativeString(out) {
-        out.consume(this.toString());
+        out.consume(Symbol.keyFor(this.sym));
     }
 
     // Adds the quote character before the value, ex: 'sym
-    printNativeString(out) {
+    printUString(out) {
         out.consume("'");
         this.writeNativeString(out);
     }
 }
 
 export function make(v) {
-    return new PrimitiveSymbol(v);
+    return new PrimitiveSymbol(v ? v.toString() : '');
 }
 
 export function makeUninterned() {
@@ -72,4 +76,11 @@ export function makeUninterned() {
 
 export function check(v) {
     return v instanceof PrimitiveSymbol;
+}
+
+export function isInterned(v) {
+    if (check(v)) {
+        return v.isInterned;
+    }
+    return false;
 }
