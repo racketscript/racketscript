@@ -1,4 +1,5 @@
 import { PrintablePrimitive } from './printable_primitive.js';
+import { hashString } from './raw_hashing.js';
 
 let counter = 0;
 
@@ -31,11 +32,15 @@ class PrimitiveSymbol extends PrintablePrimitive {
         return s === this.value;
     }
 
-    le(s) {
+    lt(s) {
         if (s === this) {
             return false;
         }
-        return this.value < s.value;
+        return this.toString() < s.toString();
+    }
+
+    hashForEqual() {
+        return hashString(this.toString());
     }
 
     /* String printing */
@@ -47,16 +52,16 @@ class PrimitiveSymbol extends PrintablePrimitive {
         return this.toString();
     }
 
-    toString() {
-        return Symbol.keyFor(this.sym);
-    }
-
     displayUString(out) {
         out.consume(Symbol.keyFor(this.sym));
     }
 
     displayNativeString(out) {
-        out.consume(Symbol.keyFor(this.sym));
+        if (this.isInterned) {
+            out.consume(Symbol.keyFor(this.sym));
+        } else {
+            out.consume(this.sym.toString());
+        }
     }
 
     // Adds the quote character before the value, ex: 'sym
