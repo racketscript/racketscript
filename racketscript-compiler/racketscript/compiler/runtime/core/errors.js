@@ -186,14 +186,16 @@ export function makeOutOfRangeError(name, type, v, len, i) {
         stringOut.consume(i.toString());
         stringOut.consume('\n');
         stringOut.consume('  valid range: [0, ');
-        stringOut.consume(len.toString());
+        stringOut.consume((len - 1).toString());
         stringOut.consume(']\n');
         stringOut.consume('  ');
         stringOut.consume(type);
         stringOut.consume(': ');
         printNativeString(stringOut, v, true, 0);
     } else {
-        stringOut.consume(`${name.toString()}: index is out of range for empty ${type}\n`);
+        stringOut.consume(
+            `${name.toString()}: index is out of range for empty ${type}\n`
+        );
     }
 
     return racketContractError(stringOut.getOutputString());
