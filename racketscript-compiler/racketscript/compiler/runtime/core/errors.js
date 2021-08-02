@@ -186,7 +186,7 @@ export function makeOutOfRangeError(name, type, v, len, i) {
         stringOut.consume(i.toString());
         stringOut.consume('\n');
         stringOut.consume('  valid range: [0, ');
-        stringOut.consume((len - 1).toString());
+        stringOut.consume(len.toString());
         stringOut.consume(']\n');
         stringOut.consume('  ');
         stringOut.consume(type);

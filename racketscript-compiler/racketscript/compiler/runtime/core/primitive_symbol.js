@@ -5,7 +5,7 @@ let counter = 0;
 
 class PrimitiveSymbol extends PrintablePrimitive {
     constructor(name) {
-        super(name);
+        super();
 
         if (name) {
             // interned
@@ -52,22 +52,12 @@ class PrimitiveSymbol extends PrintablePrimitive {
         return this.toString();
     }
 
-    displayUString(out) {
-        out.consume(Symbol.keyFor(this.sym));
-    }
-
     displayNativeString(out) {
         if (this.isInterned) {
             out.consume(Symbol.keyFor(this.sym));
         } else {
             out.consume(this.sym.toString());
         }
-    }
-
-    // Adds the quote character before the value, ex: 'sym
-    printUString(out) {
-        out.consume("'");
-        this.writeNativeString(out);
     }
 }
 
