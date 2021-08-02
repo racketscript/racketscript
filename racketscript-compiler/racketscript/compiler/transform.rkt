@@ -894,7 +894,7 @@
   (: ~sym (-> Symbol ILExpr))
   (define (~sym s)
     (ILApp
-     (name-in-module 'core 'Symbol.make) (list (ILValue (symbol->string s)))))
+     (name-in-module 'core 'PrimitiveSymbol.make) (list (ILValue (symbol->string s)))))
 
   (: ~cons (-> ILExpr ILExpr ILExpr))
   (define (~cons a b)
