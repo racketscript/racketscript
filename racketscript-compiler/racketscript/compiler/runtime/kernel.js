@@ -35,7 +35,7 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
 
     const matches = formStr.match(regex);
     const numExpected = matches
-        ? matches.filter((m) => !NO_ARG_FORM_RE.test(m)).length
+        ? matches.filter(m => !NO_ARG_FORM_RE.test(m)).length
         : 0;
     if (numExpected !== args.length) {
         throw Core.racketContractError(
