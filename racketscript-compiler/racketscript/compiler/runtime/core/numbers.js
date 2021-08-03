@@ -72,3 +72,21 @@ export function equals(...operands) {
 export function check(v) {
     return typeof v === 'number';
 }
+
+/* Bitwise operators */
+
+export function bitwiseOr(...operands) {
+    return [].reduce.call(operands, (a, b) => a | b, 0);
+}
+
+export function bitwiseXor(...operands) {
+    return [].reduce.call(operands, (a, b) => a ^ b, 0);
+}
+
+export function bitwiseAnd(...operands) {
+    return [].reduce.call(operands, (a, b) => a & b, -1);
+}
+
+export function bitwiseNot(v) {
+    return ~v;
+}
