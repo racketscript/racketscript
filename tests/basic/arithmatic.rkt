@@ -53,3 +53,13 @@
 
 (displayln (+))
 (displayln (*))
+
+;; test bitwise operations
+(displayln (bitwise-and 5 3)) ;; 1
+(displayln (bitwise-and 5 3 -1983)) ;; 1
+(displayln (bitwise-ior 5 3)) ;; 7
+(displayln (bitwise-ior 5 3 10)) ;; 15
+(displayln (bitwise-xor 5 3)) ;; 6
+(displayln (bitwise-xor 5 3 10)) ;; 12
+(displayln (bitwise-not 5)) ;; -6
+(displayln (bitwise-not -3)) ;; 2

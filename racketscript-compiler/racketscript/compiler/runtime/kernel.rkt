@@ -172,6 +172,24 @@
 (define-checked+provide (numerator [x number?]) x)
 (define-checked+provide (denominator [x number?]) 1)
 
+;; bitwise operators
+(define+provide bitwise-and
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity #js.Core.Number.bitwiseAnd 1)
+   "bitwise-and"))
+
+(define+provide bitwise-ior
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity #js.Core.Number.bitwiseOr 1)
+   "bitwise-ior"))
+
+(define+provide bitwise-xor
+  (#js.Core.attachProcedureName
+   (#js.Core.attachProcedureArity #js.Core.Number.bitwiseXor 1)
+   "bitwise-xor"))
+
+(define-checked+provide (bitwise-not [v number?])
+  (#js.Core.Number.bitwiseNot v))
 
 ;; ----------------------------------------------------------------------------
 ;; Booleans
