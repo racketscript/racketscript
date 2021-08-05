@@ -37,8 +37,7 @@ function makeError(name) {
     e.prototype = Object.create(Error.prototype);
     e.prototype.constructor = e;
 
-    return (...args) =>
-        new (Function.prototype.bind.apply(e, [this].concat(args)))();
+    return (...args) => new (Function.prototype.bind.apply(e, [this].concat(args)))();
 }
 
 export const racketCoreError = makeError('RacketCoreError');

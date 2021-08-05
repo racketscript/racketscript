@@ -7,10 +7,11 @@ import * as Paramz from './paramz.js';
 export function isImmutable(v) {
     if (Core.Primitive.check(v)) {
         return v.isImmutable();
-    } else if (Core.Bytes.check(v) || typeof v === 'string') {
+    }
+    if (Core.Bytes.check(v) || typeof v === 'string') {
         return true;
-    } else if (typeof v === 'number' || typeof v === 'boolean' ||
-        typeof v === 'undefined' || v === null) {
+    }
+    if (typeof v === 'number' || typeof v === 'boolean' || typeof v === 'undefined' || v === null) {
         return false;
     }
     throw Core.racketCoreError('isImmutable not implemented for', v);
@@ -33,20 +34,32 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
     let lastMatch = '';
 
     const matches = formStr.match(regex);
-    const numExpected = matches ?
-        matches.filter(m => !NO_ARG_FORM_RE.test(m)).length : 0;
+    const numExpected = matches
+        ? matches.filter(m => !NO_ARG_FORM_RE.test(m)).length
+        : 0;
     if (numExpected !== args.length) {
-        throw Core.racketContractError(`fprintf: format string requires ${numExpected} arguments, ` +
-            `given ${args.length}; arguments were:`, out, form, ...args);
+        throw Core.racketContractError(
+            `fprintf: format string requires ${numExpected} arguments, `
+            + `given ${args.length}; arguments were:`,
+            out,
+            form,
+            ...args
+        );
     }
 
     // eslint-disable-next-line no-cond-assign
     while ((reExecResult = regex.exec(formStr)) !== null) {
-        Core.display(out, formStr.slice(prevIndex + lastMatch.length, reExecResult.index));
+        Core.display(
+            out,
+            formStr.slice(prevIndex + lastMatch.length, reExecResult.index)
+        );
         prevIndex = reExecResult.index;
         lastMatch = reExecResult[0]; // eslint-disable-line prefer-destructuring
         if (/^~\s/.test(lastMatch)) continue; // eslint-disable-line no-continue
-        switch (lastMatch.charAt(1)) { // eslint-disable-line default-case
+        // eslint-disable-next-line default-case
+        switch (
+            lastMatch.charAt(1)
+        ) {
         case '~':
             Core.display(out, '~');
             continue; // eslint-disable-line no-continue
@@ -76,17 +89,17 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
             break;
         case 'b':
         case 'B':
-            // TODO: raise exn:fail:contract if the number is not exact.
+        // TODO: raise exn:fail:contract if the number is not exact.
             Core.display(out, v.toString(2));
             break;
         case 'o':
         case 'O':
-            // TODO: raise exn:fail:contract if the number is not exact.
+        // TODO: raise exn:fail:contract if the number is not exact.
             Core.display(out, v.toString(8));
             break;
         case 'x':
         case 'X':
-            // TODO: raise exn:fail:contract if the number is not exact.
+        // TODO: raise exn:fail:contract if the number is not exact.
             Core.display(out, v.toString(16));
             break;
         default:
@@ -119,11 +132,11 @@ export function listToString(charsList) {
 // Errors
 
 /**
- * @param {Core.Symbol|Core.UString|String} firstArg
+ * @param {Core.PrimitiveSymbol|Core.UString|String} firstArg
  * @param {*[]} rest
  */
 export function error(firstArg, ...rest) {
-    if (Core.Symbol.check(firstArg)) {
+    if (Core.PrimitiveSymbol.check(firstArg)) {
         if (rest.length === 0) {
             throw Core.racketCoreError(firstArg.toString());
         } else {
@@ -153,7 +166,7 @@ export function doraise(e) {
 }
 
 /**
- * @param {Core.Symbol} name
+ * @param {Core.PrimitiveSymbol} name
  * @param {Core.UString|String} expected
  * @param {*[]} rest
  */
@@ -163,9 +176,11 @@ export function doraise(e) {
 //  (raise-argument-error name expected bad-pos arg ...)
 export function argerror(name, expected, ...rest) {
     let theerr;
-    if (Core.Symbol.check(name)
+    if (
+        Core.PrimitiveSymbol.check(name)
         && (Core.UString.check(expected) || typeof expected === 'string')
-        && rest.length >= 1) {
+        && rest.length >= 1
+    ) {
         theerr = Core.makeArgumentError(name, expected, ...rest);
     } else {
         theerr = Core.racketContractError('raise-argument-error: invalid arguments');
@@ -175,7 +190,7 @@ export function argerror(name, expected, ...rest) {
 }
 
 /**
- * @param {Core.Symbol} name
+ * @param {Core.PrimitiveSymbol} name
  * @param {Core.UString|String} expected
  * @param {*[]} rest
  */
@@ -185,9 +200,11 @@ export function argerror(name, expected, ...rest) {
 //  (raise-result-error name expected bad-pos arg ...)
 export function resulterror(name, expected, ...rest) {
     let theerr;
-    if (Core.Symbol.check(name)
+    if (
+        Core.PrimitiveSymbol.check(name)
         && (Core.UString.check(expected) || typeof expected === 'string')
-        && rest.length >= 1) {
+        && rest.length >= 1
+    ) {
         theerr = Core.makeResultError(name, expected, ...rest);
     } else {
         theerr = Core.racketContractError('raise-result-error: invalid result');
@@ -197,7 +214,7 @@ export function resulterror(name, expected, ...rest) {
 }
 
 /**
- * @param {Core.Symbol} name
+ * @param {Core.PrimitiveSymbol} name
  * @param {Core.UString|String} msg
  * @param {Core.UString|String} field
  * @param {*[]} rest
@@ -206,10 +223,12 @@ export function resulterror(name, expected, ...rest) {
 // so rest must be at least 1 and must be odd bc each field must have matching v
 export function argserror(name, msg, field, ...rest) {
     let theerr;
-    if (Core.Symbol.check(name)
+    if (
+        Core.PrimitiveSymbol.check(name)
         && (Core.UString.check(msg) || typeof msg === 'string')
         && (Core.UString.check(field) || typeof field === 'string')
-        && rest.length >= 1 && rest.length % 2 === 1) {
+        && rest.length >= 1 && rest.length % 2 === 1
+    ) {
         theerr = Core.makeArgumentsError(name, msg, field, ...rest);
     } else {
         theerr = Core.racketContractError('raise-arguments-error: invalid arguments');
@@ -219,7 +238,7 @@ export function argserror(name, msg, field, ...rest) {
 }
 
 /**
- * @param {Core.Symbol} name
+ * @param {Core.PrimitiveSymbol} name
  * @param {Core.UString|String} msg
  * @param {*[]} rest
  */
@@ -228,8 +247,10 @@ export function argserror(name, msg, field, ...rest) {
 // so ...rst might have additional msg, v ...
 export function mismatcherror(name, msg, ...rest) {
     let theerr;
-    if (Core.Symbol.check(name)
-        && (Core.UString.check(msg) || typeof msg === 'string')) {
+    if (
+        Core.PrimitiveSymbol.check(name)
+        && (Core.UString.check(msg) || typeof msg === 'string')
+    ) {
         theerr = Core.makeMismatchError(name, msg, ...rest);
     } else {
         theerr = Core.racketContractError('error: invalid arguments');
@@ -249,8 +270,12 @@ export function mismatcherror(name, msg, ...rest) {
 // usage: raise-range-error name, type, v len, i
 export function outofrangeerror(name, type, v, len, i) {
     let theerr;
-    if (typeof name === 'string' && typeof type === 'string' &&
-        typeof len === 'number' && typeof i === 'number') {
+    if (
+        typeof name === 'string'
+        && typeof type === 'string'
+        && typeof len === 'number'
+        && typeof i === 'number'
+    ) {
         theerr = Core.makeOutOfRangeError(name, type, v, len, i);
     } else {
         theerr = Core.racketContractError('error: invalid arguments');
@@ -264,7 +289,8 @@ export function outofrangeerror(name, type, v, len, i) {
 
 export function random(...args) {
     switch (args.length) {
-    case 0: return Math.random();
+    case 0:
+        return Math.random();
     case 1:
         if (args[0] > 0) {
             return Math.floor(Math.random() * args[0]);

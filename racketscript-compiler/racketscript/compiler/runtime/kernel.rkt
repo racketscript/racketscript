@@ -798,7 +798,7 @@
        (apply fprintf out form args)
        (get-output-string out)))
 
-(define+provide symbol? #js.Core.Symbol.check)
+(define+provide symbol? #js.Core.PrimitiveSymbol.check)
 (define+provide keyword? #js.Core.Keyword.check)
 
 (define+provide (make-string k [c #\nul])
@@ -814,14 +814,14 @@
   (#js.Core.UString.makeMutable (#js.v.toString)))
 
 (define-checked+provide (string->symbol [s string?])
-  (#js.Core.Symbol.make s))
+  (#js.Core.PrimitiveSymbol.make s))
 
 (define-checked+provide (string->uninterned-symbol [s string?])
-  (#js.Core.Symbol.makeUninterned s))
+  (#js.Core.PrimitiveSymbol.makeUninterned s))
 
 ;; TODO: implement unreadable symbols
 (define-checked+provide (string->unreadable-symbol [s string?])
-  (#js.Core.Symbol.make s))
+  (#js.Core.PrimitiveSymbol.make s))
 
 ; Does not support prefixed forms such as "#b101".
 (define+provide (string->number s [radix 10])
@@ -838,9 +838,7 @@
       result)))
 
 (define-checked+provide (symbol-interned? [sym symbol?])
-  ;;NOTE: We simply check if given symbol is equal to an
-  ;; interned symbol.
-  (binop === sym (#js.Core.Symbol.make #js.sym.v)))
+  (#js.Core.PrimitiveSymbol.isInterned sym))
 
 (define+provide (symbol=? s v)
   (#js.s.equals v))
@@ -1283,7 +1281,7 @@
   (v-λ (sym) #:unchecked
     (let ([s (or (and sym #js.sym.v) "")])
       (set! __count (binop + __count 1))
-      (#js.Core.Symbol.makeUninterned (binop + s __count)))))
+      (#js.Core.PrimitiveSymbol.makeUninterned (binop + s __count)))))
 
 (define+provide (eval-jit-enabled) #f)
 

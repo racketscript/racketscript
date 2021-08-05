@@ -14,14 +14,21 @@
  */
 export function hash(o) {
     if (o === null) return 0;
+    if (o && o.sym) return hashString(`sym_${o.toString()}`);
     switch (typeof o) {
-    case 'number': return hashNumber(o);
-    case 'string': return hashString(o);
-    case 'boolean': return o ? 1 : -1;
-    case 'undefined': return 0;
+    case 'number':
+        return hashNumber(o);
+    case 'string':
+        return hashString(o);
+    case 'boolean':
+        return o ? 1 : -1;
+    case 'undefined':
+        return 0;
     case 'object':
-    case 'function': return hashObjectIdentity(o);
-    default: return hashString(o.toString());
+    case 'function':
+        return hashObjectIdentity(o);
+    default:
+        return hashString(o.toString());
     }
 }
 
@@ -37,9 +44,9 @@ export function hashString(s) {
     let h = 0;
     const n = s.length;
     for (let i = 0; i < n; ++i) {
-        // Benchmarks of various ways to do this:
-        // https://run.perf.zone/view/String-Hashing-Performance-1504040177726
-        h = ~~(((h << 5) - h) + s.charCodeAt(i));
+    // Benchmarks of various ways to do this:
+    // https://run.perf.zone/view/String-Hashing-Performance-1504040177726
+        h = ~~((h << 5) - h + s.charCodeAt(i));
     }
     return h;
 }
@@ -66,8 +73,8 @@ export function hashNumber(n) {
     // This slightly increases the potential number of collisions
     // with large numbers and floats, but increases the performance by 20%.
     if (~~n === n) {
-        // If `n` is -0, the above check will pass.
-        // `~~` is here only to convert the potential -0 to 0.
+    // If `n` is -0, the above check will pass.
+    // `~~` is here only to convert the potential -0 to 0.
         return ~~n;
     }
     kBufAsF64[0] = n;
@@ -114,7 +121,7 @@ export function hashIntArray(a) {
     let h = 0;
     const n = a.length;
     for (let i = 0; i < n; ++i) {
-        h = ~~(((h << 5) - h) + a[i]);
+        h = ~~((h << 5) - h + a[i]);
     }
     return h;
 }
@@ -134,7 +141,7 @@ export function hashArray(a, valueToIntFn) {
     let h = 0;
     const n = a.length;
     for (let i = 0; i < n; ++i) {
-        h = ~~(((h << 5) - h) + valueToIntFn(a[i]));
+        h = ~~((h << 5) - h + valueToIntFn(a[i]));
     }
     return h;
 }

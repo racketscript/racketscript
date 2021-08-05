@@ -82,8 +82,9 @@
                          #"apple" 'a #"banana" 'b #"coconut" 'c
                          u/apple 'a u/banana 'b u/coconut 'c
                          ;; TODO: properly implement unreadable symbols
+                         'apple 'banana 'coconut 'coconut+
                          ; apple 'a banana 'b coconut 'c
-                         'apple 'a 'banana 'b 'coconut 'c 'coconut+ '+
+                         ;'apple 'a 'banana 'b 'coconut 'c 'coconut+ '+
                          '#:apple 'a '#:banana 'b '#:coconut 'c
                          null 'one
                          (void) 'one
