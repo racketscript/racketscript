@@ -14,7 +14,7 @@
  */
 export function hash(o) {
     if (o === null) return 0;
-    if (o.sym) return hashString(`sym_${o.toString()}`);
+    if (o && o.sym) return hashString(`sym_${o.toString()}`);
     switch (typeof o) {
     case 'number':
         return hashNumber(o);
