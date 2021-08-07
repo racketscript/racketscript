@@ -112,6 +112,10 @@
   (#js.Math.cos v))
 (define-checked+provide (tan [v real?])
   (#js.Math.tan v))
+(define-checked+provide (asin [v real?])
+  (#js.Math.asin v))
+(define-checked+provide (acos [v real?])
+  (#js.Math.acos v))
 (define+provide atan
   (case-lambda
     [(v) (#js.Math.atan v)]
