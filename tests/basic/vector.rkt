@@ -21,3 +21,10 @@
 (displayln "equal")
 (displayln (equal? #(1 2 3) #(1 2 3)))
 (displayln (equal? #(1 2 3) #(2 2 3)))
+
+(displayln "make-vector")
+(displayln (make-vector 5))
+(displayln (make-vector 5 3))
+(displayln (make-vector 5 #f))
+(displayln (make-vector 0))
+

@@ -375,7 +375,10 @@
 
 ;; v is optional
 (define-checked+provide (make-vector [size integer?] [v #t])
-  (#js.Core.Vector.makeInit size (or v 0)))
+  (#js.Core.Vector.makeInit size
+    (if (eq? v *undefined*)
+      0
+      v)))
 
 (define+provide vector? #js.Core.Vector.check)
 
@@ -396,6 +399,7 @@
 
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
+
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
