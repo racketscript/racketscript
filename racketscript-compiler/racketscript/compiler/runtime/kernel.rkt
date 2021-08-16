@@ -394,6 +394,7 @@
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
 
+
 ;; --------------------------------------------------------------------------
 ;; Hashes
 
