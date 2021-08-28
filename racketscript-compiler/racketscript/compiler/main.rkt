@@ -324,6 +324,7 @@
    ["--ast" "Expand and print AST" (build-mode 'absyn)]
    ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
    ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
+   ["--linklet" "Compile a linklet as an s-expression to JS and print to stdout" (build-mode 'linklet)]
    ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
    #:args ([filename 'stdin])
    (match `(,filename ,(input-from-stdin?))
@@ -362,7 +363,7 @@
   (unless (equal? (build-mode) 'js)
     (log-rjs-info "RacketScript root directory: ~a" racketscript-dir))
 
-  (unless (input-from-stdin?)
+  (unless (or (input-from-stdin?) (equal? (build-mode) 'linklet))
     ;; Initialize global-export-graph so that we can import each module as an
     ;; object and follow identifier's from there. For stdin builds, we have to
     ;; defer this operation.
