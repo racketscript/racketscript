@@ -34,6 +34,7 @@
          "util.rkt")
 
 (provide convert
+         convert-linklet
          open-read-module
          read-module
          to-absyn
@@ -422,6 +423,12 @@
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
+(define (convert-linklet linklet)
+  (syntax-parse linklet #;(freshen-linklet-forms linklet)
+    #:literal-sets () ;; what are these literal sets for?
+    [(linklet _imports _exports forms ...)
+     (Linklet (filter-map to-absyn (syntax->list #'(forms ...))))]))
+
 (define (freshen-mod-forms mod)
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
@@ -459,6 +466,10 @@
     [((~and mod-datum (~datum module)) . rest)
      (error 'do-expand
             "got ill-formed module: ~a\n" (syntax->datum #'rest))]
+    [((~datum linklet) _ _ . rest) (void)]
+    [((~datum linklet) . rest)
+     (error 'do-expand
+            "got ill-formed linklet: ~a\n" (syntax->datum #'rest))]
     [rest
      (error 'do-expand
             "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
@@ -489,6 +500,9 @@
   (read-accept-reader #t)
   (read-accept-lang #t)
   (do-expand (read-syntax (object-name input) input)))
+
+(define (read-and-expand-linklet input)
+  (read-syntax (object-name input) input))
 
 ;;;----------------------------------------------------------------------------
 ;;; Flatten Phases in Module

@@ -5,6 +5,8 @@
 
 (provide (all-defined-out))
 
+(struct Linklet ([forms : (Listof GeneralTopLevelForm)]))
+
 (struct Module  ([id      : Symbol]
                  [path    : Path]
                  [lang    : (U Symbol String (Listof Symbol))]

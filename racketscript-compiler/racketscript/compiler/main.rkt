@@ -391,6 +391,10 @@
       [else
        (quick-expand source)]))
 
+  (define (expanded-linklet)
+    (parameterize ([current-namespace (make-base-namespace)])
+
+
   (match (build-mode)
     ['expand (~> (expanded-module)
                  (syntax->datum _)
@@ -415,6 +419,10 @@
       (if (js-output-beautify?)
           (js-string-beautify (get-output-string output-string))
           (get-output-string output-string)))]
-    ['complete (racket->js)])
+    ['complete (racket->js)]
+    ['linklet
+     (~> (expanded-module)
+         (convert-linklet _)
+         (pretty-print _))])
 
   (void))
