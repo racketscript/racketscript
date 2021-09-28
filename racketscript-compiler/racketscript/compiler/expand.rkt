@@ -40,7 +40,8 @@
          to-absyn
          to-absyn/top
          read-and-expand-module
-         quick-expand)
+         quick-expand
+         expand-linklet)
 
 (define current-module (make-parameter #f))
 (define current-phase (make-parameter 0))
@@ -466,10 +467,6 @@
     [((~and mod-datum (~datum module)) . rest)
      (error 'do-expand
             "got ill-formed module: ~a\n" (syntax->datum #'rest))]
-    [((~datum linklet) _ _ . rest) (void)]
-    [((~datum linklet) . rest)
-     (error 'do-expand
-            "got ill-formed linklet: ~a\n" (syntax->datum #'rest))]
     [rest
      (error 'do-expand
             "got something that isn't a module: ~a\n" (syntax->datum #'rest))])
@@ -477,6 +474,19 @@
 
   (parameterize ([current-namespace (make-base-namespace)])
     (expand stx)))
+
+(define (do-expand-linklet stx)
+  (syntax-parse stx
+    [((~datum linklet) imports exports . rest)
+     (parameterize ([current-namespace (make-base-namespace)])
+       #`(linklet imports exports #,@(map expand (syntax->list #'rest))))]
+    [((~datum linklet) . rest)
+     (error 'do-expand-linklet
+            "got ill-formed linklet: ~a\n" (syntax->datum #'rest))]
+    [rest
+     (error 'do-expand-linklet
+            "got something that isn't a module: ~a\n" (syntax->datum #'rest))]))
+  
 
 ;;; Read modules
 
@@ -487,6 +497,13 @@
   (call-with-input-file (actual-module-path in-path)
     (λ (in)
       (read-module in))))
+
+(define (expand-linklet in-path)
+  (log-rjs-info "[expand-linklet] ~a" in-path)
+  (define full-path (path->complete-path (actual-module-path in-path)))
+  (parameterize ([current-directory (path-only full-path)])
+    (do-expand-linklet (open-read-module in-path))))
+
 
 (define (quick-expand in-path)
   (log-rjs-info "[expand] ~a" in-path)

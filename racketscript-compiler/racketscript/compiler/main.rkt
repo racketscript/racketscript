@@ -391,10 +391,6 @@
       [else
        (quick-expand source)]))
 
-  (define (expanded-linklet)
-    (parameterize ([current-namespace (make-base-namespace)])
-
-
   (match (build-mode)
     ['expand (~> (expanded-module)
                  (syntax->datum _)
@@ -421,7 +417,7 @@
           (get-output-string output-string)))]
     ['complete (racket->js)]
     ['linklet
-     (~> (expanded-module)
+     (~> (expand-linklet source)
          (convert-linklet _)
          (pretty-print _))])
 
