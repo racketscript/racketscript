@@ -363,7 +363,9 @@
   (unless (equal? (build-mode) 'js)
     (log-rjs-info "RacketScript root directory: ~a" racketscript-dir))
 
-  (unless (or (input-from-stdin?) (equal? (build-mode) 'linklet))
+  (define linklet-mode? (equal? (build-mode) 'linklet))
+
+  (unless (or (input-from-stdin?) linklet-mode?)
     ;; Initialize global-export-graph so that we can import each module as an
     ;; object and follow identifier's from there. For stdin builds, we have to
     ;; defer this operation.
@@ -371,6 +373,9 @@
       ;; As 'js mode prints output to stdout, we don't want to mix
       (log-rjs-info "Resolving module dependencies and identifiers... "))
     (global-export-graph (get-export-tree (list source))))
+
+  (when linklet-mode?
+    (global-export-graph (get-export-tree (list (collection-file-path "base.rkt" "racket")))))
 
   (define (expanded-module)
     (cond

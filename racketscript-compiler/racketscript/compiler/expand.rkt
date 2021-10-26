@@ -268,6 +268,7 @@
                (current-module-imports (set-add (current-module-imports) '#%kernel))
                (current-module-imports (set-add (current-module-imports) src-mod-path)))
 
+
            ;;HACK: See test/struct/import-struct.rkt. Somehow, the
            ;;  struct constructor has different src-id returned by
            ;;  identifier-binding than the actual identifier name used
@@ -428,7 +429,9 @@
   (syntax-parse linklet #;(freshen-linklet-forms linklet)
     #:literal-sets () ;; what are these literal sets for?
     [(linklet _imports _exports forms ...)
-     (Linklet (filter-map to-absyn (syntax->list #'(forms ...))))]))
+     (parameterize ([lexical-bindings (make-free-id-table)])
+       (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))])
+         (Linklet contents)))]))
 
 (define (freshen-mod-forms mod)
   (syntax-parse mod
