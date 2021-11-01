@@ -26,7 +26,8 @@
 (provide absyn-top-level->il
          absyn-gtl-form->il
          absyn-expr->il
-         absyn-module->il)
+         absyn-module->il
+         absyn-linklet->il)
 
 (define-type-alias ModuleObjectNameMap (HashTable (U Path Symbol)
                                                   Symbol))
@@ -46,6 +47,54 @@
      (append1 stmt v)]
     [(Begin? form) (absyn-expr->il form #f)]
     [else (error "only modules supported at top level")]))
+
+;; FIXME I do ZERO handling of javascript forms
+(: absyn-linklet->il (-> Linklet ILLinklet))
+(define (absyn-linklet->il lnk)
+  (match-define (Linklet path forms imports) lnk)
+  (log-rjs-info "[linklet il]")
+
+  (define imported-mod-path-list (set->list imports))
+  (define requires* (absyn-requires->il imported-mod-path-list path))
+
+  ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
+  ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
+  (parameterize ([module-object-name-map (make-module-map requires* imported-mod-path-list)])
+    (ILLinklet
+      (filter ILRequire? (absyn-requires->il (set->list imports) path))
+      (append-map absyn-gtl-form->il forms))))
+
+(: make-module-map (-> (Listof (Option ILRequire)) (Listof (U Path Symbol)) ModuleObjectNameMap)) ;; TODO need type aliases
+(define (make-module-map reqs imported-paths)
+  (for/fold ([acc (module-object-name-map)])
+            ([req reqs]
+             [mod-path imported-paths])
+    (if (ILRequire? req)
+      (hash-set acc
+                mod-path
+                (ILRequire-name req))
+      acc)))
+
+(: absyn-requires->il (-> (Listof (U Path Symbol)) Path (Listof (Option ILRequire))))
+(define (absyn-requires->il import-list path)
+  (for/list ([mod-path import-list]
+             [counter (in-naturals)])
+    (define mod-obj-name (string->symbol (~a "M" counter)))
+    (define import-name
+      (match mod-path
+        [(? symbol? _)
+          (jsruntime-import-path path
+                                 (jsruntime-module-path mod-path))]
+        [_ (module->relative-import (cast mod-path Path))]))
+    ;; See expansion of identifier in `expand.rkt` for primitive
+    ;; modules
+    (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
+                  (equal? path (actual-module-path mod-path)))
+            (and (primitive-module-path? (actual-module-path path))
+                  (set-member? ignored-module-imports-in-boot mod-path)))
+        #f
+        (ILRequire import-name mod-obj-name '*))))
+
 
 
 (: absyn-module->il (-> Module ILModule))
@@ -73,28 +122,7 @@
     (set-box! provides (append (unbox provides) p*)))
 
   (define imported-mod-path-list (set->list imports))
-
-  (: requires* (Listof (Option ILRequire)))
-  (define requires*
-    ;; FIXME: We put #f so that we can match it exactly
-    ;;  later in mod-stms
-    (for/list ([mod-path imported-mod-path-list]
-               [counter (in-naturals)])
-      (define mod-obj-name (string->symbol (~a "M" counter)))
-      (define import-name
-        (match mod-path
-          [(? symbol? _)
-           (jsruntime-import-path path
-                                  (jsruntime-module-path mod-path))]
-          [_ (module->relative-import (cast mod-path Path))]))
-      ;; See expansion of identifier in `expand.rkt` for primitive
-      ;; modules
-      (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
-                   (equal? path (actual-module-path mod-path)))
-              (and (primitive-module-path? (actual-module-path path))
-                   (set-member? ignored-module-imports-in-boot mod-path)))
-          #f
-          (ILRequire import-name mod-obj-name '*))))
+  (define requires* (absyn-requires->il imported-mod-path-list path))
 
   ;; Append all JavaScript requires we find at GTL over here
   (: js-requires (Boxof (Listof ILRequire)))
@@ -105,16 +133,7 @@
   (define racket-requires (filter ILRequire? requires*))
 
   (define mod-stms
-    (parameterize ([module-object-name-map
-                    ; Names we will use for module objects in JS
-                    (for/fold ([acc (module-object-name-map)])
-                              ([req requires*]
-                               [mod-path imported-mod-path-list])
-                      (if (ILRequire? req)
-                          (hash-set acc
-                                    mod-path
-                                    (ILRequire-name req))
-                          acc))])
+    (parameterize ([module-object-name-map (make-module-map requires* imported-mod-path-list)])
       (append-map
        (λ ([form : ModuleLevelForm])
          (cond

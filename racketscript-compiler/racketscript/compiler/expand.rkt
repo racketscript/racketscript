@@ -425,13 +425,15 @@
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
-(define (convert-linklet linklet)
+(define (convert-linklet linklet path)
   (syntax-parse linklet #;(freshen-linklet-forms linklet)
     #:literal-sets () ;; what are these literal sets for?
     [(linklet _imports _exports forms ...)
-     (parameterize ([lexical-bindings (make-free-id-table)])
-       (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))])
-         (Linklet contents)))]))
+     (parameterize ([current-module-imports (set)]
+                    [lexical-bindings (make-free-id-table)])
+       (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))]
+             [imports (current-module-imports)])
+         (Linklet path contents imports)))]))
 
 (define (freshen-mod-forms mod)
   (syntax-parse mod

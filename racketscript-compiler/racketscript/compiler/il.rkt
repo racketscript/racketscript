@@ -16,6 +16,9 @@
 (define-predicate   ILProgram? ILProgram)
 (define-type-alias  ILModuleName (Option Path-String))
 
+(struct ILLinklet ([requires : ILRequire*]
+                   [body     : ILStatement*]))
+
 (struct ILModule ([id       : ILModuleName]
                   [provides : ILProvide*]
                   [requires : ILRequire*]

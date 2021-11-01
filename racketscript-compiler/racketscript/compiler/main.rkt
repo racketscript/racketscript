@@ -422,8 +422,11 @@
           (get-output-string output-string)))]
     ['complete (racket->js)]
     ['linklet
+     (define p (path->complete-path (main-source-file)))
+     (current-source-file p)
      (~> (expand-linklet source)
-         (convert-linklet _)
+         (convert-linklet _ p)
+         (absyn-linklet->il _)
          (pretty-print _))])
 
   (void))

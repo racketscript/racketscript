@@ -5,7 +5,10 @@
 
 (provide (all-defined-out))
 
-(struct Linklet ([forms : (Listof GeneralTopLevelForm)]))
+(struct Linklet ([path    : Path]
+                 [forms   : (Listof GeneralTopLevelForm)]
+                 [imports : (Setof (U Path Symbol))])
+  #:transparent)
 
 (struct Module  ([id      : Symbol]
                  [path    : Path]
