@@ -16,6 +16,7 @@
 
 (provide assemble
          assemble-module
+         assemble-linklet
          assemble-statement*
          assemble-statement)
 
@@ -58,7 +59,7 @@
          [(list? args) (map normalize-symbol args)]
          [(cons? args) (append1 (map normalize-symbol (car args))
                                 (~a "..." (normalize-symbol (cdr args))))]
-         [else (error 'assemble-expr "λ must be unchecked by assembler phase")]))
+         [else (displayln args) (error 'assemble-expr "λ must be unchecked by assembler phase")]))
      (emit (string-join args-str ", "))
      (emit ") {")
      (for ([s body])
@@ -233,6 +234,16 @@
        (when (ILLambda? stmt)
          (emit ")"))
        (emit ";")]))
+
+(: assemble-linklet (-> ILLinklet Void))
+(define (assemble-linklet lnk)
+  (match-define (ILLinklet requires body) lnk)
+  (log-rjs-info "[assemble linklet]")
+
+  (define out (open-output-file "foo.js" #:exists 'replace))
+  (assemble-requires* requires out)
+  (for ([b body])
+    (assemble-statement b out)))
 
 (: assemble-module (-> ILModule (Option Output-Port) Void))
 (define (assemble-module mod maybeout)

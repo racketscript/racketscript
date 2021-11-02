@@ -45,7 +45,7 @@
      (define pos-formals (cast (car formals*) (Listof Symbol)))
      (list (check-arity-stm '< (length pos-formals)))]))
 
-(: insert-arity-checks (-> ILModule ILModule))
+(: insert-arity-checks (-> (U ILLinklet ILModule) (U ILLinklet ILModule)))
 (define (insert-arity-checks mod)
   (: traverse-expr (-> ILExpr ILExpr))
   (define traverse-expr
@@ -121,8 +121,11 @@
   (define (traverse-stm* stm*)
     (map traverse-stm stm*))
 
-  (match-define (ILModule id provides requires body) mod)
-  (ILModule id provides requires (traverse-stm* body)))
+  (match mod
+    [(ILModule id provides requires body)
+     (ILModule id provides requires (traverse-stm* body))]
+    [(ILLinklet requires body)
+     (ILLinklet requires (traverse-stm* body))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Tail Call Optimization

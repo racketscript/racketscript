@@ -423,10 +423,13 @@
     ['complete (racket->js)]
     ['linklet
      (define p (path->complete-path (main-source-file)))
+     (displayln p)
      (current-source-file p)
      (~> (expand-linklet source)
          (convert-linklet _ p)
          (absyn-linklet->il _)
+         (insert-arity-checks _)
+         (assemble-linklet _)
          (pretty-print _))])
 
   (void))
