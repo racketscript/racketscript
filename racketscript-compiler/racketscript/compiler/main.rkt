@@ -280,6 +280,28 @@
          (npm-install-build))
        (log-rjs-info "Finished.")])))
 
+(define (compile-collects-module mod)
+  (current-source-file mod)
+  (make-directory* (path-only (module-output-file mod)))
+
+  (define expanded (quick-expand mod))
+  (define ast (convert expanded (override-module-path mod)))
+
+  (assemble-module (insert-arity-checks
+                     (absyn-module->il* ast))
+                   #f)
+
+  (for ([mod (in-set (Module-imports ast))]
+        #:when (and (not (symbol? mod))
+                    (collects-module? mod)))
+    (compile-collects-module mod)))
+
+(define (compile-linklet-imports lnk)
+  (for ([mod (in-set (Linklet-imports lnk))]
+        #:when (and (not (symbol? mod))
+                    (collects-module? mod)))
+    (compile-collects-module mod)))
+
 ;; String -> String
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
@@ -423,13 +445,13 @@
     ['complete (racket->js)]
     ['linklet
      (define p (path->complete-path (main-source-file)))
-     (displayln p)
      (current-source-file p)
-     (~> (expand-linklet source)
-         (convert-linklet _ p)
-         (absyn-linklet->il _)
+
+     (define lnk-ast (convert-linklet (expand-linklet source) p))
+     (~> (absyn-linklet->il lnk-ast)
          (insert-arity-checks _)
-         (assemble-linklet _)
-         (pretty-print _))])
+         (assemble-linklet _))
+
+     (compile-linklet-imports lnk-ast)])
 
   (void))
