@@ -1218,6 +1218,11 @@
 (define+provide (regexp-match pattern input)
   (#js.Core.Regexp.match pattern input))
 
+(define+provide (regexp-match? pattern input)
+  (if (#js.Core.Regexp.match pattern input)
+      #t
+      #f))
+
 ;; --------------------------------------------------------------------------
 ;; Procedures
 
