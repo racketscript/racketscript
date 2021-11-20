@@ -1055,7 +1055,13 @@
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))
 
+(define-checked+provide (bytes->string/latin-1 [bs bytes?])
+  (#js.Core.UString.fromBytesLatin1 bs))
+
 (define-checked+provide (string->bytes/utf-8 [str string?])
+  (#js.Core.UString.toBytesUtf8 str))
+
+(define+provide (string->bytes/locale str [err-byte #t] [start 0] [end 0])
   (#js.Core.UString.toBytesUtf8 str))
 
 (define-checked+provide (bytes=? [bstr1 bytes?] [bstr2 bytes?])

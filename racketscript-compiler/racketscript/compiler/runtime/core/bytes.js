@@ -127,6 +127,7 @@ export function fromIntArray(ints) {
 }
 
 const utf8Decoder = new TextDecoder('utf-8');
+const latin1Decoder = new TextDecoder('latin1');
 
 /**
  * @param {!Uint8Array} bytes
@@ -134,6 +135,14 @@ const utf8Decoder = new TextDecoder('utf-8');
  */
 export function toString(bytes) {
     return utf8Decoder.decode(bytes);
+}
+
+/**
+ * @param {!Uint8Array} bytes
+ * @return {!String}
+ */
+export function toLatin1String(bytes) {
+    return latin1Decoder.decode(bytes);
 }
 
 /**
