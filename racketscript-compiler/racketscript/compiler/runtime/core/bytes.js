@@ -28,6 +28,21 @@ export function ref(bs, i) {
     return bs[i];
 }
 
+
+/**
+ *
+ * @param Array of {!Uint8Array}
+ * @return {!Uint8Array}
+ */
+export function append(bss) {
+    let size = 0;
+    bss.forEach(function (bs) { size = size + bs.length;})
+    let res = new Uint8Array(size);
+    let i = 0;
+    bss.forEach(function (bs) { res.set(bs,i); i = i + bs.length; })
+    return res;
+}
+
 /**
  *
  * @param {!Uint8Array} bs

@@ -1049,6 +1049,9 @@
        (#js.Core.makeOutOfRangeError "bytes-set!" "byte string" bs #js.bs.length i))
       (#js.Core.Bytes.set bs i b)))
 
+(define+provide bytes-append
+  (v-λ bss #:unchecked (#js.Core.Bytes.append bss)))
+
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))
 
@@ -1215,11 +1218,11 @@
 
 (define+provide byte-pregexp byte-regexp)
 
-(define+provide (regexp-match pattern input)
-  (#js.Core.Regexp.match pattern input))
+(define+provide (regexp-match pattern input [start-pos 0] [end-pos #f])
+  (#js.Core.Regexp.match pattern input start-pos end-pos))
 
-(define+provide (regexp-match? pattern input)
-  (if (#js.Core.Regexp.match pattern input)
+(define+provide (regexp-match? pattern input [start-pos 0] [end-pos #f])
+  (if (#js.Core.Regexp.match pattern input start-pos end-pos)
       #t
       #f))
 
@@ -1308,6 +1311,7 @@
     [(fs-change) (#js.Core.Vector.make (array #false #false #false #false) #false)]
     [else #false])
   )
+
 ;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
