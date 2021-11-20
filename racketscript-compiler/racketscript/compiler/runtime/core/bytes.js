@@ -36,10 +36,10 @@ export function ref(bs, i) {
  */
 export function append(bss) {
     let size = 0;
-    bss.forEach((bs) => { size += bs.length; })
+    bss.forEach((bs) => { size += bs.length; });
     const res = new Uint8Array(size);
     let i = 0;
-    bss.forEach((bs) => { res.set(bs,i); i += bs.length; })
+    bss.forEach((bs) => { res.set(bs, i); i += bs.length; });
     return res;
 }
 
