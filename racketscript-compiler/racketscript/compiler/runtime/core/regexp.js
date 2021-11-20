@@ -51,9 +51,9 @@ export function match(pattern, input, start, _end) {
         ? UString.fromBytesUtf8(/** @type {!Uint8Array} */(pattern))
         : pattern;
 
-    const end = ((typeof _end) == 'number') ? _end : stringInput.length;
+    const end = ((typeof _end) === 'number') ? _end : stringInput.length;
 
-    const result = stringInput.toString().slice(start,end).match(stringOrRegExpPattern);
+    const result = stringInput.toString().slice(start, end).match(stringOrRegExpPattern);
 
     if (result === null) {
         return false;
