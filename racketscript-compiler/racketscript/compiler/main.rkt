@@ -280,7 +280,7 @@
          (npm-install-build))
        (log-rjs-info "Finished.")])))
 
-(define (compile-collects-module mod)
+(define (compile-linklet-import mod)
   (current-source-file mod)
   (make-directory* (path-only (module-output-file mod)))
 
@@ -292,15 +292,16 @@
                    #f)
 
   (for ([mod (in-set (Module-imports ast))]
-        #:when (and (not (symbol? mod))
-                    (collects-module? mod)))
-    (compile-collects-module mod)))
+        #:when (not (symbol? mod)))
+    (compile-linklet-import mod)))
 
 (define (compile-linklet-imports lnk)
+  (for ([mod (in-set primitive-modules)])
+    (compile-linklet-import mod))
+
   (for ([mod (in-set (Linklet-imports lnk))]
-        #:when (and (not (symbol? mod))
-                    (collects-module? mod)))
-    (compile-collects-module mod)))
+        #:when (not (symbol? mod)))
+    (compile-linklet-import mod)))
 
 ;; String -> String
 (define (js-string-beautify js-str)
@@ -446,6 +447,12 @@
     ['linklet
      (define p (path->complete-path (main-source-file)))
      (current-source-file p)
+
+     (define default-module-name (string-slice (~a (last-path-element
+                                                     (main-source-file)))
+                                               0 -5))
+
+     (prepare-build-directory default-module-name)
 
      (define lnk-ast (convert-linklet (expand-linklet source) p))
      (~> (absyn-linklet->il lnk-ast)
