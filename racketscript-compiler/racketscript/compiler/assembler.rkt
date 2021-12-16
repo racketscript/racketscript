@@ -308,6 +308,7 @@
        [+nan.0 (emit "NaN")]
        [+nan.f  (emit "NaN")]
        [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
+       [_ #:when (zero? v) (emit (~a 0))]
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
     [(void? v)
