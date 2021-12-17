@@ -11,3 +11,6 @@
 (define (sub a b)
   (- a b))
 
+;; require protected id, see pr#284
+(require "protect-out.rkt")
+(displayln (f 10))
