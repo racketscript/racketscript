@@ -134,7 +134,8 @@
     [((~datum all-from-except) p ...) '()]
     [((~datum for-meta) 1 p ...) '()]
     [((~datum for-syntax) p ...) '()]
-    [((~datum protect) p ...) '()]
+    [((~datum protect) p ...)
+     (stx-map (λ (pv) (SimpleProvide (syntax-e pv))) #'(p ...))]
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
 (define (formals->absyn formals)

@@ -1311,6 +1311,9 @@
 
 (define+provide (variable-reference-constant? x) #f)
 (define+provide (variable-reference-from-unsafe? x) #f)
+(define+provide (variable-reference->module-source x) #f)
+(define+provide (variable-reference->resolved-module-path x) #f)
+(define+provide (module-name-fixup x) #f)
 
 (define+provide (inspector? p)
   #t)
@@ -1319,7 +1322,7 @@
 
 (define __count 1000)
 
-(define+provide (system-type mode)
+(define+provide (system-type [mode 'os])
   (case mode
     [(os) 'unix]
     [(vm) 'javascript]
@@ -1327,6 +1330,11 @@
     [(fs-change) (#js.Core.Vector.make (array #false #false #false #false) #false)]
     [else #false])
   )
+
+;; path stubs
+(define+provide (find-system-path kind)  "")
+(define+provide build-path ; multi-arity
+  (v-λ (base) #:unchecked base))
 
 ;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
@@ -1352,6 +1360,12 @@
   (f) (g) (h))
 
 (define+provide (datum-intern-literal v) v)
+
+;; semaphore stubs
+(define+provide (make-semaphore x) x)
+(define+provide (semaphore-peek-evt x) x)
+(define+provide call-with-semaphore
+  (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
 ;; Syntax
