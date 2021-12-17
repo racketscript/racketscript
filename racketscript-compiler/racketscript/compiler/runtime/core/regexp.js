@@ -23,9 +23,11 @@ export function fromString(str) {
 /**
  * @param {!(RegExp|Uint8Array|UString.UString)} pattern
  * @param {!(Uint8Array|UString.UString)} input
+ * @param {!Int} start-pos
+ * @param {!Int|#f} end-pos
  * @return {!Pair.Pair|false} A list of bytes or strings, depending on the input.
  */
-export function match(pattern, input) {
+export function match(pattern, input, start, _end) {
     // TODO: Contract-checking should happen in kernel.rkt.
     const isRegexpPattern = check(pattern);
     const isBytesPattern = !isRegexpPattern && Bytes.check(pattern);
@@ -49,7 +51,9 @@ export function match(pattern, input) {
         ? UString.fromBytesUtf8(/** @type {!Uint8Array} */(pattern))
         : pattern;
 
-    const result = stringInput.toString().match(stringOrRegExpPattern);
+    const end = ((typeof _end) === 'number') ? _end : stringInput.length;
+
+    const result = stringInput.toString().slice(start, end).match(stringOrRegExpPattern);
 
     if (result === null) {
         return false;

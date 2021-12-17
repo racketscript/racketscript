@@ -310,14 +310,6 @@
        [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
        [_ (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
-    [(regexp? v)
-     (define s (string-replace (cast (object-name v) String) "/" "\\/"))
-     (write (format "/~a/" s) out)]
-    [(byte-regexp? v)
-     (define s (string-replace (bytes->string/utf-8
-                                (cast (object-name v) Bytes))
-                               "/" "\\/"))
-     (write (format "/~a/" s) out)]
     [(void? v)
      (emit "null")]
     [else (error "Unexpected value: " v)]))

@@ -658,10 +658,12 @@
     [(char? d)
      (ILApp (name-in-module 'core 'Char.charFromCodepoint)
             (list (absyn-value->il (char->integer d))))]
+    [(or (regexp? d) (byte-regexp? d))
+     (define v (object-name d)) ; string or bytes
+     (ILApp (name-in-module 'core 'Regexp.fromString)
+            (list (ILValue (if (bytes? v) (bytes->string/utf-8 v) v))))]
     [(or (integer? d)
          (boolean? d)
-         (regexp? d)
-         (byte-regexp? d)
          (void? d)
          (real? d))
      (ILValue d)]

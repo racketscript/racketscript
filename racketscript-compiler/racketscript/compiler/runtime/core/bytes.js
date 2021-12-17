@@ -28,6 +28,21 @@ export function ref(bs, i) {
     return bs[i];
 }
 
+
+/**
+ *
+ * @param Array of {!Uint8Array}
+ * @return {!Uint8Array}
+ */
+export function append(bss) {
+    let size = 0;
+    bss.forEach((bs) => { size += bs.length; });
+    const res = new Uint8Array(size);
+    let i = 0;
+    bss.forEach((bs) => { res.set(bs, i); i += bs.length; });
+    return res;
+}
+
 /**
  *
  * @param {!Uint8Array} bs
@@ -112,6 +127,7 @@ export function fromIntArray(ints) {
 }
 
 const utf8Decoder = new TextDecoder('utf-8');
+const latin1Decoder = new TextDecoder('latin1');
 
 /**
  * @param {!Uint8Array} bytes
@@ -119,6 +135,14 @@ const utf8Decoder = new TextDecoder('utf-8');
  */
 export function toString(bytes) {
     return utf8Decoder.decode(bytes);
+}
+
+/**
+ * @param {!Uint8Array} bytes
+ * @return {!String}
+ */
+export function toLatin1String(bytes) {
+    return latin1Decoder.decode(bytes);
 }
 
 /**
