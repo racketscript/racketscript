@@ -218,14 +218,27 @@
      (define unchecked? (syntax-property v 'racketscript-unchecked-lambda?))
      (define fabsyn (formals->absyn #'formals))
      (PlainLambda fabsyn (map to-absyn (syntax->list #'body)) unchecked?)]
+    ;; NOTE: js require cannot be used without define (see next 4 cases)
     [(define-values (name)
        (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote mod:str)))
-     ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod) 'default)]
     [(define-values (name)
        (#%plain-app (~datum #%js-ffi) (quote (~datum require)) (quote *) (quote mod:str)))
-     ;; HACK: Special case for JSRequire
      (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote (~datum requirerkt)) (quote mod:str)))
+     ;; js ids not part of dependency calculation, so manually add
+     (current-module-imports
+      (set-add (current-module-imports)
+               (path->complete-path (string->path (syntax-e #'mod)))))
+     (JSRequire (syntax-e #'name) (string-append "./" (syntax-e #'mod) ".js") 'default)]
+    [(define-values (name)
+       (#%plain-app (~datum #%js-ffi) (quote (~datum requirerkt)) (quote *) (quote mod:str)))
+     ;; js ids not part of dependency calculation, so manually add
+     (current-module-imports
+      (set-add (current-module-imports)
+               (path->complete-path (string->path (syntax-e #'mod)))))
+     (JSRequire (syntax-e #'name) (string-append "./" (syntax-e #'mod) ".js") '*)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
     [(#%top . x) (TopId (syntax-e #'x))]
