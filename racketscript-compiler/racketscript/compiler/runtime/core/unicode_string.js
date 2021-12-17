@@ -489,6 +489,14 @@ export function fromBytesUtf8(bytes) {
 }
 
 /**
+ * @param {!Uint8Array} bytes
+ * @return {!MutableUString}
+ */
+export function fromBytesLatin1(bytes) {
+    return makeMutable(Bytes.toString(bytes));
+}
+
+/**
  * @param {!UString[]} strs
  * @return {!MutableUString}
  */

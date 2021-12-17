@@ -1059,10 +1059,19 @@
        (#js.Core.makeOutOfRangeError "bytes-set!" "byte string" bs #js.bs.length i))
       (#js.Core.Bytes.set bs i b)))
 
+(define+provide bytes-append
+  (v-λ bss #:unchecked (#js.Core.Bytes.append bss)))
+
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))
 
+(define-checked+provide (bytes->string/latin-1 [bs bytes?])
+  (#js.Core.UString.fromBytesLatin1 bs))
+
 (define-checked+provide (string->bytes/utf-8 [str string?])
+  (#js.Core.UString.toBytesUtf8 str))
+
+(define+provide (string->bytes/locale str [err-byte #t] [start 0] [end 0])
   (#js.Core.UString.toBytesUtf8 str))
 
 (define-checked+provide (bytes=? [bstr1 bytes?] [bstr2 bytes?])
@@ -1225,8 +1234,13 @@
 
 (define+provide byte-pregexp byte-regexp)
 
-(define+provide (regexp-match pattern input)
-  (#js.Core.Regexp.match pattern input))
+(define+provide (regexp-match pattern input [start-pos 0] [end-pos #f])
+  (#js.Core.Regexp.match pattern input start-pos end-pos))
+
+(define+provide (regexp-match? pattern input [start-pos 0] [end-pos #f])
+  (if (#js.Core.Regexp.match pattern input start-pos end-pos)
+      #t
+      #f))
 
 ;; --------------------------------------------------------------------------
 ;; Procedures
