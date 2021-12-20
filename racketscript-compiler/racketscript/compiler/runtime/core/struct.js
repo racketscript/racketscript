@@ -39,14 +39,12 @@ class Struct extends PrintablePrimitive {
         super();
         this._desc = desc; /* struct-type-descriptor */
 
-        if (this._desc.getSuperType() !== undefined) {
-            C.eq(
-                fields.length,
-                this._desc._totalInitFields,
-                racketCoreError,
-                'arity mismatch'
-            );
-        }
+        C.eq(
+            fields.length,
+            this._desc._totalInitFields,
+            racketCoreError,
+            'arity mismatch'
+        );
 
         // Guard's are applied starting from subtype to supertype
         // Later when we instantiate the subtype, its guard will be
@@ -69,7 +67,7 @@ class Struct extends PrintablePrimitive {
         // Initialize current and super instance
         this._superStructInstance = false; /* Struct instance of super-type */
         const superType = this._desc.getSuperType();
-        if ((superType !== false) && (superType !== undefined)) {
+        if (superType !== false) {
             const superInitFields = fields.slice(0, superType._totalInitFields);
             this._fields = fields.slice(superType._totalInitFields);
             this._superStructInstance = superType
