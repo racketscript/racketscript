@@ -428,7 +428,7 @@
 (define (convert-linklet linklet path)
   (syntax-parse linklet #;(freshen-linklet-forms linklet)
     #:literal-sets () ;; what are these literal sets for?
-    [(linklet _imports _exports forms ...)
+    [(linklet _imports _exports forms ...) ;; FIXME it isn't actually matching 'linklet' literally, can use ~datum or try literal-sets
      (parameterize ([current-module-imports (set)]
                     [lexical-bindings (make-free-id-table)])
        (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))]
