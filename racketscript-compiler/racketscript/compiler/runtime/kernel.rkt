@@ -400,6 +400,8 @@
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
 
+(define-checked+provide (vector-copy [vec vector?])
+  (#js.Core.Vector.copy vec #t)) ; a vector copy is always mutable
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
