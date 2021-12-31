@@ -12,7 +12,9 @@
          $/:=
          $/throw
          $/undefined
+         $/defined?
          $/null
+         $/null?
          $/typeof
          $/instanceof
          $/arguments
@@ -101,9 +103,19 @@
   (syntax-parse stx
     [_ #`(#%js-ffi 'undefined)]))
 
+;; shorthand for testing if something is undefined
+(define-syntax ($/defined? stx)
+  (syntax-parse stx
+    [(_ x) #'($/binop !== x $/undefined)]))
+
 (define-syntax ($/null stx)
   (syntax-parse stx
     [_ #`(#%js-ffi 'null)]))
+
+;; shorthand for testing null
+(define-syntax ($/null? stx)
+  (syntax-parse stx
+    [(_ x) #'($/binop === x $/null)]))
 
 (define-syntax ($/this stx)
   (syntax-parse stx
