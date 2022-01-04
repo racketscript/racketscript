@@ -31,7 +31,8 @@
          "global.rkt"
          "logging.rkt"
          "moddeps.rkt"
-         "util.rkt")
+         "util.rkt"
+         "expander-forms.rkt")
 
 (provide convert
          convert-linklet
@@ -230,7 +231,10 @@
      (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
-    [(#%top . x) (TopId (syntax-e #'x))]
+    [(#%top . x)
+     (if (set-member? EXPANDER-FORMS (syntax-e #'x))
+       (ImportedIdent (syntax-e #'x) '#%kernel #t)
+       (TopId (syntax-e #'x)))]
     [(#%variable-reference x) (VarRef (to-absyn #'x))]
     [(#%variable-reference) (VarRef #f)]
     [i:identifier #:when (quoted?) (syntax-e #'i)]
@@ -427,8 +431,8 @@
 
 (define (convert-linklet linklet path)
   (syntax-parse linklet #;(freshen-linklet-forms linklet)
-    #:literal-sets () ;; what are these literal sets for?
-    [(linklet _imports _exports forms ...) ;; FIXME it isn't actually matching 'linklet' literally, can use ~datum or try literal-sets
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [((~datum linklet) _imports _exports forms ...)
      (parameterize ([current-module-imports (set)]
                     [lexical-bindings (make-free-id-table)])
        (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))]

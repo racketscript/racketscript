@@ -347,7 +347,7 @@
    ["--ast" "Expand and print AST" (build-mode 'absyn)]
    ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
    ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
-   ["--linklet" "Compile a linklet as an s-expression to JS and print to stdout" (build-mode 'linklet)]
+   [("-l" "--linklet") "Compile a linklet as an s-expression to JS and print to stdout" (build-mode 'linklet)]
    ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
    #:args ([filename 'stdin])
    (match `(,filename ,(input-from-stdin?))

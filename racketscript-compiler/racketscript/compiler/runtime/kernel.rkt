@@ -3,6 +3,7 @@
 (require (for-syntax syntax/parse)
          racketscript/interop
          "lib.rkt")
+         ;; "unsafe.rkt")
 
 ;; ----------------------------------------------------------------------------
 ;; Equality
@@ -1338,3 +1339,13 @@
 (define+provide syntax-column #js.Core.Correlated.syntaxColumn)
 (define+provide syntax-position #js.Core.Correlated.syntaxPosition)
 (define+provide syntax-span #js.Core.Correlated.syntaxSpan)
+
+;; ----------------------------------------------------------------------------
+;; Unsafe forms for Expander Linklet
+
+(define+provide unsafe-make-place-local #js.Core.Box.make)
+(define+provide (unsafe-root-continuation-prompt-tag)
+  (#js.Core.Marks.defaultContinuationPromptTag))
+
+;; (provide unsafe-make-place-local
+;;          unsafe-root-continuation-prompt-tag)
