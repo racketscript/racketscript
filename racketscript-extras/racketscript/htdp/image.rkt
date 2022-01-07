@@ -5,6 +5,7 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
+         racketscript/interop
          racket/bool
          "private/color.rkt"
          "../private/jscommon.rkt")
@@ -478,6 +479,74 @@
                             (- (half #js.image.width))
                             (- (half #js.image.height)))))])
 
+;; from: https://github.com/mdn/js-examples/blob/master/promises-test/index.html
+;; function imgLoad(url) {
+;;     // Create new promise with the Promise() constructor;
+;;     // This has as its argument a function
+;;     // with two parameters, resolve and reject
+;;     return new Promise(function(resolve, reject) {
+;;       // Standard XHR to load an image
+;;       var request = new XMLHttpRequest();
+;;       request.open('GET', url);
+;;       request.responseType = 'blob';
+;;       // When the request loads, check whether it was successful
+;;       request.onload = function() {
+;;         if (request.status === 200) {
+;;         // If successful, resolve the promise by passing back the request response
+;;           resolve(request.response);
+;;         } else {
+;;         // If it fails, reject the promise with a error message
+;;           reject(Error('Image didn\'t load successfully; error code:' + request.statusText));
+;;         }
+;;       };
+;;       request.onerror = function() {
+;;       // Also deal with the case when the entire request fails to begin with
+;;       // This is probably a network error, so reject the promise with an appropriate message
+;;           reject(Error('There was a network error.'));
+;;       };
+;;       // Send the request
+;;       request.send();
+;;     });
+;;       }
+(define (imgLoad url)
+  ($/new
+   (#js*.Promise
+    (lambda (resolve reject)
+      (define request ($/new (#js*.XMLHttpRequest)))
+      (#js.request.open #js"GET" url)
+      ($/:= #js.request.responseType #js"blob")
+      ($/:= #js.request.onload
+            (lambda ()
+              (if ($/binop ===  #js.request.status 200)
+                  (resolve #js.request.response)
+                  (reject (#js*.Error #js"Image didnt load successfully")))))
+      ($/:= #js.request.onerror
+            (lambda () ($/throw (#js*.Error #js"There was a network error"))))
+      (#js.request.send)))))
+
+;; doesnt work, images rendered in wrong order
+(define-proto UrlBitmap
+  (λ (data)
+    #:with-this this
+    (set-object! this
+     [image  
+      ($/new
+       (#js*.Promise
+        (lambda (resolve reject)
+          (define image (new #js*.Image))
+          (:= #js.image.crossOrigin #js"anonymous")
+          (:= #js.image.src (js-string data))
+          (resolve image))))]))
+  [render
+   (λ (ctx x y)
+     #:with-this this
+     ($> #js.this.image
+         (then
+          (lambda (image)
+            (with-origin ctx [x y]
+              (#js.ctx.drawImage image
+               (- (half #js.image.width))
+               (- (half #js.image.height))))))))])
 
 (define-proto Freeze
   (λ (img)
@@ -679,6 +748,15 @@
 
 (define (bitmap/url url)
   (new (Bitmap url)))
+
+;; doesnt work, images rendered in wrong order
+#;(define (bitmap/url url)
+  (new (UrlBitmap url)))
+
+;; doesnt work, "render" is not a function"
+#;($/define/async (bitmap/url url)
+  (define blob ($/await (imgLoad url)))
+  (new (Bitmap (#js*.window.URL.createObjectURL blob))))
 
 (define (frame img)
   (color-frame "black" img))
