@@ -22,6 +22,9 @@
          $/+
          $/str
          $/this
+         $/async
+         $/define/async
+         $/await
          =>$
          js-string
          js-string->string
@@ -205,6 +208,23 @@
   (syntax-parse stx
     [(_ e) #'e]
     [(_ e . rst) #'($/binop + e ($/+ . rst))]))
+
+(define-syntax ($/async stx)
+  (syntax-parse stx
+    [(_ e:expr)
+     #`(#%js-ffi 'async e)]))
+
+(define-syntax ($/define/async stx)
+  (syntax-parse stx
+    [(_ (name . args) . body)
+     #'(define name
+         ($/async
+          (lambda args . body)))]))
+
+(define-syntax ($/await stx)
+  (syntax-parse stx
+    [(_ e:expr)
+     #`(#%js-ffi 'await e)]))
 
 (define (js-string e)
   ($$ e.toString))

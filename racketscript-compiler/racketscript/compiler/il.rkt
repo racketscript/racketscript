@@ -56,6 +56,8 @@
             (ILInstanceOf  [expr      : ILExpr]
                            [type      : ILExpr])
             (ILTypeOf      [expr      : ILExpr])
+            (ILAsync       [expr      : ILExpr])
+            (ILAwait       [expr      : ILExpr])
 
             ;; Should be ideally in values
             (ILNull)
