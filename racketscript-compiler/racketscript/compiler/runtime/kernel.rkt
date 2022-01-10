@@ -113,8 +113,14 @@
   (#js.Math.cos v))
 (define-checked+provide (tan [v real?])
   (#js.Math.tan v))
-(define-checked+provide (atan [v real?])
-  (#js.Math.atan v))
+(define-checked+provide (asin [v real?])
+  (#js.Math.asin v))
+(define-checked+provide (acos [v real?])
+  (#js.Math.acos v))
+(define+provide atan
+  (case-lambda
+    [(v) (#js.Math.atan v)]
+    [(x y) (#js.Math.atan2 x y)]))
 
 (define-checked+provide (ceiling [v real?])
   (#js.Math.ceil v))
@@ -370,7 +376,10 @@
 
 ;; v is optional
 (define-checked+provide (make-vector [size integer?] [v #t])
-  (#js.Core.Vector.makeInit size (or v 0)))
+  (#js.Core.Vector.makeInit size
+    (if (eq? v *undefined*)
+      0
+      v)))
 
 (define+provide vector? #js.Core.Vector.check)
 
@@ -391,6 +400,7 @@
 
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
+
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
