@@ -232,6 +232,11 @@ class StructTypeDescriptor extends PrintablePrimitive {
         // those of super types
         this._totalInitFields = options.initFieldCount;
         if (options.superType) {
+            C.falsy(
+                options.superType._isSealed(),
+                racketCoreError,
+                'make-struct-type: cannot make a subtype of a sealed type',
+            );
             this._totalInitFields += options.superType._totalInitFields;
         }
 
@@ -401,6 +406,18 @@ class StructTypeDescriptor extends PrintablePrimitive {
     isFieldImmutable(n) {
         return this._options.immutables.has(n);
     }
+
+    _isSealed() {
+        for (let desc = this; desc; desc = desc.getSuperType()) {
+            for (const [prop, val] of desc._options.props) {
+                if (prop._isSealedProperty()) {
+                    return val;
+                }
+            }
+        }
+
+        return false; // should be undefined, testing for now
+    }
 }
 
 /** ************************************************************************** */
@@ -483,6 +500,10 @@ class StructTypeProperty extends PrintablePrimitive {
             const proc = superEntry.tl;
             prop.attachToStructTypeDescriptor(desc, proc(newV));
         });
+    }
+
+    _isSealedProperty() {
+        return this._name === "prop:sealed";
     }
 }
 

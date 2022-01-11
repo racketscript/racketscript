@@ -1021,6 +1021,7 @@
 (define-property+provide prop:authentic)
 (define-property+provide prop:serialize)
 (define-property+provide prop:custom-write)
+(define-property+provide prop:sealed)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 (define+provide prop:equal+hash #js.Core.Struct.propEqualHash)
