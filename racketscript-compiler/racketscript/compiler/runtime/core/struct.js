@@ -503,7 +503,7 @@ class StructTypeProperty extends PrintablePrimitive {
     }
 
     _isSealedProperty() {
-        return this._name === "prop:sealed";
+        return this._name === 'prop:sealed';
     }
 }
 
