@@ -21,9 +21,11 @@
   (new (BigBang init-world handlers)))
 
 (define (big-bang init-world . handlers)
-  ($> (make-big-bang init-world handlers)
+  #;($> (make-big-bang init-world handlers)
       (setup)
-      (start)))
+      (start))
+  (define bb (make-big-bang init-world handlers))
+  ($> (#js.bb.setup) (then #js.bb.start)))
 
 (define-proto BigBang
   (λ (init-world handlers)
@@ -39,7 +41,7 @@
     (:= #js.this.-stopped    #t)
     (:= #js.this.-events     ($/array)))
   [setup
-   (λ ()
+   ($/async (λ ()
      #:with-this this
      ;; Create canvas DOM element and add to screen
      (define canvas  (#js.document.createElement #js"canvas"))
@@ -60,6 +62,8 @@
      (define draw-handler ($ #js.this.-active-handlers #js"to-draw"))
      (unless draw-handler
        (error 'big-bang "to-draw handle not provided"))
+
+    (define (finish-setup res)
      (define img ($$ draw-handler.callback #js.this.world))
      (:= #js.canvas.width   #js.img.width)
      (:= #js.canvas.height  #js.img.height)
@@ -68,7 +72,9 @@
      ;; callbacks gets invoked at start of big-bang
      (#js.this.change-world #js.this.world)
 
-     this)]
+     this)
+
+     ($> (await-async-objs) (then finish-setup))))]
   [register-handlers
    (λ ()
      #:with-this this

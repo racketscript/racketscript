@@ -1,7 +1,7 @@
 #lang racketscript/base
 
-;; Emulates 2htdp/image library as much as possible. Also see
-;; Whalesong's implementation, which we have referrred
+;; Emulates 2htdp/image library as much as possible.
+;; Borrows from Whalesong's implementation
 
 (require (for-syntax racketscript/base
                      syntax/parse)
@@ -48,6 +48,7 @@
          bitmap/data
          bitmap/url
          freeze
+         ready
 
          print-image
          color
@@ -524,29 +525,32 @@
             (lambda () ($/throw (#js*.Error #js"There was a network error"))))
       (#js.request.send)))))
 
-;; doesnt work, images rendered in wrong order
+($/define/async (ready obj)
+  (when ($/defined? #js.obj.ready) (#js.obj.ready)))
+
 (define-proto UrlBitmap
   (λ (data)
     #:with-this this
-    (set-object! this
-     [image  
-      ($/new
-       (#js*.Promise
-        (lambda (resolve reject)
-          (define image (new #js*.Image))
-          (:= #js.image.crossOrigin #js"anonymous")
-          (:= #js.image.src (js-string data))
-          (resolve image))))]))
-  [render
-   (λ (ctx x y)
-     #:with-this this
-     ($> #js.this.image
-         (then
-          (lambda (image)
-            (with-origin ctx [x y]
-              (#js.ctx.drawImage image
-               (- (half #js.image.width))
-               (- (half #js.image.height))))))))])
+    (set-object! this [loaded-image (imgLoad data)]))
+  [ready
+   ($/async
+    (λ () #:with-this this
+      (define data ($/await #js.this.loaded-image))
+      (define image (new #js*.Image))
+      (:= #js.image.crossOrigin #js"anonymous")
+      (:= #js.image.src (#js*.window.URL.createObjectURL data))
+      (set-object! this
+                 [image  image]
+                 [width  #js.image.width]
+                 [height #js.image.height])))]
+    [render
+     (λ (ctx x y)
+       #:with-this this
+       (define image #js.this.image)
+       (with-origin ctx [x y]
+         (#js.ctx.drawImage image
+          (- (half #js.image.width))
+          (- (half #js.image.height)))))])
 
 (define-proto Freeze
   (λ (img)
@@ -747,16 +751,9 @@
   (new (Bitmap data)))
 
 (define (bitmap/url url)
-  (new (Bitmap url)))
-
-;; doesnt work, images rendered in wrong order
-#;(define (bitmap/url url)
-  (new (UrlBitmap url)))
-
-;; doesnt work, "render" is not a function"
-#;($/define/async (bitmap/url url)
-  (define blob ($/await (imgLoad url)))
-  (new (Bitmap (#js*.window.URL.createObjectURL blob))))
+  (define b (new (UrlBitmap url)))
+  (register-async-obj b)
+  b)
 
 (define (frame img)
   (color-frame "black" img))
