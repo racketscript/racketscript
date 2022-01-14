@@ -401,6 +401,8 @@
 (define-checked+provide (vector->immutable-vector [vec vector?])
   (#js.Core.Vector.copy vec #f))
 
+(define-checked+provide (vector-copy [vec vector?])
+  (#js.Core.Vector.copy vec #t)) ; a vector copy is always mutable
 
 ;; --------------------------------------------------------------------------
 ;; Hashes
@@ -1022,6 +1024,7 @@
 (define-property+provide prop:authentic)
 (define-property+provide prop:serialize)
 (define-property+provide prop:custom-write)
+(define-property+provide prop:sealed)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 (define+provide prop:equal+hash #js.Core.Struct.propEqualHash)
@@ -1060,10 +1063,19 @@
        (#js.Core.makeOutOfRangeError "bytes-set!" "byte string" bs #js.bs.length i))
       (#js.Core.Bytes.set bs i b)))
 
+(define+provide bytes-append
+  (v-λ bss #:unchecked (#js.Core.Bytes.append bss)))
+
 (define-checked+provide (bytes->string/utf-8 [bs bytes?])
   (#js.Core.UString.fromBytesUtf8 bs))
 
+(define-checked+provide (bytes->string/latin-1 [bs bytes?])
+  (#js.Core.UString.fromBytesLatin1 bs))
+
 (define-checked+provide (string->bytes/utf-8 [str string?])
+  (#js.Core.UString.toBytesUtf8 str))
+
+(define+provide (string->bytes/locale str [err-byte #t] [start 0] [end 0])
   (#js.Core.UString.toBytesUtf8 str))
 
 (define-checked+provide (bytes=? [bstr1 bytes?] [bstr2 bytes?])
@@ -1226,8 +1238,13 @@
 
 (define+provide byte-pregexp byte-regexp)
 
-(define+provide (regexp-match pattern input)
-  (#js.Core.Regexp.match pattern input))
+(define+provide (regexp-match pattern input [start-pos 0] [end-pos #f])
+  (#js.Core.Regexp.match pattern input start-pos end-pos))
+
+(define+provide (regexp-match? pattern input [start-pos 0] [end-pos #f])
+  (if (#js.Core.Regexp.match pattern input start-pos end-pos)
+      #t
+      #f))
 
 ;; --------------------------------------------------------------------------
 ;; Procedures
@@ -1298,6 +1315,9 @@
 
 (define+provide (variable-reference-constant? x) #f)
 (define+provide (variable-reference-from-unsafe? x) #f)
+(define+provide (variable-reference->module-source x) #f)
+(define+provide (variable-reference->resolved-module-path x) #f)
+(define+provide (module-name-fixup x) #f)
 
 (define+provide (inspector? p)
   #t)
@@ -1306,7 +1326,7 @@
 
 (define __count 1000)
 
-(define+provide (system-type mode)
+(define+provide (system-type [mode 'os])
   (case mode
     [(os) 'unix]
     [(vm) 'javascript]
@@ -1314,6 +1334,12 @@
     [(fs-change) (#js.Core.Vector.make (array #false #false #false #false) #false)]
     [else #false])
   )
+
+;; path stubs
+(define+provide (find-system-path kind)  "")
+(define+provide build-path ; multi-arity
+  (v-λ (base) #:unchecked base))
+
 ;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
@@ -1338,6 +1364,12 @@
   (f) (g) (h))
 
 (define+provide (datum-intern-literal v) v)
+
+;; semaphore stubs
+(define+provide (make-semaphore x) x)
+(define+provide (semaphore-peek-evt x) x)
+(define+provide call-with-semaphore
+  (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
 ;; Syntax

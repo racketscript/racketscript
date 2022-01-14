@@ -137,7 +137,20 @@
     [((~datum all-from-except) p ...) '()]
     [((~datum for-meta) 1 p ...) '()]
     [((~datum for-syntax) p ...) '()]
-    [((~datum protect) p ...) '()]
+    [((~datum protect) p ...)
+     (apply append (stx-map parse-provide #'(p ...)))]
+    [((~datum struct) p (f ...))
+     (append
+      (list (SimpleProvide (syntax-e #'p))
+            (SimpleProvide (syntax-e (format-id #'p "make-~a" #'p)))
+            (SimpleProvide (syntax-e (format-id #'p "struct:~a" #'p)))
+            (SimpleProvide (syntax-e (format-id #'p "~a?" #'p))))
+      (stx-map ; accessors
+       (lambda (f) (syntax-e (format-id #'p "~a-~a" #'p f)))
+       #'(f ...))
+      (stx-map ; mutators
+       (lambda (f) (syntax-e (format-id #'p "set-~a-~a!" #'p f)))
+       #'(f ...)))]
     [_ #;(error "unsupported provide form " (syntax->datum r)) '()]))
 
 (define (formals->absyn formals)

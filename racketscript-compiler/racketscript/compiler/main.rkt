@@ -360,6 +360,7 @@
      [`(,_ ,#t) (error 'racketscript "Don't expect filename with `--stdin` mode")]
      [`(,filename ,#f)
       (let ([complete-filename (path->complete-path filename)])
+        (current-source-file complete-filename)
         (main-source-file complete-filename)
         complete-filename)])))
 
