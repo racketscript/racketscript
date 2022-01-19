@@ -8,6 +8,10 @@
 [![Coverage Status](https://codecov.io/gh/racketscript/racketscript/coverage.svg?branch=master)](https://codecov.io/gh/racketscript/racketscript?branch=master)
 [![Try Online](https://img.shields.io/badge/try_it-online!-ff9900.svg)](http://play.racketscript.org)
 
+[![Racket](https://img.shields.io/badge/-Racket-darkred?logo=racket)](https://racket-lang.org)
+[![Discourse users](https://img.shields.io/discourse/users?label=Discuss%20on%20Racket%20Discourse&logo=racket&server=https%3A%2F%2Fracket.discourse.group)](https://racket.discourse.group/)
+[![Racket Discord](https://img.shields.io/discord/571040468092321801?label=Chat%20on%20Racket%20Discord&logo=racket)](https://discord.gg/6Zq8sH5)
+
 RacketScript is an **experimental** lightweight Racket to JavaScript (ECMAScript 6)
 compiler. RacketScript aims to leverage both JavaScript and Racket's ecosystem,
 and make interoperability between them clean and smooth.
