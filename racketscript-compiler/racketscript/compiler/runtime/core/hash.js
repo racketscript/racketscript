@@ -276,3 +276,7 @@ export function isEqHash(h) {
 export function isWeakHash() {
     return false; // TODO: implement weak hashes
 }
+
+export function isEphemeronHash() {
+  return false; // TODO: implement ephemeron hashes
+}

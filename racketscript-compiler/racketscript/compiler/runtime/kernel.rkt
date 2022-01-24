@@ -451,7 +451,8 @@
 (define+provide hash-equal? #js.Core.Hash.isEqualHash)
 (define+provide hash-eqv? #js.Core.Hash.isEqvHash)
 (define+provide hash-eq? #js.Core.Hash.isEqHash)
-(define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO: implement weak hashes
+(define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO implement weak hashes
+(define+provide hash-ephemeron? #js.Core.Hash.isEphemeronHash) ;; TODO implement ephemeron hashes
 
 (define+provide hash-ref
   (case-lambda
@@ -1340,11 +1341,15 @@
 (define+provide build-path ; multi-arity
   (v-λ (base) #:unchecked base))
 
-;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
+;; TODO manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)
 
+;; TODO manually implement ephemeron references? ES6 WeakMap doesn't work(?)
+(define+provide make-ephemeron-hash make-hash)
+(define+provide make-ephemeron-hasheqv make-hasheqv)
+(define+provide make-ephemeron-hasheq make-hasheq)
 
 (define+provide (current-environment-variables) null)
 (define+provide (environment-variables-ref e n) #f)
