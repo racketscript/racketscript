@@ -18,3 +18,4 @@ TAGS
 *.elc
 node_modules/
 *.rktl
+!expander.rktl

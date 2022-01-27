@@ -1,0 +1,5 @@
+To run the expander:
+
+1. racks -l expander.rktl
+2. mv foo.js js-build/modules/
+3. node js-build/modules/foo.js
