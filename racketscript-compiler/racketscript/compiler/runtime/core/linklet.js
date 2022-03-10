@@ -1,7 +1,30 @@
 import { PrintablePrimitive } from './printable_primitive.js';
 
 // eslint-disable-next-line no-unused-vars
-class Linklet extends PrintablePrimitive {}
+class Linklet extends PrintablePrimitive {
+    // constructor corresponds to compile-linklet
+    constructor(form, name, importKeys, getImports, options) {
+        super();
+        this.form = form;
+        this.name = name;
+        this.importKeys = importKeys;
+        this.getImports = getImports;
+        this.options = options;
+        this.payload = this._compileLinklet();
+    }
+
+    _compileLinklet() {
+        // (cons displayln (cons 1 '()))
+
+
+        // Q: what is the data definition for 'form'?
+        //    it should produce whatever the runtime has decided
+        //    the definition of 'cons cells' are, and then
+        //    however symbols, numbers, etc. are represented for the
+        //    relevant things.
+        
+    }
+}
 
 class LinkletInstance extends PrintablePrimitive {
     constructor(name, data, mode, m) {
