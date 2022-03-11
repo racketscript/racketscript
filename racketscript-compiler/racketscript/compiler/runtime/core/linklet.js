@@ -1,30 +1,48 @@
+import { isEmpty, check as isCons } from './pair.js';
+import { check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 
 // eslint-disable-next-line no-unused-vars
 class Linklet extends PrintablePrimitive {
     // constructor corresponds to compile-linklet
-    constructor(form, name, importKeys, getImports, options) {
+    constructor(form, name, importKeys, getImport, options) {
         super();
         this.form = form;
-        this.name = name;
-        this.importKeys = importKeys;
-        this.getImports = getImports;
-        this.options = options;
+        this._setProps(name, importKeys, getImport, options);
         this.payload = this._compileLinklet();
     }
 
+    _setProps(name, importKeys, getImport, options) {
+        this.name = name;
+        this.importKeys = importKeys;
+        this.getImport = getImport;
+        this.options = options;
+    }
+
     _compileLinklet() {
-        // (cons displayln (cons 1 '()))
+        if (isCons(this.form)) {
+            const func = this.form.car();
+            const args = this.form.cdr();
 
+            if (isSym(func) && func.value() === 'display' && isCons(args)) {
+                const arg = args.car();
+                const rst = args.cdr();
 
-        // Q: what is the data definition for 'form'?
-        //    it should produce whatever the runtime has decided
-        //    the definition of 'cons cells' are, and then
-        //    however symbols, numbers, etc. are represented for the
-        //    relevant things.
-        
+                if (arg === 1 && isEmpty(rst)) {
+                    return 'console.log("1")';
+                }
+            }
+        }
+
+        return 'throw new Error("Sad!")';
+    }
+
+    eval() {
+        return eval(this.payload);
     }
 }
+
+export function check(l) { return l.constructor === Linklet; }
 
 class LinkletInstance extends PrintablePrimitive {
     constructor(name, data, mode, m) {
