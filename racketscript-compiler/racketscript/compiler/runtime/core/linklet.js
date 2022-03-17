@@ -1,28 +1,66 @@
+import { check as isCons, isEmpty } from './pair.js';
+import { check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 
+
+// TODO I should determine which of the 'props' (arguments to compile-linklet and recompile-linklet actually need to be saved
 // eslint-disable-next-line no-unused-vars
 class Linklet extends PrintablePrimitive {
     // constructor corresponds to compile-linklet
-    constructor(form, name, importKeys, getImports, options) {
+    constructor(form, name, importKeys, getImport, options) {
         super();
-        this.form = form;
-        this.name = name;
-        this.importKeys = importKeys;
-        this.getImports = getImports;
-        this.options = options;
-        this.payload = this._compileLinklet();
+        this.compileLinklet(form, name, importKeys, getImport, options);
     }
 
-    _compileLinklet() {
-        // (cons displayln (cons 1 '()))
+    compile(form, name, importKeys, getImport, options) {
+        this.form = form;
+        this._setProps(name, importKeys, getImport, options);
+        this.linklet = this._compile();
+    }
+
+    _compile() {
+        if (this._isRightSexp()) {
+            return 'console.log("1")';
+        }
+        throw new Error('cannot handle this s-expression yet');
+    }
+
+    // in reality, we should be able to throw most of these away
+    _setProps(name, importKeys, getImport, options) {
+        this.name = name;
+        this.importKeys = importKeys;
+        this.getImport = getImport;
+        this.options = options;
+    }
 
 
-        // Q: what is the data definition for 'form'?
-        //    it should produce whatever the runtime has decided
-        //    the definition of 'cons cells' are, and then
-        //    however symbols, numbers, etc. are represented for the
-        //    relevant things.
-        
+    _recompile(name, importKeys, getImport, options) {
+        this._setProps(name, importKeys, getImport, options);
+    }
+
+    // actual purpose is to optimize linklet
+    recompile(name, importKeys, getImport, options) {
+        this._recompile(name, importKeys, getImport, options);
+    }
+
+    _validateSexp() {
+        if (isCons(this.form)) {
+            const cmd = this.form.car();
+            const args = this.form.cdr();
+
+            if (isSym(cmd) && cmd.value() === 'displayln' && isCons(args)) {
+                const arg = args.car();
+                const rst = args.cdr();
+
+                return arg === 1 && isEmpty(rst);
+            }
+        }
+
+        return false;
+    }
+
+    eval() {
+        return eval(this.linklet);
     }
 }
 
