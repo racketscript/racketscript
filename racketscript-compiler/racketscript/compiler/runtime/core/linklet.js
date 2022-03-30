@@ -19,6 +19,11 @@ class Linklet extends PrintablePrimitive {
         this.options = options;
     }
 
+    // true purpose is further optimization
+    recompile(name, importKeys, getImport, options) {
+        this._setProps(name, importKeys, getImport, options);
+    }
+
     _compileLinklet() {
         if (isCons(this.form)) {
             const func = this.form.car();
@@ -28,8 +33,8 @@ class Linklet extends PrintablePrimitive {
                 const arg = args.car();
                 const rst = args.cdr();
 
-                if (arg === 1 && isEmpty(rst)) {
-                    return 'console.log("1")';
+                if (typeof arg === 'number' && isEmpty(rst)) {
+                    return `console.log("${arg}")`;
                 }
             }
         }
@@ -38,6 +43,10 @@ class Linklet extends PrintablePrimitive {
     }
 
     eval() {
+        return this;
+    }
+
+    instantiate(imports, target, _prompt) {
         return eval(this.payload);
     }
 }
