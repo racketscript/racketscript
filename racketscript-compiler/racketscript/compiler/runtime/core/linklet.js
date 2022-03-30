@@ -15,17 +15,9 @@ class Linklet extends PrintablePrimitive {
     compile(form, name, importKeys, getImport, options) {
         this.form = form;
         this._setProps(name, importKeys, getImport, options);
-        this.linklet = this._compile();
+        this.payload = this._compileLinklet();
     }
 
-    _compile() {
-        if (this._isRightSexp()) {
-            return 'console.log("1")';
-        }
-        throw new Error('cannot handle this s-expression yet');
-    }
-
-    // in reality, we should be able to throw most of these away
     _setProps(name, importKeys, getImport, options) {
         this.name = name;
         this.importKeys = importKeys;
@@ -33,36 +25,40 @@ class Linklet extends PrintablePrimitive {
         this.options = options;
     }
 
-
-    _recompile(name, importKeys, getImport, options) {
+    // true purpose is further optimization
+    recompile(name, importKeys, getImport, options) {
         this._setProps(name, importKeys, getImport, options);
     }
 
-    // actual purpose is to optimize linklet
-    recompile(name, importKeys, getImport, options) {
-        this._recompile(name, importKeys, getImport, options);
-    }
-
-    _validateSexp() {
+    _compileLinklet() {
         if (isCons(this.form)) {
-            const cmd = this.form.car();
+            const func = this.form.car();
             const args = this.form.cdr();
 
-            if (isSym(cmd) && cmd.value() === 'displayln' && isCons(args)) {
+            if (isSym(func) && func.value() === 'display' && isCons(args)) {
                 const arg = args.car();
                 const rst = args.cdr();
 
-                return arg === 1 && isEmpty(rst);
+                if (typeof arg === 'number' && isEmpty(rst)) {
+                    return `console.log("${arg}")`;
+                }
             }
         }
 
-        return false;
+        return 'throw new Error("Sad!")';
     }
 
     eval() {
-        return eval(this.linklet);
+        return this;
+    }
+
+    // imports, target, prompt
+    instantiate() {
+        return eval(this.payload);
     }
 }
+
+export function check(l) { return l.constructor === Linklet; }
 
 class LinkletInstance extends PrintablePrimitive {
     constructor(name, data, mode, m) {
