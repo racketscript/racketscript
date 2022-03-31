@@ -9,7 +9,7 @@ class Linklet extends PrintablePrimitive {
     // constructor corresponds to compile-linklet
     constructor(form, name, importKeys, getImport, options) {
         super();
-        this.compileLinklet(form, name, importKeys, getImport, options);
+        this.compile(form, name, importKeys, getImport, options);
     }
 
     compile(form, name, importKeys, getImport, options) {
@@ -35,7 +35,7 @@ class Linklet extends PrintablePrimitive {
             const func = this.form.car();
             const args = this.form.cdr();
 
-            if (isSym(func) && func.value() === 'display' && isCons(args)) {
+            if (isSym(func) && func.value === Symbol.for('displayln') && isCons(args)) {
                 const arg = args.car();
                 const rst = args.cdr();
 
@@ -45,7 +45,7 @@ class Linklet extends PrintablePrimitive {
             }
         }
 
-        return 'throw new Error("Sad!")';
+        return 'throw new Error("This s-expression isn\'t supported yet")';
     }
 
     eval() {
