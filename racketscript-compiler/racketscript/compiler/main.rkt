@@ -19,6 +19,7 @@
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
+         "linklet-expand.rkt"
          "global.rkt"
          "il-analyze.rkt"
          "il.rkt"
@@ -299,7 +300,7 @@
   (for ([mod (in-set primitive-modules)])
     (compile-linklet-import mod))
 
-  (for ([mod (in-set (Linklet-imports lnk))]
+  #;(for ([mod (in-set (Linklet-imports lnk))]
         #:when (not (symbol? mod)))
     (compile-linklet-import mod)))
 
@@ -454,8 +455,11 @@
                                                0 -5))
 
      (prepare-build-directory default-module-name)
+     
+     (define lnk-port (open-input-file source))
+     (define lnk-ast (parse-linklet (read lnk-port) p))
+     (pretty-print lnk-ast)
 
-     (define lnk-ast (convert-linklet (expand-linklet source) p))
      (~> (absyn-linklet->il lnk-ast)
          (insert-arity-checks _)
          (assemble-linklet _))

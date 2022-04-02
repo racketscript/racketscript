@@ -124,8 +124,8 @@
   (match mod
     [(ILModule id provides requires body)
      (ILModule id provides requires (traverse-stm* body))]
-    [(ILLinklet requires body)
-     (ILLinklet requires (traverse-stm* body))]))
+    [(ILLinklet importss exports body)
+     (ILLinklet importss exports (traverse-stm* body))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Tail Call Optimization

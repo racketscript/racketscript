@@ -16,8 +16,10 @@
 (define-predicate   ILProgram? ILProgram)
 (define-type-alias  ILModuleName (Option Path-String))
 
-(struct ILLinklet ([requires : ILRequire*]
-                   [body     : ILStatement*]))
+(struct ILLinklet ([imports : ILRequire*]  ;; FIXME (Listof (Listof Symbol))
+                   [exports : (Listof Symbol)]
+                   [body     : ILStatement*])
+  #:transparent)
 
 (struct ILModule ([id       : ILModuleName]
                   [provides : ILProvide*]

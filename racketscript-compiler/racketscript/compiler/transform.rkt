@@ -51,17 +51,19 @@
 ;; FIXME I do ZERO handling of javascript forms
 (: absyn-linklet->il (-> Linklet ILLinklet))
 (define (absyn-linklet->il lnk)
-  (match-define (Linklet path forms imports) lnk)
+  (match-define (Linklet path importss exports forms) lnk)
   (log-rjs-info "[linklet il]")
 
-  (define imported-mod-path-list (set->list imports))
+  (define imported-mod-path-list (apply append importss))
   (define requires* (absyn-requires->il imported-mod-path-list path))
 
   ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
   ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
+
   (parameterize ([module-object-name-map (make-module-map requires* imported-mod-path-list)])
     (ILLinklet
-      (filter ILRequire? (absyn-requires->il (set->list imports) path))
+      (filter ILRequire? requires*)
+      exports
       (append-map absyn-gtl-form->il forms))))
 
 (: make-module-map (-> (Listof (Option ILRequire)) (Listof (U Path Symbol)) ModuleObjectNameMap)) ;; TODO need type aliases
