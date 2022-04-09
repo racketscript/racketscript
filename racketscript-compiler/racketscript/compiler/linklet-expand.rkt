@@ -11,14 +11,24 @@
 
 (define (formals->absyn formals)
   (match formals
-    [(list-rest x ... y) #:when (null? x) y]
-    [(list-rest x ... y) #:when (null? y) x]
-    [(list-rest x ... y) (list x y)]))
+    [_ #:when (symbol? formals) formals]
+    [_ #:when (list? formals) formals]
+    [(list-rest x ... y) (cons x y)]))
+;;     [(list-rest x ... y) #:when (null? x) y]
+;;     [(list-rest x ... y) #:when (null? y) x]
+;;     [(list-rest x ... y) (list x y)]))
 
 (define (formals->bindings formals)
-  (match formals
-    [(list-rest x ... y)
-     (for/hash ([i (cons y x)]) (values i 'lexical))]))
+  (define (get-formals formals)
+    (match formals
+      [_ #:when (symbol? formals) (list formals)]
+      [_ #:when (list? formals) formals]
+      [(list-rest x ... y) (cons y x)]))
+      ;; [(list-rest x ... y) #:when (null? y) x]
+      ;; [(list-rest x ... y) (cons y x)]))
+
+  (for/hash ([i (get-formals formals)])
+    (values i 'lexical)))
 
 (define (to-absyn v bindings)
   (define (t v [b bindings]) (to-absyn v b))
