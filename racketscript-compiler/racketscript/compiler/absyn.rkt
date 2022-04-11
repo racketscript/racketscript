@@ -6,7 +6,7 @@
 (provide (all-defined-out))
 
 (struct Linklet ([path    : Path]
-                 [imports : (Listof (U Symbol (Listof Symbol)))]
+                 [imports : (Listof (Listof (U Symbol (Listof Symbol))))]
                  [exports : (Listof (U Symbol (Listof Symbol)))]
                  [forms   : (Listof GeneralTopLevelForm)])
   #:transparent)

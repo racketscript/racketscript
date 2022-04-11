@@ -1,4 +1,4 @@
-import { check as isCons, isEmpty } from './pair.js';
+import { check as isCons, isEmpty, EMPTY } from './pair.js';
 import { check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 
@@ -7,27 +7,24 @@ import { PrintablePrimitive } from './printable_primitive.js';
 // eslint-disable-next-line no-unused-vars
 class Linklet extends PrintablePrimitive {
     // constructor corresponds to compile-linklet
-    constructor(form, name, importKeys, getImport, options) {
+    // Missing import-keys, get-import, options
+    constructor(form, name) {
         super();
-        this.compile(form, name, importKeys, getImport, options);
+        this.compile(form, name);
     }
 
-    compile(form, name, importKeys, getImport, options) {
+    // Missing import-keys, get-import, options
+    compile(form, name) {
         this.form = form;
-        this._setProps(name, importKeys, getImport, options);
+        this.name = name;
         this.payload = this._compileLinklet();
     }
 
-    _setProps(name, importKeys, getImport, options) {
-        this.name = name;
-        this.importKeys = importKeys;
-        this.getImport = getImport;
-        this.options = options;
-    }
-
     // true purpose is further optimization
-    recompile(name, importKeys, getImport, options) {
-        this._setProps(name, importKeys, getImport, options);
+    // Missing import-keys, get-import, options
+    recompile(name) {
+        this.name = name;
+        this.payload = this._compileLinklet();
     }
 
     _compileLinklet() {
@@ -48,17 +45,34 @@ class Linklet extends PrintablePrimitive {
         return 'throw new Error("This s-expression isn\'t supported yet")';
     }
 
+    importVariables() {
+        return EMPTY;
+    }
+
+    exportVariables() {
+        return EMPTY;
+    }
+
     eval() {
         return this;
     }
 
-    // imports, target, prompt
-    instantiate() {
-        return eval(this.payload);
+    // - intentionally excluding `prompt`, don't know what to do with it
+    // - I have no use for instances right now either, since I'm not producing linklets
+    //   that import stuff
+    instantiate(_instances, target) {
+        const res = eval(this.payload);
+        if (target === undefined || target === false) {
+            return makeInstance(this.name);
+        }
+
+        return res;
     }
 }
 
-export function check(l) { return l.constructor === Linklet; }
+export function checkLinklet(l) {
+    return l === 'object' && l !== null && l.constructor === Linklet;
+}
 
 class LinkletInstance extends PrintablePrimitive {
     constructor(name, data, mode, m) {
@@ -68,6 +82,10 @@ class LinkletInstance extends PrintablePrimitive {
         this.mode = mode;
         this.m = m;
     }
+}
+
+export function checkInstance(i) {
+    return i === 'object' && i !== null && i.constructor === LinkletInstance;
 }
 
 export function makeInstance(name, _data, _mode, ...args) {
@@ -91,3 +109,9 @@ export function instanceSetVariableValue(i, s, v) {
 export function instanceUnsetVariable(i, s) { return i.m.remove(s); }
 export function instanceDescribeVariable() { }
 
+
+export const primitiveTable = {
+
+};
+
+// add the symbol primitive_table to the table assigned to itself
