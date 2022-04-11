@@ -17,7 +17,7 @@
 (define-type-alias  ILModuleName (Option Path-String))
 
 (struct ILLinklet ([imports : ILRequire*]  ;; FIXME (Listof (Listof Symbol))
-                   [exports : (Listof Symbol)]
+                   [exports : (Listof (U Symbol (Listof Symbol)))]
                    [body     : ILStatement*])
   #:transparent)
 
