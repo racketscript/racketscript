@@ -1398,4 +1398,8 @@
 ;;          unsafe-root-continuation-prompt-tag)
 
 ;; ----------------------------------------------------------------------------
-(define+provide (
+(define+provide (primitive-table table-name)
+  (match table-name
+    ['#%kernel #f]
+    ['#%linklet #f]
+    [_ #f]))
