@@ -27,6 +27,8 @@ currently supports only a subset of Racket.
 You can try RacketScript in your browser
 at [RacketScript Playground](http://play.racketscript.org).
 
+You may alo be interested in [Rackt](https://rackt-org.github.io) - An ultrasmall (~70 loc) React wrapper written in RacketScript.
+
 ## Disclaimer
 
 RacketScript is **work-in-progress** and is not mature and stable. Several
