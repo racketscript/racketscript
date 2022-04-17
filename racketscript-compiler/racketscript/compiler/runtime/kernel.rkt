@@ -1401,5 +1401,5 @@
 (define+provide (primitive-table table-name)
   (match table-name
     ['#%kernel #f]
-    ['#%linklet #f]
+    ['#%linklet (#js.Core.Linklet.primitiveTable)]
     [_ #f]))

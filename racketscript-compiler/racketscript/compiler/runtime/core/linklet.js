@@ -1,6 +1,7 @@
 import { check as isCons, isEmpty, EMPTY } from './pair.js';
-import { check as isSym } from './primitive_symbol.js';
+import { PrimitiveSymbol, check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
+import { makeEq } from './hash.js';
 
 
 // TODO I should determine which of the 'props' (arguments to compile-linklet and recompile-linklet actually need to be saved
@@ -70,6 +71,10 @@ class Linklet extends PrintablePrimitive {
     }
 }
 
+export function makeLinklet(form, name) {
+    return new Linklet(form, name);
+}
+
 export function checkLinklet(l) {
     return l === 'object' && l !== null && l.constructor === Linklet;
 }
@@ -109,9 +114,28 @@ export function instanceSetVariableValue(i, s, v) {
 export function instanceUnsetVariable(i, s) { return i.m.remove(s); }
 export function instanceDescribeVariable() { }
 
-
-export const primitiveTable = {
-
+// LINKLET PRIMITIVE TABLE
+const exportedPrimitives = {
+    'linklet?': checkLinklet,
+    'compile-linklet': makeLinklet,
+    'recompile-linklet': (lnk, n, importKeys, getImport, opts) => lnk.recompile(n, importKeys, getImport, opts),
+    'eval-linklet': lnk => lnk.eval(),
+    'instantiate-linklet': (lnk, imports, target, usePrompt) => lnk.instantiate(imports, target, usePrompt),
+    // HACK: there are never any imports or exports
+    'linklet-import-variables': () => EMPTY,
+    'linklet-export-variables': () => EMPTY,
+    'instance?': checkInstance,
+    'make-instance': makeInstance,
+    'instance-name': instanceName,
+    'instance-data': instanceData,
+    'instance-variable-names': instanceVariableNames,
+    'instance-variable-value': instanceVariableValue,
+    'instance-set-variable-value!': instanceSetVariableValue,
+    'instance-unset-variable!': instanceUnsetVariable,
+    'instance-describe-variable!': instanceDescribeVariable
 };
 
-// add the symbol primitive_table to the table assigned to itself
+export const primitiveTable = Object.entries(exportedPrimitives).reduce(
+    (table, [name, impl]) => table.set(new PrimitiveSymbol(name), impl),
+    makeEq([], false),
+);
