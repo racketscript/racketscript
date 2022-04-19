@@ -458,7 +458,7 @@
      
      (define lnk-port (open-input-file source))
      (define lnk-ast (parse-linklet (read lnk-port) p))
-     (pretty-print lnk-ast)
+     ;; (pretty-print lnk-ast)
 
      (~> (absyn-linklet->il lnk-ast)
          (insert-arity-checks _)

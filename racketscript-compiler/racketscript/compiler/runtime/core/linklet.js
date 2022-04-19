@@ -1,5 +1,5 @@
 import { check as isCons, isEmpty, EMPTY } from './pair.js';
-import { PrimitiveSymbol, check as isSym } from './primitive_symbol.js';
+import { make as makeSym, check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 import { makeEq } from './hash.js';
 
@@ -136,6 +136,6 @@ const exportedPrimitives = {
 };
 
 export const primitiveTable = Object.entries(exportedPrimitives).reduce(
-    (table, [name, impl]) => table.set(new PrimitiveSymbol(name), impl),
+    (table, [name, impl]) => table.set(makeSym(name), impl),
     makeEq([], false),
 );

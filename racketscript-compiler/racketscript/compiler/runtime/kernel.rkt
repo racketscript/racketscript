@@ -1399,7 +1399,9 @@
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
-  (match table-name
-    ['#%kernel #f]
-    ['#%linklet (#js.Core.Linklet.primitiveTable)]
-    [_ #f]))
+  (cond
+    [(equal? table-name '#%kernel) #js.Core.KernelTable.kernelTable]
+    [(equal? table-name '#%linklet)
+     (let ([lnkTable #js.Core.Linklet.primitiveTable])
+       (hash-set lnkTable 'primitive-table primitive-table))]
+    [else #f]))
