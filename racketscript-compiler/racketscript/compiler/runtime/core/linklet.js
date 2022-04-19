@@ -2,6 +2,7 @@ import { check as isCons, isEmpty, EMPTY } from './pair.js';
 import { make as makeSym, check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 import { makeEq } from './hash.js';
+import { toBytesUtf8 } from './unicode_string.js';
 
 
 // TODO I should determine which of the 'props' (arguments to compile-linklet and recompile-linklet actually need to be saved
@@ -124,6 +125,7 @@ const exportedPrimitives = {
     // HACK: there are never any imports or exports
     'linklet-import-variables': () => EMPTY,
     'linklet-export-variables': () => EMPTY,
+    'linklet-virtual-machine-bytes': () => toBytesUtf8('racketscript'),
     'instance?': checkInstance,
     'make-instance': makeInstance,
     'instance-name': instanceName,
@@ -132,7 +134,9 @@ const exportedPrimitives = {
     'instance-variable-value': instanceVariableValue,
     'instance-set-variable-value!': instanceSetVariableValue,
     'instance-unset-variable!': instanceUnsetVariable,
-    'instance-describe-variable!': instanceDescribeVariable
+    'instance-describe-variable!': instanceDescribeVariable,
+    'variable-reference-from-unsafe?': () => false,
+    'variable-reference-constant?': () => false
 };
 
 export const primitiveTable = Object.entries(exportedPrimitives).reduce(

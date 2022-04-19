@@ -3,6 +3,7 @@
 (require (for-syntax syntax/parse)
          racketscript/interop
          "lib.rkt")
+         ;; "linklet-primitive.rkt")
          ;; "unsafe.rkt")
 
 ;; ----------------------------------------------------------------------------
