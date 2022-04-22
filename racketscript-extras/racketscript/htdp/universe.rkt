@@ -64,7 +64,7 @@
      (:= #js.canvas.width   #js.img.width)
      (:= #js.canvas.height  #js.img.height)
 
-     ;; We are reassiging using change-world so that change world
+     ;; We are reassigning using change-world so that change world
      ;; callbacks gets invoked at start of big-bang
      (#js.this.change-world #js.this.world)
 
@@ -93,6 +93,8 @@
    (λ ()
      #:with-this this
      (:= #js.this.-stopped #f)
+     ; always draw first, in case no on-tick handler provided
+     (#js.this.queue-event ($/obj [type #js"to-draw"]))
      (#js.this.process-events))]
   [stop
    (λ ()
@@ -149,9 +151,10 @@
 
           (define changed?
             (cond
-              [handler (#js.handler.invoke #js.this.world evt)]
+              ; raw evt must be checked 1st; bc handler will be undefined
               [(equal? #js.evt.type #js"raw")
                (#js.evt.invoke #js.this.world evt)]
+              [handler (#js.handler.invoke #js.this.world evt)]
               [else
                (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
           (loop (or world-changed? changed?))]
