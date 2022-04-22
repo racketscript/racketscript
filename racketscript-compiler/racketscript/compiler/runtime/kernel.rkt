@@ -403,6 +403,13 @@
 (define-checked+provide (vector-copy [vec vector?])
   (#js.Core.Vector.copy vec #t)) ; a vector copy is always mutable
 
+(define-checked+provide (vector-copy! [dest vector?]
+                                      [dest-start integer?]
+                                      [src vector?]
+                                      [src-start integer?]
+                                      [src-end integer?])
+  (#js.dest.copy dest-start src src-start src-end))
+
 ;; --------------------------------------------------------------------------
 ;; Hashes
 
@@ -818,6 +825,8 @@
 
 (define+provide (list->string lst)
   (#js.Kernel.listToString lst))
+(define+provide (string->list [str string?])
+  (#js.Core.Pair.listFromArray (#js.Core.UString.toArray str)))
 
 (define+provide (string->immutable-string [s string?])
   (#js.Core.UString.stringToImmutableString s))

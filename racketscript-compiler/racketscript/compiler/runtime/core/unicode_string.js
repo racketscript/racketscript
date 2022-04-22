@@ -481,6 +481,14 @@ export function toBytesUtf8(str) {
 }
 
 /**
+ * @param {!(UString|String)} str
+ * @return {!Char.Char[]} chars
+ */
+export function toArray(str) {
+    return str.chars;
+}
+
+/**
  * @param {!Uint8Array} bytes
  * @return {!MutableUString}
  */

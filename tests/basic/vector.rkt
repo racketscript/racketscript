@@ -28,3 +28,6 @@
 (displayln (make-vector 5 #f))
 (displayln (make-vector 0))
 
+(define vec2 (vector 4 5 6))
+(vector-copy! vec 1 vec2 0 3)
+(displayln vec)
