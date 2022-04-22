@@ -66,6 +66,7 @@
          ["darksalmon" (-color 233 150 122)]
          ["gold" (-color 255 215 0)]
          ["yellow" (-color 255 255 0)]
+         ["medium yellow" (-color 255 255 0)]
          ["olive" (-color 128 128 0)]
          ["burlywood" (-color 222 184 135)]
          ["tan" (-color 210 180 140)]
