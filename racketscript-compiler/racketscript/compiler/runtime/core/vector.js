@@ -61,10 +61,10 @@ class Vector extends PrintablePrimitive {
         this.items[n] = v;
     }
 
-    copy(dest_start, src, src_start, src_end) {
-        for (let i = src_start, j = dest_start;
-             i < src_end && i < src.items.length && j < this.items.length;
-             i++, j++) {
+    copy(destStart, src, srcStart, srcEnd) {
+        for (let i = srcStart, j = destStart;
+            i < srcEnd && i < src.items.length && j < this.items.length;
+            i++, j++) {
             this.items[j] = src.items[i];
         }
     }
