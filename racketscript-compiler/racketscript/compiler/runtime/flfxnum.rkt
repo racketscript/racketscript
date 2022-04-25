@@ -79,3 +79,7 @@
 (define-fx-binop+provide fxxor     ^)
 (define+provide fxnot                     #js.Core.bitwiseNot)
 
+(define+provide flvector #js.Array.from) ; just create regular array
+(define+provide flvector? #js.Array.isArray)
+(define+provide fxvector #js.Array.from) ; just create regular array
+(define+provide fxvector? #js.Array.isArray)

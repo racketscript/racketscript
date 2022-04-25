@@ -61,6 +61,14 @@ class Vector extends PrintablePrimitive {
         this.items[n] = v;
     }
 
+    copy(destStart, src, srcStart, srcEnd) {
+        for (let i = srcStart, j = destStart;
+            i < srcEnd && i < src.items.length && j < this.items.length;
+            i++, j++) {
+            this.items[j] = src.items[i];
+        }
+    }
+
     length() {
         return this.items.length;
     }
@@ -105,7 +113,6 @@ export function make(items, mutable) {
 export function copy(vec, mutable) {
     return new Vector(vec.items, mutable);
 }
-
 
 export function makeInit(size, init) {
     const r = new Array(size);

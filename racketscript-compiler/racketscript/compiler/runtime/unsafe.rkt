@@ -107,6 +107,15 @@
 (define+provide (unsafe-vector-length v)
   (#js.v.length))
 
+(define+provide (unsafe-vector*-ref v k)
+  (#js.v.ref k))
+
+(define+provide (unsafe-vector*-set! v k val)
+  (#js.v.set k val))
+
+(define+provide (unsafe-vector*-length v)
+  (#js.v.length))
+
 ;;-----------------------------------------------------------------------------
 ;; Hash
 (define+provide (unsafe-immutable-hash-iterate-first h)
@@ -156,3 +165,8 @@
 
 (define+provide (unsafe-root-continuation-prompt-tag)
   (#js.Core.Marks.defaultContinuationPromptTag))
+
+;; strings
+(define+provide (unsafe-string-length s)
+  #js.s.length)
+
