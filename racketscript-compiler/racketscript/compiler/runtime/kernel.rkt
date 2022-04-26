@@ -2,9 +2,9 @@
 
 (require (for-syntax syntax/parse)
          racketscript/interop
-         "lib.rkt")
-         ;; "linklet-primitive.rkt")
-         ;; "unsafe.rkt")
+         "lib.rkt"
+         ;; "linklet-primitive.rkt"
+         "unsafe.rkt")
 
 ;; ----------------------------------------------------------------------------
 ;; Equality
@@ -1391,12 +1391,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Unsafe forms for Expander Linklet
 
-(define+provide unsafe-make-place-local #js.Core.Box.make)
-(define+provide (unsafe-root-continuation-prompt-tag)
-  (#js.Core.Marks.defaultContinuationPromptTag))
+;; FIXME since imports don't work properly in linklet mode, re-provide unsafe forms here
+(provide (all-from-out "unsafe.rkt"))
 
-;; (provide unsafe-make-place-local
-;;          unsafe-root-continuation-prompt-tag)
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
