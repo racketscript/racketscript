@@ -1392,8 +1392,17 @@
 ;; Unsafe forms for Expander Linklet
 
 ;; FIXME since imports don't work properly in linklet mode, re-provide unsafe forms here
-(provide (all-from-out "unsafe.rkt"))
+;; (provide (all-from-out "unsafe.rkt"))
 
+(define+provide unsafe-make-place-local #js.Core.Box.make)
+(define+provide (unsafe-place-local-set! b v) (#js.b.set v))
+(define+provide (unsafe-place-local-ref b) (#js.b.get))
+
+(define+provide (unsafe-root-continuation-prompt-tag)
+  (#js.Core.Marks.defaultContinuationPromptTag))
+
+(define+provide (unsafe-car v) #js.v.hd)
+(define+provide (unsafe-cdr v) #js.v.tl)
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
