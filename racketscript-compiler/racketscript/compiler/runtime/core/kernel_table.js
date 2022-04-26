@@ -1,5 +1,19 @@
 /* eslint-disable */
 // import * as Kernel from '../core.js';
+// import * as Core from '../core.js';
+
+export const kernelContents = {};
+
+// Object.entries(Core).forEach(([key, val]) => {
+//     if (key === 'theUnsafeUndefined') {
+
+//     } else if (typeof val === 'function') {
+//     } else if (typeof val === 'object') {
+//     } else {
+//     }
+// });
+
+
 
 export const kernelTable = {
     writeToPort:         () => { throw new Error('writeToPort not supported'); },
@@ -10,7 +24,7 @@ export const kernelTable = {
     ref:                 (k, fail) => {
                              throw new Error(`primitive ${k} not currently supported`);
                          },
-    toRawString:         () => { throw new Error('hasKey not supported'); },
+    hasKey:              (k) => { console.log(k); console.log(kernelContents[k]); throw new Error('hasKey not supported'); },
     refKey:              () => { return kernelTable.ref(); },
     set:                 () => { throw new Error('set not supported'); },
     remove:              () => { throw new Error('remove not supported'); },
@@ -27,4 +41,6 @@ export const kernelTable = {
     isSameType:          () => { throw new Error('isSameType not supported'); },
     isKeysSubset:        () => { throw new Error('isKeysSubset not supported'); },
     equals:              () => { throw new Error('equals not supported'); },
+
+    _unsafeSet:          (k, v) => { console.log(k); kernelContents[k] = v; }
 };

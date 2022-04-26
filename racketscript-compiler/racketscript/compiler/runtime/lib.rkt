@@ -56,13 +56,22 @@
                      [_:id #'($ 'id)]))]))
 
 (define-syntax (define+provide stx)
+  ;; FIXME currently mutating kernelContents to add primitives to the table
+  ;; FIXME the random `define` is there to prevent the expander from inserting a `call-with-values` call in tail position
+  ;;       for no reason
   (syntax-parse stx
     [(_ name:id val:expr)
-     #'(begin (provide name)
-              (define name val))]
+     (with-syntax ([(x) (generate-temporaries '(x))])
+       #'(begin (provide name)
+                (define name val)
+                ;; (#%js-ffi 'assign ($ #js.Core.KernelTable.kernelContents 'name) name)))]
+                (define x (#%js-ffi 'assign ($ #js.Core.KernelTable.kernelContents 'name) name))))]
     [(_ (~and formals (name:id . args)) body ...)
-     #'(begin (provide name)
-              (define formals body ...))]))
+     (with-syntax ([(x) (generate-temporaries '(x))])
+       #'(begin (provide name)
+                (define formals body ...)
+                ;; (#%js-ffi 'assign ($ #js.Core.KernelTable.kernelContents 'name) name)))]))
+                (define x (#%js-ffi 'assign ($ #js.Core.KernelTable.kernelContents 'name) name))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; JS imports
