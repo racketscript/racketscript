@@ -1378,15 +1378,21 @@
   (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
-;; Syntax
-
-;; TODO: implement these stubs
+;; Syntax (borrowed from syntax.rkt, should fix like unsafe)
 
 (define+provide syntax-source #js.Core.Correlated.syntaxSource)
 (define+provide syntax-line #js.Core.Correlated.syntaxLine)
 (define+provide syntax-column #js.Core.Correlated.syntaxColumn)
 (define+provide syntax-position #js.Core.Correlated.syntaxPosition)
 (define+provide syntax-span #js.Core.Correlated.syntaxSpan)
+(define+provide datum->syntax #js.Core.Correlated.datumToSyntax)
+(define+provide syntax? #js.Core.Correlated.syntaxP)
+(define+provide syntax-property (v-λ () #:unchecked #f))
+
+;; TODO question: should I turn syntax-e into an exported function that wraps this?
+(define+provide (syntax-e v) (#js.v.get))
+;; FIXME this is definitely wrong, right? I guess I don't know how correlated actually works
+(define+provide (syntax->datum v) (#js.v.get))
 
 ;; ----------------------------------------------------------------------------
 ;; Unsafe forms for Expander Linklet

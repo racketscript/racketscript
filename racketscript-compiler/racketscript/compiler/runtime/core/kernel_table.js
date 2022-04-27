@@ -1,19 +1,6 @@
 /* eslint-disable */
-// import * as Kernel from '../core.js';
-// import * as Core from '../core.js';
 
-export const kernelContents = {};
-
-// Object.entries(Core).forEach(([key, val]) => {
-//     if (key === 'theUnsafeUndefined') {
-
-//     } else if (typeof val === 'function') {
-//     } else if (typeof val === 'object') {
-//     } else {
-//     }
-// });
-
-
+const kernelContents = {};
 
 export const kernelTable = {
     writeToPort:         () => { throw new Error('writeToPort not supported'); },
@@ -22,10 +9,15 @@ export const kernelTable = {
     toRawString:         () => { throw new Error('toRawString not supported'); },
     isImmutable:         () => { return true; },
     ref:                 (k, fail) => {
-                             throw new Error(`primitive ${k} not currently supported`);
+                             if (k in kernelContents) {
+                                 return kernelContents[k];
+                             } else {
+                                 return fail;
+                             }
                          },
-    hasKey:              (k) => { console.log(k); console.log(kernelContents[k]); throw new Error('hasKey not supported'); },
-    refKey:              () => { return kernelTable.ref(); },
+    hasKey:              (k) => { return (k in kernelContents); },
+    refKey:              () => { throw new Error('refKey not supported'); },
+    get:                 (k) => { return kernelContents[k]; },
     set:                 () => { throw new Error('set not supported'); },
     remove:              () => { throw new Error('remove not supported'); },
     doset:               () => { throw new Error('doset not supported'); },
@@ -42,5 +34,7 @@ export const kernelTable = {
     isKeysSubset:        () => { throw new Error('isKeysSubset not supported'); },
     equals:              () => { throw new Error('equals not supported'); },
 
-    _unsafeSet:          (k, v) => { console.log(k); kernelContents[k] = v; }
+    _unsafeSet:          (k, v) => { kernelContents[k] = v; }
 };
+
+kernelTable._h = kernelTable;
