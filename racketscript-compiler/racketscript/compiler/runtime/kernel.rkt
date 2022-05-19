@@ -1389,6 +1389,8 @@
 (define+provide syntax? #js.Core.Correlated.syntaxP)
 (define+provide syntax-property (v-λ () #:unchecked #f))
 
+(define+provide (syntax-property-symbol-keys stx) '())
+
 ;; TODO question: should I turn syntax-e into an exported function that wraps this?
 (define+provide (syntax-e v) (#js.v.get))
 ;; FIXME this is definitely wrong, right? I guess I don't know how correlated actually works
@@ -1409,6 +1411,10 @@
 
 (define+provide (unsafe-car v) #js.v.hd)
 (define+provide (unsafe-cdr v) #js.v.tl)
+
+(define+provide (unsafe-immutable-hash-iterate-first h)
+  (#js.h.iterateFirst))
+
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
