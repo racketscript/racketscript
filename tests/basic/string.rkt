@@ -25,6 +25,8 @@
 (displayln (immutable? (string->immutable-string (string #\i #\🎂 #\c))))
 
 (displayln (list->string '(#\a #\🎂 #\c)))
+(displayln (string->list "abc"))
+(displayln (string->list ""))
 (displayln (immutable? (list->string '(#\a #\🎂 #\c))))
 (displayln (string-length (list->string '(#\a #\🎂 #\c))))
 
