@@ -1415,6 +1415,12 @@
 (define+provide (unsafe-immutable-hash-iterate-first h)
   (#js.h.iterateFirst))
 
+(define+provide (unsafe-immutable-hash-iterate-next h i)
+  (#js.h.iterateNext i))
+
+(define+provide (unsafe-immutable-hash-iterate-key h i)
+  (#js.h.iterateKey i))
+
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
