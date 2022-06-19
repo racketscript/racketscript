@@ -64,12 +64,12 @@
      (with-syntax ([(x) (generate-temporaries '(x))])
        #'(begin (provide name)
                 (define name val)
-                (define x (#js.Core.KernelTable.kernelTable._unsafeSet 'name name))))]
+                (define x (#js.Core.KernelTable.unsafeSet 'name name))))]
     [(_ (~and formals (name:id . args)) body ...)
      (with-syntax ([(x) (generate-temporaries '(x))])
        #'(begin (provide name)
                 (define formals body ...)
-                (define x (#js.Core.KernelTable.kernelTable._unsafeSet 'name name))))]))
+                (define x (#js.Core.KernelTable.unsafeSet 'name name))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; JS imports

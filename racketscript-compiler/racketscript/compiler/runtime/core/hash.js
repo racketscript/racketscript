@@ -278,5 +278,5 @@ export function isWeakHash() {
 }
 
 export function isEphemeronHash() {
-  return false; // TODO: implement ephemeron hashes
+    return false; // TODO: implement ephemeron hashes
 }
