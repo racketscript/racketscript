@@ -1545,4 +1545,14 @@
      (let ([lnkTable #js.Core.Linklet.primitiveTable])
        (hash-set lnkTable 'primitive-table primitive-table))]
     [(equal? table-name '#%paramz) paramz-table]
+    ;; Pycket has entries for all of the tables below
+    [(equal? table-name '#%foreign) (hash)]
+    [(equal? table-name '#%unsafe)  (hash)]
+    [(equal? table-name '#%futures) (hash)]
+    [(equal? table-name '#%place)   (hash)]
+    [(equal? table-name '#%flfxnum) (hash)]
+    [(equal? table-name '#%extfl)   (hash)]
+    [(equal? table-name '#%network) (hash)]
+
+
     [else #f]))
