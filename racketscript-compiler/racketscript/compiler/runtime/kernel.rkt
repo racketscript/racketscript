@@ -1514,6 +1514,27 @@
 (define+provide fxvector #js.Array.from) ; just create regular array
 (define+provide fxvector? #js.Array.isArray)
 
+;; ----------------------------------------------------------------------------
+;; for #%paramz
+(define Paramz ($/require/* "./paramz.js"))
+
+(define parameterization-key #js.Paramz.ParameterizationKey)
+(define break-enabled-key #js.Paramz.BreakEnabledKey)
+(define cache-configuration #js.Paramz.BreakEnabledKey)
+(define extend-parameterization #js.Paramz.extendParameterization)
+(define exception-handler-key #js.Paramz.ExceptionHandlerKey)
+(define (check-for-break) ($/undefined))
+(define (reparameterize v) v)
+
+(define paramz-table
+  (hash 'parameterization-key    parameterization-key
+        'break-enabled-key       break-enabled-key
+        'cache-configuration     cache-configuration
+        'extend-parameterization extend-parameterization
+        'exception-handler-key   exception-handler-key
+        'check-for-break         check-for-break
+        'reparameterize          reparameterize))
+
 
 
 ;; ----------------------------------------------------------------------------
@@ -1523,4 +1544,5 @@
     [(equal? table-name '#%linklet)
      (let ([lnkTable #js.Core.Linklet.primitiveTable])
        (hash-set lnkTable 'primitive-table primitive-table))]
+    [(equal? table-name '#%paramz) paramz-table]
     [else #f]))
