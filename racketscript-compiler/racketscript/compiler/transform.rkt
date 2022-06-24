@@ -63,7 +63,7 @@
   (parameterize ([module-object-name-map (make-module-map requires* imported-mod-path-list)])
     (ILLinklet
       (filter ILRequire? requires*)
-      exports
+      (absyn-exports->il exports)
       (append-map absyn-gtl-form->il forms))))
 
 (: make-module-map (-> (Listof (Option ILRequire)) (Listof (U Path Symbol)) ModuleObjectNameMap)) ;; TODO need type aliases
@@ -76,6 +76,15 @@
                 mod-path
                 (ILRequire-name req))
       acc)))
+
+(: absyn-exports->il (-> (Listof (U Symbol (Listof Symbol))) ILProvide*))
+(define (absyn-exports->il exports)
+  (for/list ([ex exports])
+    (cond
+      [(symbol? ex) (SimpleProvide ex)]
+      [(list? ex) (RenamedProvide (car ex) (cadr ex))]
+      [else (error 'exports->il "unknown export form in linklet" ex)])))
+
 
 (: absyn-requires->il (-> (Listof (U Path Symbol)) Path (Listof (Option ILRequire))))
 (define (absyn-requires->il import-list path)
