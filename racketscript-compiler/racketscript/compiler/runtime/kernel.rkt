@@ -1536,6 +1536,12 @@
         'reparameterize          reparameterize))
 
 
+;; ----------------------------------------------------------------------------
+;; Other random forms I need to include
+
+;; TODO should probably be real but w/e
+(define+provide error-syntax->string-handler
+  (make-parameter (v-λ (x n) "syntax")))
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
