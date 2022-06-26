@@ -1405,6 +1405,14 @@
 ;; FIXME this is definitely wrong, right? I guess I don't know how correlated actually works
 (define+provide (syntax->datum v) (#js.v.get))
 
+;; FIXME other related runtime functions
+(struct srcloc (source line column position span)
+  #:extra-constructor-name make-srcloc
+  #:transparent)
+
+(provide (struct-out srcloc))
+
+
 ;; ----------------------------------------------------------------------------
 ;; Unsafe forms for Expander Linklet
 
