@@ -1380,11 +1380,6 @@
 
 (define+provide (datum-intern-literal v) v)
 
-;; semaphore stubs
-(define+provide (make-semaphore [x 0]) x)
-(define+provide (semaphore-peek-evt x) x)
-(define+provide call-with-semaphore
-  (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
 ;; Syntax (borrowed from syntax.rkt, should fix like unsafe)
@@ -1551,10 +1546,22 @@
 (define+provide error-syntax->string-handler
   (make-parameter (v-λ (x n) "syntax")))
 
+;;; THREADS ;;;
 ;; Return the thread descriptor for the current thread
 ;; Since JS isn't multithreaded, just return the same 'descriptor'
 ;;   for all threads
 (define+provide (current-thread) #js.Core.Thread.currentThread)
+
+;;; SEMAPHORES ;;;
+(define+provide semaphore? #js.Core.Semaphore.check)
+(define+provide (make-semaphore [init 0]) (#js.Core.Semaphore.make init))
+(define+provide (semaphore-post v) (#js.v.post))
+(define+provide (semaphore-wait v) (#js.v.wait))
+
+;; PRE-EXISTING STUBS
+(define+provide (semaphore-peek-evt x) x)
+(define+provide call-with-semaphore
+  (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)

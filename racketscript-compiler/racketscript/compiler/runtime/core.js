@@ -23,6 +23,7 @@ import * as Linklet from './core/linklet.js';
 import * as Path from './core/path.js';
 import * as KernelTable from './core/kernel_table.js';
 import * as Thread from './core/thread.js';
+import * as Semaphore from './core/semaphore.js';
 
 export {
     Bytes,
@@ -46,7 +47,8 @@ export {
     Linklet,
     Path,
     KernelTable,
-    Thread
+    Thread,
+    Semaphore
 };
 
 export { argumentsToArray, argumentsSlice } from './core/lib.js';
