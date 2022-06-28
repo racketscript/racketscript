@@ -22,6 +22,7 @@ import * as Correlated from './core/correlated.js';
 import * as Linklet from './core/linklet.js';
 import * as Path from './core/path.js';
 import * as KernelTable from './core/kernel_table.js';
+import * as Thread from './core/thread.js';
 
 export {
     Bytes,
@@ -44,7 +45,8 @@ export {
     Correlated,
     Linklet,
     Path,
-    KernelTable
+    KernelTable,
+    Thread
 };
 
 export { argumentsToArray, argumentsSlice } from './core/lib.js';

@@ -1381,7 +1381,7 @@
 (define+provide (datum-intern-literal v) v)
 
 ;; semaphore stubs
-(define+provide (make-semaphore x) x)
+(define+provide (make-semaphore [x 0]) x)
 (define+provide (semaphore-peek-evt x) x)
 (define+provide call-with-semaphore
   (v-λ (s f) #:unchecked #f))
@@ -1550,6 +1550,11 @@
 ;; TODO should probably be real but w/e
 (define+provide error-syntax->string-handler
   (make-parameter (v-λ (x n) "syntax")))
+
+;; Return the thread descriptor for the current thread
+;; Since JS isn't multithreaded, just return the same 'descriptor'
+;;   for all threads
+(define+provide (current-thread) #js.Core.Thread.currentThread)
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)
