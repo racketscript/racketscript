@@ -1375,8 +1375,11 @@
 
 ;; --------------------------------------------------------------------------
 
-(define+provide (dynamic-wind f g h)
-  (f) (g) (h))
+(define+provide (dynamic-wind pre-thunk value-thunk post-thunk)
+  (pre-thunk)
+  (define res (value-thunk))
+  (post-thunk)
+  res)
 
 (define+provide (datum-intern-literal v) v)
 
