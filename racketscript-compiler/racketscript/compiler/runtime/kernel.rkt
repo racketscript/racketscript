@@ -32,7 +32,7 @@
     (cond
       [(#js.Values.check vals)
        (#js.receiver.apply *this* (#js.vals.getAll))]
-      [(not (or (eq? vals *undefined*) (eq? vals *null*)))
+      [else #;(not (or (eq? vals *undefined*) (eq? vals *null*)))
        (#js.receiver.apply *this* (array vals))])))
 
 ;; ----------------------------------------------------------------------------
