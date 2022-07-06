@@ -458,11 +458,16 @@
      
      (define lnk-port (open-input-file source))
      (define lnk-ast (parse-linklet (read lnk-port) p))
-     ;; (pretty-print lnk-ast)
+
+     (define out-str (open-output-string))
 
      (~> (absyn-linklet->il lnk-ast)
          (insert-arity-checks _)
-         (assemble-linklet _))
+         (assemble-linklet _ out-str))
+
+     (call-with-output-file "js-build/modules/foo.js"
+       (λ (out) (display (get-output-string out-str) out));;(js-string-beautify (get-output-string out-str)) out))
+       #:exists 'replace)
 
      (compile-linklet-imports lnk-ast)])
 
