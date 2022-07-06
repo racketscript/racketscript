@@ -15,7 +15,7 @@ function printError(out, msg, args) {
     }
 }
 
-function makeError(name) {
+export function makeError(name) {
     /**
      * The "(error msg v ...)" form.
      * Besides Racket values, also allows native strings.

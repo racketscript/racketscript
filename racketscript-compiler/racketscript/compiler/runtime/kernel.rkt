@@ -1132,11 +1132,12 @@
 
 (define+provide raise #js.Kernel.doraise)
 
-(define+provide exn:fail? #js.Core.isErr)
-(define+provide exn:fail:contract? #js.Core.isContractErr)
-(define+provide exn:fail:contract:arity? #js.Core.isContractErr)
-(define+provide (exn-message e)
-  (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
+;; TODO all of exception-handling may need to get re-implemented
+;; (define+provide exn:fail? #js.Core.isErr)
+;; (define+provide exn:fail:contract? #js.Core.isContractErr)
+;; (define+provide exn:fail:contract:arity? #js.Core.isContractErr)
+;; (define+provide (exn-message e)
+;;   (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -1574,6 +1575,18 @@
 (define+provide (semaphore-peek-evt x) x)
 (define+provide call-with-semaphore
   (v-λ (s f) #:unchecked #f))
+
+;; ----------------------------------------------------------------------------
+;; New Exception Support
+(provide (struct-out exn) (struct-out exn:fail))
+
+(struct exn (message continuation-marks)
+  #:extra-constructor-name make-exn
+  #:transparent)
+
+(struct exn:fail exn ()
+  #:extra-constructor-name make-exn:fail
+  #:transparent)
 
 ;; ----------------------------------------------------------------------------
 (define+provide (primitive-table table-name)

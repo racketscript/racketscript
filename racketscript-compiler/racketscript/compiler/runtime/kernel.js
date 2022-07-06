@@ -1,5 +1,7 @@
 import * as Core from './core.js';
 import * as Paramz from './paramz.js';
+import { isStructInstance } from './core/struct.js';
+import { makeError } from './core/errors.js';
 
 /* --------------------------------------------------------------------------*/
 // Immutable
@@ -161,6 +163,9 @@ export function error(firstArg, ...rest) {
 // (but less general, eg ignore prompt tag for now);
 // must be here to avoid circular dependency
 export function doraise(e) {
+    if (isStructInstance(e)) {
+        e = makeError('racketException')('a struct exception was rasied');
+    }
     const markset = Core.Marks.getContinuationMarks();
     const marks = Core.Marks.getMarks(markset, Paramz.ExceptionHandlerKey);
     if (marks.length === 0) {
