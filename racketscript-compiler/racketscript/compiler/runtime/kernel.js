@@ -24,9 +24,10 @@ export function isImmutable(v) {
 const NO_ARG_FORM_RE = /^~[\s~n%]/;
 
 export function fprintf(isPrintAsExpression, out, form, ...args) {
-    // TODO: Missing forms: ~.[asv], ~e, ~c.
+    // TODO: Missing forms: ~e, ~c.
+    // TODO: Forms ~.[asv] implemented incorrectly but included in regex.
     // TODO: The ~whitespace form should match Unicode whitespace.
-    const regex = /~(?:[aAeEsSvVbBoOxX~n%]|\s+)/g;
+    const regex = /~\.?(?:[aAeEsSvVbBoOxX~n%]|\s+)/g;
     const formStr = form.toString();
     let reExecResult;
     let currentMatchIndex = 0;
@@ -56,6 +57,10 @@ export function fprintf(isPrintAsExpression, out, form, ...args) {
         prevIndex = reExecResult.index;
         lastMatch = reExecResult[0]; // eslint-disable-line prefer-destructuring
         if (/^~\s/.test(lastMatch)) continue; // eslint-disable-line no-continue
+        // TODO handle ~.[asv] properly, this is hack to save time -- check racket docs
+        if (lastMatch.charAt(1) === '.') {
+            lastMatch = lastMatch.charAt(0) + lastMatch.charAt(2);
+        }
         // eslint-disable-next-line default-case
         switch (
             lastMatch.charAt(1)

@@ -1556,6 +1556,8 @@
 (define+provide error-syntax->string-handler
   (make-parameter (v-λ (x n) "syntax")))
 
+(define+provide error-print-source-location (make-parameter #t))
+
 ;;; THREADS ;;;
 ;; Return the thread descriptor for the current thread
 ;; Since JS isn't multithreaded, just return the same 'descriptor'
