@@ -1524,13 +1524,13 @@
 ;; for #%paramz
 (define Paramz ($/require/* "./paramz.js"))
 
-(define parameterization-key #js.Paramz.ParameterizationKey)
-(define break-enabled-key #js.Paramz.BreakEnabledKey)
-(define cache-configuration #js.Paramz.BreakEnabledKey)
-(define extend-parameterization #js.Paramz.extendParameterization)
-(define exception-handler-key #js.Paramz.ExceptionHandlerKey)
-(define (check-for-break) ($/undefined))
-(define (reparameterize v) v)
+(define+provide parameterization-key #js.Paramz.ParameterizationKey)
+(define+provide break-enabled-key #js.Paramz.BreakEnabledKey)
+(define+provide cache-configuration #js.Paramz.BreakEnabledKey)
+(define+provide extend-parameterization #js.Paramz.extendParameterization)
+(define+provide exception-handler-key #js.Paramz.ExceptionHandlerKey)
+(define+provide (check-for-break) ($/undefined))
+(define+provide (reparameterize v) v)
 
 (define paramz-table
   (hash 'parameterization-key    parameterization-key
@@ -1544,6 +1544,13 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Other random forms I need to include
+
+;; based on Pycket's implementation of the same function at time of writing
+(define+provide (sync/timeout timeout . evts)
+  (cond
+    [(number? timeout) #f]
+    [(procedure? timeout) (timeout)]
+    [else (throw (#js.Core.racketCoreError "sync/timeout doesn't support given timeout type"))]))
 
 ;; TODO should probably be real but w/e
 (define+provide error-syntax->string-handler
