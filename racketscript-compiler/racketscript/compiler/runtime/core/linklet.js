@@ -76,7 +76,7 @@ class Linklet extends PrintablePrimitive {
 export function makeLinklet(form, name, importKeys) {
     const newLinklet = new Linklet(form, name);
     if (importKeys) {
-        return makeValues(newLinklet, makeVector([], true));
+        return makeValues([newLinklet, makeVector([], true)]);
     } else {
         return newLinklet;
     }

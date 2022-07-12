@@ -286,6 +286,16 @@
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
 
+(define+provide (list-tail lst pos)
+  (let loop ([l lst]
+             [p pos])
+    (cond
+      [(
+
+    (if (<= pos 0)
+      lst
+      (loop (cdr list) (sub1 pos)))))
+
 ;; ----------------------------------------------------------------------------
 ;; Mutable Pairs
 
