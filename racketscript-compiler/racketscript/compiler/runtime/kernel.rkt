@@ -524,8 +524,11 @@
 (define+provide (hash-iterate-next h i)
   (#js.h.iterateNext i))
 
-(define+provide (hash-iterate-key h i)
-  (#js.h.iterateKey i))
+(define+provide hash-iterate-key
+  (case-lambda
+    [(h i) (#js.h.iterateKey i)] ;; FIXME spec says throw contract error if bad index, does that already happen?
+    [(h i bad-index-v)
+     (if #js.i.value (#js.h.iterateKey i) bad-index-v)])) ;; FIXME really dumb check, improve
 
 (define+provide (hash-iterate-value h i)
   (#js.h.iterateValue i))
@@ -1456,6 +1459,9 @@
     (begin (:= ($ #js.v._fields k) new-val) #t)
     #f))
 
+(define+provide current-compile-target-machine
+  (make-parameter 'racketscript))
+
 (define Core   ($/require/* "./core.js"))
 
 (define-binop bitwise-or \|)
@@ -1476,6 +1482,9 @@
 
 (define+provide (unsafe-fx< a b)
   (binop < a b))
+
+(define+provide (unsafe-fx= a b)
+  (binop === a b))
 
 ;; ----------------------------------------------------------------------------
 ;; floating point forms for expander linklet

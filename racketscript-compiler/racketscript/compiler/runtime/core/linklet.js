@@ -3,7 +3,8 @@ import { make as makeSym, check as isSym } from './primitive_symbol.js';
 import { PrintablePrimitive } from './printable_primitive.js';
 import { makeEq } from './hash.js';
 import { toBytesUtf8 } from './unicode_string.js';
-
+import { make as makeVector } from './vector.js';
+import { make as makeValues } from './values.js';
 
 // TODO I should determine which of the 'props' (arguments to compile-linklet and recompile-linklet actually need to be saved
 // eslint-disable-next-line no-unused-vars
@@ -72,8 +73,13 @@ class Linklet extends PrintablePrimitive {
     }
 }
 
-export function makeLinklet(form, name) {
-    return new Linklet(form, name);
+export function makeLinklet(form, name, importKeys) {
+    const newLinklet = new Linklet(form, name);
+    if (importKeys) {
+        return makeValues(newLinklet, makeVector([], true));
+    } else {
+        return newLinklet;
+    }
 }
 
 export function checkLinklet(l) {
