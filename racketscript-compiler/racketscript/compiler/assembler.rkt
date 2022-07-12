@@ -235,12 +235,11 @@
          (emit ")"))
        (emit ";")]))
 
-(: assemble-linklet (-> ILLinklet Void))
-(define (assemble-linklet lnk)
+(: assemble-linklet (-> ILLinklet Output-Port Void))
+(define (assemble-linklet lnk out)
   (match-define (ILLinklet imports exports body) lnk)
   (log-rjs-info "[assemble linklet]")
 
-  (define out (open-output-file "foo.js" #:exists 'replace))
   (assemble-requires* imports out)
   (for ([b body])
     (assemble-statement b out))
