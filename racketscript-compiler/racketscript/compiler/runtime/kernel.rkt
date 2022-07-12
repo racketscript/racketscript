@@ -1439,6 +1439,9 @@
 
 (define+provide unsafe-undefined #js.Core.theUnsafeUndefined)
 
+(define+provide (unsafe-start-atomic) (void))
+(define+provide (unsafe-end-atomic) (void))
+
 (define Core   ($/require/* "./core.js"))
 
 (define-binop bitwise-or \|)
@@ -1456,6 +1459,9 @@
 (define-unsafe-fx-binop+provide unsafe-fx*         *)
 (define-unsafe-fx-binop+provide unsafe-fxquotient  /)
 (define-unsafe-fx-binop+provide unsafe-fxremainder %)
+
+(define+provide (unsafe-fx< a b)
+  (binop < a b))
 
 ;; ----------------------------------------------------------------------------
 ;; floating point forms for expander linklet
