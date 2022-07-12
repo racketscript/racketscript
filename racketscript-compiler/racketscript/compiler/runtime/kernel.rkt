@@ -1442,6 +1442,20 @@
 (define+provide (unsafe-start-atomic) (void))
 (define+provide (unsafe-end-atomic) (void))
 
+(define+provide (unsafe-vector-ref v k)
+  (#js.v.ref k))
+(define+provide (unsafe-vector-length v)
+  (#js.v.length))
+
+(define+provide (unsafe-struct*-cas! v k old-val new-val)
+  ;;  FIXME correct error message
+  (when (or (< k 0) (>= k #js.v._desc.totalInitFields))
+    (throw (#js.Core.racketContractError "arity mismatch in unsafe-struct*-cas!")))
+
+  (if (eq? old-val ($ #js.v._fields k))
+    (begin (:= ($ #js.v._fields k) new-val) #t)
+    #f))
+
 (define Core   ($/require/* "./core.js"))
 
 (define-binop bitwise-or \|)
