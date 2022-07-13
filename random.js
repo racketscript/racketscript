@@ -3,17 +3,17 @@ import * as CORE from '../runtime/core.js';
 
 const demoNamespace = Expander.make_namespace();
 const KERNEL_IMPORT = CORE.Pair.makeList(
-  CORE.PrimitiveSymbol.make('quote'),
-  CORE.PrimitiveSymbol.make('#%kernel')
+    CORE.PrimitiveSymbol.make('quote'),
+    CORE.PrimitiveSymbol.make('#%kernel')
 );
 
 const STX_KERNEL_IMPORT = CORE.Pair.makeList(
-  CORE.PrimitiveSymbol.make('for-syntax'),
-  CORE.Pair.makeList(
-    CORE.PrimitiveSymbol.make('quote'),
-    CORE.PrimitiveSymbol.make('#%kernel')
-  )
-)
+    CORE.PrimitiveSymbol.make('for-syntax'),
+    CORE.Pair.makeList(
+        CORE.PrimitiveSymbol.make('quote'),
+        CORE.PrimitiveSymbol.make('#%kernel')
+    )
+);
 
 const SUM = CORE.Pair.makeList(CORE.PrimitiveSymbol.make('+'), 5, 5);
 

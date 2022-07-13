@@ -5,7 +5,7 @@
         "sourceType": "module"
     },
     "rules": {
-        "indent": ["error", 2],
+        "indent": ["error", 4],
         "import/extensions": ["error", "always"],
         "comma-dangle": ["error", "never"],
         "no-bitwise": 0,
