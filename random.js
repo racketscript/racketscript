@@ -22,6 +22,8 @@ Expander.namespace_attach_module(Expander.current_namespace(), KERNEL_IMPORT, de
 Expander.namespace_require(KERNEL_IMPORT, demoNamespace);
 Expander.namespace_require(STX_KERNEL_IMPORT, demoNamespace);
 
-const stxObj = Expander.namespace_syntax_introduce(Expander.datum__gt_syntax(false, SUM), demoNamespace);
+// const stxObj = Expander.namespace_syntax_introduce(Expander.datum__gt_syntax(false, SUM), demoNamespace);
 
-console.log(Expander.expand(stxObj, demoNamespace)._fields[0].tl);
+// console.log(Expander.expand(stxObj, demoNamespace)._fields[0].tl);
+
+console.log(Expander.compile(Expander.datum__gt_syntax(false, 5), demoNamespace));
