@@ -286,15 +286,14 @@
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
 
+;; FIXME contract for pos being non-negative
 (define+provide (list-tail lst pos)
   (let loop ([l lst]
              [p pos])
     (cond
-      [(
-
-    (if (<= pos 0)
-      lst
-      (loop (cdr list) (sub1 pos)))))
+      [(<= p 0) l]
+      [(not (pair? p)) (throw (#js.Core.racketContractError "list-tail: index reaches a non-pair"))]
+      [else (loop (cdr l) (sub1 p))])))
 
 ;; ----------------------------------------------------------------------------
 ;; Mutable Pairs
