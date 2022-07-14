@@ -64,6 +64,7 @@ class Linklet extends PrintablePrimitive {
     // - I have no use for instances right now either, since I'm not producing linklets
     //   that import stuff
     instantiate(_instances, target) {
+        console.log('ENTERING EVALUATION, WILL PROBABLY CRASH BECAUSE BAD PAYLOAD');
         const res = eval(this.payload);
         if (target === undefined || target === false) {
             return makeInstance(this.name);
@@ -76,10 +77,10 @@ class Linklet extends PrintablePrimitive {
 export function makeLinklet(form, name, importKeys) {
     const newLinklet = new Linklet(form, name);
     if (importKeys) {
-        return makeValues([newLinklet, makeVector([], true)]);
-    } else {
-        return newLinklet;
+        return makeValues([newLinklet, importKeys]);
     }
+
+    return newLinklet;
 }
 
 export function checkLinklet(l) {
