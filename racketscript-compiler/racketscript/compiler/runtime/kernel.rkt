@@ -288,15 +288,11 @@
 
 ;; FIXME contract for pos being non-negative
 (define+provide (list-tail lst pos)
-  (displayln "HELLO WORLD")
   (let loop ([l lst]
              [p pos])
-    (displayln "looping")
-    (write l)
-    (write p)
     (cond
       [(<= p 0) l]
-      [(not (pair? p)) (throw (#js.Core.racketContractError "list-tail: index reaches a non-pair"))]
+      [(not (pair? l)) (throw (#js.Core.racketContractError "list-tail: index reaches a non-pair"))]
       [else (loop (cdr l) (sub1 p))])))
 
 ;; ----------------------------------------------------------------------------

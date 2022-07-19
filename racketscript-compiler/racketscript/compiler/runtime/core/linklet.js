@@ -95,6 +95,10 @@ class LinkletInstance extends PrintablePrimitive {
         this.mode = mode;
         this.m = m;
     }
+
+    displayNativeString(out) {
+        out.consume('#<instance>');
+    }
 }
 
 export function checkInstance(i) {
