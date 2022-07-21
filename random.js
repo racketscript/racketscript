@@ -1,5 +1,6 @@
 import * as Expander from './foo.js';
 import * as CORE from '../runtime/core.js';
+import { displayln as print } from '../runtime/kernel.rkt.js';
 
 const demoNamespace = Expander.make_namespace();
 const KERNEL_IMPORT = CORE.Pair.makeList(
@@ -17,6 +18,28 @@ const STX_KERNEL_IMPORT = CORE.Pair.makeList(
 
 const SUM = CORE.Pair.makeList(CORE.PrimitiveSymbol.make('+'), 5, 5);
 
+const LET_EX = CORE.Pair.makeList(
+    CORE.PrimitiveSymbol.make('let'),
+    CORE.Pair.makeList(CORE.Pair.makeList(CORE.PrimitiveSymbol.make('x'), 5)),
+    CORE.PrimitiveSymbol.make('x')
+);
+
+const DEFINE_EX = CORE.Pair.makeList(
+    CORE.PrimitiveSymbol.make('let'),
+    CORE.Pair.makeList(),
+    CORE.Pair.makeList(
+        CORE.PrimitiveSymbol.make('define'),
+        CORE.PrimitiveSymbol.make('x'),
+        5
+    ),
+    CORE.Pair.makeList(
+        CORE.PrimitiveSymbol.make('set!'),
+        CORE.PrimitiveSymbol.make('x'),
+        6
+    ),
+    CORE.PrimitiveSymbol.make('x')
+);
+
 Expander.namespace_attach_module(Expander.current_namespace(), KERNEL_IMPORT, demoNamespace);
 
 Expander.namespace_require(KERNEL_IMPORT, demoNamespace);
@@ -32,4 +55,4 @@ const compileExpr = (e) => {
     return Expander.compile(e, demoNamespace);
 };
 
-console.log(compileExpr(5));
+print(Expander.syntax__gt_datum(expandExpr(DEFINE_EX)));
