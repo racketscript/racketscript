@@ -55,7 +55,7 @@
   (log-rjs-info "[linklet il]")
 
   (define imported-mod-path-list (cast (flatten imports) (Listof Symbol)))
-  (define requires* (absyn-requires->il imported-mod-path-list path))
+  (define requires* (absyn-requires->il imported-mod-path-list (cast path Path)))
 
   ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
   ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map

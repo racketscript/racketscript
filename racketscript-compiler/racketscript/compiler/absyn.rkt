@@ -5,7 +5,7 @@
 
 (provide (all-defined-out))
 
-(struct Linklet ([path    : Path]
+(struct Linklet ([path    : Path-String] ;; TODO eventually get rid of paths, need it for now
                  [imports : (Listof (Listof (U Symbol (Listof Symbol))))]
                  [exports : (Listof (U Symbol (Listof Symbol)))]
                  [forms   : (Listof GeneralTopLevelForm)])
