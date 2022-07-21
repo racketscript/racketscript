@@ -1414,6 +1414,7 @@
 ;; TODO question: should I turn syntax-e into an exported function that wraps this?
 (define+provide (syntax-e v) (#js.v.get))
 ;; FIXME this is definitely wrong, right? I guess I don't know how correlated actually works
+;;       this ONLY works for correlated syntax, which doesn't work
 (define+provide (syntax->datum v) (#js.v.get))
 
 ;; FIXME other related runtime functions
@@ -1613,6 +1614,9 @@
 (define+provide (semaphore-peek-evt x) x)
 (define+provide call-with-semaphore
   (v-λ (s f) #:unchecked #f))
+
+;; Random vector things
+(define+provide vector*-set! vector-set!)
 
 ;; ----------------------------------------------------------------------------
 ;; New Exception Support
