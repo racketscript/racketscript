@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require "absyn.rkt"
-         "linklet-expand.rkt")
+         "sexp-to-ast.rkt")
 
 (define (compile-linklet sexp)
   (parse-linklet sexp ""))
