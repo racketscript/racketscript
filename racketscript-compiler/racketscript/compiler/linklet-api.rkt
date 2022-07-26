@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require "absyn.rkt"
+(require "ast.rkt"
          "sexp-to-ast.rkt")
 
 (provide (all-defined-out))

@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require racket/match
-         racket/pretty
          racket/hash
          "ast.rkt")
 
@@ -91,7 +90,7 @@
     [`(,rator . ,rands)
      (App (t rator) (map t rands))]
     [_ (displayln "unsupported form =>")
-       (pretty-print v)
+       (displayln v)
        (error 'linklet-expand)]))
 
 
