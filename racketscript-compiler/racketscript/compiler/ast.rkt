@@ -1,5 +1,7 @@
 #lang racket/base
 
+(provide (all-defined-out))
+
 (struct Linklet (imports exports forms) #:transparent)
 
 (struct DefineValues (ids expr))
@@ -71,9 +73,5 @@
 ;; (VarRef (or false? Ident?))
 (struct VarRef (id) #:transparent)
 
-
-
-;; JSRequire?
-;; (JSRequire [alias : Symbol]
-;;            [path : (U Symbol Path-String)]
-;;            [mode : (U 'default '*)])
+;; (JSRequire symbol? (or symbol? path-string?) (or 'default '*))
+(struct JSRequire (alias path mode) #:transparent)

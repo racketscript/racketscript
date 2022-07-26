@@ -14,9 +14,6 @@
     [_ #:when (symbol? formals) formals]
     [_ #:when (list? formals) formals]
     [(list-rest x ... y) (cons x y)]))
-;;     [(list-rest x ... y) #:when (null? x) y]
-;;     [(list-rest x ... y) #:when (null? y) x]
-;;     [(list-rest x ... y) (list x y)]))
 
 (define (formals->bindings formals)
   (define (get-formals formals)
@@ -24,8 +21,6 @@
       [_ #:when (symbol? formals) (list formals)]
       [_ #:when (list? formals) formals]
       [(list-rest x ... y) (cons y x)]))
-      ;; [(list-rest x ... y) #:when (null? y) x]
-      ;; [(list-rest x ... y) (cons y x)]))
 
   (for/hash ([i (get-formals formals)])
     (values i 'lexical)))
@@ -57,13 +52,13 @@
              (match c
                ;; TODO in regular to-absyn, the structure is different
                [(list formals body)
-                (PlainLambda (formals->absyn formals)
-                             (list (t body (hash-union bindings (formals->bindings formals))))
-                             #f)]))
+                (Lambda (formals->absyn formals)
+                        (list (t body (hash-union bindings (formals->bindings formals))))
+                        #f)]))
            clauses))]
     [`(lambda ,formals ,body)
      (define fabsyn (formals->absyn formals))
-     (PlainLambda fabsyn (list (t body (hash-union bindings (formals->bindings formals)))) #f)]
+     (Lambda fabsyn (list (t body (hash-union bindings (formals->bindings formals)))) #f)]
     [`(define-values (,name) (#%js-ffi 'require (quote ,mod)))
      ;; HACK: Special case for JSRequire
      (JSRequire name mod 'default)]
@@ -94,7 +89,7 @@
                            (t result))]
     ;; application
     [`(,rator . ,rands)
-     (PlainApp (t rator) (map t rands))]
+     (App (t rator) (map t rands))]
     [_ (displayln "unsupported form =>")
        (pretty-print v)
        (error 'linklet-expand)]))
