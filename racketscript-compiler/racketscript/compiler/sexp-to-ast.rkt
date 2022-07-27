@@ -1,10 +1,16 @@
 #lang racket/base
 
 (require racket/match
-         racket/hash
          "ast.rkt")
 
 (provide parse-linklet)
+
+(define (hash-union h1 h2)
+  (for/fold ([res h1])
+            ([(k v) (in-hash h2)])
+    (if (hash-has-key? res k)
+      (error 'hash-union)
+      (hash-set res k v))))
 
 ;; originally written by Sam Tobin-Hochstadt
 

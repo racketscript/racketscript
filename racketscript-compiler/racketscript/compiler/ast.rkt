@@ -2,7 +2,8 @@
 
 (provide (all-defined-out))
 
-(struct Linklet (imports exports forms) #:transparent)
+;; TODO path should get eliminated once things are bootstrapped (or perhaps just before)
+(struct Linklet (path imports exports forms) #:transparent)
 
 (struct DefineValues (ids expr))
 
