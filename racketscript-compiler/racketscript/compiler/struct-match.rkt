@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base))
 
-(provide struct-match)
+(provide struct-match struct-match-define)
 
 (define-for-syntax (pat-pred pat)
   (let ([sym (car (syntax->datum pat))])
@@ -40,3 +40,11 @@
                           [else
                            #,(loop (cdr patterns) (cdr bodys))]))])))
            (error 'match "~e not a struct" v)))]))
+
+(define-syntax (struct-match-define stx)
+  (syntax-case stx ()
+    [(_ pat expr)
+     #`(define-values #,(pat-ids #'pat)
+         (let ([v expr])
+           (struct-match v
+             [pat (values . #,(pat-ids #'pat))])))]))
