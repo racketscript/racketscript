@@ -2,12 +2,14 @@
 
 (require (for-syntax racket/base))
 
-;; based on the pattern matcher in schemify
-
 (provide match)
 
+;; Borrowed and slightly modified from `schemify`
+
 (define-for-syntax (extract-pattern-variables pattern)
-  (syntax-case pattern (unquote)
+  (syntax-case pattern (unquote ?)
+    [(unquote (? pred?))
+     null]
     [(unquote bind-id)
      (if (free-identifier=? #'bind-id #'_)
          null
@@ -16,16 +18,15 @@
                        (extract-pattern-variables #'p2))]
     [else null]))
 
-;; TODO the original implementation uses `wrap-list?` and the other `wrap?` functions,
-;; for now I'm not using them, but if it becomes relevant I'll reintroduce them.
-;; They seem to be primarily for correlated objects
 (define-for-syntax (check-one id pattern head-id)
   (define (check-one/expr e pattern)
     (syntax-case pattern (unquote)
       [(unquote bind-id) #`#t]
       [_ #`(let ([a #,e])
              #,(check-one #'a pattern #f))]))
-  (syntax-case pattern (unquote)
+  (syntax-case pattern (unquote ?)
+    [(unquote (? pred?))
+     #`(pred? #,id)]
     [(unquote bind-id) #`#t]
     [(pat ellipses)
      (and (identifier? #'ellipses)
@@ -56,7 +57,9 @@
          #`(equal? (quote #,pattern) #,id))]))
 
 (define-for-syntax (extract-one id pattern)
-  (syntax-case pattern (unquote)
+  (syntax-case pattern (unquote ?)
+    [(unquote (? pred?))
+     #`(values)]
     [(unquote bind-id)
      (if (free-identifier=? #'bind-id #'_)
          #'(values)
@@ -68,7 +71,7 @@
        [(unquote bind-id)
         (if (free-identifier=? #'bind-id #'_)
             #'(values)
-            #`(list #,id))]
+            #`(unlist #,id))]
        [_
         (with-syntax ([pat-ids (extract-pattern-variables #'pat)])
           #`(for/lists pat-ids ([v (in-list #,id)])
@@ -95,6 +98,18 @@
     [_
      #'(values)]))
 
+(define-for-syntax (extract-guard body)
+  (syntax-case body ()
+    [(#:when guard-expr . body)
+     #'guard-expr]
+    [_ #f]))
+
+(define-for-syntax (remove-guard body)
+  (syntax-case body ()
+    [(#:when guard-expr . body)
+     #'body]
+    [_ body]))
+
 (define-syntax (match stx)
   (syntax-case stx (quasiquote)
     [(_ expr [`pattern body0 body ...] ...)
@@ -109,17 +124,20 @@
                    [else
                     (define ids (extract-pattern-variables (car patterns)))
                     (define match? (check-one #'v (car patterns) head-id))
-                    #`(if #,match?
+                    (define guard (extract-guard (car bodys)))
+                    #`(if #,(if guard
+                                #`(and #,match? #,guard)
+                                match?)
                           (let-values ([#,ids #,(extract-one #'v (car patterns))])
-                            . #,(car bodys))
+                            . #,(remove-guard (car bodys)))
                           #,(loop (cdr patterns) (cdr bodys)))])))
-
              ;; If the first pattern is `(<id> ....)`, then
              ;; extract the input head symbol, because we're
              ;; likely to want to check it for many pattern cases
              (syntax-case (and (pair? patterns) (car patterns)) ()
                [(id . _)
                 (identifier? #'id)
-                #`(let ([hd (and (pair? v) (car v))])
+                #`(let ([hd (let ([p v])
+                              (and (pair? p) (car p)))])
                     #,(build-matches #'hd))]
                [_ (build-matches #f)])))]))
