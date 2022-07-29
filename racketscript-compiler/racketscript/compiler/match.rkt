@@ -71,7 +71,7 @@
        [(unquote bind-id)
         (if (free-identifier=? #'bind-id #'_)
             #'(values)
-            #`(unlist #,id))]
+            id)]
        [_
         (with-syntax ([pat-ids (extract-pattern-variables #'pat)])
           #`(for/lists pat-ids ([v (in-list #,id)])
