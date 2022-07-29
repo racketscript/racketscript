@@ -1,0 +1,42 @@
+#lang racket/base
+
+(require (for-syntax racket/base))
+
+(provide struct-match)
+
+(define-for-syntax (pat-pred pat)
+  (let ([sym (car (syntax->datum pat))])
+    (string->symbol
+      (string-append (symbol->string sym) "?"))))
+
+(define-for-syntax (pat-length pat)
+  (length (syntax->datum pat)))
+
+(define-for-syntax (pat-ids pat)
+  (cdr (syntax-e pat)))
+
+(define-syntax (struct-match stx)
+  (syntax-case stx ()
+    [(_ expr [pattern body0 body ...] ...)
+     #`(let ([v expr])
+         (if (struct? v)
+           #,(let ([patterns (syntax->list #'(pattern ...))])
+               (let loop ([patterns patterns]
+                          [bodys (syntax->list #'((body0 body ...) ...))])
+                 (cond
+                   [(null? patterns)
+                    #'(error 'match "failed ~e" v)]
+                   [else
+                    #`(let* ([vec-v (struct->vector v)]) ;; TODO maybe don't need vector if using pat-pred crap
+                        (cond
+                          [(and (#,(pat-pred (car patterns)) v)
+                                (not (= (vector-length vec-v) #,(pat-length (car patterns)))))
+                           ;; TODO make better, want to blow up if pattern doesn't correspond to real struct
+                           (error 'match "head pattern wrong size")]
+                          [(and (#,(pat-pred (car patterns)) v)
+                                (= (vector-length vec-v) #,(pat-length (car patterns))))
+                           (let-values ([#,(pat-ids (car patterns)) (vector->values vec-v 1)])
+                             . #,(car bodys))]
+                          [else
+                           #,(loop (cdr patterns) (cdr bodys))]))])))
+           (error 'match "~e not a struct" v)))]))
