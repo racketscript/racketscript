@@ -15,7 +15,8 @@
          "il-analyze.rkt"
          "il.rkt"
          "logging.rkt"
-         "util.rkt")
+         "util.rkt"
+         "struct-match.rkt")
 
 (require/typed racket/syntax
   [format-symbol (-> String Any * Symbol)])
@@ -51,11 +52,11 @@
 ;; FIXME I do ZERO handling of javascript forms
 (: absyn-linklet->il (-> Linklet ILLinklet))
 (define (absyn-linklet->il lnk)
-  (struct-match-define (Linklet path imports exports forms) lnk)
+  (match-define (Linklet path imports exports forms) lnk)
   (log-rjs-info "[linklet il]")
 
-  (define imported-mod-path-list (flatten imports))
-  (define requires* (absyn-requires->il imported-mod-path-list path))
+  (define imported-mod-path-list (cast (flatten imports) (Listof Symbol)))
+  (define requires* (absyn-requires->il imported-mod-path-list (cast path Path)))
 
   ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
   ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
@@ -96,7 +97,7 @@
         [(? symbol? _)
           (jsruntime-import-path path
                                  (jsruntime-module-path mod-path))]
-        [_ (module->relative-import mod-path)]))
+        [_ (module->relative-import (cast mod-path Path))]))
     ;; See expansion of identifier in `expand.rkt` for primitive
     ;; modules
     (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
