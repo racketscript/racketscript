@@ -15,7 +15,8 @@
          "il-analyze.rkt"
          "il.rkt"
          "logging.rkt"
-         "util.rkt")
+         "util.rkt"
+         "set.rkt")
 
 (require/typed racket/syntax
   [format-symbol (-> String Any * Symbol)])
@@ -70,7 +71,6 @@
                 (ILRequire-name req))
       acc)))
 
-(: absyn-exports->il (-> (Listof (U Symbol (Listof Symbol))) ILProvide*))
 (define (absyn-exports->il exports)
   (for/list ([ex exports])
     (cond
@@ -79,7 +79,6 @@
       [else (error 'exports->il "unknown export form in linklet" ex)])))
 
 
-(: absyn-requires->il (-> (Listof (U Path Symbol)) Path (Listof (Option ILRequire))))
 (define (absyn-requires->il import-list path)
   (for/list ([mod-path import-list]
              [counter (in-naturals)])
