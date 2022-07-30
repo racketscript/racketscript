@@ -1,4 +1,4 @@
-#lang typed/racket/base
+#lang racket/base
 
 ;;; Generate IL code from abstract syntax. Each binding name
 ;;; in assumed to be fresh, to enforce lexical scope rules of Racket
@@ -29,12 +29,7 @@
          absyn-module->il
          absyn-linklet->il)
 
-(define-type-alias ModuleObjectNameMap (HashTable (U Path Symbol)
-                                                  Symbol))
-
-(: module-object-name-map (Parameter ModuleObjectNameMap))
-(define module-object-name-map
-  (make-parameter ((inst hash (U Path Symbol) Symbol))))
+(define module-object-name-map (make-parameter hash))
 
 
 (: absyn-top-level->il (-> TopLevelForm ILStatement*))
@@ -49,7 +44,6 @@
     [else (error "only modules supported at top level")]))
 
 ;; FIXME I do ZERO handling of javascript forms
-(: absyn-linklet->il (-> Linklet ILLinklet))
 (define (absyn-linklet->il lnk)
   (struct-match-define (Linklet path imports exports forms) lnk)
   (log-rjs-info "[linklet il]")
@@ -66,7 +60,6 @@
       (absyn-exports->il exports)
       (append-map absyn-gtl-form->il forms))))
 
-(: make-module-map (-> (Listof (Option ILRequire)) (Listof (U Path Symbol)) ModuleObjectNameMap)) ;; TODO need type aliases
 (define (make-module-map reqs imported-paths)
   (for/fold ([acc (module-object-name-map)])
             ([req reqs]
