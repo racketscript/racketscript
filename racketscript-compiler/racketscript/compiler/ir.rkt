@@ -1,12 +1,20 @@
 #lang racket/base
 
-(provide (all-defined-out))
+(require "ast.rkt")
+
+(provide (all-defined-out)
+         (struct-out SimpleProvide)
+         (struct-out RenamedProvide))
 
 ;; (ILLinklet [Listof ILRequire?] [Listof ILProvide?] [Listof ILStatement?])
 (struct ILLinklet (imports exports body) #:transparent)
 
 ;; (ILRequire [Maybe path-string?] symbol? [or 'default '*])
 (struct ILRequire (mod name import-mode) #:transparent)
+
+;; ILProvide is one of:
+;; - SimpleProvide
+;; - RenamedProvide
 
 ;; TODO purpose unclear?
 (struct IfClause (pred body) #:transparent)
