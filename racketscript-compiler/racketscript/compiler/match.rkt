@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base))
 
-(provide match)
+(provide match match-define)
 
 ;; Borrowed and slightly modified from `schemify`
 
@@ -141,3 +141,11 @@
                               (and (pair? p) (car p)))])
                     #,(build-matches #'hd))]
                [_ (build-matches #f)])))]))
+
+(define-syntax (match-define stx)
+  (syntax-case stx ()
+    [(_ pat expr)
+     #`(define-values #,(extract-pattern-variables #'pat)
+         (let ([v expr])
+           (match v
+             [pat (values . #,(extract-pattern-variables #'pat))])))]))
