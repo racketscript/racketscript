@@ -64,3 +64,33 @@
 
 ;; (ILIf ILExpr? [Listof ILStatement?] [Listof ILStatement?])
 (struct ILIf (pred t-branch f-branch) #:transparent)
+
+;; (ILIf* [Listof ILIf?])
+(struct ILIf* (clauses) #:transparent)
+
+;; (ILAssign (or sumbol? ILRef? ILIndex?) ILExpr?)
+(struct ILAssign (lvalue rvalue) #:transparent)
+
+;; (ILWhile ILExpr? [Listof ILStatement?])
+(struct ILWhile (condition body) #:transparent)
+
+;; (ILReturn ILExpr?)
+(struct ILReturn (expr) #:transparent)
+
+;; (ILLabel symbol?)
+(struct ILLabel (name) #:transparent)
+
+;; (ILContinue symbol?)
+(struct ILContinue (label) #:transparent)
+
+;; (ILExnHandler [Listof ILStatement?]
+;;               symbol?
+;;               [Listof ILStatement?]
+;;               [Listof ILStatement?]
+;;               ILExpr?)
+(struct ILExnHandler (try error catch finally expr) #:transparent)
+
+;; (ILThrow ILExpr?)
+(struct ILThrow (expr) #:transparent)
+
+
