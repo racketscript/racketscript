@@ -201,20 +201,18 @@
 (: module-output-file (-> (U Path Symbol) Path))
 ;; NOTE: returns simplified path, which is required by fns like find-relative-path
 (define (module-output-file mod)
- (simple-form-path
+  (define simple-form-path (compose simplify-path path->complete-path))
+  (simple-form-path
   (match (module-kind mod)
     [(list 'primitive mod-path)
      ;; Eg. #%kernel, #%utils ...
-     (path->complete-path
-      (build-path (output-directory)
-                  "runtime"
-                  (~a (substring (symbol->string mod-path) 2) ".rkt.js")))]
+     (build-path (output-directory)
+                 "runtime"
+                 (~a (substring (symbol->string mod-path) 2) ".rkt.js"))]
     [(list 'runtime rel-path)
-     (path->complete-path
-      (build-path (output-directory) "runtime" (~a rel-path ".js")))]
+     (build-path (output-directory) "runtime" (~a rel-path ".js"))]
     [(list 'collects base rel-path)
-     (path->complete-path
-      (build-path (output-directory) "collects" (~a rel-path ".js")))]
+     (build-path (output-directory) "collects" (~a rel-path ".js"))]
     [(list 'links name root-path rel-path)
      (define output-path
        (build-path (output-directory) "links" name (~a rel-path ".js")))
@@ -222,13 +220,12 @@
      ;; deep arbitrarily inside
      (make-directory* (assert (path-only output-path) path?))
      ;; TODO: doesn't handle arbitrary deep files for now
-     (path->complete-path output-path)]
+     output-path]
     [(list 'general mod-path)
      (let* ([main (assert (main-source-file) path?)]
             [rel-path (find-relative-path (simple-form-path (path-parent main))
                                           (simple-form-path mod-path))])
-       (path->complete-path
-        (build-path (output-directory) "modules" (~a rel-path ".js"))))])))
+       (build-path (output-directory) "modules" (~a rel-path ".js")))])))
 
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
