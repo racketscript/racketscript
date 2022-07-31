@@ -5,9 +5,6 @@
          *jsident-pattern*
          js-identifier?)
 
-(require setup/dirs
-         setup/link)
-
 ;; Path Path -> Boolean
 ;; Returns true if path has base as prefix
 (define (subpath? base path)
