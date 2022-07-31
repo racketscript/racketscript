@@ -1,4 +1,4 @@
-#lang typed/racket/base
+#lang racket/base
 
 (require (for-syntax racket/base)
          anaphoric
