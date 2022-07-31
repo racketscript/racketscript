@@ -17,6 +17,17 @@
                [p path*])
        (equal? b p))]))
 
+(define (get-root-links links-file)
+  (define-values (base _f _b) (split-path links-file))
+  (let ([specs (read (open-input-file links-file))])
+    (for/list ([spec specs]
+               #:when (eq? 'root (car spec)))
+      (apply build-path
+             base
+             "collects"
+             (map bytes->string/locale (cadr spec))))))
+        
+
 ;; Module-Path -> (Maybe (list String Path))
 ;; If `mod-path` belongs to a module listed in (find-links-file),
 ;; return a list containing:
@@ -26,13 +37,12 @@
 ;;         #<path:/home/username/racketscript/racketscript-compiler>)
 ;; else return false.
 (define (links-module? mod-path)
-  (define links-file (find-links-file))
   (for*/or ([links-file (current-library-collection-links)]
             #:when links-file
-            [link-path (links #:file links-file #:root? #t)])
+            [link-path (get-root-links links-file)])
     (and (subpath? link-path mod-path)
          (let-values ([(base link-name dir?) (split-path link-path)])
-           (list (~a link-name) link-path)))))
+           (list (format "~a" link-name) link-path)))))
 
 (define (improper->proper l)
   (match l
