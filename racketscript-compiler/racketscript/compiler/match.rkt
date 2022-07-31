@@ -125,16 +125,16 @@
                     (define ids (extract-pattern-variables (car patterns)))
                     (define match? (check-one #'v (car patterns) head-id))
                     (define guard (extract-guard (car bodys)))
-                    #`(let* ([k #f]
-                             [condition (let/cc kont (set! k kont) #,match?)])
-                        (if condition
+                    #`(let ()
+                        (define (alt) #,(loop (cdr patterns) (cdr bodys)))
+                        (if #,match?
                           (let-values ([#,ids #,(extract-one #'v (car patterns))])
                             #,(if guard
                                 #`(if #,guard
                                     (begin . #,(remove-guard (car bodys)))
-                                    (k #f))
+                                    (alt))
                                 #`(begin . #,(remove-guard (car bodys)))))
-                          #,(loop (cdr patterns) (cdr bodys))))])))
+                          (alt)))])))
              ;; If the first pattern is `(<id> ....)`, then
              ;; extract the input head symbol, because we're
              ;; likely to want to check it for many pattern cases
