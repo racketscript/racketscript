@@ -1,14 +1,9 @@
-#lang typed/racket/base
+#lang racket/base
 
-(require racket/bool
-         racket/format
-         racket/match
-         racket/set
-         typed/rackunit
-         "config.rkt")
-
-(require/typed racket/string
-  [string-prefix? (-> String String Boolean)])
+(require "config.rkt"
+         "match.rkt"
+         ;; suspicious but looks like it doesn't have issues
+         (only-in racket/string string-prefix?))
 
 (provide fresh-id
          fresh-id-counter
@@ -17,14 +12,12 @@
 
 ;;; Identifier renaming -------------------------------------------------------
 
-(: normalize-symbol (->* (Symbol) ((Listof String)) String))
 ;;; NOTE: Just normalizing is still not a safe way to translate to JS.
 (define (normalize-symbol s [ignores '()])
   ;; TODO: handle every weird character in symbol
   ;; Since every identifier is suffixed with fresh symbol
   ;; we don't have to worry about name clashes after this
   ;; naive renaming.
-  (: should-rename? (-> String Boolean))
   (define (should-rename? s)
     (not (string-prefix? s (jsruntime-core-module))))
 
