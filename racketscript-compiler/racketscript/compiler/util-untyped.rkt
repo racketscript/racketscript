@@ -17,15 +17,20 @@
                [p path*])
        (equal? b p))]))
 
+(define (link-path-elem->string elem)
+  (if (symbol? elem)
+    elem
+    (bytes->string/locale elem)))
+
 (define (get-root-links links-file)
   (define-values (base _f _b) (split-path links-file))
   (let ([specs (read (open-input-file links-file))])
     (for/list ([spec specs]
                #:when (eq? 'root (car spec)))
-      (apply build-path
-             base
-             "collects"
-             (map bytes->string/locale (cadr spec))))))
+      (simplify-path
+        (apply build-path
+              base
+              (map link-path-elem->string (cadr spec)))))))
         
 
 ;; Module-Path -> (Maybe (list String Path))
