@@ -1,17 +1,9 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
-         anaphoric
-         racket/file
-         racket/format
-         racket/list
-         racket/match
-         racket/path
-         racket/sequence
-         racket/set
-         typed/rackunit
          "config.rkt"
-         "ident.rkt")
+         "ident.rkt"
+         (only-in racket/string string-prefix?))
 
 (require/typed racket/string
   [string-prefix? (-> String String Boolean)])
