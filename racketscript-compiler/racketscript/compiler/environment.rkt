@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require "config.rkt"
-         "util.rkt")
+         "util.rkt"
+         "match.rkt")
 
 (provide name-in-module
          *quoted-binding-ident-name*)

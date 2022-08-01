@@ -36,6 +36,7 @@
          primitive-module?
          primitive-module-path?
          ++
+         ~a
          (all-from-out "ident.rkt"))
 
 (module+ test (require rackunit))
@@ -62,6 +63,9 @@
           [else (raise-argument-error err
                                       "(or/c string? symbol? identifier? keyword? char? number?)"
                                       x)]))
+
+  (define (restricted-format-string? fmt)
+    (regexp-match? #rx"^(?:[^~]|~[aAn~%])*$" fmt))
 
   (define (check-restricted-format-string who fmt)
     (unless (restricted-format-string? fmt)

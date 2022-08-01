@@ -9,7 +9,7 @@
          racket/match
          racket/set
          threading
-         "absyn.rkt"
+         "ast.rkt"
          "config.rkt"
          "environment.rkt"
          "il-analyze.rkt"
@@ -18,9 +18,6 @@
          "util.rkt"
          "set.rkt"
          "match.rkt")
-
-(require/typed version/utils
-  [version<=? (-> String String Boolean)])
 
 (provide absyn-top-level->il
          absyn-gtl-form->il
