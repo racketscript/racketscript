@@ -50,6 +50,32 @@
          [fmt-string (apply string-append fmt-lst)])
     (apply format fmt-string args)))
 
+;; taken from racket/collects/racket/syntax.rkt
+(define (format-symbol fmt . args)
+  (define (->string x err)
+    (cond [(string? x) x]
+          [(symbol? x) (symbol->string x)]
+          [(identifier? x) (symbol->string (syntax-e x))]
+          [(keyword? x) (keyword->string x)]
+          [(number? x) (number->string x)]
+          [(char? x) (string x)]
+          [else (raise-argument-error err
+                                      "(or/c string? symbol? identifier? keyword? char? number?)"
+                                      x)]))
+
+  (define (check-restricted-format-string who fmt)
+    (unless (restricted-format-string? fmt)
+      (raise-arguments-error who
+                            "format string should have only ~a placeholders"
+                            "format string" fmt)))
+
+  (define (convert x) (->string x 'format-symbol))
+
+  (check-restricted-format-string 'format-symbol fmt)
+  (let ([args (map convert args)])
+    (string->symbol (apply format fmt args))))
+
+
 ;; taken from racket/collects/racket/path.rkt
 (define (path-only name)
   (unless (or (path-string? name)
