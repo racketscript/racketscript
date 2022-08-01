@@ -4,7 +4,7 @@
 
 (require (for-syntax racket/base))
 
-(provide set set-member? set-add list->set set-map)
+(provide set set-member? set-add list->set set->list set-map)
 
 (struct set-impl (contents) #:transparent)
 
@@ -26,3 +26,5 @@
   (for/fold ([st (set)])
             ([elem lst])
     (set-add st elem)))
+
+(define (set->list st) (hash-keys (set-impl-contents st)))
