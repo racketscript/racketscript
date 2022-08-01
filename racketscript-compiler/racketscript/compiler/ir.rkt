@@ -19,6 +19,9 @@
 ;; TODO purpose unclear?
 (struct IfClause (pred body) #:transparent)
 
+;; (ILCheckedFormals Formals?)
+(struct ILCheckedFormals (formals) #:transparent)
+
 ;; ILExpr is one of the following, along with symbol?:
 
 ;; (ILLambda [or Formals? ILCheckedFormals?] [Listof ILStatement?])

@@ -76,3 +76,9 @@
 
 ;; (JSRequire symbol? (or symbol? path-string?) (or 'default '*))
 (struct JSRequire (alias path mode) #:transparent)
+
+;; (SimpleProvide symbol?)
+(struct SimpleProvide (id) #:transparent)
+
+;; (RenamedProvide symbol? symbol?)
+(struct RenamedProvide (local-id exported-id) #:transparent)
