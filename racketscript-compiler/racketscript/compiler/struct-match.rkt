@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base))
 
-(provide struct-match struct-match-define)
+(provide struct-match struct-match-define struct-match-lambda)
 
 (define-for-syntax (pat-pred pat)
   (let ([sym (car (syntax->datum pat))])
@@ -48,3 +48,7 @@
          (let ([v expr])
            (struct-match v
              [pat (values . #,(pat-ids #'pat))])))]))
+
+(define-syntax (struct-match-lambda stx)
+  (syntax-case stx ()
+    [(_ clause ...) #'(λ (a) (struct-match a clause ...))]))

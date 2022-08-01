@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base))
 
-(provide match match-define)
+(provide match match-define match-lambda)
 
 ;; Borrowed and slightly modified from `schemify`
 
@@ -153,3 +153,7 @@
          (let ([v expr])
            (match v
              [pat (values . #,(extract-pattern-variables #'pat))])))]))
+
+(define-syntax (match-lambda stx)
+  (syntax-case stx ()
+    [(_ clause ...) #'(λ (a) (match a clause ...))]))
