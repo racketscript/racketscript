@@ -4,9 +4,9 @@
 
 (require (for-syntax racket/base))
 
-(struct set-impl (contents) #:transparent)
+(provide set set-member? set-add list->set set-map)
 
-(provide set set-member? set-add list->set)
+(struct set-impl (contents) #:transparent)
 
 (define-syntax (set stx)
   (syntax-case stx ()
@@ -16,6 +16,11 @@
 
 (define (set-add st v)
   (set-impl (hash-set (set-impl-contents st) v #t)))
+
+(define (set-map st proc)
+  (set-impl
+    (hash-map (set-impl-contents st)
+              (λ (k _) (proc k)))))
 
 (define (list->set lst)
   (for/fold ([st (set)])
