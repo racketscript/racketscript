@@ -3,16 +3,9 @@
 (require (for-syntax racket/base)
          "config.rkt"
          "ident.rkt"
+         "util-untyped.rkt"
+         "set.rkt"
          (only-in racket/string string-prefix?))
-
-(require/typed racket/string
-  [string-prefix? (-> String String Boolean)])
-
-(require/typed "util-untyped.rkt"
-  [improper->proper (-> (Pairof Any Any) (Listof Any))]
-  [js-identifier? (-> Symbol Boolean)]
-  [links-module? (-> Path
-                     (Option (List String Path)))])
 
 (provide hash-set-pair*
          improper->proper
@@ -42,27 +35,35 @@
          ++
          (all-from-out "ident.rkt"))
 
+(module+ test (require rackunit))
+
 
 (define ++ string-append)
 
-(: simple-module-path (-> (U Symbol Path) (U Symbol Path)))
+(define simple-form-path (compose simplify-path path->complete-path))
+
+;; taken from racket/collects/racket/path.rkt
+(define (path-only name)
+  (unless (or (path-string? name)
+              (path-for-some-system? name))
+    (raise-argument-error 'path-only "(or/c path-string? path-for-some-system?)" name))
+  (let-values ([(base file dir?) (split-path name)])
+    (cond [dir? (if (string? name) (string->path name) name)]
+          [(path-for-some-system? base) base]
+          [else #f])))
+
 (define (simple-module-path mod)
   (if (symbol? mod)
       mod
       (simple-form-path mod)))
 
-(: string-slice (->* (String Integer) ((Option Integer)) String))
 (define (string-slice str start [end #f])
   (let* ([len (string-length str)]
-         [fix-index (λ ([i : Integer])
-                      (if (negative? i)
-                          (+ len i)
-                          i))]
+         [fix-index (λ (i) (if (negative? i) (+ len i) i))]
          [start (fix-index start)]
          [end (fix-index (or end len))])
     (substring str start end)))
 
-(: path-parent (-> Path Path))
 ;; Because `path-only` return type is `path-for-some-system` and that
 ;; is not in any way helping
 (define (path-parent p)
@@ -71,34 +72,29 @@
       p*
       (error 'path-parent "No parent for ~a" p)))
 
-(: length=? (-> (Listof Any) Natural Boolean))
 (define (length=? lst n)
   (equal? (length lst) n))
+
 (module+ test
   (check-false (length=? '() 1))
   (check-true (length=? '(1 2) 2)))
 
-(: reverse-pair (∀ (A B) (-> (Pairof A B) (Pairof B A))))
 (define (reverse-pair p)
   (cons (cdr p) (car p)))
 
-(: flatten1 (∀ (A) (-> (Listof (Listof A)) (Listof A))))
 ;; Flatten a list of list upto one level
 (define (flatten1 lst)
-  (foldl (inst append A) '() lst))
+  (foldl append '() lst))
 
-(: append1 (∀ (A) (-> (Listof A) A (Listof A))))
 (define (append1 lst a)
   (append lst (list a)))
 
-(: split-before-last : (∀ (A) (-> (Listof A) (Values (Listof A) A))))
 ;; Returns lst with its last element and the last element
 (define (split-before-last lst)
-  (match-define-values (ls (list v)) (split-at-right lst 1))
-  (values ls v))
+  (define-values (ls list-v) (split-at-right lst 1))
+  (match list-v
+    [`(,v) (values ls v)]))
 
-(: hash-set-pair* (∀ (A B) (-> (HashTable A B) (Listof (Pairof A B))
-                               (HashTable A B))))
 ;; Update given hash `h` with given list of (key, value) pairs.
 (define (hash-set-pair* h pairs)
   (let loop ([p* pairs] [h h])
@@ -108,26 +104,25 @@
                [k (car p)]
                [v (cdr p)])
           (loop (cdr p*) (hash-set h k v))))))
+
 (module+ test
   (check-equal? (hash-set-pair* (hash) '()) (hash))
   (check-equal? (hash-set-pair* (hash) (list '(a . b) '(c . d)))
                 (hash 'a 'b 'c 'd)))
 
-(: assocs->hash-list : (∀ (A B) (-> (Listof (Pairof A B))
-                                    (HashTable A (Listof B)))))
 ;; Takes a list of (key, value) pairs `assocs` and returns a hash
 ;; with all values pointed by same key folded into a list
 (define (assocs->hash-list assocs)
-  (: empty-hash (HashTable A (Listof B)))
   (define empty-hash (hash))
-  (foldl (λ ([a* : (Pairof A B)] [result : (HashTable A (Listof B))])
+  (foldl (λ (a* result)
            (let ([key (car a*)]
                  [val (cdr a*)])
              (hash-update result key
-                          (λ ([v : (Listof B)]) (cons val v))
+                          (λ (v) (cons val v))
                           (λ () '()))))
          empty-hash
          assocs))
+
 (module+ test
   (check-equal?
    (assocs->hash-list '((a . b) (b . c) (c . d) (a . e) (c . f) (a . g)))
@@ -138,7 +133,6 @@
 
 ;;; Paths that we use every now and then --------------------------------------
 
-(: module-path->name (-> (U Path Symbol) Path)) ;; (-> ModuleName String)
 (define (module-path->name mod-name)
   (cond
     [(symbol? mod-name) (jsruntime-module-path mod-name)] ;; #%kernel, #%utils
@@ -146,86 +140,78 @@
     [else (error 'module-path->name
                  "Don't know how to translate module name '~a'" mod-name)]))
 
-(: main-source-directory (-> Path))
 (define (main-source-directory)
-  (path-parent (assert (main-source-file) path?)))
+  (path-parent (main-source-file)))
 
-(: jsruntime-import-path (-> (U Path Symbol) Path Path))
 (define (jsruntime-import-path base runtime-fpath)
   ;; TODO: Make runtime, modules, and everything united!
-  (: fix-for-down (-> Path Path))
   (define (fix-for-down p)
     (define p-str (~a p))
     (if (string-prefix? p-str "..")
         p
-        (build-path (~a "./" p-str))))
+        (build-path (format "./~a" p-str))))
   (fix-for-down
-   (cast (find-relative-path (path-parent (module-output-file base))
-                             runtime-fpath)
-         Path)))
+   (find-relative-path (path-parent (module-output-file base))
+                             runtime-fpath)))
 
 ;;; Module path renaming ------------------------------------------------------
 
-(: actual-module-path (-> (U Path Symbol) Path))
 (define (actual-module-path in-path)
   (cond
     [(path? in-path) in-path]
     [(and (symbol? in-path) (primitive-module? in-path))
      (build-path racketscript-runtime-dir
-                 (~a (substring (symbol->string in-path) 2) ".rkt"))]
+                 (format "~a~a"
+                         (substring (symbol->string in-path) 2)
+                         ".rkt"))]
     [else (error 'actual-module-path "~a is not a primitive module" in-path)]))
 
-
-(: primitive-module? (-> (U Path Symbol) Boolean))
 (define (primitive-module? mod)
   (set-member? primitive-modules mod))
 
-(: primitive-module-path? (-> Path (Option (U Symbol Path))))
 (define (primitive-module-path? mod-path)
-  (let* ([primitive-modules-paths : (Listof (Pairof Path (U Symbol Path)))
-                                  (set-map primitive-modules
-                                           (λ ([m : (U Symbol Path)])
+  (let* ([primitive-modules-paths (set-map primitive-modules
+                                           (λ (m)
                                              (cons (actual-module-path m) m)))]
          [result (assoc mod-path primitive-modules-paths)])
     (if (pair? result)
         (cdr result)
         #f)))
 
-(: override-module-path (-> (U Path Symbol) Path))
 (define (override-module-path mod)
   (if (symbol? mod)
       (build-path racketscript-runtime-dir
-                  (~a (substring (symbol->string mod) 2) ".rkt"))
+                  (format "~a~a"
+                          (substring (symbol->string mod) 2)
+                          ".rkt"))
       mod))
 
-(: module-output-file (-> (U Path Symbol) Path))
 ;; NOTE: returns simplified path, which is required by fns like find-relative-path
 (define (module-output-file mod)
-  (define simple-form-path (compose simplify-path path->complete-path))
   (simple-form-path
-  (match (module-kind mod)
-    [(list 'primitive mod-path)
-     ;; Eg. #%kernel, #%utils ...
-     (build-path (output-directory)
-                 "runtime"
-                 (~a (substring (symbol->string mod-path) 2) ".rkt.js"))]
-    [(list 'runtime rel-path)
-     (build-path (output-directory) "runtime" (~a rel-path ".js"))]
-    [(list 'collects base rel-path)
-     (build-path (output-directory) "collects" (~a rel-path ".js"))]
-    [(list 'links name root-path rel-path)
-     (define output-path
-       (build-path (output-directory) "links" name (~a rel-path ".js")))
-     ;; because we just created root links directory, but files could be
-     ;; deep arbitrarily inside
-     (make-directory* (assert (path-only output-path) path?))
-     ;; TODO: doesn't handle arbitrary deep files for now
-     output-path]
-    [(list 'general mod-path)
-     (let* ([main (assert (main-source-file) path?)]
-            [rel-path (find-relative-path (simple-form-path (path-parent main))
-                                          (simple-form-path mod-path))])
-       (build-path (output-directory) "modules" (~a rel-path ".js")))])))
+    (match (module-kind mod)
+      [(list 'primitive mod-path)
+      ;; Eg. #%kernel, #%utils ...
+       (build-path (output-directory)
+                   "runtime"
+                   (~a (substring (symbol->string mod-path) 2) ".rkt.js"))]
+      [(list 'runtime rel-path)
+       (build-path (output-directory) "runtime" (~a rel-path ".js"))]
+      [(list 'collects base rel-path)
+       (build-path (output-directory) "collects" (~a rel-path ".js"))]
+      [(list 'links name root-path rel-path)
+       (define output-path
+         (build-path (output-directory) "links" name (~a rel-path ".js")))
+       ;; because we just created root links directory, but files could be
+       ;; deep arbitrarily inside
+       (make-directory* (assert (path-only output-path) path?))
+       ;; TODO: doesn't handle arbitrary deep files for now
+       output-path]
+      [(list 'general mod-path)
+       (let* ([main (assert (main-source-file) path?)]
+               [rel-path (find-relative-path (simple-form-path (path-parent main))
+                                             (simple-form-path mod-path))])
+         (build-path (output-directory) "modules" (~a rel-path ".js")))])))
 
 (: module->relative-import (-> Path Path))
 (define (module->relative-import mod-path)
