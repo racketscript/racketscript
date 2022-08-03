@@ -5,9 +5,14 @@
 (provide struct-match struct-match-define struct-match-lambda)
 
 (define-for-syntax (pat-pred pat)
-  (let ([sym (car (syntax->datum pat))])
-    (string->symbol
-      (string-append (symbol->string sym) "?"))))
+  (let* ([stx-hd (car (syntax-e pat))]
+         [sym (syntax-e stx-hd)])
+    (datum->syntax
+      stx-hd
+      (string->symbol
+        (string-append (symbol->string sym) "?"))
+      stx-hd
+      stx-hd)))
 
 (define-for-syntax (pat-length pat)
   (length (syntax->datum pat)))
