@@ -52,13 +52,12 @@
                    [(pred-pat? (car patterns))
                     #`(if #,(pred-from-pat (car patterns) #'v)
                         #,(if (empty-pat? (id-of-pred-pat (car patterns)))
-                            #'(let ([#,(id-of-pred-pat (car patterns)) v])
-                                . #,(car bodys))
-                            #`(let () . #,(car bodys)))
-                        (let () . #,(loop (cdr patterns) (cdr bodys))))]
+                            #`(let () . #,(car bodys))
+                            #`(let ([#,(id-of-pred-pat (car patterns)) v])
+                                . #,(car bodys)))
+                        #,(loop (cdr patterns) (cdr bodys)))]
                    [(identifier? (car patterns))
-                    #`(let ([#,(car patterns) v])
-                        . #,(car bodys))]
+                    #`(let ([#,(car patterns) v]) . #,(car bodys))]
                    [else
                     #`(let* ([vec-v (struct->vector v)]) ;; TODO maybe don't need vector if using pat-pred crap
                         (cond
