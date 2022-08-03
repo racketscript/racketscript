@@ -23,6 +23,20 @@
 (define-for-syntax (empty-pat? pat)
   (eq? (syntax->datum pat) '_))
 
+(define-for-syntax (pred-pat? pat)
+  (syntax-case pat (?)
+    [(? pred val) #t]
+    [_ #f]))
+
+(define-for-syntax (pred-from-pat pat val)
+  (syntax-case pat (?)
+    [(? pred _) #`(pred #,val)]))
+
+(define-for-syntax (id-of-pred-pat pat)
+  (syntax-case pat (?)
+    [(? _ id) #'id]))
+
+
 (define-syntax (struct-match stx)
   (syntax-case stx ()
     [(_ expr [pattern body0 body ...] ...)
@@ -35,6 +49,13 @@
                    [(null? patterns)
                     #'(error 'match "failed ~e" v)]
                    [(empty-pat? (car patterns)) #`(begin . #,(car bodys))]
+                   [(pred-pat? (car patterns))
+                    #`(if #,(pred-from-pat (car patterns) #'v)
+                        #,(if (empty-pat? (id-of-pred-pat (car patterns)))
+                            #'(let ([#,(id-of-pred-pat (car patterns)) v])
+                                . #,(car bodys))
+                            #`(let () . #,(car bodys)))
+                        (let () . #,(loop (cdr patterns) (cdr bodys))))]
                    [(identifier? (car patterns))
                     #`(let ([#,(car patterns) v])
                         . #,(car bodys))]
