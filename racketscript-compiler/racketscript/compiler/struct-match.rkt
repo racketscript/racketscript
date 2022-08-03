@@ -15,6 +15,9 @@
 (define-for-syntax (pat-ids pat)
   (cdr (syntax-e pat)))
 
+(define-for-syntax (empty-pat? pat)
+  (eq? (syntax->datum pat) '_))
+
 (define-syntax (struct-match stx)
   (syntax-case stx ()
     [(_ expr [pattern body0 body ...] ...)
@@ -23,9 +26,15 @@
            #,(let ([patterns (syntax->list #'(pattern ...))])
                (let loop ([patterns patterns]
                           [bodys (syntax->list #'((body0 body ...) ...))])
+                 (displayln (car patterns))
+                 (displayln (car bodys))
                  (cond
                    [(null? patterns)
                     #'(error 'match "failed ~e" v)]
+                   [(empty-pat? (car patterns)) #`(begin . #,(car bodys))]
+                   [(identifier? (car patterns))
+                    #`(let ([#,(car patterns) v])
+                        . #,(car bodys))]
                    [else
                     #`(let* ([vec-v (struct->vector v)]) ;; TODO maybe don't need vector if using pat-pred crap
                         (cond
