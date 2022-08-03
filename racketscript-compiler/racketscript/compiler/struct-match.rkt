@@ -26,8 +26,6 @@
            #,(let ([patterns (syntax->list #'(pattern ...))])
                (let loop ([patterns patterns]
                           [bodys (syntax->list #'((body0 body ...) ...))])
-                 (displayln (car patterns))
-                 (displayln (car bodys))
                  (cond
                    [(null? patterns)
                     #'(error 'match "failed ~e" v)]
