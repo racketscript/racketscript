@@ -2,15 +2,13 @@
 
 ;; basic set implementation 
 
-(require (for-syntax racket/base))
-
-(provide set set-member? set-add list->set set->list set-map)
+(provide set set-member? set-add list->set set->list set-map in-set set-intersect)
 
 (struct set-impl (contents) #:transparent)
 
-(define-syntax (set stx)
-  (syntax-case stx ()
-    [(_ e ...) #'(set-impl (make-immutable-hash (list (cons e #t) ...)))]))
+(define (set . args)
+  (set-impl
+    (make-immutable-hash (map (λ (e) (cons e #t)) args))))
 
 (define (set-member? st v) (hash-has-key? (set-impl-contents st) v))
 
@@ -28,3 +26,13 @@
     (set-add st elem)))
 
 (define (set->list st) (hash-keys (set-impl-contents st)))
+
+(define (in-set st) (in-list (set->list st)))
+
+(define (set-intersect s . sets)
+  (for/fold
+      ([s1 (set)])
+      ([x (in-set s)]
+       #:when (for/and ([s2 (in-list sets)])
+                (set-member? s2 x)))
+    (set-add s1 x)))
