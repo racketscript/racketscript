@@ -2,7 +2,7 @@
 
 ;; basic set implementation 
 
-(provide set set-member? set-add list->set set->list set-map in-set set-intersect)
+(provide set set-member? set-add list->set set->list set-map in-set set-intersect set-union)
 
 (struct set-impl (contents) #:transparent)
 
@@ -36,3 +36,10 @@
        #:when (for/and ([s2 (in-list sets)])
                 (set-member? s2 x)))
     (set-add s1 x)))
+
+(define (set-union s . sets)
+  (for/fold ([s1 s])
+            ([s2 (in-list sets)])
+    (for/fold ([s1 s1])
+              ([x (in-set s2)])
+      (set-add s1 x))))
