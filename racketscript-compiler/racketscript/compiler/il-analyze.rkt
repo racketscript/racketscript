@@ -1,12 +1,13 @@
-#lang typed/racket/base
+#lang racket/base
 
 (require racket/bool
          racket/list
-         racket/match
-         racket/set
+         "struct-match.rkt"
+         "match.rkt"
+         "set.rkt"
          "environment.rkt"
-         "il.rkt"
-         "language.rkt"
+         "ir.rkt"
+         "ast.rkt"
          "util.rkt")
 
 (provide self-tail->loop
@@ -23,12 +24,14 @@
 ;;       Eg. ILRef
 ;; TODO: Identify mutually recursive calls.
 
+(module+ test
+  (require rackunit)
+  (require "ir.rkt"))
+
 ;; ----------------------------------------------------------------------------
 ;; Add arity checking in IL
 
-(: check-arity-stms (-> ILCheckedFormals ILStatement*))
 (define (check-arity-stms formals)
-  (: check-arity-stm (-> Symbol Natural ILIf))
   (define (check-arity-stm op arity)
     (ILIf (ILBinaryOp op (list (ILRef (ILArguments) 'length) (ILValue arity)))
           (list
@@ -42,19 +45,15 @@
     [(list? formals*)
      (list (check-arity-stm '!== (length formals*)))]
     [(cons? formals*)
-     (define pos-formals (cast (car formals*) (Listof Symbol)))
+     (define pos-formals (car formals*))
      (list (check-arity-stm '< (length pos-formals)))]))
 
-(: insert-arity-checks (-> (U ILLinklet ILModule) (U ILLinklet ILModule)))
 (define (insert-arity-checks mod)
-  (: traverse-expr (-> ILExpr ILExpr))
   (define traverse-expr
-    (match-lambda
+    (struct-match-lambda
       [(ILLambda args body)
-       (: new-args ILFormals)
-       (: check-stms ILStatement*)
        (define-values (new-args check-stms)
-         (match args
+         (struct-match args
            [(ILCheckedFormals args*)
             (values args*
                     (check-arity-stms args))]
@@ -66,7 +65,7 @@
        (ILApp (traverse-expr lam) (map traverse-expr args))]
       [(ILBinaryOp oper args) (ILBinaryOp oper (map traverse-expr args))]
       [(ILArray items) (ILArray (map traverse-expr items))]
-      [(ILObject items) (ILObject (map (λ ([o : ObjectPair])
+      [(ILObject items) (ILObject (map (λ (o)
                                          (cons (car o)
                                                (traverse-expr (cdr o))))
                                        items))]
@@ -74,15 +73,14 @@
        (ILRef (traverse-expr expr) fieldname)]
       [(ILIndex expr field-expr)
        (ILIndex (traverse-expr expr) (traverse-expr field-expr))]
-      [(ILNew e) (ILNew (cast (traverse-expr e) (U ILApp ILLValue)))]
+      [(ILNew e) (ILNew (traverse-expr e))]
       [(ILInstanceOf expr type)
        (ILInstanceOf (traverse-expr expr) (traverse-expr type))]
       [(ILTypeOf expr) (ILTypeOf (traverse-expr expr))]
       [v v]))
 
-  (: traverse-stm (-> ILStatement ILStatement))
   (define traverse-stm
-    (match-lambda
+    (struct-match-lambda
       [(ILVarDec id expr)
        (ILVarDec id (if expr
                         (traverse-expr expr)
@@ -102,7 +100,7 @@
                 (IfClause (and pred (traverse-expr pred))
                           (traverse-stm* body))))]
       [(ILAssign lvalue rvalue)
-       (ILAssign (cast (traverse-expr lvalue) ILLValue)
+       (ILAssign (traverse-expr lvalue)
                  (traverse-expr rvalue))]
       [(ILWhile condition body)
        (ILWhile (traverse-expr condition)
@@ -117,54 +115,38 @@
       [(? ILExpr? expr) (traverse-expr expr)]
       [v v]))
 
-  (: traverse-stm* (-> ILStatement* ILStatement*))
   (define (traverse-stm* stm*)
     (map traverse-stm stm*))
 
-  (match mod
-    [(ILModule id provides requires body)
-     (ILModule id provides requires (traverse-stm* body))]
+  (struct-match mod
     [(ILLinklet importss exports body)
      (ILLinklet importss exports (traverse-stm* body))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Tail Call Optimization
 
-(define-type ILLink    (Option ILStatement))
-(define-type ILResult  (U ILStatement* ILStatement))
-(define-type IdentSet  (Setof Symbol))
-
-;; Constructor for building identifier sets.
-(define ident-set      (inst set Symbol))
-
-(: self-tail->loop (-> ILStatement* ILStatement*))
 ;; Frontend function to convert self tail calls to
 ;; loops.
 (define (self-tail->loop il*)
   (x-self-tail->loop (lift-returns il*)))
 
-(: lift-returns (-> ILStatement* ILStatement*))
 ;; Lifts return statements up by one statement, if
 ;; the identifier returned, was declared or re-assigned
 ;; in previous statement.
 (define (lift-returns il*)
-  (: current-scope-declarations (Parameter (Setof Symbol)))
   ;; Track all variables delcared in current function scope.
   (define current-scope-declarations
-    (make-parameter ((inst set Symbol))))
+    (make-parameter (set)))
 
-  (: removed-declarations (Parameter (Setof Symbol)))
   ;; Keep a list of variable declarations whose next runtime statement
   ;; is returning value held by same variable. We check this set for each
   ;; ILReturn statement and decide if it should be removed.
-  (define removed-declarations (make-parameter ((inst set Symbol))))
+  (define removed-declarations (make-parameter (set)))
 
-  (: next-statement (Parameter ILLink))
   ;; Next statement that will be executed after
   ;; the statement we are currently handling.
   (define next-statement (make-parameter #f))
 
-  (: add-to-scope! (-> Symbol Void))
   ;; Adds sym to scope of declared variables.
   (define (add-to-scope! sym)
     (current-scope-declarations
@@ -174,9 +156,8 @@
   (define (var-in-scope? sym)
     (set-member? (current-scope-declarations) sym))
 
-  (: handle-expr (-> ILExpr ILExpr))
   (define (handle-expr e)
-    (match e
+    (struct-match e
       [(ILLambda args body)
        (parameterize ([current-scope-declarations (set)]
                       [next-statement #f])
@@ -191,7 +172,7 @@
       [(ILArray items)
        (ILArray (map handle-expr items))]
       [(ILObject items)
-       (ILObject (map (λ ([i : ObjectPair])
+       (ILObject (map (λ (i)
                         (cons (car i)
                               (handle-expr (cdr i))))
                       items))]
@@ -204,7 +185,7 @@
       [(ILTypeOf expr)
        (ILTypeOf (handle-expr expr))]
       [(ILNew v)
-       (ILNew (cast (handle-expr v) (U Symbol ILRef ILIndex ILApp)))]
+       (ILNew (handle-expr v))]
       [(ILValue v) e]
       [(ILUndefined) e]
       [(ILArguments) e]
@@ -212,11 +193,10 @@
       [(ILNull) e]
       [(? symbol? v) v]))
 
-  (: handle-stm (-> ILStatement ILResult))
   (define (handle-stm stm)
-    (match stm
+    (struct-match stm
       [(ILVarDec id expr)
-       (match (next-statement)
+       (struct-match (next-statement)
          [(ILReturn e) #:when (and expr (equal? e id))
           (removed-declarations (set-add (removed-declarations) id))
           (ILReturn (handle-expr expr))]
@@ -228,19 +208,19 @@
        ;; function scope.
        (ILLetDec id (and expr (handle-expr expr)))]
       [(ILAssign lvalue rvalue)
-       (match (next-statement)
+       (struct-match (next-statement)
          [(ILReturn e) #:when (and (symbol? lvalue)
                                    (var-in-scope? lvalue)
                                    (equal? e lvalue))
           (ILReturn (handle-expr rvalue))]
-         [_ (ILAssign (cast (handle-expr lvalue) ILLValue)
+         [_ (ILAssign (handle-expr lvalue)
                       (handle-expr rvalue))])]
       [(ILIf pred t-branch f-branch)
-       (match-define (list t-branch* t-removed)
+       (match-define `(,t-branch* ,t-removed)
          (parameterize ([removed-declarations (removed-declarations)])
            (list (handle-stm* t-branch)
                  (removed-declarations))))
-       (match-define (list f-branch* f-removed)
+       (match-define `(,f-branch* ,f-removed)
          (parameterize ([removed-declarations (removed-declarations)])
            (list (handle-stm* f-branch)
                  (removed-declarations))))
@@ -248,8 +228,8 @@
        (ILIf (handle-expr pred) t-branch* f-branch*)]
       [(ILIf* clauses)
        (define-values (clauses* removed)
-         (for/fold ([c*      : (Listof ILIfClause) '()]
-                    [removed : (Listof IdentSet) '()])
+         (for/fold ([c*      '()]
+                    [removed '()])
                    ([clause (reverse clauses)])
            (let* ([pred (ILIfClause-pred clause)]
                   [body (ILIfClause-body clause)]
@@ -258,9 +238,9 @@
                (values (cons (ILIfClause pred* (handle-stm* body)) c*)
                        (cons (removed-declarations) removed))))))
        (removed-declarations (match removed
-                               [(cons hd '()) hd]
-                               [(cons hd0 tl)
-                                (foldl (inst set-intersect Symbol Symbol)
+                               [`(,hd) hd]
+                               [`(,hd0 . ,tl)
+                                (foldl set-intersect
                                        hd0
                                        tl)]))
        (ILIf* clauses*)]
@@ -299,27 +279,29 @@
       [(ILContinue _) stm]
       [(? ILExpr? expr) (handle-expr expr)]))
 
-  (: handle-stm* (-> ILStatement* ILStatement*))
   (define (handle-stm* stm*)
-    (let loop ([result : ILStatement* '()]
+    (let loop ([result '()]
                [stm* stm*])
       (match stm*
-        ['() result]
-        [(cons hd tl)
-         (define next : ILLink (if (empty? tl)
-                                   (next-statement)
-                                   (car tl)))
-         (define stm** : ILResult
+        [`() result]
+        [`(,hd . ,tl)
+         (define next (if (empty? tl)
+                          (next-statement)
+                          (car tl)))
+         (define stm**
            (if (empty? tl)
                (handle-stm hd)
                (parameterize ([next-statement (car tl)])
                  (handle-stm hd))))
 
-         (match stm**
-           [(? ILStatement? stm)
-            (loop (append result (list stm)) tl)]
-           [(? ILStatement*? stms)
-            (loop (append result stms) tl)])])))
+         (loop (append result (if (list? stm**) stm** (list stm**))) tl)])))
+           
+
+         ;; (match stm**
+         ;;   [(? ILStatement? stm)
+         ;;    (loop (append result (list stm)) tl)]
+         ;;   [(? ILStatement*? stms)
+         ;;    (loop (append result stms) tl)])
 
   ;; Try lifting until convergence
   (let ([result (handle-stm* il*)])
@@ -589,62 +571,60 @@
    "Lift return in if-else-if-else statements")]
 
 
-(: x-self-tail->loop (-> ILStatement* ILStatement*))
 ;; Translate self tail calls to loop. The given `il`
 ;; is assumed to have gone through return lifting.
 (define (x-self-tail->loop il)
-  (: lambda-name (Parameter (Option Symbol)))
   (define lambda-name (make-parameter #f))
-
-  (: lambda-formals (Parameter ILFormals))
   (define lambda-formals (make-parameter '()))
 
   ;; If we apply TCO, we will change the original lambda formal names,
   ;; and inside the loop, use `let` statment to bind the original
   ;; formal names with values, making closures act sanely
-  (: lambda-updated-formals (Parameter (Option ILFormals)))
   (define lambda-updated-formals (make-parameter #f))
 
-  (: lambda-start-label (Parameter (Option Symbol)))
   (define lambda-start-label (make-parameter #f))
 
-  (: reset-formals (-> ILFormals ILFormals (Listof ILLetDec)))
   (define (reset-formals original-formals new-formals)
-    (match (cons original-formals new-formals)
-      [(cons (ILCheckedFormals original-formals*) (ILCheckedFormals new-formals*))
+    (cond
+      [(and (ILCheckedFormals? original-formals)
+            (ILCheckedFormals? new-formals))
+       (struct-match-define (ILCheckedFormals original-formals*))
+       (struct-match-define (ILCheckedFormals new-formals*))
        (reset-formals original-formals* new-formals*)]
-      [(cons (? symbol? original-formals*) (? symbol? new-formals*))
-       (list (ILLetDec original-formals* new-formals*))]
-      [(cons (list original-formals* ...) (list new-formals* ...))
-       (map ILLetDec original-formals* new-formals*)]
-      [(cons (cons original-formals-i original-formals-r) (cons new-formals-i new-formals-r))
+      [(and (symbol? original-formals) (symbol? new-formals*))
+       (list (ILLetDec original-formals new-formals))]
+      [(and (list? original-formals) (list? new-formals))
+       (map ILLetDec original-formals new-formals)]
+      [(and (pair? original-formals) (pair? new-formals))
+       (match-define `(,(,original-formals-i . ,original-formals-r) .
+                       ,(.new-formals-i . ,new-formals-r))
+         (cons original-formals new-formals))
        (append (reset-formals original-formals-i new-formals-i)
                (reset-formals original-formals-r new-formals-r))]
       [_ (error 'reset-formals "Incompatible formals: ~a vs ~a" original-formals new-formals)]))
-  (: handle-expr/general (-> ILExpr ILExpr))
+
   (define (handle-expr/general e) (handle-expr e #f #f))
 
-  (: handle-expr (-> ILExpr Boolean (Option Symbol) ILExpr))
   (define (handle-expr e tail-position? vardec)
-    (match e
+    (struct-match e
       [(ILLambda args body)
        (parameterize ([lambda-name vardec]
                       [lambda-formals args]
                       [lambda-start-label (fresh-id 'lambda-start)]
                       [lambda-updated-formals #f])
-         (define body* : ILStatement*
+         (define body*
            (let ([s* (handle-stm* body)]
                  [new-frmls (lambda-updated-formals)])
              (cond
                [(false? new-frmls) s*]
                [else
-                (define reset-formals-decls : (Listof ILLetDec)
+                (define reset-formals-decls
                   ;; Let is used as, it has block level scope, as
                   ;; opposed to var which has function level scope,
                   ;; which breaks the closure in case any of the
                   ;; closure variable is mutated.
                   (reset-formals (lambda-formals) new-frmls))
-                (list (ILLabel (cast (lambda-start-label) Symbol))
+                (list (ILLabel (lambda-start-label))
                       (ILWhile (ILValue #t)
                                (append reset-formals-decls s*)))])))
          (ILLambda (or (lambda-updated-formals) args)
@@ -655,7 +635,7 @@
        (ILBinaryOp oper (map handle-expr/general args))]
       [(ILArray items) (ILArray (map handle-expr/general items))]
       [(ILObject items) (ILObject
-                         (map (λ ([item : (Pairof ObjectKey ILExpr)])
+                         (map (λ (item)
                                 (cons (car item)
                                       (handle-expr/general (cdr item))))
                               items))]
@@ -675,7 +655,6 @@
       [(ILNew v) e]
       [(? symbol? v) e]))
 
-  (: handle-stm (-> ILStatement ILResult))
   (define (handle-stm s)
     (match s
       [(ILReturn (ILApp lam args))
@@ -696,7 +675,7 @@
               (ILAssign frml (handle-expr/general a))))
           (append compute-args
                   (list (ILContinue
-                         (cast (lambda-start-label) Symbol))))]
+                         (lambda-start-label))))]
          [else (ILReturn (ILApp lam (map handle-expr/general args)))])]
       [(ILVarDec id expr)
        (ILVarDec id (and expr
@@ -709,8 +688,8 @@
              (handle-stm* t-branch)
              (handle-stm* f-branch))]
       [(ILIf* clauses)
-       (ILIf* (map (λ ([c : ILIfClause])
-                     (match-define (ILIfClause pred body) c)
+       (ILIf* (map (λ (c)
+                     (struct-match-define (ILIfClause pred body) c)
                      (ILIfClause (and pred (handle-expr/general pred))
                                  (handle-stm* (ILIfClause-body c))))
                    clauses))]
@@ -734,9 +713,8 @@
       [(ILLabel n) s]
       [(? ILExpr? expr) (handle-expr/general expr)]))
 
-  (: handle-stm* (-> ILStatement* ILStatement*))
   (define (handle-stm* s*)
-    (for/fold ([result : ILStatement* '()])
+    (for/fold ([result '()])
               ([s s*])
       (define stm* (handle-stm s))
       (match stm*
@@ -744,8 +722,8 @@
         [(? ILStatement*? r*) (append result r*)])))
 
   (handle-stm* il))
+
 (module+ test
-  (require typed/rackunit)
 
   (define-syntax-rule (check-equal?* args ...)
     (parameterize ([fresh-id-counter 0])
@@ -822,11 +800,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Compute defs, use, and free sets
 
-(: free+defined (-> ILStatement* IdentSet (List IdentSet IdentSet)))
 (define (free+defined stms* defs)
   (define find* free+defined)
 
-  (: find (-> ILStatement IdentSet (List IdentSet IdentSet)))
   ;; Returns (list defined-idents free-idents)
   (define (find stm defs)
     (match stm
@@ -915,7 +891,6 @@
              (set-union h-free free)
              tl)])))
 
-(: free-identifiers (-> ILStatement* IdentSet))
 (define (free-identifiers stms)
   (second (free+defined stms (set))))
 
@@ -962,7 +937,6 @@
 
 ;;-----------------------------------------------------------------------------
 
-(: has-application? (-> ILExpr Boolean))
 ;; Returns true if any subexpression of given input contains an
 ;; application.
 (define has-application?
@@ -971,7 +945,7 @@
     [(ILBinaryOp _ args) (ormap has-application? args)]
     [(ILApp _ _) #t]
     [(ILArray items) (ormap has-application? items)]
-    [(ILObject items) (ormap (λ ([pair : ObjectPair])
+    [(ILObject items) (ormap (λ (pair)
                                (has-application? (cdr pair)))
                              items)]
     [(ILRef expr _) (has-application? expr)]
@@ -995,10 +969,6 @@
 ;;-----------------------------------------------------------------------------
 ;; Compute used and defined sets
 
-(define-type StatementKey      Natural)
-(define-type Statement2UseDef (HashTable ILStatement (List IdentSet IdentSet)))
-
-(: used+defined/block (-> ILStatement* Boolean (List IdentSet IdentSet)))
 (define (used+defined/block stms lam-block?)
   (let loop ([let-decs (ident-set)]
              [var-decs (ident-set)]
@@ -1036,9 +1006,8 @@
                   final-used
                   tl)])])))
 
-(: used+defined/statement (-> ILStatement (List IdentSet IdentSet)))
 (define used+defined/statement
-  (match-lambda
+  (struct-match-lambda
     [(ILVarDec id expr)
      (match-define (list used _) (if expr
                                      (used+defined/statement expr)
@@ -1106,9 +1075,8 @@
     [(? symbol? v)
      (list (set v) (set))]))
 
-(: used+defined/statement* (-> ILStatement* Statement2UseDef))
 (define (used+defined/statement* stms)
-  (for/hash : Statement2UseDef ([stm stms])
+  (for/hash([stm stms])
     (values stm (used+defined/statement stm))))
 
 (module+ test
@@ -1189,9 +1157,8 @@
 ;;-----------------------------------------------------------------------------
 ;; Flatten if-else
 
-(: flatten-if-else/expr (-> ILExpr ILExpr))
 (define flatten-if-else/expr
-  (match-lambda
+  (struct-match-lambda
     [(ILLambda args body) (ILLambda args (flatten-if-else/stm* body))]
     [(ILBinaryOp oper args) (ILBinaryOp oper (map flatten-if-else/expr args))]
     [(ILApp lam args) (ILApp (flatten-if-else/expr lam)
@@ -1204,16 +1171,14 @@
     [(ILRef expr* fieldname) (ILRef (flatten-if-else/expr expr*) fieldname)]
     [(ILIndex expr* fieldexpr) (ILIndex (flatten-if-else/expr expr*)
                                         (flatten-if-else/expr fieldexpr))]
-    [(ILNew expr*) (ILNew (cast (flatten-if-else/expr expr*)
-                                (U ILLValue ILApp)))]
+    [(ILNew expr*) (ILNew (flatten-if-else/expr expr*))]
     [(ILInstanceOf expr* type) (ILInstanceOf (flatten-if-else/expr expr*)
                                              (flatten-if-else/expr type))]
     [(ILTypeOf expr) (ILTypeOf (flatten-if-else/expr expr))]
     [v v]))
 
-(: flatten-if-else/stm (-> ILStatement ILStatement))
 (define flatten-if-else/stm
-  (match-lambda
+  (struct-match-lambda
     [(ILIf pred t-branch (list (ILIf pred* t-branch* f-branch*)))
      (flatten-if-else/stm
       (ILIf* (list (ILIfClause pred t-branch)
@@ -1227,7 +1192,7 @@
                                          (flatten-if-else/stm* f-branch))]
     [(ILIf* (list clauses ... (ILIfClause #f (list (ILIf pred* t-branch* f-branch*)))))
      (flatten-if-else/stm
-      (ILIf* (append (cast clauses (Listof IfClause))
+      (ILIf* (append clauses
                      (list
                       (ILIfClause pred* t-branch*)
                       (ILIfClause #f f-branch*)))))]
@@ -1256,11 +1221,9 @@
     [(? ILContinue? stm) stm]
     [(? ILExpr? stm) (flatten-if-else/expr stm)]))
 
-(: flatten-if-else/stm* (-> ILStatement* ILStatement*))
 (define (flatten-if-else/stm* stms)
   (map flatten-if-else/stm stms))
 
-(: flatten-if-else (-> ILStatement* ILStatement*))
 (define (flatten-if-else stms)
   (converge flatten-if-else/stm* stms))
 
