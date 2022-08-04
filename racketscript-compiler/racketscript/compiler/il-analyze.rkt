@@ -1045,7 +1045,8 @@
      (list (set-union l-used a-used) (set))]
     [(ILBinaryOp oper args) (used+defined/block args #f)]
     [(ILArray items) (used+defined/block items #f)]
-    [(and (ILObject items) stm)
+    [(ILObject items)
+     (define stm (ILObject items))
      ;; Typically the fields of object are in context (this) of any
      ;; lambda, and hence should be overall be removed from used set.
      ;; However, since members of objects could be called with
@@ -1057,7 +1058,7 @@
     [(ILExnHandler try error catch finally)
      (match-define `(,t-used ,t-defs) (used+defined/block try #f))
      (match-define `(,c-used ,c-defs)
-       (match-let ([(list u d) (used+defined/block catch #f)])
+       (match-let ([`(,u ,d) (used+defined/block catch #f)])
          (list (set-remove u error)
                (set-remove d error))))
      (match-define `(,f-used ,f-defs) (used+defined/block finally #f))
@@ -1166,7 +1167,7 @@
     [(ILApp lam args) (ILApp (flatten-if-else/expr lam)
                              (map flatten-if-else/expr args))]
     [(ILArray items) (ILArray (map flatten-if-else/expr items))]
-    [(ILObject items) (ILObject (map (λ ([item : ObjectPair])
+    [(ILObject items) (ILObject (map (λ (item)
                                        (cons (car item)
                                              (flatten-if-else/expr (cdr item))))
                                      items))]
@@ -1181,31 +1182,43 @@
 
 (define flatten-if-else/stm
   (struct-match-lambda
-    [(ILIf pred t-branch (list (ILIf pred* t-branch* f-branch*)))
+    [(ILIf pred t-branch f-branch)
+     #:when (and (= 1 (length f-branch))
+                 (ILIf? (car f-branch)))
+     (struct-match-define (ILIf pred* t-branch* f-branch*) (car f-branch))
      (flatten-if-else/stm
       (ILIf* (list (ILIfClause pred t-branch)
                    (ILIfClause pred* t-branch*)
                    (ILIfClause #f f-branch*))))]
-    [(ILIf pred t-branch (list (ILIf* clauses)))
+    [(ILIf pred t-branch f-branch)
+     #:when (and (= 1 (length f-branch))
+                 (ILIf*? (car f-branch)))
+     (define clauses (ILIf*-clauses (car f-branch)))
      (flatten-if-else/stm
       (ILIf* (cons (ILIfClause pred t-branch) clauses)))]
     [(ILIf pred t-branch f-branch) (ILIf (flatten-if-else/expr pred)
                                          (flatten-if-else/stm* t-branch)
                                          (flatten-if-else/stm* f-branch))]
-    [(ILIf* (list clauses ... (ILIfClause #f (list (ILIf pred* t-branch* f-branch*)))))
-     (flatten-if-else/stm
-      (ILIf* (append clauses
-                     (list
-                      (ILIfClause pred* t-branch*)
-                      (ILIfClause #f f-branch*)))))]
-    [(ILIf* (list clauses ...))
-     (ILIf* (map (λ ([c : IfClause])
-                   (let* ([pred (ILIfClause-pred c)]
-                          [body (ILIfClause-body c)]
-                          [pred* (and pred (flatten-if-else/expr pred))]
-                          [body* (flatten-if-else/stm* body)])
-                     (ILIfClause pred* body*)))
-                 clauses))]
+    [(ILIf* clauses) #:when (list? clauses)
+     (struct-match-define (ILIfClause cnd contents) (last clauses))
+     (cond
+       [(and (not cnd)
+             (= 1 (length contents))
+             (ILIf? (car contents)))
+        (struct-match-define (ILIf pred* t-branch* f-branch*) (car contents))
+        (flatten-if-else/stm
+          (ILIf* (append clauses
+                         (list
+                           (ILIfClause pred* t-branch*)
+                           (ILIfClause #f f-branch*)))))]
+       [else
+        (ILIf* (map (λ (c)
+                      (let* ([pred (ILIfClause-pred c)]
+                             [body (ILIfClause-body c)]
+                             [pred* (and pred (flatten-if-else/expr pred))]
+                             [body* (flatten-if-else/stm* body)])
+                        (ILIfClause pred* body*)))
+                    clauses))])]
 
     ;; Traverse through statements
 
