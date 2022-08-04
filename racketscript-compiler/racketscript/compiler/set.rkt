@@ -2,7 +2,17 @@
 
 ;; basic set implementation 
 
-(provide set set-member? set-add list->set set->list set-map in-set set-intersect set-union)
+(provide set
+         set-member?
+         set-add
+         set-remove
+         list->set
+         set->list
+         set-map
+         in-set
+         set-intersect
+         set-union
+         set-subtract)
 
 (struct set-impl (contents) #:transparent)
 
@@ -14,6 +24,9 @@
 
 (define (set-add st v)
   (set-impl (hash-set (set-impl-contents st) v #t)))
+
+(define (set-remove st v)
+  (set-impl (hash-remove (set-impl-contents st) v)))
 
 (define (set-map st proc)
   (set-impl
@@ -43,3 +56,12 @@
     (for/fold ([s1 s1])
               ([x (in-set s2)])
       (set-add s1 x))))
+
+(define (set-subtract s . sets)
+  (define (remove? k)
+    (for/or ([s2 (in-list sets)])
+      (set-member? s2 k)))
+
+  (for/fold ([res s])
+            ([v (in-set s)] #:when (remove? v))
+    (set-remove res v)))
