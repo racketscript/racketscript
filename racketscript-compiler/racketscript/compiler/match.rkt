@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base))
 
-(provide match match-define match-lambda)
+(provide match match-define match-lambda match-let)
 
 ;; Borrowed and slightly modified from `schemify`
 
@@ -157,3 +157,14 @@
 (define-syntax (match-lambda stx)
   (syntax-case stx ()
     [(_ clause ...) #'(λ (a) (match a clause ...))]))
+
+(define-syntax (match-let stx)
+  (syntax-case stx ()
+    [(_ ([pat rhs] ...) body ...)
+     #`(let-values
+         #,(map (λ (pat rhs)
+                  #`(#,(extract-pattern-variables pat)
+                     (let ([v #,rhs]) (match v [#,pat (values . #,(extract-pattern-variables pat))]))))
+                (syntax->list #'(pat ...))
+                (syntax->list #'(rhs ...)))
+         body ...)]))
