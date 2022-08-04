@@ -100,7 +100,7 @@
                         [(#,(pat-pred (car patterns)) v)
                          (let-values ([#,(pat-ids (car patterns)) (vector->values vec-v 1)])
                            #,(if guard?
-                               #`(if #,guard? (begin . #,(remove-guard (car bodys))) (alt))
+                               #`(if #,guard? (let () . #,(remove-guard (car bodys))) (alt))
                                #`(begin . #,(car bodys))))]
                         [else (alt)]))]))))]))
 
