@@ -588,20 +588,20 @@
     (cond
       [(and (ILCheckedFormals? original-formals)
             (ILCheckedFormals? new-formals))
-       (struct-match-define (ILCheckedFormals original-formals*))
-       (struct-match-define (ILCheckedFormals new-formals*))
+       (struct-match-define (ILCheckedFormals original-formals*) original-formals)
+       (struct-match-define (ILCheckedFormals new-formals*) new-formals)
        (reset-formals original-formals* new-formals*)]
-      [(and (symbol? original-formals) (symbol? new-formals*))
+      [(and (symbol? original-formals) (symbol? new-formals))
        (list (ILLetDec original-formals new-formals))]
       [(and (list? original-formals) (list? new-formals))
        (map ILLetDec original-formals new-formals)]
       [(and (pair? original-formals) (pair? new-formals))
-       (match-define `(,(,original-formals-i . ,original-formals-r) .
-                       ,(.new-formals-i . ,new-formals-r))
+       (match-define `((,original-formals-i . ,original-formals-r) .
+                       (,new-formals-i . ,new-formals-r))
          (cons original-formals new-formals))
        (append (reset-formals original-formals-i new-formals-i)
                (reset-formals original-formals-r new-formals-r))]
-      [_ (error 'reset-formals "Incompatible formals: ~a vs ~a" original-formals new-formals)]))
+      [else (error 'reset-formals "Incompatible formals: ~a vs ~a" original-formals new-formals)]))
 
   (define (handle-expr/general e) (handle-expr e #f #f))
 
@@ -656,8 +656,9 @@
       [(? symbol? v) e]))
 
   (define (handle-stm s)
-    (match s
-      [(ILReturn (ILApp lam args))
+    (struct-match s
+      [(ILReturn e) #:when (ILApp? e)
+       (struct-match-define (ILApp lam args) e)
        (cond
          [(and (equal? (lambda-name) lam)
                #;(not (list? (lambda-formals))) ;; TODO: Make it work for variadict lambdas
@@ -669,7 +670,7 @@
                   (il-freshen-formals (lambda-formals))
                   old-updated-frmls)))
           (lambda-updated-formals new-frmls)
-          (define compute-args : (Listof ILAssign)
+          (define compute-args
             (for/list  ([frml (il-formals->list new-frmls)]
                         [a args])
               (ILAssign frml (handle-expr/general a))))
@@ -717,7 +718,7 @@
     (for/fold ([result '()])
               ([s s*])
       (define stm* (handle-stm s))
-      (match stm*
+      (struct-match stm*
         [(? ILStatement? r) (append result (list r))]
         [(? ILStatement*? r*) (append result r*)])))
 
@@ -805,7 +806,7 @@
 
   ;; Returns (list defined-idents free-idents)
   (define (find stm defs)
-    (match stm
+    (struct-match stm
       [(ILVarDec id expr)
        (list (set id)
              (if expr
@@ -818,42 +819,41 @@
                  (second (find expr (set-add defs id)))
                  (set)))]
       [(ILIf pred t-branch f-branch)
-       (match-define (list _ p-free) (find pred defs))
-       (match-define (list t-defs t-free) (find* t-branch defs))
-       (match-define (list f-defs f-free) (find* f-branch defs))
+       (match-define `(,_ ,p-free) (find pred defs))
+       (match-define `(,t-defs ,t-free) (find* t-branch defs))
+       (match-define `(,f-defs ,f-free) (find* f-branch defs))
        (list (set-union t-defs f-defs)
              (set-union p-free t-free f-free))]
       [(ILIf* clauses)
        (define-values (defs* free*)
-         (for/fold ([r-defs : IdentSet (set)]
-                    [r-free : IdentSet (set)])
+         (for/fold ([r-defs (set)]
+                    [r-free (set)])
                    ([clause clauses])
-           (match-define (ILIfClause pred body) clause)
-           (match-define (list _ p-free) (if pred
-                                             (find pred defs)
-                                             (list (ident-set) (ident-set))))
-           (match-define (list b-defs b-free) (find* body defs))
+           (struct-match-define (ILIfClause pred body) clause)
+           (match-define `(,_ ,p-free) (if pred
+                                           (find pred defs)
+                                           (list (set) (set))))
+           (match-define `(,b-defs ,b-free) (find* body defs))
            (values (set-union r-defs b-defs)
                    (set-union r-free p-free b-free))))
        (list defs* free*)]
       [(ILAssign lvalue rvalue)
-       (match-define (list _ lv-free) (find lvalue defs))
-       (match-define (list _ rv-free) (find rvalue defs))
+       (match-define `(,_ ,lv-free) (find lvalue defs))
+       (match-define `(,_ ,rv-free) (find rvalue defs))
        (list (set) (set-union lv-free rv-free))]
       [(ILWhile condition body)
-       (match-define (list _ cond-free) (find condition defs))
-       (match-define (list body-defs body-free) (find* body defs))
+       (match-define `(,_ ,cond-free) (find condition defs))
+       (match-define `(,body-defs ,body-free) (find* body defs))
        (list body-defs
              (set-union cond-free body-free))]
       [(ILReturn expr) (find expr defs)]
       [(ILLambda args expr)
        (define args-set (list->set (il-formals->list args)))
-       (match-define (list _ e-free)
-         (find* expr (set-union defs args-set)))
+       (match-define `(,_ ,e-free) (find* expr (set-union defs args-set)))
        (list (set) e-free)]
       [(ILApp lam args)
-       (match-define (list _ l-free) (find lam defs))
-       (match-define (list _ a-free) (find* args defs))
+       (match-define `(,_ ,l-free) (find lam defs))
+       (match-define `(,_ ,a-free) (find* args defs))
        (list (set) (set-union l-free a-free))]
       [(ILBinaryOp oper args)
        (find* args defs)]
@@ -867,8 +867,8 @@
       [(ILRef expr fieldname)
        (find expr defs)]
       [(ILIndex expr fieldexpr)
-       (match-define (list _ e-free) (find expr defs))
-       (match-define (list _ f-free) (find fieldexpr defs))
+       (match-define `(,_ ,e-free) (find expr defs))
+       (match-define `(,_ ,f-free) (find fieldexpr defs))
        (list (set) (set-union e-free f-free))]
       [(ILValue v) (list (set) (set))]
       [(ILUndefined) (list (set) (set))]
@@ -880,13 +880,13 @@
                  (set)
                  (set v)))]))
 
-  (let loop ([defs : IdentSet defs]
-             [free : IdentSet (set)]
+  (let loop ([defs defs]
+             [free (set)]
              [stms stms*])
     (match stms
-      ['() (list defs free)]
-      [(cons hd tl)
-       (match-define (list h-defs h-free) (find hd defs))
+      [`() (list defs free)]
+      [`(,hd . ,tl)
+       (match-define `(,h-defs ,h-free) (find hd defs))
        (loop (set-union h-defs defs)
              (set-union h-free free)
              tl)])))
@@ -939,22 +939,24 @@
 
 ;; Returns true if any subexpression of given input contains an
 ;; application.
+;; TODO added suffixes to underscore patterns so that I don't have to handle them for real,
+;;      but might want to at some point
 (define has-application?
-  (match-lambda
-    [(ILLambda _ _) #f]
-    [(ILBinaryOp _ args) (ormap has-application? args)]
-    [(ILApp _ _) #t]
+  (struct-match-lambda
+    [(ILLambda _fst _snd) #f]
+    [(ILBinaryOp _fst args) (ormap has-application? args)]
+    [(ILApp _fst _snd) #t]
     [(ILArray items) (ormap has-application? items)]
     [(ILObject items) (ormap (λ (pair)
                                (has-application? (cdr pair)))
                              items)]
-    [(ILRef expr _) (has-application? expr)]
+    [(ILRef expr _fst) (has-application? expr)]
     [(ILIndex expr fieldexpr) (or (has-application? expr)
                                   (has-application? fieldexpr))]
-    [(ILValue _) #f]
+    [(ILValue _fst) #f]
     [(ILUndefined) #f]
     [(ILNull) #f]
-    [(ILNew _) #t]
+    [(ILNew _fst) #t]
     [(ILInstanceOf expr type) (or (has-application? expr)
                                   (has-application? type))]
     [(ILTypeOf expr) (has-application? expr)]
@@ -970,13 +972,13 @@
 ;; Compute used and defined sets
 
 (define (used+defined/block stms lam-block?)
-  (let loop ([let-decs (ident-set)]
-             [var-decs (ident-set)]
-             [defines  (ident-set)]
-             [used     (ident-set)]
+  (let loop ([let-decs (set)]
+             [var-decs (set)]
+             [defines  (set)]
+             [used     (set)]
              [stms     stms])
     (match stms
-      ['()
+      [`()
        ;; If lam-block? is true, the current block is top level block
        ;; of a lambda, and hence we remove all defines and uses of variables
        ;; declared in function scope.
@@ -985,11 +987,11 @@
                               let-decs))
        (list (set-subtract used scope-defs)
              (set-subtract defines scope-defs))]
-      [(cons hd tl)
-       (match-define (list hd-used hd-defs) (used+defined/statement hd))
+      [`(,hd . ,tl)
+       (match-define `(,hd-used ,hd-defs) (used+defined/statement hd))
        (define final-defines (set-union defines hd-defs))
        (define final-used    (set-union used hd-used))
-       (match hd
+       (struct-match hd
          [(ILVarDec id _) (loop let-decs
                                 (set-add var-decs id)
                                 final-defines
@@ -1009,37 +1011,37 @@
 (define used+defined/statement
   (struct-match-lambda
     [(ILVarDec id expr)
-     (match-define (list used _) (if expr
+     (match-define `(,used ,_) (if expr
                                      (used+defined/statement expr)
-                                     (list (ident-set) (ident-set))))
+                                     (list (set) (set))))
      (list used (set id))]
     [(ILLetDec id expr)
-     (match-define (list used _) (if expr
+     (match-define `(,used ,_) (if expr
                                      (used+defined/statement expr)
-                                     (list (ident-set) (ident-set))))
+                                     (list (set) (set))))
      (list used (set id))]
     [(ILIf pred t-branch f-branch)
-     (match-define (list p-used _) (used+defined/statement pred))
-     (match-define (list t-used t-defs) (used+defined/block t-branch #f))
-     (match-define (list f-used f-defs) (used+defined/block f-branch #f))
+     (match-define `(,p-used ,_) (used+defined/statement pred))
+     (match-define `(,t-used ,t-defs) (used+defined/block t-branch #f))
+     (match-define `(,f-used ,f-defs) (used+defined/block f-branch #f))
      (list (set-union p-used t-used f-used)
            (set-union t-defs f-defs))]
     [(ILAssign lvalue rvalue)
-     (match-define (list lv-used _) (used+defined/statement lvalue))
-     (match-define (list rv-used _) (used+defined/statement rvalue))
+     (match-define `(,lv-used ,_) (used+defined/statement lvalue))
+     (match-define `(,rv-used ,_) (used+defined/statement rvalue))
      (list rv-used lv-used)]
     [(ILWhile condition body)
-     (match-define (list cond-used _) (used+defined/statement condition))
-     (match-define (list body-used body-defs) (used+defined/block body #f))
+     (match-define `(,cond-used ,_) (used+defined/statement condition))
+     (match-define `(,body-used ,body-defs) (used+defined/block body #f))
      (list (set-union cond-used body-used) body-defs)]
     [(ILReturn expr) (used+defined/statement expr)]
     [(ILLambda args exprs)
-     (match-define (list e-used e-defs) (used+defined/block exprs #t))
+     (match-define `(,e-used ,e-defs) (used+defined/block exprs #t))
      (define args-set (list->set (il-formals->list args)))
      (list (set-subtract e-used args-set) e-defs)]
     [(ILApp lam args)
-     (match-define (list l-used _) (used+defined/statement lam))
-     (match-define (list a-used _) (used+defined/block args #f))
+     (match-define `(,l-used ,_) (used+defined/statement lam))
+     (match-define `(,a-used ,_) (used+defined/block args #f))
      (list (set-union l-used a-used) (set))]
     [(ILBinaryOp oper args) (used+defined/block args #f)]
     [(ILArray items) (used+defined/block items #f)]
@@ -1050,21 +1052,21 @@
      ;; different context (this) we can't determine this for sure, so
      ;; we consider fields as used overall if they are used in bodies.
      (define bodies (ILObject-bodies stm))
-     (match-define (list used defined) (used+defined/block bodies #f))
+     (match-define `(,used ,defined) (used+defined/block bodies #f))
      (list used defined)]
     [(ILExnHandler try error catch finally)
-     (match-define (list t-used t-defs) (used+defined/block try #f))
-     (match-define (list c-used c-defs)
+     (match-define `(,t-used ,t-defs) (used+defined/block try #f))
+     (match-define `(,c-used ,c-defs)
        (match-let ([(list u d) (used+defined/block catch #f)])
          (list (set-remove u error)
                (set-remove d error))))
-     (match-define (list f-used f-defs) (used+defined/block finally #f))
+     (match-define `(,f-used ,f-defs) (used+defined/block finally #f))
      (list (set-union t-used c-used f-used) (set-union t-defs c-defs f-defs))]
     [(ILRef expr fieldname)
      (used+defined/statement expr)]
     [(ILIndex expr fieldexpr)
-     (match-define (list e-used _) (used+defined/statement expr))
-     (match-define (list f-used _) (used+defined/statement fieldexpr))
+     (match-define `(,e-used ,_) (used+defined/statement expr))
+     (match-define `(,f-used ,_) (used+defined/statement fieldexpr))
      (list (set-union e-used f-used) (set))]
     [(ILValue v) (list (set) (set))]
     [(ILUndefined) (list (set) (set))]
