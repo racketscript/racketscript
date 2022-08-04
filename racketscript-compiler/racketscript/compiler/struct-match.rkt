@@ -59,7 +59,6 @@
             (if (not (struct-info? str-info?))
               (raise (format "struct-match: ~a is not a struct") (syntax->datum #'s))
               (let ([info (extract-struct-info str-info?)])
-                (displayln (cadddr info))
                 ;; TODO the spec for struct-info has additional details about what can appear
                 ;;      in the struct-info field-accessors position, so it may cause bugs
                 (if (not (eq? (length (cadddr info)) (length (syntax->list #'pats))))
