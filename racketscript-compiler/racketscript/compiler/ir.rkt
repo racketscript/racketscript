@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require "ast.rkt")
+(require "ast.rkt"
+         "struct-match.rkt")
 
 (provide (all-defined-out)
          (prefix-out IL
@@ -138,3 +139,31 @@
       (ILContinue? e)
       (ILExnHandler? e)
       (ILThrow? e)))
+
+(define (ILStatement*? e) (and (list? e) (andmap ILStatement? e)))
+
+(define (ILObject-fields o)
+  (for/list ([item (ILObject-items o)])
+    (car item)))
+
+(define (ILObject-bodies o)
+  (for/list ([item (ILObject-items o)])
+    (cdr item)))
+
+(define (il-formals-arity-includes formals k)
+  (struct-match formals
+    [(ILCheckedFormals formals*)
+     (formals-arity-includes formals* k)]
+    [v (formals-arity-includes v k)]))
+
+(define (il-freshen-formals formals)
+  (struct-match formals
+    [(ILCheckedFormals formals*)
+     (ILCheckedFormals (freshen-formals formals*))]
+    [v (freshen-formals v)]))
+
+(define (il-formals->list formals)
+  (struct-match formals
+    [(ILCheckedFormals formals*)
+     (formals->list formals*)]
+    [v (formals->list v)]))

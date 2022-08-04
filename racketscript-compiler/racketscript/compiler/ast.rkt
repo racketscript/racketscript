@@ -1,5 +1,7 @@
 #lang racket/base
 
+(require "ident.rkt")
+
 (provide (all-defined-out))
 
 ;; TODO path should get eliminated once things are bootstrapped (or perhaps just before)
@@ -82,3 +84,24 @@
 
 ;; (RenamedProvide symbol? symbol?)
 (struct RenamedProvide (local-id exported-id) #:transparent)
+
+(define (formals-arity-includes formals k)
+  (cond
+    [(symbol? formals) #t]
+    [(list? formals) (equal? (length formals) k)]
+    [(pair? formals) (>= k (length (car formals)))]))
+
+(define (freshen-formals formals)
+  (cond
+    [(symbol? formals) (fresh-id (string->symbol (format "_~a" formals)))]
+    [(list? formals) (for/list ([f formals])
+                       (freshen-formals f))]
+    [(pair? formals) (cons (freshen-formals (car formals))
+                           (freshen-formals (cdr formals)))]))
+
+(define (formals->list formals)
+  (cond
+    [(symbol? formals) (list formals)]
+    [(list? formals) formals]
+    [(pair? formals) (append (car formals)
+                             (list (cdr formals)))]))
