@@ -3,8 +3,11 @@
 (require "ast.rkt")
 
 (provide (all-defined-out)
-         (struct-out SimpleProvide)
-         (struct-out RenamedProvide))
+         (prefix-out IL
+                     (combine-out
+                       (struct-out SimpleProvide)
+                       (struct-out RenamedProvide)
+                       (struct-out IfClause))))
 
 ;; (ILLinklet [Listof ILRequire?] [Listof ILProvide?] [Listof ILStatement?])
 (struct ILLinklet (imports exports body) #:transparent)
@@ -76,7 +79,7 @@
 ;; (ILIf ILExpr? [Listof ILStatement?] [Listof ILStatement?])
 (struct ILIf (pred t-branch f-branch) #:transparent)
 
-;; (ILIf* [Listof ILIf?])
+;; (ILIf* [Listof IfClause?])
 (struct ILIf* (clauses) #:transparent)
 
 ;; (ILAssign (or sumbol? ILRef? ILIndex?) ILExpr?)
@@ -122,7 +125,7 @@
       (ILArguments? e)
       (ILThis? e)
       (symbol? e)))
-
+        
 (define (ILStatement? e)
   (or (ILExpr? e)
       (ILVarDec? e)
