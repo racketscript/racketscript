@@ -99,7 +99,7 @@
 ;;               [Listof ILStatement?]
 ;;               [Listof ILStatement?]
 ;;               ILExpr?)
-(struct ILExnHandler (try error catch finally expr) #:transparent)
+(struct ILExnHandler (try error catch finally) #:transparent)
 
 ;; (ILThrow ILExpr?)
 (struct ILThrow (expr) #:transparent)
