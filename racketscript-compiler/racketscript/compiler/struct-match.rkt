@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base racket/struct-info))
 
-(provide struct-match struct-match-define struct-match-lambda)
+(provide struct-match struct-match-define struct-match-lambda struct-match-let)
 
 (define-for-syntax (pat-pred pat)
   (let* ([stx-hd (car (syntax-e pat))]
@@ -115,3 +115,14 @@
 (define-syntax (struct-match-lambda stx)
   (syntax-case stx ()
     [(_ clause ...) #'(λ (a) (struct-match a clause ...))]))
+
+(define-syntax (struct-match-let stx)
+  (syntax-case stx ()
+    [(_ ([pat rhs] ...) body ...)
+     #`(let-values
+         #,(map (λ (pat rhs)
+                  #`(#,(pat-ids pat)
+                     (let ([v #,rhs]) (match v [#,pat (values . #,(pat-ids pat))]))))
+                (syntax->list #'(pat ...))
+                (syntax->list #'(rhs ...)))
+         body ...)]))
