@@ -129,3 +129,13 @@
       (LetValues? e)
       (Set!? e)
       (WithContinuationMark? e)))
+
+(define (lambda-arity f)
+  (define frmls (Lambda-formals f))
+  (cond
+    [(symbol? frmls) (arity-at-least 0)]
+    [(list? frmls) (length frmls)]
+    [(pair? frmls) (arity-at-least (length (car frmls)))]))
+
+(define (variadic-lambda? lam)
+  (not (list? (Lambda-formals lam))))
