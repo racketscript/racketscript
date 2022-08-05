@@ -16,17 +16,25 @@
                                         (string->symbol
                                           (format "log-rjs-~a" (syntax-e #'kind))))]
                    [str (symbol->string (syntax-e #'kind))]
-                   [stx (generate-temporaries 'stx)])
-       (syntax
-         (define-syntax (name stx)
-           (syntax-case stx ()
-             [(_ a0 a* (... ...))
-              #'(when (logging?)
-                  (begin (printf "[~a]" 'str)
-                         (unless (equal? (string-ref a0 0) #\[)
-                           (printf " "))
-                         (printf a0 a* (... ...))
-                         (printf "\n")))])))])]))
+                   [(fst rst) (generate-temporaries '(fst rst))])
+       #'(define (name fst . rst)
+           (when (logging?)
+             (begin (printf "[~a]" 'str)
+                    (unless (equal? (string-ref fst 0) #\[)
+                      (printf " "))
+                    (apply printf fst rst)
+                    (printf "\n")))))]))
+       ;; (syntax
+
+       ;;   (define-syntax (name stx)
+       ;;     (syntax-case stx ()
+       ;;       [(_ a0 a* (... ...))
+       ;;        #'(when (logging?)
+       ;;            (begin (printf "[~a]" 'str)
+       ;;                   (unless (equal? (string-ref a0 0) #\[)
+       ;;                     (printf " "))
+       ;;                   (printf a0 a* (... ...))
+       ;;                   (printf "\n")))]))))]))
 
 ;; (define-syntax log-rjs
 ;;   (syntax-parser
