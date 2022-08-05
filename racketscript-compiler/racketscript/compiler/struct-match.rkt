@@ -82,7 +82,11 @@
                (cond
                  [(null? patterns)
                   #'(error 'match "failed ~e" v)]
-                 [(empty-pat? (car patterns)) #`(begin . #,(car bodys))]
+                 [(empty-pat? (car patterns))
+                  (define guard? (extract-guard (car bodys)))
+                  (if guard?
+                    #`(if #,guard? (let () . #,(remove-guard (car bodys))) #,(loop (cdr patterns) (cdr bodys)))
+                    #`(let () . #,(car bodys)))]
                  [(pred-pat? (car patterns))
                   #`(if #,(pred-from-pat (car patterns) #'v)
                       #,(if (empty-pat? (id-of-pred-pat (car patterns)))
