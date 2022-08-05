@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require "ast.rkt"
+(require (only-in racket/list flatten)
+         "ast.rkt"
          "struct-match.rkt")
 
 (provide (all-defined-out)
@@ -167,3 +168,5 @@
     [(ILCheckedFormals formals*)
      (formals->list formals*)]
     [v (formals->list v)]))
+
+(define (flatten-statements stms) (flatten stms))
