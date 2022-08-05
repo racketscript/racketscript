@@ -7,6 +7,9 @@
          "set.rkt"
          "match.rkt"
          "anaphoric.rkt"
+         racket/flonum
+         racket/fixnum
+         (only-in racket/list range)
          (only-in racket/string string-prefix?)
          (only-in racket/path find-relative-path))
 
@@ -37,6 +40,7 @@
          primitive-module-path?
          ++
          ~a
+         sequence-length
          (all-from-out "ident.rkt"))
 
 (module+ test (require rackunit))
@@ -337,6 +341,20 @@
           (loop new-val)))))
 
 ;;; ---------------------------------------------------------------------------
+
+(define (sequence-length s)
+  (unless (sequence? s) (raise-argument-error 'sequence-length "sequence?" s))
+  (cond [(exact-nonnegative-integer? s) s]
+        [(list? s) (length s)]
+        [(vector? s) (vector-length s)]
+        [(flvector? s) (flvector-length s)]
+        [(fxvector? s) (fxvector-length s)]
+        [(string? s) (string-length s)]
+        [(bytes? s) (bytes-length s)]
+        [(hash? s) (hash-count s)]
+        [else
+         (for/fold ([c 0]) ([i (in-values*-sequence s)])
+           (add1 c))]))
 
 (define-syntax (for/fold/last stx)
   (syntax-case stx ()
