@@ -188,7 +188,7 @@
                  (App (ImportedIdent 'make-arity-at-least '#%kernel #t) (list (Quote (arity-at-least-value c))))
                  #f))
              val]
-            [(number? val) (ILValue val)]))))
+            [(number? c) (ILValue c)]))))
 
      (values stms (ILApp (name-in-module 'core 'attachProcedureArity) (list val arities)))]
 
@@ -416,11 +416,7 @@
     ;; Begin Statements
 
     [_ #:when (and (pair? expr) (null? (cdr expr)))
-     (displayln "bar")
-     (displayln expr)
      (match-define `(,hd) expr)
-     (displayln "foo")
-     (displayln hd)
      (cond
        [(Expr? hd) (absyn-expr->il hd overwrite-mark-frame?)]
        [else (error "last datum in body must be expression")])]

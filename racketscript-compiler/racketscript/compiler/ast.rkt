@@ -46,9 +46,6 @@
 ;; (Quote datum?)
 (struct Quote (datum) #:transparent)
 
-;; (Begin [Listof Expr?])
-(struct Begin (exprs) #:transparent)
-
 ;; (Begin0 Expr? [Listof Expr?])
 (struct Begin0 (expr0 exprs) #:transparent)
 
@@ -111,6 +108,14 @@
       (TopLevelIdent? e)
       (LinkletImportIdent? e)
       (LocalIdent? e)))
+
+(define (TopLevelForm? e)
+  (or (Expr? e)
+      (DefineValues? e)
+      (JSRequire? e)))
+
+(define (Begin? e)
+  (and (list? e) (andmap TopLevelForm? e)))
 
 ;; NOTE the linklet docs specify that:
 ;;      1. quote-syntax and #%top don't appear in the IR
