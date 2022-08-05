@@ -13,11 +13,12 @@
          "config.rkt"
          "environment.rkt"
          "il-analyze.rkt"
-         "il.rkt"
+         "ir.rkt"
          "logging.rkt"
          "util.rkt"
          "set.rkt"
-         "match.rkt")
+         "match.rkt"
+         "struct-match.rkt")
 
 (provide absyn-top-level->il
          absyn-gtl-form->il
