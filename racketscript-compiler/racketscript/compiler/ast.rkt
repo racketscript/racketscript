@@ -105,3 +105,27 @@
     [(list? formals) formals]
     [(pair? formals) (append (car formals)
                              (list (cdr formals)))]))
+
+(define (Ident? e)
+  (or (ImportedIdent? e)
+      (TopLevelIdent? e)
+      (LinkletImportIdent? e)
+      (LocalIdent? e)))
+
+;; NOTE the linklet docs specify that:
+;;      1. quote-syntax and #%top don't appear in the IR
+;;      2. #%plain-app is implicit
+;;      3. #%plain-lambda is 'spelled' lambda
+(define (Expr? e)
+  (or (Ident? e)
+      (VarRef? e)
+      (Quote? e)
+      (Begin? e)
+      (Begin0? e)
+      (App? e)
+      (Lambda? e)
+      (CaseLambda? e)
+      (If? e)
+      (LetValues? e)
+      (Set!? e)
+      (WithContinuationMark? e)))
