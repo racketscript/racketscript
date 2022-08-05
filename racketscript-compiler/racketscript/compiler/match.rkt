@@ -131,9 +131,9 @@
                           (let-values ([#,ids #,(extract-one #'v (car patterns))])
                             #,(if guard
                                 #`(if #,guard
-                                    (begin . #,(remove-guard (car bodys)))
+                                    (let () . #,(remove-guard (car bodys)))
                                     (alt))
-                                #`(begin . #,(remove-guard (car bodys)))))
+                                #`(let () . #,(remove-guard (car bodys)))))
                           (alt)))])))
              ;; If the first pattern is `(<id> ....)`, then
              ;; extract the input head symbol, because we're
