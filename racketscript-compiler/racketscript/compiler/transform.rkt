@@ -5,6 +5,7 @@
 
 (require racket/bool
          racket/list
+         version/utils
          "ast.rkt"
          "config.rkt"
          "environment.rkt"
@@ -19,7 +20,6 @@
 (provide absyn-top-level->il
          absyn-gtl-form->il
          absyn-expr->il
-         absyn-module->il
          absyn-linklet->il)
 
 (define module-object-name-map (make-parameter hash))
@@ -222,18 +222,28 @@
                         (ILAssign id v)))
              (ILValue (void)))]
 
-    [(App (ImportedIdent '#%js-ffi _ _) args)
+    [(App lam args)
+     #:when (and (ImportedIdent? lam)
+                 (eq? '#%js-ffi (ImportedIdent-id lam)))
      (match args
-       [(list (Quote 'var) (Quote var))
-        (values '() (cast var Symbol))]
-       [(list (Quote 'string) (Quote str))
-        (values '() (ILValue str))]
-       [(list (Quote 'ref) b xs ...)
+       [`(,fst ,snd)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'var))
+        (values '() (Quote-datum snd))]
+       [`(,fst ,snd)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'string))
+        (values '() (ILValue (Quote-datum snd)))]
+       [`(,fst ,b . ,xs)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'ref))
         (define-values (stms il) (absyn-expr->il b #f))
         (values stms
                 (for/fold ([il il])
                           ([x xs])
-                  (match-define (Quote s) x) ;; Previous phase wrap
+                  (struct-match-define (Quote s) x) ;; Previous phase wrap
                                              ;; the symbol in quote
 
                   ;; HACK: To avoid wrapping the base symbol into
@@ -244,7 +254,9 @@
                       (ILRef (ILValue-v il)
                              s)
                       (ILRef il s))))]
-       [(list (Quote 'index) b xs ...)
+       [`(,fst ,b . ,xs)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'index))
         (define-values (stms il) (absyn-expr->il b #f))
         (for/fold ([stms stms]
                    [il il])
@@ -255,18 +267,24 @@
                       (ILIndex (ILValue-v il)
                                s-il)
                       (ILIndex il s-il))))]
-       [(list (Quote 'assign) lv rv)
+       [`(,fst ,lv ,rv)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'assign))
         (define-values (lv-stms lv-il) (absyn-expr->il lv #f))
         (define-values (rv-stms rv-il) (absyn-expr->il rv #f))
         (values (append lv-stms
                         rv-stms
                         (list (ILAssign lv-il rv-il)))
                 (ILValue (void)))]
-       [(list (Quote 'new) lv)
+       [`(,fst ,lv)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'new))
         (define-values (stms il) (absyn-expr->il lv #f))
         (values stms
                 (ILNew il))]
-       [(list (Quote 'array) items ...)
+       [`(,fst . ,items)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'array))
         (define-values (stms* items*)
           (for/fold ([stms '()]
                      [vals '()])
@@ -276,7 +294,9 @@
                     (append vals (list v*)))))
         (values stms*
                 (ILArray items*))]
-       [(list (Quote 'object) items ...)
+       [`(,fst . ,items)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'object))
         (define-values (keys vals) (split-at items (/ (length items) 2)))
         (define-values (stms* items*)
           (for/fold ([stms '()]
@@ -288,37 +308,54 @@
                     (append kvs (list (cons (Quote-datum k)
                                             v*))))))
         (values stms* (ILObject items*))]
-       [(list (Quote 'throw) e)
+       [`(,fst ,e)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'throw)) 
         (define-values (stms val) (absyn-expr->il e #f))
         (values (append1 stms (ILThrow val)) (ILValue (void)))]
-       [(list (Quote 'typeof) e)
+       [`(,fst ,e)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'typeof))
         (define-values (stms val) (absyn-expr->il e #f))
         (values stms (ILTypeOf val))]
-       [(list (Quote 'instanceof) e t)
+       [`(,fst ,e ,t)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'instanceof))
         ;;TODO: Not ANF.
         (define-values (stms val) (absyn-expr->il e #f))
         (define-values (tstms tval) (absyn-expr->il t #f))
         (values (append stms tstms) (ILInstanceOf val tval))]
-       [(list (Quote 'operator) (Quote oper) e0 e1)
+       [`(,fst ,snd ,e0 ,e1)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'operator))
+        (struct-match-define (Quote oper) snd)
         ;;TODO: not ANF
         (define-values (stms0 val0) (absyn-expr->il e0 #f))
         (define-values (stms1 val1) (absyn-expr->il e1 #f))
         (values (append stms0 stms1)
                 (ILBinaryOp oper (list val0 val1)))]
-       [(list (Quote 'null))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'null))
         (values '() (ILNull))]
-       [(list (Quote 'undefined))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'undefined))
         (values '() (ILUndefined))]
-       [(list (Quote 'arguments))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'arguments))
         (values '() (ILArguments))]
-       [(list (Quote 'this))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'this))
         (values '() (ILThis))]
-       [_ (error 'absyn-expr->il "unknown ffi form" args)])]
+       [`,_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
     [(App lam args)
      ;;NOTE: Comparision operators work only on two operands TODO
      ;;later
-     (: binops (Listof ImportedIdent))
      (define binops (map (λ (b)
                            (ImportedIdent b '#%kernel #t))
                          '(+ - * /)))
@@ -340,9 +377,9 @@
      ;; If some arguements produce statement, it may have side effects
      ;; and hence lambda expression should be computed first.
      (define-values (lam+arg-stms lam-part-vals _rst)
-       (for/fold/last ([stms : ILStatement* '()]
-                       [vals : (Listof ILExpr) '()]
-                       [next-has-stms? : Boolean #f])
+       (for/fold/last ([stms '()]
+                       [vals '()]
+                       [next-has-stms? #f])
                       ([arg last? (reverse (cons lam args))])
          (define-values (s v) (absyn-expr->il arg #f))
          (cond
@@ -427,8 +464,8 @@
      (cond
        [(and (or (symbol? (current-source-file))
                  (path? (current-source-file)))
-             (equal? (actual-module-path (cast (current-source-file) ModuleName))
-                     (actual-module-path (cast src ModuleName))))
+             (equal? (actual-module-path (current-source-file))
+                     (actual-module-path src)))
         (absyn-expr->il (LocalIdent id) overwrite-mark-frame?)]
        [(false? reachable?)
         ;; Probably a macro-introduced binding.
@@ -439,7 +476,7 @@
                                          (log-rjs-warning "missing unreachable binding ~s ~s" id* src)
                                          src)))
         (values '()
-                (ILRef (ILRef (assert mod-obj-name symbol?)
+                (ILRef (ILRef mod-obj-name
                               *quoted-binding-ident-name*)
                        id*))]
        [else
@@ -447,9 +484,11 @@
                                        (lambda ()
                                          (log-rjs-warning "missing reachable binding ~s ~s" id* src)
                                          src)))
-        (values '() (ILRef (assert mod-obj-name symbol?) id*))])]
+        (values '() (ILRef mod-obj-name id*))])]
 
-    [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
+    [(WithContinuationMark key _fst wcm) #:when (WithContinuationMark? wcm)
+     (struct-match-define (WithContinuationMark key _snd _thd) wcm)
+
      ;; Overwrites previous key
      (absyn-expr->il wcm overwrite-mark-frame?)]
 
@@ -493,20 +532,18 @@
     [_ (error (~a "unsupported expr " expr))]))
 
 
-(: absyn-binding->il (-> Binding ILStatement*))
 (define (absyn-binding->il b)
-  (match-define (cons args expr) b)
+  (match-define `(,args . ,expr) b)
   (define-values (stms v) (absyn-expr->il expr #f))
   (match args
-    [(list a)
+    [`(,a)
      (append1 stms
               (ILVarDec a v))]
-    [_
+    [`,_
      (define result-id (fresh-id 'let_result))
-     (: binding-stms ILStatement*)
      (define binding-stms
-       (for/list ([i : Natural (range (length args))]
-                  [arg : Symbol args])
+       (for/list ([i (range (length args))]
+                  [arg args])
          (ILVarDec arg (ILApp (ILRef result-id 'getAt)
                               (list (ILValue i))))))
      (append stms
@@ -514,7 +551,6 @@
                    binding-stms))]))
 
 
-(: absyn-value->il (-> Any ILExpr))
 (define (absyn-value->il d)
   (cond
     [(Quote? d) (absyn-value->il (Quote-datum d))]
@@ -541,9 +577,8 @@
             (list
              (ILArray
               (map absyn-value->il
-                   (vector->list (cast d (Vectorof Any)))))))]
+                   (vector->list d)))))]
     [(hash? d)
-     (: maker Symbol)
      (define maker (cond
                      [(hash-eq? d) 'Hash.makeEq]
                      [(hash-eqv? d) 'Hash.makeEqv]
@@ -576,18 +611,15 @@
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
 
-(: expand-normal-case-lambda (-> (Listof Lambda)
-                                 (Listof Lambda)
-                                 (Values ILStatement* ILExpr)))
 (define (expand-normal-case-lambda fixed-lams rest-lams)
-  (define fixed-lam-names : (Listof Symbol)
+  (define fixed-lam-names
     (build-list (length fixed-lams) (λ (_) (fresh-id 'cl))))
-  (define rest-lam-names : (Listof Symbol)
+  (define rest-lam-names
     (build-list (length rest-lams) (λ (_) (fresh-id 'cl))))
 
   (define fixed-lam-name (fresh-id 'fixed-lam))
   (define fixed-lam-map
-    (ILObject (map (λ ([id : Symbol] [lam : Lambda])
+    (ILObject (map (λ (id lam)
                      (let ([arity (lambda-arity lam)])
                        (if (number? arity)
                            (cons (string->symbol (~a arity)) id)
@@ -599,12 +631,12 @@
 
   (define-values (var-lam-stms var-lam-val)
     (absyn-expr->il
-     (let loop : Expr ([lams*   rest-lams]
-                       [names*  rest-lam-names])
+     (let loop ([lams*   rest-lams]
+                [names*  rest-lam-names])
           (match (list lams* names*)
-            [(list '() '()) (App (ImportedIdent 'error '#%kernel #t)
-                                      (list (Quote "case-lambda: invalid case")))]
-            [(list (cons lh lt) (cons nh nt))
+            [`(() ()) (App (ImportedIdent 'error '#%kernel #t)
+                           (list (Quote "case-lambda: invalid case")))]
+            [`((,lh . ,lt) (,nh . ,nt))
              (define arguments-length (App (ImportedIdent '#%js-ffi '#%kernel #t)
                                                 (list (Quote 'ref)
                                                       (LocalIdent nh)
@@ -628,25 +660,24 @@
                 (append1 var-lam-stms
                          (ILReturn var-lam-val)))))
 
-  (let ([make-lam (λ ([id : Symbol] [lam : Lambda])
+  (let ([make-lam (λ (id lam)
                     (define-values (stms lam-expr) (absyn-expr->il lam #f))
-                    (assert stms empty?)
+                    stms
                     (ILVarDec id lam-expr))])
     (values (append (map make-lam fixed-lam-names fixed-lams)
                     (map make-lam rest-lam-names rest-lams))
             (ILLambda '() dispatch-stms))))
 
-(: case-lambda-has-dead-clause? (-> CaseLambda Boolean))
 ;; Returns true if the given case-lambda has an unreachable clause.
 ;; Eg. (case-lambda
 ;;       [(a . b) "take at-least 1"]
 ;;       [(a b) "take exactly 2"])
 (define (case-lambda-has-dead-clause? clam)
   (define-values (result _)
-    (for/fold : (Values Boolean Number)
-              ([res : Boolean #f]
-               [least-var-arity : Real +inf.0])
-              ([lam (CaseLambda-clauses clam)])
+    (for/fold
+      ([res #f]
+       [least-var-arity +inf.0])
+      ([lam (CaseLambda-clauses clam)])
       (let ([arity (lambda-arity lam)])
         (cond
           [(and (number? arity) (< arity least-var-arity))
@@ -694,7 +725,6 @@
                  (Lambda '(a b) '() #f))))
               "third clause is unreachable"))
 
-(: get-formals-predicate (-> Lambda (-> Expr Expr)))
 (define (get-formals-predicate c)
   ;; TODO: Use binary ops instead of function call for cmp
   (define frmls (Lambda-formals c))
@@ -702,13 +732,13 @@
   (cond
     [(symbol? frmls) (λ (_) (Quote #t))]
     [(list? frmls)
-     (λ ([v : Expr])
+     (λ (v)
        (App (ImportedIdent 'equal? '#%kernel #t)
                  (list
                   v
                   (Quote (length frmls)))))]
     [(cons? frmls)
-     (λ ([v : Expr])
+     (λ (v)
        (App (ImportedIdent '>= '#%kernel #t)
                  (list
                   v
@@ -732,12 +762,12 @@
   (let loop ([arities* (sort arities arity<)]
              [result '()])
     (match arities*
-      ['() (reverse result)]
-      [(cons (and (arity-at-least v) hd) tl)
+      [`() (reverse result)]
+      [`(,hd . ,tl) #:when (arity-at-least? hd)
        (reverse (if (and (cons? result) (arity-equal? (car result) hd))
                     (cons hd (cdr result))
                     (cons hd result)))]
-      [(cons hd tl)
+      [`(,hd . ,tl)
        (loop tl (if (and (cons? result) (arity-equal? (car result) hd))
                     result
                     (cons hd result)))])))
@@ -746,7 +776,6 @@
   (require typed/rackunit
            racket/pretty)
 
-  (: -absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
   (define (-absyn-expr->il expr)
     (absyn-expr->il expr #f))
 
@@ -771,12 +800,8 @@
     (ilcheck absyn-gtl-form->il form stms))
 
   (define LI LocalIdent)
-  (define LI* (λ s*
-                ((inst map LocalIdent Symbol)
-                 LocalIdent
-                 (cast s* (Listof Symbol)))))
+  (define LI* (λ s* (map LocalIdent s*)))
 
-  (: kident (-> Symbol ImportedIdent))
   (define (kident s) (ImportedIdent s '#%kernel #t))
 
   (define-syntax-rule (convert+print fn absyn)
@@ -789,18 +814,15 @@
   ;; enable test environment
   (test-environment? #t)
 
-  (: ~str (-> String ILExpr))
   (define (~str s)
     (ILApp
      (name-in-module 'core 'UString.make)
      (list (ILValue s))))
 
-  (: ~sym (-> Symbol ILExpr))
   (define (~sym s)
     (ILApp
      (name-in-module 'core 'PrimitiveSymbol.make) (list (ILValue (symbol->string s)))))
 
-  (: ~cons (-> ILExpr ILExpr ILExpr))
   (define (~cons a b)
     (ILApp (name-in-module 'core 'Pair.make) (list a b)))
 
