@@ -1180,6 +1180,12 @@
     [(ILTypeOf expr) (ILTypeOf (flatten-if-else/expr expr))]
     [v v]))
 
+(define (remove-last ls)
+  (match ls
+    [`() '()]
+    [`(,e) '()]
+    [`(,hd . ,tl) (cons hd (remove-last tl))]))
+
 (define flatten-if-else/stm
   (struct-match-lambda
     [(ILIf pred t-branch f-branch)
@@ -1199,15 +1205,19 @@
     [(ILIf pred t-branch f-branch) (ILIf (flatten-if-else/expr pred)
                                          (flatten-if-else/stm* t-branch)
                                          (flatten-if-else/stm* f-branch))]
+    ;; TODO this is really bad
+    [(ILIf* clauses) #:when (null? clauses)
+     (ILIf* (list))]
     [(ILIf* clauses) #:when (list? clauses)
      (struct-match-define (ILIfClause cnd contents) (last clauses))
+     (define new-clauses (remove-last clauses))
      (cond
        [(and (not cnd)
              (= 1 (length contents))
              (ILIf? (car contents)))
         (struct-match-define (ILIf pred* t-branch* f-branch*) (car contents))
         (flatten-if-else/stm
-          (ILIf* (append clauses
+          (ILIf* (append new-clauses
                          (list
                            (ILIfClause pred* t-branch*)
                            (ILIfClause #f f-branch*)))))]
