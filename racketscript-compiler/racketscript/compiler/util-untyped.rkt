@@ -1,4 +1,6 @@
-#lang racket
+#lang racket/base
+
+(require "match.rkt")
 
 (provide links-module?
          improper->proper
@@ -51,9 +53,9 @@
 
 (define (improper->proper l)
   (match l
-    [(cons a b) (cons a (improper->proper b))]
-    ['() '()]
-    [_ (cons l '())]))
+    [`(,a . ,b) (cons a (improper->proper b))]
+    [`() '()]
+    [`,_ (cons l '())]))
 (module+ test
   (check-equal? (improper->proper '()) '())
   (check-equal? (improper->proper '(1 . 2)) '(1 2))
