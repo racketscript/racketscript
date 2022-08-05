@@ -22,7 +22,7 @@
          absyn-expr->il
          absyn-linklet->il)
 
-(define module-object-name-map (make-parameter hash))
+(define module-object-name-map (make-parameter (hash)))
 
 (define (absyn-top-level->il form)
   (cond
@@ -44,6 +44,7 @@
 
   ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
   ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
+
 
   (parameterize ([module-object-name-map (make-module-map requires* imported-mod-path-list)])
     (ILLinklet
@@ -69,24 +70,26 @@
       [else (error 'exports->il "unknown export form in linklet" ex)])))
 
 
+;; TODO not using a lot of the code here, eventually should be able to delete
 (define (absyn-requires->il import-list path)
   (for/list ([mod-path import-list]
              [counter (in-naturals)])
     (define mod-obj-name (string->symbol (~a "M" counter)))
-    (define import-name
-      (if (symbol? mod-path)
-        (jsruntime-import-path path
-                               (jsruntime-module-path mod-path))
-        (module->relative-import mod-path)))
+    (ILRequire mod-path mod-obj-name '*)))
+    ;; (define import-name
+    ;;   (if (symbol? mod-path)
+    ;;     (jsruntime-import-path path
+    ;;                            (jsruntime-module-path mod-path))
+    ;;     (module->relative-import mod-path)))
 
-    ;; See expansion of identifier in `expand.rkt` for primitive
-    ;; modules
-    (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
-                  (equal? path (actual-module-path mod-path)))
-            (and (primitive-module-path? (actual-module-path path))
-                  (set-member? ignored-module-imports-in-boot mod-path)))
-        #f
-        (ILRequire import-name mod-obj-name '*))))
+    ;; ;; See expansion of identifier in `expand.rkt` for primitive
+    ;; ;; modules
+    ;; (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
+    ;;               (equal? path (actual-module-path mod-path)))
+    ;;         (and (primitive-module-path? (actual-module-path path))
+    ;;               (set-member? ignored-module-imports-in-boot mod-path)))
+    ;;     #f
+    ;;     (ILRequire import-name mod-obj-name '*))))
 
 (define (absyn-gtl-form->il form)
   (cond
@@ -236,7 +239,7 @@
                     (Quote? snd)
                     (eq? (Quote-datum fst) 'string))
         (values '() (ILValue (Quote-datum snd)))]
-       [`(,fst ,b . ,xs)
+       [`(,fst ,b ,xs ...)
         #:when (and (Quote? fst)
                     (eq? (Quote-datum fst) 'ref))
         (define-values (stms il) (absyn-expr->il b #f))
@@ -254,7 +257,7 @@
                       (ILRef (ILValue-v il)
                              s)
                       (ILRef il s))))]
-       [`(,fst ,b . ,xs)
+       [`(,fst ,b ,xs ...)
         #:when (and (Quote? fst)
                     (eq? (Quote-datum fst) 'index))
         (define-values (stms il) (absyn-expr->il b #f))
@@ -282,7 +285,7 @@
         (define-values (stms il) (absyn-expr->il lv #f))
         (values stms
                 (ILNew il))]
-       [`(,fst . ,items)
+       [`(,fst ,items ...)
         #:when (and (Quote? fst)
                     (eq? (Quote-datum fst) 'array))
         (define-values (stms* items*)
@@ -294,7 +297,7 @@
                     (append vals (list v*)))))
         (values stms*
                 (ILArray items*))]
-       [`(,fst . ,items)
+       [`(,fst ,items ...)
         #:when (and (Quote? fst)
                     (eq? (Quote-datum fst) 'object))
         (define-values (keys vals) (split-at items (/ (length items) 2)))
@@ -401,7 +404,7 @@
                     (cons v vals)
                     (or next-has-stms? (cons? s)))])))
 
-     (match-define `(,lam-val . ,arg-vals) lam-part-vals)
+     (match-define `(,lam-val ,arg-vals ...) lam-part-vals)
 
      (if (Ident? lam)
          (values lam+arg-stms
@@ -413,7 +416,11 @@
     ;; Begin Statements
 
     [_ #:when (and (pair? expr) (null? (cdr expr)))
+     (displayln "bar")
+     (displayln expr)
      (match-define `(,hd) expr)
+     (displayln "foo")
+     (displayln hd)
      (cond
        [(Expr? hd) (absyn-expr->il hd overwrite-mark-frame?)]
        [else (error "last datum in body must be expression")])]
@@ -773,8 +780,7 @@
                     (cons hd result)))])))
 
 (module+ test
-  (require typed/rackunit
-           racket/pretty)
+  (require rackunit)
 
   (define (-absyn-expr->il expr)
     (absyn-expr->il expr #f))

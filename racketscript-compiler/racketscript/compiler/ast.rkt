@@ -7,7 +7,7 @@
 ;; TODO path should get eliminated once things are bootstrapped (or perhaps just before)
 (struct Linklet (path imports exports forms) #:transparent)
 
-(struct DefineValues (ids expr))
+(struct DefineValues (ids expr) #:transparent)
 
 ;; An Ident is one of:
 ;; - TopLevelIdent
