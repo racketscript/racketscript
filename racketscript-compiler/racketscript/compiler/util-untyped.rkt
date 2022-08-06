@@ -2,8 +2,7 @@
 
 (require "match.rkt")
 
-(provide links-module?
-         improper->proper
+(provide improper->proper
          *jsident-pattern*
          js-identifier?)
 
@@ -33,23 +32,6 @@
         (apply build-path
               base
               (map link-path-elem->string (cadr spec)))))))
-        
-
-;; Module-Path -> (Maybe (list String Path))
-;; If `mod-path` belongs to a module listed in (find-links-file),
-;; return a list containing:
-;; - the link name,
-;; - and path to root of the module
-;; e.g., '("racketscript-compiler"
-;;         #<path:/home/username/racketscript/racketscript-compiler>)
-;; else return false.
-(define (links-module? mod-path)
-  (for*/or ([links-file (current-library-collection-links)]
-            #:when links-file
-            [link-path (get-root-links links-file)])
-    (and (subpath? link-path mod-path)
-         (let-values ([(base link-name dir?) (split-path link-path)])
-           (list (format "~a" link-name) link-path)))))
 
 (define (improper->proper l)
   (match l

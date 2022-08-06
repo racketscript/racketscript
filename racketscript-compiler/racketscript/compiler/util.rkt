@@ -24,11 +24,8 @@
          assocs->hash-list
          module-path->name
          collects-module?
-         module-output-file
-         module->relative-import
          actual-module-path
          js-identifier?
-         jsruntime-import-path
          path-parent
          length=?
          string-slice
@@ -211,17 +208,6 @@
 (define (main-source-directory)
   (path-parent (main-source-file)))
 
-(define (jsruntime-import-path base runtime-fpath)
-  ;; TODO: Make runtime, modules, and everything united!
-  (define (fix-for-down p)
-    (define p-str (~a p))
-    (if (string-prefix? p-str "..")
-        p
-        (build-path (~a "./" p-str))))
-  (fix-for-down
-   (find-relative-path (path-parent (module-output-file base))
-                             runtime-fpath)))
-
 ;;; Module path renaming ------------------------------------------------------
 
 (define (actual-module-path in-path)
@@ -262,48 +248,6 @@
       (with-handlers ([exn:fail:filesystem:exists? void])
         (make-directory dir)))))
 
-;; NOTE: returns simplified path, which is required by fns like find-relative-path
-(define (module-output-file mod)
-  (simple-form-path
-    (match (module-kind mod)
-      [`(primitive ,mod-path)
-      ;; Eg. #%kernel, #%utils ...
-       (build-path (output-directory)
-                   "runtime"
-                   (~a (substring (symbol->string mod-path) 2) ".rkt.js"))]
-      [`(runtime ,rel-path)
-       (build-path (output-directory) "runtime" (~a rel-path ".js"))]
-      [`(collects ,base ,rel-path)
-       (build-path (output-directory) "collects" (~a rel-path ".js"))]
-      [`(links ,name ,root-path ,rel-path)
-       (define output-path
-         (build-path (output-directory) "links" name (~a rel-path ".js")))
-       ;; because we just created root links directory, but files could be
-       ;; deep arbitrarily inside
-       (make-directory* (path-only output-path))
-       ;; TODO: doesn't handle arbitrary deep files for now
-       output-path]
-      [`(general ,mod-path)
-       (let* ([main (main-source-file)]
-               [rel-path (find-relative-path (simple-form-path (path-parent main))
-                                             (simple-form-path mod-path))])
-         (build-path (output-directory) "modules" (~a rel-path ".js")))])))
-
-(define (module->relative-import mod-path)
-  ;; ES6 modules imports need "./" prefix for importing relatively
-  ;; to current module, rather than relative to main module. Weird :/
-  (define (fix-for-down p)
-    (define p-str (~a p))
-    (if (string-prefix? p-str "..")
-        p
-        (build-path (~a "./" p-str))))
-
-  (let ([src (current-source-file)])
-    (if src
-        (fix-for-down
-         (find-relative-path (path-parent (module-output-file src))
-                                   (module-output-file mod-path)))
-         (error 'module->relative-import "current-source-file is #f"))))
 
 (define (collects-module? mod-path)
   (let loop ([collects (current-library-collection-paths)])
@@ -317,21 +261,6 @@
 (define (runtime-module? mod-path)
   (and (string-prefix? (~a mod-path) (~a racketscript-runtime-dir))
        (find-relative-path racketscript-runtime-dir mod-path)))
-
-(define (module-kind mod-path)
-  (acond
-    [(symbol? mod-path) (list 'primitive mod-path)]
-    [(runtime-module? mod-path) (list 'runtime it)]
-    [(collects-module? mod-path)
-     (list 'collects
-           it
-           (find-relative-path it mod-path))]
-    [(links-module? mod-path)
-     (list 'links
-           (car it)
-           (cadr it)
-           (find-relative-path (cadr it) mod-path))]
-    [else (list 'general mod-path)]))
 
 (define (converge fn init-val)
   (let loop ([val init-val])
