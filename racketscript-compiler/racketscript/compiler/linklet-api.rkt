@@ -11,8 +11,3 @@
 
 (define (linklet-import-variables lnk)
   (Linklet-imports lnk))
-
-(define (foobar)
-  (compile-linklet (read (open-input-file "/home/gamburgm/racketscript/expander.rktl"))))
-
-(foobar)

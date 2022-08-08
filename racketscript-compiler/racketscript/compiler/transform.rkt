@@ -443,7 +443,7 @@
     [(ImportedIdent id src_ reachable?)
      ;; FIXME?: Racket7 workaround
      (define src
-       (if (and (< (string->number (substring (version) 0 1)) 7)
+       (if (and (< (get-major-version (substring (version) 0 1)) 7)
                 (equal? src_ '#%runtime))
            '#%kernel
            src_))
