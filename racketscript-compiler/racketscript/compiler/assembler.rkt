@@ -305,16 +305,16 @@
 
 (define (assemble-value v out)
   (define emit (curry fprintf out))
-  ;; TODO: this will eventually be replaced by runtime primitives
+  ;; TODO this will eventually be replaced by runtime primitives
   (cond
     [(string? v)
      (emit "~s" v)]
     [(number? v)
      (cond
-       [(eq? +inf.0 v) (emit "Infinity")]
-       [(eq? -inf.0 v) (emit "-Infinity")]
-       [(eq? +nan.0 v) (emit "NaN")]
-       [(eq? +nan.f v)  (emit "NaN")]
+       [(equal? +inf.0 v) (emit "Infinity")]
+       [(equal? -inf.0 v) (emit "-Infinity")]
+       [(equal? +nan.0 v) (emit "NaN")] ;; same as +nan.f
+       ;; [(equal? +nan.f v)  (emit "NaN")]
        [(single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
        [else (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
