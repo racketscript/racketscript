@@ -234,7 +234,7 @@
   (struct-match-define (ILLinklet imports exports body) lnk)
   (log-rjs-info "[assemble linklet]")
 
-  ;; (assemble-requires* imports out)
+  (assemble-requires* imports out)
   (for ([b body])
     (assemble-statement b out))
   (assemble-provides* exports out))
@@ -254,6 +254,29 @@
 ;;           #:exists 'replace
 ;;           cb))))
 
+(define (assemble-requires* reqs* out)
+  (define emit (curry fprintf out))
+
+  ;; need some relative mechanism to do this in the future
+
+  (emit "import * as ~a from '~a';"
+        (jsruntime-core-module)
+        "../runtime/core.js")
+
+  (for ([req reqs*])
+    (struct-match-define (ILRequire mod obj-name import-sym) req)
+    (define import-string
+      (case import-sym
+        [(default) (format "import ~a from \"~a\";"
+                           (normalize-symbol obj-name)
+                           mod)]
+        [(*) (format "import * as ~a from \"~a\";"
+                      (normalize-symbol obj-name)
+                      mod)]
+        [else (error 'assemble-requires* "invalid require mode")]))
+
+    (emit import-string)))
+
 ;; (define (assemble-requires* reqs* out)
 ;;   (define emit (curry fprintf out))
 ;;   (define core-import-path
@@ -261,22 +284,6 @@
 ;;     (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
 ;;                            (jsruntime-module-path 'core)))
 
-;;   (emit "import * as ~a from '~a';"
-;;         (jsruntime-core-module)
-;;         core-import-path)
-;;   (for ([req reqs*])
-;;     (struct-match-define (ILRequire mod obj-name import-sym) req)
-;;     (define import-string
-;;       (case import-sym
-;;         [(default) (format "import ~a from \"~a\";"
-;;                            (normalize-symbol obj-name)
-;;                            mod)]
-;;         [(*) (format "import * as ~a from \"~a\";"
-;;                       (normalize-symbol obj-name)
-;;                       mod)]
-;;         [else (error 'assemble-requires* "invalid require mode")]))
-
-;;     (emit import-string)))
 
 (define (assemble-provides* p* out)
   (define emit (curry fprintf out))
