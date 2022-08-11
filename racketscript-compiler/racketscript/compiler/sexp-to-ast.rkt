@@ -130,5 +130,5 @@
          [`(define-values ,is ,_)
           (for ([i is]) (hash-set! defs i 'define))]
          [`,_ (void)]))
-     (Linklet path (cons (list '#%kernel) imports) exports (map (lambda (v) (to-absyn v (hash-union imps defs))) body))]))
+     (Linklet path imports exports (map (lambda (v) (to-absyn v (hash-union imps defs))) body))]))
 

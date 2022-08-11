@@ -100,8 +100,9 @@
   (cond
     [(symbol? formals) (list formals)]
     [(list? formals) formals]
-    [(pair? formals) (append (car formals)
-                             (list (cdr formals)))]))
+    [(pair? formals)
+     (append (car formals)
+             (list (cdr formals)))]))
 
 (define (Ident? e)
   (or (ImportedIdent? e)
