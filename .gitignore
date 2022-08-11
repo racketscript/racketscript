@@ -19,3 +19,4 @@ TAGS
 node_modules/
 *.rktl
 !expander.rktl
+!racketscript.rktl
