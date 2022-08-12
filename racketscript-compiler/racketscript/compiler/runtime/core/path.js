@@ -25,7 +25,7 @@ class Path extends PrintablePrimitive {
     appendPath(p) {
         const isDirPath = this.isDir();
         const isCompPath = p.isComplete();
-        if ((isDirPath && !isCompPath) || (!isDirPath && isCompPath)) {
+        if (isDirPath ^ isCompPath) {
             return fromString(this.s + p.s);
         } else if (isDirPath) {
             return fromString(this.s + p.s.substring(1));
