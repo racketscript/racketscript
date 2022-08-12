@@ -1384,6 +1384,29 @@
 
 (define+provide (version) "99.0") ;; fake
 
+(define (->path p)
+  (cond
+    [(string? p) (#js.Core.Path.fromString p)]
+    [(bytes? p) (#js.Core.Path.fromString (#js.Core.Bytes.toString p))]
+    [(path? p) p]
+    [else
+     (raise
+       (#js.Core.makeArgumentsError "->path"
+                                    "argument cannot be transformed into path"
+                                    p))]))
+
+(define+provide current-directory (make-parameter (#js.Core.FS.currentDir)))
+
+(define+provide (relative-path? p) (#js.p.isRelative))
+(define+provide (absolute-path? p) (#js.p.isAbsolute))
+(define+provide (complete-path? p) (#js.p.isComplete))
+
+(define+provide (path->complete-path p [base (current-directory)])
+  (cond
+    [(complete-path? p) p]
+    [(complete-path? base) (#js.base.appendPath p)]
+    [else (throw (#js.Core.racketContractError "expected: path?" "given: " base))]))
+
 (define+provide string->path #js.Core.Path.fromString)
 
 ;; --------------------------------------------------------------------------

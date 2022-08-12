@@ -24,6 +24,7 @@ import * as Path from './core/path.js';
 import * as KernelTable from './core/kernel_table.js';
 import * as Thread from './core/thread.js';
 import * as Semaphore from './core/semaphore.js';
+import * as FS from './core/FS.js';
 
 export {
     Bytes,
@@ -48,7 +49,8 @@ export {
     Path,
     KernelTable,
     Thread,
-    Semaphore
+    Semaphore,
+    FS
 };
 
 export { argumentsToArray, argumentsSlice } from './core/lib.js';
