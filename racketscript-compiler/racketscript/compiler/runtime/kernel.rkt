@@ -1402,10 +1402,16 @@
 (define+provide (complete-path? p) (#js.p.isComplete))
 
 (define+provide (path->complete-path p [base (current-directory)])
-  (cond
-    [(complete-path? p) p]
-    [(complete-path? base) (#js.base.appendPath p)]
-    [else (throw (#js.Core.racketContractError "expected: path?" "given: " base))]))
+  (let ([p^ (->path p)]
+        [base^ (->path base)])
+    (cond
+      [(complete-path? p^) p^]
+      [(complete-path? base^) (#js.base^.appendPath p^)]
+      [else (throw (#js.Core.racketContractError "expected: path?" "given: " base^))])))
+
+(define+provide (split-path p)
+  (let ([p^ (->path p)])
+    (#js.p^.splitPath)))
 
 (define+provide string->path #js.Core.Path.fromString)
 
