@@ -1,6 +1,8 @@
 import { PrintablePrimitive } from './printable_primitive.js';
 import { make as values } from './values.js';
 import { make as sym } from './primitive_symbol.js';
+import { displayNativeString, writeNativeString } from './print_native_string.js';
+import { displayUString, writeUString } from './print_ustring.js';
 
 const UNIX_PATH_SEP = '/';
 
@@ -15,6 +17,8 @@ const splitPathString = (str) => {
     const basePathStr = str.substring(lastDirSep + 1);
     return { dirPathStr, basePathStr };
 };
+
+const getComps = str => str.split(UNIX_PATH_SEP).filter(e => e !== '');
 
 // TODO going to assume this is Unix for now, will fix later
 class Path extends PrintablePrimitive {
@@ -38,6 +42,10 @@ class Path extends PrintablePrimitive {
 
     isDir() {
         return this.s.slice(-2, -1) === UNIX_PATH_SEP;
+    }
+
+    pathEnding() {
+        return (this.isDir() ? UNIX_PATH_SEP : '');
     }
 
     appendPath(p) {
@@ -75,6 +83,46 @@ class Path extends PrintablePrimitive {
         }
 
         return values([dirRes, baseRes, this.isDir()]);
+    }
+
+    simplify() {
+        const finalStack = [];
+        const currStack = getComps(this.s);
+
+        currStack.forEach((elem) => {
+            if (elem === '..') {
+                finalStack.pop();
+            } else if (elem !== '.') {
+                finalStack.push(elem);
+            }
+        });
+
+        return fromString(UNIX_PATH_SEP + finalStack.join(UNIX_PATH_SEP) + this.pathEnding());
+    }
+
+    displayNativeString(out) {
+        out.consume('#<path:');
+        displayNativeString(out, this.s);
+        out.consume('>');
+    }
+
+    displayUString(out) {
+        out.consume('#<path:');
+        displayUString(out, this.s);
+        out.consume('>');
+    }
+
+    writeNativeString(out) {
+        out.consume('#<path:');
+        writeNativeString(out, this.s);
+        out.consume(this.s);
+        out.consume('>');
+    }
+
+    writeUString(out) {
+        out.consume('#<path:');
+        writeUString(out, this.s);
+        out.consume('>');
     }
 }
 

@@ -1413,6 +1413,11 @@
   (let ([p^ (->path p)])
     (#js.p^.splitPath)))
 
+(define+provide (simplify-path p)
+  (let* ([p^ (->path p)]
+         [abs-path (path->complete-path p^)])
+    (#js.abs-path.simplify)))
+
 (define+provide string->path #js.Core.Path.fromString)
 
 ;; --------------------------------------------------------------------------

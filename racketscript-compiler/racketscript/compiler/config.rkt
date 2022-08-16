@@ -20,7 +20,6 @@
 
          primitive-modules
          ignored-module-imports-in-boot
-         ignored-undefined-identifier?
 
          skip-arity-checks?)
 
@@ -82,12 +81,6 @@
 (define ignored-module-imports-in-boot
   (set
    (build-path racketscript-dir "private" "interop.rkt")))
-
-(define ignored-undefined-identifiers
-  (list #'#%js-ffi))
-
-(define (ignored-undefined-identifier? id)
-  (ormap (λ (ignored) (free-identifier=? id ignored)) ignored-undefined-identifiers))
 
 (define primitive-modules
   (set '#%runtime
