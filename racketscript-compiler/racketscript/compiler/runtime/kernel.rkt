@@ -1239,6 +1239,11 @@
 (define+provide (bitwise-bit-set? mask n) #t)
 (define+provide (procedure-extract-target f) #f)
 
+;; same implementation as Pyret's.
+;; could implement this by checking if mask is a valid arity, then returning a new
+;; procedure that takes _at most_ `_mask` arguments.
+(define+provide (procedure-reduce-arity-mask proc mask [name #f] [realm 'racket]) proc)
+
 ;; --------------------------------------------------------------------------
 ;; Regexp
 
