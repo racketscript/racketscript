@@ -16,13 +16,13 @@
 
 ;; TODO temporary, for debugging/checking purposes
 (define (everything)
-  (define sexp (read (open-input-file "../../../racketscript.rktl")))
+  (define sexp (read (open-input-file "../../../expander.rktl")))
 
   (call-with-output-file
-    "../../../js-build/modules/racketscript.js"
+    "../../../js-build/modules/expander.js"
     (λ (out)
       (assemble-linklet
         (insert-arity-checks
-          (absyn-linklet->il (parse-linklet sexp "/home/gamburgm/racketscript/racketscript.rkt")))
+          (absyn-linklet->il (parse-linklet sexp "/home/gamburgm/racketscript/expander.rkt")))
         out))
     #:exists 'replace))
