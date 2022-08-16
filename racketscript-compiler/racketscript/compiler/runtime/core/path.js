@@ -3,6 +3,7 @@ import { make as values } from './values.js';
 import { make as sym } from './primitive_symbol.js';
 import { displayNativeString, writeNativeString } from './print_native_string.js';
 import { displayUString, writeUString } from './print_ustring.js';
+import { isEqual } from './equality.js';
 
 const UNIX_PATH_SEP = '/';
 
@@ -123,6 +124,10 @@ class Path extends PrintablePrimitive {
         out.consume('#<path:');
         writeUString(out, this.s);
         out.consume('>');
+    }
+
+    equals(v) {
+        return isEqual(this.s, v.s);
     }
 }
 

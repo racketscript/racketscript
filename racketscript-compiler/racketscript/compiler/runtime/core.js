@@ -19,13 +19,12 @@ import * as Vector from './core/vector.js';
 import * as Marks from './core/marks.js';
 import * as MPair from './core/mpair.js';
 import * as Correlated from './core/correlated.js';
-// import * as Linklet from './core/linklet.js';
+import * as Linklet from './core/linklet.js';
 import * as Path from './core/path.js';
 import * as KernelTable from './core/kernel_table.js';
 import * as Thread from './core/thread.js';
 import * as Semaphore from './core/semaphore.js';
 import * as FS from './core/FS.js';
-import * as Linklet from './core/racketscript.js';
 
 export {
     Bytes,
@@ -124,5 +123,4 @@ class UnsafeUndefined extends PrintablePrimitive {
     }
 }
 
-// eslint-disable-next-line no-unused-vars
 export const theUnsafeUndefined = new UnsafeUndefined();
