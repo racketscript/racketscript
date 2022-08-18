@@ -71,7 +71,10 @@
 
 ;; TODO not using a lot of the code here, eventually should be able to delete
 (define (absyn-requires->il import-list path)
-  (list (ILRequire "../runtime/kernel.rkt.js" 'M0 '*)))
+  (cons (ILRequire "../runtime/kernel.rkt.js" 'M0 '*)
+        (if (member '#%linklet import-list)
+          (list (ILRequire "./racketscript.js" 'M1 '*))
+          '())))
 
 
 ;;   (for/list ([mod-path import-list]

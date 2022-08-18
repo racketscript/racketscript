@@ -3985,13 +3985,13 @@
     (begin
       (let-values (((t_1)
                     (let-values (((t_2)
-                                  (lambda (v3_0 b2_4)
+                                  (lambda (v6_0 b5_0)
                                     (begin
                                       't
-                                      (let-values (((v_47) v3_0))
-                                        (let-values (((b_8) (if (eq? b2_4 unsafe-undefined) bindings_0 b2_4)))
+                                      (let-values (((v_47) v6_0))
+                                        (let-values (((b_8) (if (eq? b5_0 unsafe-undefined) bindings_0 b5_0)))
                                           (let-values () (to-absyn v_47 b_8))))))))
-                      (case-lambda ((v_48) (begin 't (t_2 v_48 unsafe-undefined))) ((v_49 b2_5) (t_2 v_49 b2_5))))))
+                      (case-lambda ((v_48) (begin 't (t_2 v_48 unsafe-undefined))) ((v_49 b5_1) (t_2 v_49 b5_1))))))
         (let-values (((v_50) v_46))
           (let-values (((hd_0) (let-values (((p_17) v_50)) (if (pair? p_17) (car p_17) #f))))
             (let-values ()
@@ -4297,11 +4297,19 @@
                                                                                                                                                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                                                                                                                                                       (LocalIdent6.1
                                                                                                                                                                                                                                                                                                                        v_46))
-                                                                                                                                                                                                                                                                                                                    (let-values ()
-                                                                                                                                                                                                                                                                                                                      (ImportedIdent3.1
-                                                                                                                                                                                                                                                                                                                       v_46
-                                                                                                                                                                                                                                                                                                                       '#%kernel
-                                                                                                                                                                                                                                                                                                                       #t))))))
+                                                                                                                                                                                                                                                                                                                    (if (eq?
+                                                                                                                                                                                                                                                                                                                         v_46
+                                                                                                                                                                                                                                                                                                                         'primitive-table)
+                                                                                                                                                                                                                                                                                                                      (let-values ()
+                                                                                                                                                                                                                                                                                                                        (ImportedIdent3.1
+                                                                                                                                                                                                                                                                                                                         v_46
+                                                                                                                                                                                                                                                                                                                         '#%linklet
+                                                                                                                                                                                                                                                                                                                         #t))
+                                                                                                                                                                                                                                                                                                                      (let-values ()
+                                                                                                                                                                                                                                                                                                                        (ImportedIdent3.1
+                                                                                                                                                                                                                                                                                                                         v_46
+                                                                                                                                                                                                                                                                                                                         '#%kernel
+                                                                                                                                                                                                                                                                                                                         #t)))))))
                                                                                                                                                                                                                                                                                                             (alt_18)))))))))
                                                                                                                                                                                                                                                                                     (if (if (eq?
                                                                                                                                                                                                                                                                                              '#%variable-reference
@@ -5130,8 +5138,8 @@
                                                                                                                                                                                                                                         (let-values (((xs_11
                                                                                                                                                                                                                                                        es_6)
                                                                                                                                                                                                                                                       (let-values ()
-                                                                                                                                                                                                                                                        (let-values (((xs4_0
-                                                                                                                                                                                                                                                                       es5_0)
+                                                                                                                                                                                                                                                        (let-values (((xs7_0
+                                                                                                                                                                                                                                                                       es8_0)
                                                                                                                                                                                                                                                                       (let-values ()
                                                                                                                                                                                                                                                                         (let-values (((p_67)
                                                                                                                                                                                                                                                                                       v_53))
@@ -5153,10 +5161,10 @@
                                                                                                                                                                                                                                                                              es_7))))))
                                                                                                                                                                                                                                                           (values
                                                                                                                                                                                                                                                            (cons
-                                                                                                                                                                                                                                                            xs4_0
+                                                                                                                                                                                                                                                            xs7_0
                                                                                                                                                                                                                                                             xs_10)
                                                                                                                                                                                                                                                            (cons
-                                                                                                                                                                                                                                                            es5_0
+                                                                                                                                                                                                                                                            es8_0
                                                                                                                                                                                                                                                             es_5))))))
                                                                                                                                                                                                                                           (values
                                                                                                                                                                                                                                            xs_11
@@ -5614,8 +5622,8 @@
                                                                                                                                                                                                                     (let-values (((xs_18
                                                                                                                                                                                                                                    es_14)
                                                                                                                                                                                                                                   (let-values ()
-                                                                                                                                                                                                                                    (let-values (((xs10_0
-                                                                                                                                                                                                                                                   es11_0)
+                                                                                                                                                                                                                                    (let-values (((xs13_0
+                                                                                                                                                                                                                                                   es14_0)
                                                                                                                                                                                                                                                   (let-values ()
                                                                                                                                                                                                                                                     (let-values (((p_73)
                                                                                                                                                                                                                                                                   v_55))
@@ -5637,10 +5645,10 @@
                                                                                                                                                                                                                                                          es_15))))))
                                                                                                                                                                                                                                       (values
                                                                                                                                                                                                                                        (cons
-                                                                                                                                                                                                                                        xs10_0
+                                                                                                                                                                                                                                        xs13_0
                                                                                                                                                                                                                                         xs_17)
                                                                                                                                                                                                                                        (cons
-                                                                                                                                                                                                                                        es11_0
+                                                                                                                                                                                                                                        es14_0
                                                                                                                                                                                                                                         es_13))))))
                                                                                                                                                                                                                       (values
                                                                                                                                                                                                                        xs_18
@@ -6084,348 +6092,404 @@
                     (alt_4)))))))))))
  (define-values
   (parse-linklet)
-  (lambda (v_57 path_0)
-    (begin
-      (let-values (((v_58) v_57))
-        (let-values (((hd_1) (let-values (((p_82) v_58)) (if (pair? p_82) (car p_82) #f))))
-          (let-values ()
-            (let-values (((alt_23) (lambda () (begin 'alt (error 'match "failed ~e" v_58)))))
-              (if (if (eq? 'linklet hd_1)
-                    (let-values (((a_150) (cdr v_58)))
-                      (let-values (((p_83) a_150))
-                        (if (pair? p_83)
-                          (let-values (((a_151) (cdr p_83))) (let-values (((p_84) a_151)) (if (pair? p_84) #t #f)))
-                          #f)))
-                    #f)
-                (let-values (((imports_0 exports_0 body_4)
-                              (let-values (((d_41) (cdr v_58)))
-                                (let-values (((p_85) d_41))
-                                  (let-values (((imports_1) (let-values (((a_152) (car p_85))) a_152))
-                                               ((exports_1 body_5)
-                                                (let-values (((d_42) (cdr p_85)))
-                                                  (let-values (((p_86) d_42))
-                                                    (let-values (((exports_2) (let-values (((a_153) (car p_86))) a_153))
-                                                                 ((body_6) (let-values (((d_43) (cdr p_86))) d_43)))
-                                                      (values exports_2 body_6))))))
-                                    (values imports_1 exports_1 body_5))))))
-                  (let-values ()
-                    (let-values (((imps_0)
-                                  (let-values (((pos->vals_12
-                                                 pos-pre-inc_10
-                                                 pos-next_13
-                                                 init_13
-                                                 pos-cont?_13
-                                                 val-cont?_12
-                                                 all-cont?_12)
-                                                (make-sequence '(j) imports_0))
-                                               ((start_9) 0))
-                                    (begin
-                                      (if (void)
-                                        (if (variable-reference-from-unsafe? (#%variable-reference))
-                                          (void)
-                                          (let-values () (check-naturals start_9)))
-                                        #f)
-                                      ((letrec-values (((for-loop_13)
-                                                        (lambda (table_20 pos_38 pos_39)
+  (let-values (((parse-linklet_0)
+                (lambda (v2_1 path3_0 expander?1_0)
+                  (begin
+                    'parse-linklet
+                    (let-values (((v_57) v2_1))
+                      (let-values (((path_0) path3_0))
+                        (let-values (((expander?_0) expander?1_0))
+                          (let-values ()
+                            (let-values (((v_58) v_57))
+                              (let-values (((hd_1) (let-values (((p_82) v_58)) (if (pair? p_82) (car p_82) #f))))
+                                (let-values ()
+                                  (let-values (((alt_23) (lambda () (begin 'alt (error 'match "failed ~e" v_58)))))
+                                    (if (if (eq? 'linklet hd_1)
+                                          (let-values (((a_150) (cdr v_58)))
+                                            (let-values (((p_83) a_150))
+                                              (if (pair? p_83)
+                                                (let-values (((a_151) (cdr p_83)))
+                                                  (let-values (((p_84) a_151)) (if (pair? p_84) #t #f)))
+                                                #f)))
+                                          #f)
+                                      (let-values (((imports_0 exports_0 body_4)
+                                                    (let-values (((d_41) (cdr v_58)))
+                                                      (let-values (((p_85) d_41))
+                                                        (let-values (((imports_1)
+                                                                      (let-values (((a_152) (car p_85))) a_152))
+                                                                     ((exports_1 body_5)
+                                                                      (let-values (((d_42) (cdr p_85)))
+                                                                        (let-values (((p_86) d_42))
+                                                                          (let-values (((exports_2)
+                                                                                        (let-values (((a_153)
+                                                                                                      (car p_86)))
+                                                                                          a_153))
+                                                                                       ((body_6)
+                                                                                        (let-values (((d_43)
+                                                                                                      (cdr p_86)))
+                                                                                          d_43)))
+                                                                            (values exports_2 body_6))))))
+                                                          (values imports_1 exports_1 body_5))))))
+                                        (let-values ()
+                                          (let-values (((imps_0)
+                                                        (let-values (((pos->vals_12
+                                                                       pos-pre-inc_10
+                                                                       pos-next_13
+                                                                       init_13
+                                                                       pos-cont?_13
+                                                                       val-cont?_12
+                                                                       all-cont?_12)
+                                                                      (make-sequence '(j) imports_0))
+                                                                     ((start_9) 0))
                                                           (begin
-                                                            'for-loop
-                                                            (if (if (if pos-cont?_13 (pos-cont?_13 pos_38) #t) #t #f)
-                                                              (let-values (((j_3 all-cont?/pos_10)
-                                                                            (let-values (((j_4) (pos->vals_12 pos_38)))
-                                                                              (values
-                                                                               j_4
-                                                                               (if all-cont?_12
-                                                                                 (lambda (pos_40)
-                                                                                   (all-cont?_12 pos_40 j_4))
-                                                                                 #f))))
-                                                                           ((pos_41)
-                                                                            (if pos-pre-inc_10
-                                                                              (pos-pre-inc_10 pos_38)
-                                                                              pos_38))
-                                                                           ((import_0) pos_39))
-                                                                (if (if (if val-cont?_12 (val-cont?_12 j_3) #t) #t #f)
-                                                                  (let-values (((table_21)
-                                                                                (let-values (((table_22) table_20))
-                                                                                  (let-values (((pos->vals_13
-                                                                                                 pos-pre-inc_11
-                                                                                                 pos-next_14
-                                                                                                 init_14
-                                                                                                 pos-cont?_14
-                                                                                                 val-cont?_13
-                                                                                                 all-cont?_13)
-                                                                                                (make-sequence
-                                                                                                 '(i)
-                                                                                                 import_0)))
-                                                                                    (begin
-                                                                                      (void)
-                                                                                      ((letrec-values (((for-loop_14)
-                                                                                                        (lambda (table_23
-                                                                                                                 pos_42)
+                                                            (if (void)
+                                                              (if (variable-reference-from-unsafe?
+                                                                   (#%variable-reference))
+                                                                (void)
+                                                                (let-values () (check-naturals start_9)))
+                                                              #f)
+                                                            ((letrec-values (((for-loop_13)
+                                                                              (lambda (table_20 pos_38 pos_39)
+                                                                                (begin
+                                                                                  'for-loop
+                                                                                  (if (if (if pos-cont?_13
+                                                                                            (pos-cont?_13 pos_38)
+                                                                                            #t)
+                                                                                        #t
+                                                                                        #f)
+                                                                                    (let-values (((j_3 all-cont?/pos_10)
+                                                                                                  (let-values (((j_4)
+                                                                                                                (pos->vals_12
+                                                                                                                 pos_38)))
+                                                                                                    (values
+                                                                                                     j_4
+                                                                                                     (if all-cont?_12
+                                                                                                       (lambda (pos_40)
+                                                                                                         (all-cont?_12
+                                                                                                          pos_40
+                                                                                                          j_4))
+                                                                                                       #f))))
+                                                                                                 ((pos_41)
+                                                                                                  (if pos-pre-inc_10
+                                                                                                    (pos-pre-inc_10
+                                                                                                     pos_38)
+                                                                                                    pos_38))
+                                                                                                 ((import_0) pos_39))
+                                                                                      (if (if (if val-cont?_12
+                                                                                                (val-cont?_12 j_3)
+                                                                                                #t)
+                                                                                            #t
+                                                                                            #f)
+                                                                                        (let-values (((table_21)
+                                                                                                      (let-values (((table_22)
+                                                                                                                    table_20))
+                                                                                                        (let-values (((pos->vals_13
+                                                                                                                       pos-pre-inc_11
+                                                                                                                       pos-next_14
+                                                                                                                       init_14
+                                                                                                                       pos-cont?_14
+                                                                                                                       val-cont?_13
+                                                                                                                       all-cont?_13)
+                                                                                                                      (make-sequence
+                                                                                                                       '(i)
+                                                                                                                       import_0)))
                                                                                                           (begin
-                                                                                                            'for-loop
-                                                                                                            (if (if pos-cont?_14
-                                                                                                                  (pos-cont?_14
-                                                                                                                   pos_42)
-                                                                                                                  #t)
-                                                                                                              (let-values (((i_48
-                                                                                                                             all-cont?/pos_11)
-                                                                                                                            (let-values (((i_49)
-                                                                                                                                          (pos->vals_13
-                                                                                                                                           pos_42)))
-                                                                                                                              (values
-                                                                                                                               i_49
-                                                                                                                               (if all-cont?_13
-                                                                                                                                 (lambda (pos_43)
-                                                                                                                                   (all-cont?_13
-                                                                                                                                    pos_43
-                                                                                                                                    i_49))
-                                                                                                                                 #f))))
-                                                                                                                           ((pos_44)
-                                                                                                                            (if pos-pre-inc_11
-                                                                                                                              (pos-pre-inc_11
-                                                                                                                               pos_42)
-                                                                                                                              pos_42)))
-                                                                                                                (if (if val-cont?_13
-                                                                                                                      (val-cont?_13
-                                                                                                                       i_48)
-                                                                                                                      #t)
-                                                                                                                  (let-values (((table_24)
-                                                                                                                                (let-values (((table_25)
-                                                                                                                                              table_23))
-                                                                                                                                  (let-values (((table_26)
-                                                                                                                                                table_25))
-                                                                                                                                    (let-values (((table_27)
-                                                                                                                                                  (let-values ()
-                                                                                                                                                    (let-values (((key_7
-                                                                                                                                                                   val_3)
-                                                                                                                                                                  (let-values ()
-                                                                                                                                                                    (values
-                                                                                                                                                                     i_48
-                                                                                                                                                                     j_3))))
-                                                                                                                                                      (hash-set
-                                                                                                                                                       table_26
-                                                                                                                                                       key_7
-                                                                                                                                                       val_3)))))
-                                                                                                                                      (values
-                                                                                                                                       table_27))))))
-                                                                                                                    (if (if (if all-cont?/pos_11
-                                                                                                                              (all-cont?/pos_11
-                                                                                                                               pos_44)
-                                                                                                                              #t)
-                                                                                                                          (not
-                                                                                                                           #f)
-                                                                                                                          #f)
-                                                                                                                      (for-loop_14
-                                                                                                                       table_24
-                                                                                                                       (pos-next_14
-                                                                                                                        pos_44))
-                                                                                                                      table_24))
-                                                                                                                  table_23))
-                                                                                                              table_23)))))
-                                                                                         for-loop_14)
-                                                                                       table_22
-                                                                                       init_14))))))
-                                                                    (if (if (if (if all-cont?/pos_10
-                                                                                  (all-cont?/pos_10 pos_41)
-                                                                                  #t)
-                                                                              #t
-                                                                              #f)
-                                                                          (not #f)
-                                                                          #f)
-                                                                      (for-loop_13
-                                                                       table_21
-                                                                       (pos-next_13 pos_41)
-                                                                       (+ pos_39 1))
-                                                                      table_21))
-                                                                  table_20))
-                                                              table_20)))))
-                                         for-loop_13)
-                                       '#hash()
-                                       init_13
-                                       start_9)))))
-                      (let-values (((defs_0) (make-hash)))
-                        (begin
-                          (let-values (((pos->vals_14
-                                         pos-pre-inc_12
-                                         pos-next_15
-                                         init_15
-                                         pos-cont?_15
-                                         val-cont?_14
-                                         all-cont?_14)
-                                        (make-sequence '(b) body_4)))
-                            (begin
-                              (void)
-                              ((letrec-values (((for-loop_15)
-                                                (lambda (pos_45)
-                                                  (begin
-                                                    'for-loop
-                                                    (if (if pos-cont?_15 (pos-cont?_15 pos_45) #t)
-                                                      (let-values (((b_15 all-cont?/pos_12)
-                                                                    (let-values (((b_16) (pos->vals_14 pos_45)))
-                                                                      (values
-                                                                       b_16
-                                                                       (if all-cont?_14
-                                                                         (lambda (pos_46) (all-cont?_14 pos_46 b_16))
-                                                                         #f))))
-                                                                   ((pos_47)
-                                                                    (if pos-pre-inc_12 (pos-pre-inc_12 pos_45) pos_45)))
-                                                        (if (if val-cont?_14 (val-cont?_14 b_15) #t)
-                                                          (let-values ((()
-                                                                        (let-values ()
-                                                                          (let-values ((()
-                                                                                        (let-values ()
-                                                                                          (begin
-                                                                                            (let-values ()
-                                                                                              (let-values (((v_59)
-                                                                                                            b_15))
-                                                                                                (let-values (((hd_2)
-                                                                                                              (let-values (((p_87)
-                                                                                                                            v_59))
-                                                                                                                (if (pair?
-                                                                                                                     p_87)
-                                                                                                                  (car
-                                                                                                                   p_87)
-                                                                                                                  #f))))
-                                                                                                  (let-values ()
-                                                                                                    (let-values (((alt_24)
-                                                                                                                  (lambda ()
-                                                                                                                    (begin
-                                                                                                                      'alt
-                                                                                                                      (let-values ()
-                                                                                                                        (let-values ()
-                                                                                                                          (let-values ()
+                                                                                                            (void)
+                                                                                                            ((letrec-values (((for-loop_14)
+                                                                                                                              (lambda (table_23
+                                                                                                                                       pos_42)
+                                                                                                                                (begin
+                                                                                                                                  'for-loop
+                                                                                                                                  (if (if pos-cont?_14
+                                                                                                                                        (pos-cont?_14
+                                                                                                                                         pos_42)
+                                                                                                                                        #t)
+                                                                                                                                    (let-values (((i_48
+                                                                                                                                                   all-cont?/pos_11)
+                                                                                                                                                  (let-values (((i_49)
+                                                                                                                                                                (pos->vals_13
+                                                                                                                                                                 pos_42)))
+                                                                                                                                                    (values
+                                                                                                                                                     i_49
+                                                                                                                                                     (if all-cont?_13
+                                                                                                                                                       (lambda (pos_43)
+                                                                                                                                                         (all-cont?_13
+                                                                                                                                                          pos_43
+                                                                                                                                                          i_49))
+                                                                                                                                                       #f))))
+                                                                                                                                                 ((pos_44)
+                                                                                                                                                  (if pos-pre-inc_11
+                                                                                                                                                    (pos-pre-inc_11
+                                                                                                                                                     pos_42)
+                                                                                                                                                    pos_42)))
+                                                                                                                                      (if (if val-cont?_13
+                                                                                                                                            (val-cont?_13
+                                                                                                                                             i_48)
+                                                                                                                                            #t)
+                                                                                                                                        (let-values (((table_24)
+                                                                                                                                                      (let-values (((table_25)
+                                                                                                                                                                    table_23))
+                                                                                                                                                        (let-values (((table_26)
+                                                                                                                                                                      table_25))
+                                                                                                                                                          (let-values (((table_27)
+                                                                                                                                                                        (let-values ()
+                                                                                                                                                                          (let-values (((key_7
+                                                                                                                                                                                         val_3)
+                                                                                                                                                                                        (let-values ()
+                                                                                                                                                                                          (values
+                                                                                                                                                                                           i_48
+                                                                                                                                                                                           j_3))))
+                                                                                                                                                                            (hash-set
+                                                                                                                                                                             table_26
+                                                                                                                                                                             key_7
+                                                                                                                                                                             val_3)))))
+                                                                                                                                                            (values
+                                                                                                                                                             table_27))))))
+                                                                                                                                          (if (if (if all-cont?/pos_11
+                                                                                                                                                    (all-cont?/pos_11
+                                                                                                                                                     pos_44)
+                                                                                                                                                    #t)
+                                                                                                                                                (not
+                                                                                                                                                 #f)
+                                                                                                                                                #f)
+                                                                                                                                            (for-loop_14
+                                                                                                                                             table_24
+                                                                                                                                             (pos-next_14
+                                                                                                                                              pos_44))
+                                                                                                                                            table_24))
+                                                                                                                                        table_23))
+                                                                                                                                    table_23)))))
+                                                                                                               for-loop_14)
+                                                                                                             table_22
+                                                                                                             init_14))))))
+                                                                                          (if (if (if (if all-cont?/pos_10
+                                                                                                        (all-cont?/pos_10
+                                                                                                         pos_41)
+                                                                                                        #t)
+                                                                                                    #t
+                                                                                                    #f)
+                                                                                                (not #f)
+                                                                                                #f)
+                                                                                            (for-loop_13
+                                                                                             table_21
+                                                                                             (pos-next_13 pos_41)
+                                                                                             (+ pos_39 1))
+                                                                                            table_21))
+                                                                                        table_20))
+                                                                                    table_20)))))
+                                                               for-loop_13)
+                                                             '#hash()
+                                                             init_13
+                                                             start_9)))))
+                                            (let-values (((defs_0) (make-hash)))
+                                              (let-values ((()
+                                                            (begin
+                                                              (let-values (((pos->vals_14
+                                                                             pos-pre-inc_12
+                                                                             pos-next_15
+                                                                             init_15
+                                                                             pos-cont?_15
+                                                                             val-cont?_14
+                                                                             all-cont?_14)
+                                                                            (make-sequence '(b) body_4)))
+                                                                (begin
+                                                                  (void)
+                                                                  ((letrec-values (((for-loop_15)
+                                                                                    (lambda (pos_45)
+                                                                                      (begin
+                                                                                        'for-loop
+                                                                                        (if (if pos-cont?_15
+                                                                                              (pos-cont?_15 pos_45)
+                                                                                              #t)
+                                                                                          (let-values (((b_15
+                                                                                                         all-cont?/pos_12)
+                                                                                                        (let-values (((b_16)
+                                                                                                                      (pos->vals_14
+                                                                                                                       pos_45)))
+                                                                                                          (values
+                                                                                                           b_16
+                                                                                                           (if all-cont?_14
+                                                                                                             (lambda (pos_46)
+                                                                                                               (all-cont?_14
+                                                                                                                pos_46
+                                                                                                                b_16))
+                                                                                                             #f))))
+                                                                                                       ((pos_47)
+                                                                                                        (if pos-pre-inc_12
+                                                                                                          (pos-pre-inc_12
+                                                                                                           pos_45)
+                                                                                                          pos_45)))
+                                                                                            (if (if val-cont?_14
+                                                                                                  (val-cont?_14 b_15)
+                                                                                                  #t)
+                                                                                              (let-values ((()
+                                                                                                            (let-values ()
+                                                                                                              (let-values ((()
                                                                                                                             (let-values ()
-                                                                                                                              (void)))))))))
-                                                                                                      (if (if (eq?
-                                                                                                               'define-values
-                                                                                                               hd_2)
-                                                                                                            (let-values (((a_154)
-                                                                                                                          (cdr
-                                                                                                                           v_59)))
-                                                                                                              (let-values (((p_88)
-                                                                                                                            a_154))
-                                                                                                                (if (pair?
-                                                                                                                     p_88)
-                                                                                                                  (let-values (((a_155)
-                                                                                                                                (cdr
-                                                                                                                                 p_88)))
-                                                                                                                    (let-values (((p_89)
-                                                                                                                                  a_155))
-                                                                                                                      (if (pair?
-                                                                                                                           p_89)
-                                                                                                                        (let-values (((a_156)
-                                                                                                                                      (cdr
-                                                                                                                                       p_89)))
-                                                                                                                          (eq?
-                                                                                                                           '()
-                                                                                                                           a_156))
-                                                                                                                        #f)))
-                                                                                                                  #f)))
-                                                                                                            #f)
-                                                                                                        (let-values (((is_0)
-                                                                                                                      (let-values (((d_44)
-                                                                                                                                    (cdr
-                                                                                                                                     v_59)))
-                                                                                                                        (let-values (((a_157)
-                                                                                                                                      (car
-                                                                                                                                       d_44)))
-                                                                                                                          a_157))))
-                                                                                                          (let-values ()
-                                                                                                            (begin
-                                                                                                              (let-values (((pos->vals_15
-                                                                                                                             pos-pre-inc_13
-                                                                                                                             pos-next_16
-                                                                                                                             init_16
-                                                                                                                             pos-cont?_16
-                                                                                                                             val-cont?_15
-                                                                                                                             all-cont?_15)
-                                                                                                                            (make-sequence
-                                                                                                                             '(i)
-                                                                                                                             is_0)))
-                                                                                                                (begin
-                                                                                                                  (void)
-                                                                                                                  ((letrec-values (((for-loop_16)
-                                                                                                                                    (lambda (pos_48)
-                                                                                                                                      (begin
-                                                                                                                                        'for-loop
-                                                                                                                                        (if (if pos-cont?_16
-                                                                                                                                              (pos-cont?_16
-                                                                                                                                               pos_48)
-                                                                                                                                              #t)
-                                                                                                                                          (let-values (((i_50
-                                                                                                                                                         all-cont?/pos_13)
-                                                                                                                                                        (let-values (((i_51)
-                                                                                                                                                                      (pos->vals_15
-                                                                                                                                                                       pos_48)))
-                                                                                                                                                          (values
-                                                                                                                                                           i_51
-                                                                                                                                                           (if all-cont?_15
-                                                                                                                                                             (lambda (pos_49)
-                                                                                                                                                               (all-cont?_15
-                                                                                                                                                                pos_49
-                                                                                                                                                                i_51))
-                                                                                                                                                             #f))))
-                                                                                                                                                       ((pos_50)
-                                                                                                                                                        (if pos-pre-inc_13
-                                                                                                                                                          (pos-pre-inc_13
-                                                                                                                                                           pos_48)
-                                                                                                                                                          pos_48)))
-                                                                                                                                            (if (if val-cont?_15
-                                                                                                                                                  (val-cont?_15
-                                                                                                                                                   i_50)
-                                                                                                                                                  #t)
-                                                                                                                                              (let-values ((()
+                                                                                                                              (begin
+                                                                                                                                (let-values ()
+                                                                                                                                  (let-values (((v_59)
+                                                                                                                                                b_15))
+                                                                                                                                    (let-values (((hd_2)
+                                                                                                                                                  (let-values (((p_87)
+                                                                                                                                                                v_59))
+                                                                                                                                                    (if (pair?
+                                                                                                                                                         p_87)
+                                                                                                                                                      (car
+                                                                                                                                                       p_87)
+                                                                                                                                                      #f))))
+                                                                                                                                      (let-values ()
+                                                                                                                                        (let-values (((alt_24)
+                                                                                                                                                      (lambda ()
+                                                                                                                                                        (begin
+                                                                                                                                                          'alt
+                                                                                                                                                          (let-values ()
                                                                                                                                                             (let-values ()
-                                                                                                                                                              (let-values ((()
-                                                                                                                                                                            (let-values ()
-                                                                                                                                                                              (begin
-                                                                                                                                                                                (let-values ()
-                                                                                                                                                                                  (hash-set!
-                                                                                                                                                                                   defs_0
-                                                                                                                                                                                   i_50
-                                                                                                                                                                                   'define))
-                                                                                                                                                                                (values)))))
-                                                                                                                                                                (values)))))
-                                                                                                                                                (if (if (if all-cont?/pos_13
-                                                                                                                                                          (all-cont?/pos_13
-                                                                                                                                                           pos_50)
-                                                                                                                                                          #t)
-                                                                                                                                                      (not
-                                                                                                                                                       #f)
-                                                                                                                                                      #f)
-                                                                                                                                                  (for-loop_16
-                                                                                                                                                   (pos-next_16
-                                                                                                                                                    pos_50))
-                                                                                                                                                  (values)))
-                                                                                                                                              (values)))
-                                                                                                                                          (values))))))
-                                                                                                                     for-loop_16)
-                                                                                                                   init_16)))
-                                                                                                              (void))))
-                                                                                                        (alt_24)))))))
-                                                                                            (values)))))
-                                                                            (values)))))
-                                                            (if (if (if all-cont?/pos_12 (all-cont?/pos_12 pos_47) #t)
-                                                                  (not #f)
-                                                                  #f)
-                                                              (for-loop_15 (pos-next_15 pos_47))
-                                                              (values)))
-                                                          (values)))
-                                                      (values))))))
-                                 for-loop_15)
-                               init_15)))
-                          (void)
-                          (Linklet1.1
-                           path_0
-                           imports_0
-                           exports_0
-                           (map2 (lambda (v_60) (to-absyn v_60 (hash-union imps_0 defs_0))) body_4)))))))
-                (alt_23)))))))))
+                                                                                                                                                              (let-values ()
+                                                                                                                                                                (let-values ()
+                                                                                                                                                                  (void)))))))))
+                                                                                                                                          (if (if (eq?
+                                                                                                                                                   'define-values
+                                                                                                                                                   hd_2)
+                                                                                                                                                (let-values (((a_154)
+                                                                                                                                                              (cdr
+                                                                                                                                                               v_59)))
+                                                                                                                                                  (let-values (((p_88)
+                                                                                                                                                                a_154))
+                                                                                                                                                    (if (pair?
+                                                                                                                                                         p_88)
+                                                                                                                                                      (let-values (((a_155)
+                                                                                                                                                                    (cdr
+                                                                                                                                                                     p_88)))
+                                                                                                                                                        (let-values (((p_89)
+                                                                                                                                                                      a_155))
+                                                                                                                                                          (if (pair?
+                                                                                                                                                               p_89)
+                                                                                                                                                            (let-values (((a_156)
+                                                                                                                                                                          (cdr
+                                                                                                                                                                           p_89)))
+                                                                                                                                                              (eq?
+                                                                                                                                                               '()
+                                                                                                                                                               a_156))
+                                                                                                                                                            #f)))
+                                                                                                                                                      #f)))
+                                                                                                                                                #f)
+                                                                                                                                            (let-values (((is_0)
+                                                                                                                                                          (let-values (((d_44)
+                                                                                                                                                                        (cdr
+                                                                                                                                                                         v_59)))
+                                                                                                                                                            (let-values (((a_157)
+                                                                                                                                                                          (car
+                                                                                                                                                                           d_44)))
+                                                                                                                                                              a_157))))
+                                                                                                                                              (let-values ()
+                                                                                                                                                (begin
+                                                                                                                                                  (let-values (((pos->vals_15
+                                                                                                                                                                 pos-pre-inc_13
+                                                                                                                                                                 pos-next_16
+                                                                                                                                                                 init_16
+                                                                                                                                                                 pos-cont?_16
+                                                                                                                                                                 val-cont?_15
+                                                                                                                                                                 all-cont?_15)
+                                                                                                                                                                (make-sequence
+                                                                                                                                                                 '(i)
+                                                                                                                                                                 is_0)))
+                                                                                                                                                    (begin
+                                                                                                                                                      (void)
+                                                                                                                                                      ((letrec-values (((for-loop_16)
+                                                                                                                                                                        (lambda (pos_48)
+                                                                                                                                                                          (begin
+                                                                                                                                                                            'for-loop
+                                                                                                                                                                            (if (if pos-cont?_16
+                                                                                                                                                                                  (pos-cont?_16
+                                                                                                                                                                                   pos_48)
+                                                                                                                                                                                  #t)
+                                                                                                                                                                              (let-values (((i_50
+                                                                                                                                                                                             all-cont?/pos_13)
+                                                                                                                                                                                            (let-values (((i_51)
+                                                                                                                                                                                                          (pos->vals_15
+                                                                                                                                                                                                           pos_48)))
+                                                                                                                                                                                              (values
+                                                                                                                                                                                               i_51
+                                                                                                                                                                                               (if all-cont?_15
+                                                                                                                                                                                                 (lambda (pos_49)
+                                                                                                                                                                                                   (all-cont?_15
+                                                                                                                                                                                                    pos_49
+                                                                                                                                                                                                    i_51))
+                                                                                                                                                                                                 #f))))
+                                                                                                                                                                                           ((pos_50)
+                                                                                                                                                                                            (if pos-pre-inc_13
+                                                                                                                                                                                              (pos-pre-inc_13
+                                                                                                                                                                                               pos_48)
+                                                                                                                                                                                              pos_48)))
+                                                                                                                                                                                (if (if val-cont?_15
+                                                                                                                                                                                      (val-cont?_15
+                                                                                                                                                                                       i_50)
+                                                                                                                                                                                      #t)
+                                                                                                                                                                                  (let-values ((()
+                                                                                                                                                                                                (let-values ()
+                                                                                                                                                                                                  (let-values ((()
+                                                                                                                                                                                                                (let-values ()
+                                                                                                                                                                                                                  (begin
+                                                                                                                                                                                                                    (let-values ()
+                                                                                                                                                                                                                      (hash-set!
+                                                                                                                                                                                                                       defs_0
+                                                                                                                                                                                                                       i_50
+                                                                                                                                                                                                                       'define))
+                                                                                                                                                                                                                    (values)))))
+                                                                                                                                                                                                    (values)))))
+                                                                                                                                                                                    (if (if (if all-cont?/pos_13
+                                                                                                                                                                                              (all-cont?/pos_13
+                                                                                                                                                                                               pos_50)
+                                                                                                                                                                                              #t)
+                                                                                                                                                                                          (not
+                                                                                                                                                                                           #f)
+                                                                                                                                                                                          #f)
+                                                                                                                                                                                      (for-loop_16
+                                                                                                                                                                                       (pos-next_16
+                                                                                                                                                                                        pos_50))
+                                                                                                                                                                                      (values)))
+                                                                                                                                                                                  (values)))
+                                                                                                                                                                              (values))))))
+                                                                                                                                                         for-loop_16)
+                                                                                                                                                       init_16)))
+                                                                                                                                                  (void))))
+                                                                                                                                            (alt_24)))))))
+                                                                                                                                (values)))))
+                                                                                                                (values)))))
+                                                                                                (if (if (if all-cont?/pos_12
+                                                                                                          (all-cont?/pos_12
+                                                                                                           pos_47)
+                                                                                                          #t)
+                                                                                                      (not #f)
+                                                                                                      #f)
+                                                                                                  (for-loop_15
+                                                                                                   (pos-next_15 pos_47))
+                                                                                                  (values)))
+                                                                                              (values)))
+                                                                                          (values))))))
+                                                                     for-loop_15)
+                                                                   init_15)))
+                                                              (values))))
+                                                (let-values ()
+                                                  (let-values (((final-imports_0)
+                                                                (if expander?_0 (cons '#%linklet imports_0) imports_0)))
+                                                    (Linklet1.1
+                                                     path_0
+                                                     final-imports_0
+                                                     exports_0
+                                                     (map2
+                                                      (lambda (v_60) (to-absyn v_60 (hash-union imps_0 defs_0)))
+                                                      body_4)))))))))
+                                      (alt_23))))))))))))))
+    (case-lambda
+     ((v_61 path_1) (begin (parse-linklet_0 v_61 path_1 #f)))
+     ((v_62 path_2 expander?1_1) (parse-linklet_0 v_62 path_2 expander?1_1)))))
  (define-values
   (improper->proper)
   (lambda (l_22)
     (begin
-      (let-values (((v_61) l_22))
+      (let-values (((v_63) l_22))
         (let-values ()
           (let-values (((alt_13)
                         (lambda ()
@@ -6438,10 +6502,10 @@
                                                 'alt
                                                 (let-values ()
                                                   (let-values () (let-values () (let-values () (cons l_22 '())))))))))
-                                (if (eq? '() v_61) (let-values () (let-values () '())) (alt_14))))))))
-            (if (let-values (((p_90) v_61)) (if (pair? p_90) #t #f))
+                                (if (eq? '() v_63) (let-values () (let-values () '())) (alt_14))))))))
+            (if (let-values (((p_90) v_63)) (if (pair? p_90) #t #f))
               (let-values (((a_158 b_17)
-                            (let-values (((p_91) v_61))
+                            (let-values (((p_91) v_63))
                               (let-values (((a_159) (let-values (((a_160) (car p_91))) a_160))
                                            ((b_18) (let-values (((d_45) (cdr p_91))) d_45)))
                                 (values a_159 b_18)))))
@@ -6590,7 +6654,7 @@
   (name-in-module)
   (lambda (mod_5 name_12)
     (begin
-      (let-values (((v_62) mod_5))
+      (let-values (((v_64) mod_5))
         (let-values ()
           (let-values (((alt_25)
                         (lambda ()
@@ -6598,7 +6662,7 @@
                             'alt
                             (let-values ()
                               (let-values () (let-values () (let-values () (error "Invalid module name")))))))))
-            (if (eq? 'core v_62)
+            (if (eq? 'core v_64)
               (let-values () (let-values () (string->symbol (~a (jsruntime-core-module) "." name_12))))
               (alt_25))))))))
  (define-values
@@ -6805,100 +6869,100 @@
   (has-application?)
   (lambda (a_161)
     (begin
-      (let-values (((v_63) a_161))
-        (let-values (((vec-v_0) (struct->vector v_63)))
+      (let-values (((v_65) a_161))
+        (let-values (((vec-v_0) (struct->vector v_65)))
           (let-values (((alt_26)
                         (lambda ()
                           (begin
                             'alt
-                            (let-values (((vec-v_1) (struct->vector v_63)))
+                            (let-values (((vec-v_1) (struct->vector v_65)))
                               (let-values (((alt_27)
                                             (lambda ()
                                               (begin
                                                 'alt
-                                                (let-values (((vec-v_2) (struct->vector v_63)))
+                                                (let-values (((vec-v_2) (struct->vector v_65)))
                                                   (let-values (((alt_28)
                                                                 (lambda ()
                                                                   (begin
                                                                     'alt
-                                                                    (let-values (((vec-v_3) (struct->vector v_63)))
+                                                                    (let-values (((vec-v_3) (struct->vector v_65)))
                                                                       (let-values (((alt_29)
                                                                                     (lambda ()
                                                                                       (begin
                                                                                         'alt
                                                                                         (let-values (((vec-v_4)
                                                                                                       (struct->vector
-                                                                                                       v_63)))
+                                                                                                       v_65)))
                                                                                           (let-values (((alt_30)
                                                                                                         (lambda ()
                                                                                                           (begin
                                                                                                             'alt
                                                                                                             (let-values (((vec-v_5)
                                                                                                                           (struct->vector
-                                                                                                                           v_63)))
+                                                                                                                           v_65)))
                                                                                                               (let-values (((alt_31)
                                                                                                                             (lambda ()
                                                                                                                               (begin
                                                                                                                                 'alt
                                                                                                                                 (let-values (((vec-v_6)
                                                                                                                                               (struct->vector
-                                                                                                                                               v_63)))
+                                                                                                                                               v_65)))
                                                                                                                                   (let-values (((alt_32)
                                                                                                                                                 (lambda ()
                                                                                                                                                   (begin
                                                                                                                                                     'alt
                                                                                                                                                     (let-values (((vec-v_7)
                                                                                                                                                                   (struct->vector
-                                                                                                                                                                   v_63)))
+                                                                                                                                                                   v_65)))
                                                                                                                                                       (let-values (((alt_33)
                                                                                                                                                                     (lambda ()
                                                                                                                                                                       (begin
                                                                                                                                                                         'alt
                                                                                                                                                                         (let-values (((vec-v_8)
                                                                                                                                                                                       (struct->vector
-                                                                                                                                                                                       v_63)))
+                                                                                                                                                                                       v_65)))
                                                                                                                                                                           (let-values (((alt_34)
                                                                                                                                                                                         (lambda ()
                                                                                                                                                                                           (begin
                                                                                                                                                                                             'alt
                                                                                                                                                                                             (let-values (((vec-v_9)
                                                                                                                                                                                                           (struct->vector
-                                                                                                                                                                                                           v_63)))
+                                                                                                                                                                                                           v_65)))
                                                                                                                                                                                               (let-values (((alt_35)
                                                                                                                                                                                                             (lambda ()
                                                                                                                                                                                                               (begin
                                                                                                                                                                                                                 'alt
                                                                                                                                                                                                                 (let-values (((vec-v_10)
                                                                                                                                                                                                                               (struct->vector
-                                                                                                                                                                                                                               v_63)))
+                                                                                                                                                                                                                               v_65)))
                                                                                                                                                                                                                   (let-values (((alt_36)
                                                                                                                                                                                                                                 (lambda ()
                                                                                                                                                                                                                                   (begin
                                                                                                                                                                                                                                     'alt
                                                                                                                                                                                                                                     (let-values (((vec-v_11)
                                                                                                                                                                                                                                                   (struct->vector
-                                                                                                                                                                                                                                                   v_63)))
+                                                                                                                                                                                                                                                   v_65)))
                                                                                                                                                                                                                                       (let-values (((alt_37)
                                                                                                                                                                                                                                                     (lambda ()
                                                                                                                                                                                                                                                       (begin
                                                                                                                                                                                                                                                         'alt
                                                                                                                                                                                                                                                         (let-values (((vec-v_12)
                                                                                                                                                                                                                                                                       (struct->vector
-                                                                                                                                                                                                                                                                       v_63)))
+                                                                                                                                                                                                                                                                       v_65)))
                                                                                                                                                                                                                                                           (let-values (((alt_38)
                                                                                                                                                                                                                                                                         (lambda ()
                                                                                                                                                                                                                                                                           (begin
                                                                                                                                                                                                                                                                             'alt
                                                                                                                                                                                                                                                                             (if (symbol?
-                                                                                                                                                                                                                                                                                 v_63)
+                                                                                                                                                                                                                                                                                 v_65)
                                                                                                                                                                                                                                                                               (let-values ()
                                                                                                                                                                                                                                                                                 #f)
                                                                                                                                                                                                                                                                               (error
                                                                                                                                                                                                                                                                                'match
                                                                                                                                                                                                                                                                                "failed ~e"
-                                                                                                                                                                                                                                                                               v_63))))))
+                                                                                                                                                                                                                                                                               v_65))))))
                                                                                                                                                                                                                                                             (if (ILTypeOf?
-                                                                                                                                                                                                                                                                 v_63)
+                                                                                                                                                                                                                                                                 v_65)
                                                                                                                                                                                                                                                               (let-values ()
                                                                                                                                                                                                                                                                 (let-values (((expr_0)
                                                                                                                                                                                                                                                                               (vector->values
@@ -6909,7 +6973,7 @@
                                                                                                                                                                                                                                                               (let-values ()
                                                                                                                                                                                                                                                                 (alt_38)))))))))
                                                                                                                                                                                                                                         (if (ILInstanceOf?
-                                                                                                                                                                                                                                             v_63)
+                                                                                                                                                                                                                                             v_65)
                                                                                                                                                                                                                                           (let-values ()
                                                                                                                                                                                                                                             (let-values (((expr_1
                                                                                                                                                                                                                                                            type_0)
@@ -6926,7 +6990,7 @@
                                                                                                                                                                                                                                           (let-values ()
                                                                                                                                                                                                                                             (alt_37)))))))))
                                                                                                                                                                                                                     (if (ILNew?
-                                                                                                                                                                                                                         v_63)
+                                                                                                                                                                                                                         v_65)
                                                                                                                                                                                                                       (let-values ()
                                                                                                                                                                                                                         (let-values (((_fst_0)
                                                                                                                                                                                                                                       (vector->values
@@ -6936,7 +7000,7 @@
                                                                                                                                                                                                                       (let-values ()
                                                                                                                                                                                                                         (alt_36)))))))))
                                                                                                                                                                                                 (if (ILNull?
-                                                                                                                                                                                                     v_63)
+                                                                                                                                                                                                     v_65)
                                                                                                                                                                                                   (let-values ()
                                                                                                                                                                                                     (let-values ((()
                                                                                                                                                                                                                   (vector->values
@@ -6946,7 +7010,7 @@
                                                                                                                                                                                                   (let-values ()
                                                                                                                                                                                                     (alt_35)))))))))
                                                                                                                                                                             (if (ILUndefined?
-                                                                                                                                                                                 v_63)
+                                                                                                                                                                                 v_65)
                                                                                                                                                                               (let-values ()
                                                                                                                                                                                 (let-values ((()
                                                                                                                                                                                               (vector->values
@@ -6956,7 +7020,7 @@
                                                                                                                                                                               (let-values ()
                                                                                                                                                                                 (alt_34)))))))))
                                                                                                                                                         (if (ILValue?
-                                                                                                                                                             v_63)
+                                                                                                                                                             v_65)
                                                                                                                                                           (let-values ()
                                                                                                                                                             (let-values (((_fst_1)
                                                                                                                                                                           (vector->values
@@ -6966,7 +7030,7 @@
                                                                                                                                                           (let-values ()
                                                                                                                                                             (alt_33)))))))))
                                                                                                                                     (if (ILIndex?
-                                                                                                                                         v_63)
+                                                                                                                                         v_65)
                                                                                                                                       (let-values ()
                                                                                                                                         (let-values (((expr_2
                                                                                                                                                        fieldexpr_0)
@@ -6983,7 +7047,7 @@
                                                                                                                                       (let-values ()
                                                                                                                                         (alt_32)))))))))
                                                                                                                 (if (ILRef?
-                                                                                                                     v_63)
+                                                                                                                     v_65)
                                                                                                                   (let-values ()
                                                                                                                     (let-values (((expr_3
                                                                                                                                    _fst_2)
@@ -6994,7 +7058,7 @@
                                                                                                                        expr_3)))
                                                                                                                   (let-values ()
                                                                                                                     (alt_31)))))))))
-                                                                                            (if (ILObject? v_63)
+                                                                                            (if (ILObject? v_65)
                                                                                               (let-values ()
                                                                                                 (let-values (((items_0)
                                                                                                               (vector->values
@@ -7007,22 +7071,22 @@
                                                                                                    items_0)))
                                                                                               (let-values ()
                                                                                                 (alt_30)))))))))
-                                                                        (if (ILArray? v_63)
+                                                                        (if (ILArray? v_65)
                                                                           (let-values ()
                                                                             (let-values (((items_1)
                                                                                           (vector->values vec-v_3 1)))
                                                                               (ormap2 has-application? items_1)))
                                                                           (let-values () (alt_29)))))))))
-                                                    (if (ILApp? v_63)
+                                                    (if (ILApp? v_65)
                                                       (let-values ()
                                                         (let-values (((_fst_3 _snd_0) (vector->values vec-v_2 1))) #t))
                                                       (let-values () (alt_28)))))))))
-                                (if (ILBinaryOp? v_63)
+                                (if (ILBinaryOp? v_65)
                                   (let-values ()
                                     (let-values (((_fst_4 args_13) (vector->values vec-v_1 1)))
                                       (ormap2 has-application? args_13)))
                                   (let-values () (alt_27)))))))))
-            (if (ILLambda? v_63)
+            (if (ILLambda? v_65)
               (let-values () (let-values (((_fst_5 _snd_1) (vector->values vec-v_0 1))) #f))
               (let-values () (alt_26)))))))))
  (define-values
@@ -7057,7 +7121,7 @@
       (if (Linklet? form_0)
         (let-values () (error 'absyn-top-level->il "Not supported. Todo."))
         (if (Expr? form_0)
-          (let-values () (let-values (((stmt_0 v_62) (absyn-expr->il form_0 #f))) (append1 stmt_0 v_62)))
+          (let-values () (let-values (((stmt_0 v_64) (absyn-expr->il form_0 #f))) (append1 stmt_0 v_64)))
           (if (Begin? form_0)
             (let-values () (absyn-expr->il form_0 #f))
             (let-values () (error "only some forms supported at top level"))))))))
@@ -7065,19 +7129,19 @@
   (absyn-linklet->il)
   (lambda (lnk_0)
     (begin
-      (let-values (((path_1 imports_2 exports_3 forms_0)
+      (let-values (((path_3 imports_2 exports_3 forms_0)
                     (let-values (((v_43) lnk_0))
                       (let-values (((v_1) v_43))
                         (let-values (((vec-v_13) (struct->vector v_1)))
                           (let-values (((alt_39) (lambda () (begin 'alt (error 'match "failed ~e" v_1)))))
                             (if (Linklet? v_1)
                               (let-values ()
-                                (let-values (((path_2 imports_3 exports_4 forms_1) (vector->values vec-v_13 1)))
-                                  (values path_2 imports_3 exports_4 forms_1)))
+                                (let-values (((path_4 imports_3 exports_4 forms_1) (vector->values vec-v_13 1)))
+                                  (values path_4 imports_3 exports_4 forms_1)))
                               (let-values () (alt_39)))))))))
         (let-values ((() (begin (log-rjs-info "[linklet il]") (values))))
           (let-values (((imported-mod-path-list_0) (flatten imports_2)))
-            (let-values (((requires*_0) (absyn-requires->il imported-mod-path-list_0 path_1)))
+            (let-values (((requires*_0) (absyn-requires->il imported-mod-path-list_0 path_3)))
               (with-continuation-mark
                parameterization-key
                (extend-parameterization
@@ -7199,21 +7263,25 @@
             init_20)))))))
  (define-values
   (absyn-requires->il)
-  (lambda (import-list_0 path_3) (begin (list (ILRequire2.1 "../runtime/kernel.rkt.js" 'M0 '*)))))
+  (lambda (import-list_0 path_5)
+    (begin
+      (cons
+       (ILRequire2.1 "../runtime/kernel.rkt.js" 'M0 '*)
+       (if (member '#%linklet import-list_0) (list (ILRequire2.1 "./racketscript.js" 'M1 '*)) '())))))
  (define-values
   (absyn-gtl-form->il)
   (lambda (form_1)
     (begin
       (if (Expr? form_1)
-        (let-values () (let-values (((stms_1 v_64) (absyn-expr->il form_1 #f))) (append1 stms_1 v_64)))
+        (let-values () (let-values (((stms_1 v_66) (absyn-expr->il form_1 #f))) (append1 stms_1 v_66)))
         (if (DefineValues? form_1)
           (let-values ()
             (let-values (((ids_0 expr_4)
-                          (let-values (((v_65) form_1))
-                            (let-values (((v_66) v_65))
-                              (let-values (((vec-v_14) (struct->vector v_66)))
-                                (let-values (((alt_40) (lambda () (begin 'alt (error 'match "failed ~e" v_66)))))
-                                  (if (DefineValues? v_66)
+                          (let-values (((v_67) form_1))
+                            (let-values (((v_68) v_67))
+                              (let-values (((vec-v_14) (struct->vector v_68)))
+                                (let-values (((alt_40) (lambda () (begin 'alt (error 'match "failed ~e" v_68)))))
+                                  (if (DefineValues? v_68)
                                     (let-values ()
                                       (let-values (((ids_1 expr_5) (vector->values vec-v_14 1))) (values ids_1 expr_5)))
                                     (let-values () (alt_40)))))))))
@@ -7223,51 +7291,51 @@
   (absyn-expr->il)
   (lambda (expr_6 overwrite-mark-frame?_0)
     (begin
-      (let-values (((v_67) expr_6))
-        (let-values (((vec-v_15) (struct->vector v_67)))
+      (let-values (((v_69) expr_6))
+        (let-values (((vec-v_15) (struct->vector v_69)))
           (let-values (((alt_41)
                         (lambda ()
                           (begin
                             'alt
-                            (let-values (((vec-v_16) (struct->vector v_67)))
+                            (let-values (((vec-v_16) (struct->vector v_69)))
                               (let-values (((alt_42)
                                             (lambda ()
                                               (begin
                                                 'alt
-                                                (let-values (((vec-v_17) (struct->vector v_67)))
+                                                (let-values (((vec-v_17) (struct->vector v_69)))
                                                   (let-values (((alt_43)
                                                                 (lambda ()
                                                                   (begin
                                                                     'alt
-                                                                    (let-values (((vec-v_18) (struct->vector v_67)))
+                                                                    (let-values (((vec-v_18) (struct->vector v_69)))
                                                                       (let-values (((alt_44)
                                                                                     (lambda ()
                                                                                       (begin
                                                                                         'alt
                                                                                         (let-values (((vec-v_19)
                                                                                                       (struct->vector
-                                                                                                       v_67)))
+                                                                                                       v_69)))
                                                                                           (let-values (((alt_45)
                                                                                                         (lambda ()
                                                                                                           (begin
                                                                                                             'alt
                                                                                                             (let-values (((vec-v_20)
                                                                                                                           (struct->vector
-                                                                                                                           v_67)))
+                                                                                                                           v_69)))
                                                                                                               (let-values (((alt_46)
                                                                                                                             (lambda ()
                                                                                                                               (begin
                                                                                                                                 'alt
                                                                                                                                 (let-values (((vec-v_21)
                                                                                                                                               (struct->vector
-                                                                                                                                               v_67)))
+                                                                                                                                               v_69)))
                                                                                                                                   (let-values (((alt_47)
                                                                                                                                                 (lambda ()
                                                                                                                                                   (begin
                                                                                                                                                     'alt
                                                                                                                                                     (let-values (((vec-v_22)
                                                                                                                                                                   (struct->vector
-                                                                                                                                                                   v_67)))
+                                                                                                                                                                   v_69)))
                                                                                                                                                       (let-values (((alt_48)
                                                                                                                                                                     (lambda ()
                                                                                                                                                                       (begin
@@ -7280,10 +7348,10 @@
                                                                                                                                                                               #f)
                                                                                                                                                                           (let-values ()
                                                                                                                                                                             (let-values (((hd_3)
-                                                                                                                                                                                          (let-values (((v_68)
+                                                                                                                                                                                          (let-values (((v_70)
                                                                                                                                                                                                         expr_6))
-                                                                                                                                                                                            (let-values (((v_69)
-                                                                                                                                                                                                          v_68))
+                                                                                                                                                                                            (let-values (((v_71)
+                                                                                                                                                                                                          v_70))
                                                                                                                                                                                               (let-values ()
                                                                                                                                                                                                 (let-values (((alt_49)
                                                                                                                                                                                                               (lambda ()
@@ -7292,9 +7360,9 @@
                                                                                                                                                                                                                   (error
                                                                                                                                                                                                                    'match
                                                                                                                                                                                                                    "failed ~e"
-                                                                                                                                                                                                                   v_69)))))
+                                                                                                                                                                                                                   v_71)))))
                                                                                                                                                                                                   (if (let-values (((p_92)
-                                                                                                                                                                                                                    v_69))
+                                                                                                                                                                                                                    v_71))
                                                                                                                                                                                                         (if (pair?
                                                                                                                                                                                                              p_92)
                                                                                                                                                                                                           (let-values (((a_162)
@@ -7307,7 +7375,7 @@
                                                                                                                                                                                                     (let-values (((hd_4)
                                                                                                                                                                                                                   (let-values (((a_53)
                                                                                                                                                                                                                                 (car
-                                                                                                                                                                                                                                 v_69)))
+                                                                                                                                                                                                                                 v_71)))
                                                                                                                                                                                                                     a_53)))
                                                                                                                                                                                                       (let-values ()
                                                                                                                                                                                                         (values
@@ -7327,10 +7395,10 @@
                                                                                                                                                                             (let-values ()
                                                                                                                                                                               (let-values (((hd_5
                                                                                                                                                                                              tl_0)
-                                                                                                                                                                                            (let-values (((v_70)
+                                                                                                                                                                                            (let-values (((v_72)
                                                                                                                                                                                                           expr_6))
-                                                                                                                                                                                              (let-values (((v_71)
-                                                                                                                                                                                                            v_70))
+                                                                                                                                                                                              (let-values (((v_73)
+                                                                                                                                                                                                            v_72))
                                                                                                                                                                                                 (let-values ()
                                                                                                                                                                                                   (let-values (((alt_50)
                                                                                                                                                                                                                 (lambda ()
@@ -7339,9 +7407,9 @@
                                                                                                                                                                                                                     (error
                                                                                                                                                                                                                      'match
                                                                                                                                                                                                                      "failed ~e"
-                                                                                                                                                                                                                     v_71)))))
+                                                                                                                                                                                                                     v_73)))))
                                                                                                                                                                                                     (if (let-values (((p_93)
-                                                                                                                                                                                                                      v_71))
+                                                                                                                                                                                                                      v_73))
                                                                                                                                                                                                           (if (pair?
                                                                                                                                                                                                                p_93)
                                                                                                                                                                                                             #t
@@ -7349,7 +7417,7 @@
                                                                                                                                                                                                       (let-values (((hd_6
                                                                                                                                                                                                                      tl_1)
                                                                                                                                                                                                                     (let-values (((p_94)
-                                                                                                                                                                                                                                  v_71))
+                                                                                                                                                                                                                                  v_73))
                                                                                                                                                                                                                       (let-values (((hd_7)
                                                                                                                                                                                                                                     (let-values (((a_62)
                                                                                                                                                                                                                                                   (car
@@ -7372,7 +7440,7 @@
                                                                                                                                                                                               (absyn-top-level->il
                                                                                                                                                                                                hd_5)))
                                                                                                                                                                                   (let-values (((tl-stms_0
-                                                                                                                                                                                                 v_72)
+                                                                                                                                                                                                 v_74)
                                                                                                                                                                                                 (absyn-expr->il
                                                                                                                                                                                                  tl_0
                                                                                                                                                                                                  overwrite-mark-frame?_0)))
@@ -7380,7 +7448,7 @@
                                                                                                                                                                                      (append
                                                                                                                                                                                       hd-stms_0
                                                                                                                                                                                       tl-stms_0)
-                                                                                                                                                                                     v_72)))))
+                                                                                                                                                                                     v_74)))))
                                                                                                                                                                             (if (null?
                                                                                                                                                                                  expr_6)
                                                                                                                                                                               (let-values ()
@@ -7390,49 +7458,49 @@
                                                                                                                                                                                   (void))))
                                                                                                                                                                               (let-values (((vec-v_23)
                                                                                                                                                                                             (struct->vector
-                                                                                                                                                                                             v_67)))
+                                                                                                                                                                                             v_69)))
                                                                                                                                                                                 (let-values (((alt_51)
                                                                                                                                                                                               (lambda ()
                                                                                                                                                                                                 (begin
                                                                                                                                                                                                   'alt
                                                                                                                                                                                                   (let-values (((vec-v_24)
                                                                                                                                                                                                                 (struct->vector
-                                                                                                                                                                                                                 v_67)))
+                                                                                                                                                                                                                 v_69)))
                                                                                                                                                                                                     (let-values (((alt_52)
                                                                                                                                                                                                                   (lambda ()
                                                                                                                                                                                                                     (begin
                                                                                                                                                                                                                       'alt
                                                                                                                                                                                                                       (let-values (((vec-v_25)
                                                                                                                                                                                                                                     (struct->vector
-                                                                                                                                                                                                                                     v_67)))
+                                                                                                                                                                                                                                     v_69)))
                                                                                                                                                                                                                         (let-values (((alt_53)
                                                                                                                                                                                                                                       (lambda ()
                                                                                                                                                                                                                                         (begin
                                                                                                                                                                                                                                           'alt
                                                                                                                                                                                                                                           (let-values (((vec-v_26)
                                                                                                                                                                                                                                                         (struct->vector
-                                                                                                                                                                                                                                                         v_67)))
+                                                                                                                                                                                                                                                         v_69)))
                                                                                                                                                                                                                                             (let-values (((alt_54)
                                                                                                                                                                                                                                                           (lambda ()
                                                                                                                                                                                                                                                             (begin
                                                                                                                                                                                                                                                               'alt
                                                                                                                                                                                                                                                               (let-values (((vec-v_27)
                                                                                                                                                                                                                                                                             (struct->vector
-                                                                                                                                                                                                                                                                             v_67)))
+                                                                                                                                                                                                                                                                             v_69)))
                                                                                                                                                                                                                                                                 (let-values (((alt_55)
                                                                                                                                                                                                                                                                               (lambda ()
                                                                                                                                                                                                                                                                                 (begin
                                                                                                                                                                                                                                                                                   'alt
                                                                                                                                                                                                                                                                                   (let-values (((vec-v_28)
                                                                                                                                                                                                                                                                                                 (struct->vector
-                                                                                                                                                                                                                                                                                                 v_67)))
+                                                                                                                                                                                                                                                                                                 v_69)))
                                                                                                                                                                                                                                                                                     (let-values (((alt_56)
                                                                                                                                                                                                                                                                                                   (lambda ()
                                                                                                                                                                                                                                                                                                     (begin
                                                                                                                                                                                                                                                                                                       'alt
                                                                                                                                                                                                                                                                                                       (let-values (((vec-v_29)
                                                                                                                                                                                                                                                                                                                     (struct->vector
-                                                                                                                                                                                                                                                                                                                     v_67)))
+                                                                                                                                                                                                                                                                                                                     v_69)))
                                                                                                                                                                                                                                                                                                         (let-values (((alt_57)
                                                                                                                                                                                                                                                                                                                       (lambda ()
                                                                                                                                                                                                                                                                                                                         (begin
@@ -7443,7 +7511,7 @@
                                                                                                                                                                                                                                                                                                                               "unsupported expr "
                                                                                                                                                                                                                                                                                                                               expr_6)))))))
                                                                                                                                                                                                                                                                                                           (if (VarRef?
-                                                                                                                                                                                                                                                                                                               v_67)
+                                                                                                                                                                                                                                                                                                               v_69)
                                                                                                                                                                                                                                                                                                             (let-values ()
                                                                                                                                                                                                                                                                                                               (let-values (((__5)
                                                                                                                                                                                                                                                                                                                             (vector->values
@@ -7456,7 +7524,7 @@
                                                                                                                                                                                                                                                                                                             (let-values ()
                                                                                                                                                                                                                                                                                                               (alt_57)))))))))
                                                                                                                                                                                                                                                                                       (if (WithContinuationMark?
-                                                                                                                                                                                                                                                                                           v_67)
+                                                                                                                                                                                                                                                                                           v_69)
                                                                                                                                                                                                                                                                                         (let-values ()
                                                                                                                                                                                                                                                                                           (let-values (((key_8
                                                                                                                                                                                                                                                                                                          value_3
@@ -7546,7 +7614,7 @@
                                                                                                                                                                                                                                                                                         (let-values ()
                                                                                                                                                                                                                                                                                           (alt_56)))))))))
                                                                                                                                                                                                                                                                   (if (WithContinuationMark?
-                                                                                                                                                                                                                                                                       v_67)
+                                                                                                                                                                                                                                                                       v_69)
                                                                                                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                                                                                                       (let-values (((key_9
                                                                                                                                                                                                                                                                                      _fst_6
@@ -7560,13 +7628,13 @@
                                                                                                                                                                                                                                                                             (let-values (((key_10
                                                                                                                                                                                                                                                                                            _snd_2
                                                                                                                                                                                                                                                                                            _thd_0)
-                                                                                                                                                                                                                                                                                          (let-values (((v_73)
+                                                                                                                                                                                                                                                                                          (let-values (((v_75)
                                                                                                                                                                                                                                                                                                         wcm_0))
-                                                                                                                                                                                                                                                                                            (let-values (((v_74)
-                                                                                                                                                                                                                                                                                                          v_73))
+                                                                                                                                                                                                                                                                                            (let-values (((v_76)
+                                                                                                                                                                                                                                                                                                          v_75))
                                                                                                                                                                                                                                                                                               (let-values (((vec-v_30)
                                                                                                                                                                                                                                                                                                             (struct->vector
-                                                                                                                                                                                                                                                                                                             v_74)))
+                                                                                                                                                                                                                                                                                                             v_76)))
                                                                                                                                                                                                                                                                                                 (let-values (((alt_58)
                                                                                                                                                                                                                                                                                                               (lambda ()
                                                                                                                                                                                                                                                                                                                 (begin
@@ -7574,9 +7642,9 @@
                                                                                                                                                                                                                                                                                                                   (error
                                                                                                                                                                                                                                                                                                                    'match
                                                                                                                                                                                                                                                                                                                    "failed ~e"
-                                                                                                                                                                                                                                                                                                                   v_74)))))
+                                                                                                                                                                                                                                                                                                                   v_76)))))
                                                                                                                                                                                                                                                                                                   (if (WithContinuationMark?
-                                                                                                                                                                                                                                                                                                       v_74)
+                                                                                                                                                                                                                                                                                                       v_76)
                                                                                                                                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                                                                                                                                       (let-values (((key_11
                                                                                                                                                                                                                                                                                                                      _snd_3
@@ -7597,7 +7665,7 @@
                                                                                                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                                                                                                       (alt_55)))))))))
                                                                                                                                                                                                                                               (if (ImportedIdent?
-                                                                                                                                                                                                                                                   v_67)
+                                                                                                                                                                                                                                                   v_69)
                                                                                                                                                                                                                                                 (let-values ()
                                                                                                                                                                                                                                                   (let-values (((id_3
                                                                                                                                                                                                                                                                  src__0
@@ -7685,7 +7753,7 @@
                                                                                                                                                                                                                                                 (let-values ()
                                                                                                                                                                                                                                                   (alt_54)))))))))
                                                                                                                                                                                                                           (if (Begin0?
-                                                                                                                                                                                                                               v_67)
+                                                                                                                                                                                                                               v_69)
                                                                                                                                                                                                                             (let-values ()
                                                                                                                                                                                                                               (let-values (((expr0_0
                                                                                                                                                                                                                                              expr*_0)
@@ -7710,7 +7778,7 @@
                                                                                                                                                                                                                             (let-values ()
                                                                                                                                                                                                                               (alt_53)))))))))
                                                                                                                                                                                                       (if (TopLevelIdent?
-                                                                                                                                                                                                           v_67)
+                                                                                                                                                                                                           v_69)
                                                                                                                                                                                                         (let-values ()
                                                                                                                                                                                                           (let-values (((id_4)
                                                                                                                                                                                                                         (vector->values
@@ -7722,7 +7790,7 @@
                                                                                                                                                                                                         (let-values ()
                                                                                                                                                                                                           (alt_52)))))))))
                                                                                                                                                                                   (if (LocalIdent?
-                                                                                                                                                                                       v_67)
+                                                                                                                                                                                       v_69)
                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                       (let-values (((id_5)
                                                                                                                                                                                                     (vector->values
@@ -7734,7 +7802,7 @@
                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                       (alt_51))))))))))))
                                                                                                                                                         (if (Quote?
-                                                                                                                                                             v_67)
+                                                                                                                                                             v_69)
                                                                                                                                                           (let-values ()
                                                                                                                                                             (let-values (((datum_0)
                                                                                                                                                                           (vector->values
@@ -7747,7 +7815,7 @@
                                                                                                                                                           (let-values ()
                                                                                                                                                             (alt_48)))))))))
                                                                                                                                     (if (App?
-                                                                                                                                         v_67)
+                                                                                                                                         v_69)
                                                                                                                                       (let-values ()
                                                                                                                                         (let-values (((lam_1
                                                                                                                                                        args_14)
@@ -7766,19 +7834,19 @@
                                                                                                                                                            *
                                                                                                                                                            /))))
                                                                                                                                             (let-values (((il-app/binop_0)
-                                                                                                                                                          (lambda (v_75
+                                                                                                                                                          (lambda (v_77
                                                                                                                                                                    arg*_0)
                                                                                                                                                             (begin
                                                                                                                                                               'il-app/binop
                                                                                                                                                               (let-values (((v-il_0)
                                                                                                                                                                             (let-values (((__6
-                                                                                                                                                                                           v_76)
+                                                                                                                                                                                           v_78)
                                                                                                                                                                                           (absyn-expr->il
-                                                                                                                                                                                           v_75
+                                                                                                                                                                                           v_77
                                                                                                                                                                                            #f)))
-                                                                                                                                                                              v_76)))
+                                                                                                                                                                              v_78)))
                                                                                                                                                                 (if (if (equal?
-                                                                                                                                                                         v_75
+                                                                                                                                                                         v_77
                                                                                                                                                                          (ImportedIdent3.1
                                                                                                                                                                           '-
                                                                                                                                                                           '#%kernel
@@ -7792,7 +7860,7 @@
                                                                                                                                                                      v-il_0
                                                                                                                                                                      arg*_0))
                                                                                                                                                                   (if (if (equal?
-                                                                                                                                                                           v_75
+                                                                                                                                                                           v_77
                                                                                                                                                                            (ImportedIdent3.1
                                                                                                                                                                             '/
                                                                                                                                                                             '#%kernel
@@ -7809,9 +7877,9 @@
                                                                                                                                                                          1)
                                                                                                                                                                         arg*_0)))
                                                                                                                                                                     (if (if (ImportedIdent?
-                                                                                                                                                                             v_75)
+                                                                                                                                                                             v_77)
                                                                                                                                                                           (if (member
-                                                                                                                                                                               v_75
+                                                                                                                                                                               v_77
                                                                                                                                                                                binops_0)
                                                                                                                                                                             (>=
                                                                                                                                                                              (length
@@ -7822,7 +7890,7 @@
                                                                                                                                                                       (let-values ()
                                                                                                                                                                         (ILBinaryOp6.1
                                                                                                                                                                          (ImportedIdent-id
-                                                                                                                                                                          v_75)
+                                                                                                                                                                          v_77)
                                                                                                                                                                          arg*_0))
                                                                                                                                                                       (let-values ()
                                                                                                                                                                         (ILApp7.1
@@ -7927,13 +7995,13 @@
                                                                                                                                                                                                                                               temp5_0)
                                                                                                                                                                                                                                              temp6_0)))
                                                                                                                                                                                                                                 (let-values (((s_15
-                                                                                                                                                                                                                                               v_77)
+                                                                                                                                                                                                                                               v_79)
                                                                                                                                                                                                                                               (absyn-expr->il
                                                                                                                                                                                                                                                arg_0
                                                                                                                                                                                                                                                #f)))
                                                                                                                                                                                                                                   (if (if next-has-stms?_2
                                                                                                                                                                                                                                         (has-application?
-                                                                                                                                                                                                                                         v_77)
+                                                                                                                                                                                                                                         v_79)
                                                                                                                                                                                                                                         #f)
                                                                                                                                                                                                                                     (let-values ()
                                                                                                                                                                                                                                       (let-values (((temp-id_0)
@@ -7946,7 +8014,7 @@
                                                                                                                                                                                                                                                        s_15
                                                                                                                                                                                                                                                        (ILVarDec20.1
                                                                                                                                                                                                                                                         temp-id_0
-                                                                                                                                                                                                                                                        v_77))))
+                                                                                                                                                                                                                                                        v_79))))
                                                                                                                                                                                                                                           (values
                                                                                                                                                                                                                                            (append
                                                                                                                                                                                                                                             arg-stms_0
@@ -7962,7 +8030,7 @@
                                                                                                                                                                                                                                           s_15
                                                                                                                                                                                                                                           stms_5)
                                                                                                                                                                                                                                          (cons
-                                                                                                                                                                                                                                          v_77
+                                                                                                                                                                                                                                          v_79
                                                                                                                                                                                                                                           vals_5)
                                                                                                                                                                                                                                          next-has-stms?_2))
                                                                                                                                                                                                                                       (let-values ()
@@ -7971,7 +8039,7 @@
                                                                                                                                                                                                                                           s_15
                                                                                                                                                                                                                                           stms_5)
                                                                                                                                                                                                                                          (cons
-                                                                                                                                                                                                                                          v_77
+                                                                                                                                                                                                                                          v_79
                                                                                                                                                                                                                                           vals_5)
                                                                                                                                                                                                                                          (let-values (((or-part_73)
                                                                                                                                                                                                                                                        next-has-stms?_2))
@@ -8019,10 +8087,10 @@
                                                                                                                                                                    start_10))))))
                                                                                                                                                 (let-values (((lam-val_0
                                                                                                                                                                arg-vals_0)
-                                                                                                                                                              (let-values (((v_78)
+                                                                                                                                                              (let-values (((v_80)
                                                                                                                                                                             lam-part-vals_0))
-                                                                                                                                                                (let-values (((v_79)
-                                                                                                                                                                              v_78))
+                                                                                                                                                                (let-values (((v_81)
+                                                                                                                                                                              v_80))
                                                                                                                                                                   (let-values ()
                                                                                                                                                                     (let-values (((alt_59)
                                                                                                                                                                                   (lambda ()
@@ -8031,9 +8099,9 @@
                                                                                                                                                                                       (error
                                                                                                                                                                                        'match
                                                                                                                                                                                        "failed ~e"
-                                                                                                                                                                                       v_79)))))
+                                                                                                                                                                                       v_81)))))
                                                                                                                                                                       (if (let-values (((p_95)
-                                                                                                                                                                                        v_79))
+                                                                                                                                                                                        v_81))
                                                                                                                                                                             (if (pair?
                                                                                                                                                                                  p_95)
                                                                                                                                                                               (let-values (((a_116)
@@ -8045,7 +8113,7 @@
                                                                                                                                                                         (let-values (((lam-val_1
                                                                                                                                                                                        arg-vals_1)
                                                                                                                                                                                       (let-values (((p_96)
-                                                                                                                                                                                                    v_79))
+                                                                                                                                                                                                    v_81))
                                                                                                                                                                                         (let-values (((lam-val_2)
                                                                                                                                                                                                       (let-values (((a_163)
                                                                                                                                                                                                                     (car
@@ -8079,7 +8147,7 @@
                                                                                                                                       (let-values ()
                                                                                                                                         (alt_47)))))))))
                                                                                                                 (if (App?
-                                                                                                                     v_67)
+                                                                                                                     v_69)
                                                                                                                   (let-values ()
                                                                                                                     (let-values (((lam_2
                                                                                                                                    args_15)
@@ -8094,7 +8162,7 @@
                                                                                                                               lam_2))
                                                                                                                             #f)
                                                                                                                         (let-values ()
-                                                                                                                          (let-values (((v_80)
+                                                                                                                          (let-values (((v_82)
                                                                                                                                         args_15))
                                                                                                                             (let-values ()
                                                                                                                               (let-values (((alt_60)
@@ -8185,7 +8253,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                                      "unknown ffi form"
                                                                                                                                                                                                                                                                                                                                                                                                                                                                      args_15)))))))))
                                                                                                                                                                                                                                                                                                                                                                                                                                             (if (let-values (((p_97)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                                                                                                                                                                                                                                                                   (if (pair?
                                                                                                                                                                                                                                                                                                                                                                                                                                                        p_97)
                                                                                                                                                                                                                                                                                                                                                                                                                                                     (let-values (((a_164)
@@ -8198,7 +8266,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                               (let-values (((fst_6)
                                                                                                                                                                                                                                                                                                                                                                                                                                                             (let-values (((a_165)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                           (car
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                           v_80)))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                           v_82)))
                                                                                                                                                                                                                                                                                                                                                                                                                                                               a_165)))
                                                                                                                                                                                                                                                                                                                                                                                                                                                 (if (if (Quote?
                                                                                                                                                                                                                                                                                                                                                                                                                                                          fst_6)
@@ -8214,7 +8282,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                   (alt_75)))
                                                                                                                                                                                                                                                                                                                                                                                                                                               (alt_75))))))))
                                                                                                                                                                                                                                                                                                                                                                                                                         (if (let-values (((p_98)
-                                                                                                                                                                                                                                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                                                                                                                                                                                                                                               (if (pair?
                                                                                                                                                                                                                                                                                                                                                                                                                                    p_98)
                                                                                                                                                                                                                                                                                                                                                                                                                                 (let-values (((a_166)
@@ -8227,7 +8295,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                                           (let-values (((fst_7)
                                                                                                                                                                                                                                                                                                                                                                                                                                         (let-values (((a_167)
                                                                                                                                                                                                                                                                                                                                                                                                                                                       (car
-                                                                                                                                                                                                                                                                                                                                                                                                                                                       v_80)))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                       v_82)))
                                                                                                                                                                                                                                                                                                                                                                                                                                           a_167)))
                                                                                                                                                                                                                                                                                                                                                                                                                             (if (if (Quote?
                                                                                                                                                                                                                                                                                                                                                                                                                                      fst_7)
@@ -8243,7 +8311,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                                               (alt_74)))
                                                                                                                                                                                                                                                                                                                                                                                                                           (alt_74))))))))
                                                                                                                                                                                                                                                                                                                                                                                                     (if (let-values (((p_99)
-                                                                                                                                                                                                                                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                                                                                                                                                                                                                                                      v_82))
                                                                                                                                                                                                                                                                                                                                                                                                           (if (pair?
                                                                                                                                                                                                                                                                                                                                                                                                                p_99)
                                                                                                                                                                                                                                                                                                                                                                                                             (let-values (((a_168)
@@ -8256,7 +8324,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                       (let-values (((fst_8)
                                                                                                                                                                                                                                                                                                                                                                                                                     (let-values (((a_169)
                                                                                                                                                                                                                                                                                                                                                                                                                                   (car
-                                                                                                                                                                                                                                                                                                                                                                                                                                   v_80)))
+                                                                                                                                                                                                                                                                                                                                                                                                                                   v_82)))
                                                                                                                                                                                                                                                                                                                                                                                                                       a_169)))
                                                                                                                                                                                                                                                                                                                                                                                                         (if (if (Quote?
                                                                                                                                                                                                                                                                                                                                                                                                                  fst_8)
@@ -8272,7 +8340,7 @@
                                                                                                                                                                                                                                                                                                                                                                                                           (alt_73)))
                                                                                                                                                                                                                                                                                                                                                                                                       (alt_73))))))))
                                                                                                                                                                                                                                                                                                                                                                                 (if (let-values (((p_100)
-                                                                                                                                                                                                                                                                                                                                                                                                  v_80))
+                                                                                                                                                                                                                                                                                                                                                                                                  v_82))
                                                                                                                                                                                                                                                                                                                                                                                       (if (pair?
                                                                                                                                                                                                                                                                                                                                                                                            p_100)
                                                                                                                                                                                                                                                                                                                                                                                         (let-values (((a_170)
@@ -8285,7 +8353,7 @@
                                                                                                                                                                                                                                                                                                                                                                                   (let-values (((fst_9)
                                                                                                                                                                                                                                                                                                                                                                                                 (let-values (((a_171)
                                                                                                                                                                                                                                                                                                                                                                                                               (car
-                                                                                                                                                                                                                                                                                                                                                                                                               v_80)))
+                                                                                                                                                                                                                                                                                                                                                                                                               v_82)))
                                                                                                                                                                                                                                                                                                                                                                                                   a_171)))
                                                                                                                                                                                                                                                                                                                                                                                     (if (if (Quote?
                                                                                                                                                                                                                                                                                                                                                                                              fst_9)
@@ -8301,7 +8369,7 @@
                                                                                                                                                                                                                                                                                                                                                                                       (alt_72)))
                                                                                                                                                                                                                                                                                                                                                                                   (alt_72))))))))
                                                                                                                                                                                                                                                                                                                                                             (if (let-values (((p_101)
-                                                                                                                                                                                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                                                                                                                                                                                   (if (pair?
                                                                                                                                                                                                                                                                                                                                                                        p_101)
                                                                                                                                                                                                                                                                                                                                                                     (let-values (((a_172)
@@ -8340,7 +8408,7 @@
                                                                                                                                                                                                                                                                                                                                                                              e0_4
                                                                                                                                                                                                                                                                                                                                                                              e1_5)
                                                                                                                                                                                                                                                                                                                                                                             (let-values (((p_104)
-                                                                                                                                                                                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                                                                                                                                                                                               (let-values (((fst_11)
                                                                                                                                                                                                                                                                                                                                                                                             (let-values (((a_174)
                                                                                                                                                                                                                                                                                                                                                                                                           (car
@@ -8403,13 +8471,13 @@
                                                                                                                                                                                                                                                                                                                                                                       #f)
                                                                                                                                                                                                                                                                                                                                                                   (let-values ()
                                                                                                                                                                                                                                                                                                                                                                     (let-values (((oper_0)
-                                                                                                                                                                                                                                                                                                                                                                                  (let-values (((v_81)
+                                                                                                                                                                                                                                                                                                                                                                                  (let-values (((v_83)
                                                                                                                                                                                                                                                                                                                                                                                                 snd_3))
-                                                                                                                                                                                                                                                                                                                                                                                    (let-values (((v_82)
-                                                                                                                                                                                                                                                                                                                                                                                                  v_81))
+                                                                                                                                                                                                                                                                                                                                                                                    (let-values (((v_84)
+                                                                                                                                                                                                                                                                                                                                                                                                  v_83))
                                                                                                                                                                                                                                                                                                                                                                                       (let-values (((vec-v_31)
                                                                                                                                                                                                                                                                                                                                                                                                     (struct->vector
-                                                                                                                                                                                                                                                                                                                                                                                                     v_82)))
+                                                                                                                                                                                                                                                                                                                                                                                                     v_84)))
                                                                                                                                                                                                                                                                                                                                                                                         (let-values (((alt_76)
                                                                                                                                                                                                                                                                                                                                                                                                       (lambda ()
                                                                                                                                                                                                                                                                                                                                                                                                         (begin
@@ -8417,9 +8485,9 @@
                                                                                                                                                                                                                                                                                                                                                                                                           (error
                                                                                                                                                                                                                                                                                                                                                                                                            'match
                                                                                                                                                                                                                                                                                                                                                                                                            "failed ~e"
-                                                                                                                                                                                                                                                                                                                                                                                                           v_82)))))
+                                                                                                                                                                                                                                                                                                                                                                                                           v_84)))))
                                                                                                                                                                                                                                                                                                                                                                                           (if (Quote?
-                                                                                                                                                                                                                                                                                                                                                                                               v_82)
+                                                                                                                                                                                                                                                                                                                                                                                               v_84)
                                                                                                                                                                                                                                                                                                                                                                                             (let-values ()
                                                                                                                                                                                                                                                                                                                                                                                               (let-values (((oper_1)
                                                                                                                                                                                                                                                                                                                                                                                                             (vector->values
@@ -8451,7 +8519,7 @@
                                                                                                                                                                                                                                                                                                                                                                   (alt_71)))
                                                                                                                                                                                                                                                                                                                                                               (alt_71))))))))
                                                                                                                                                                                                                                                                                                                                         (if (let-values (((p_107)
-                                                                                                                                                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                                                                                                                                                               (if (pair?
                                                                                                                                                                                                                                                                                                                                                    p_107)
                                                                                                                                                                                                                                                                                                                                                 (let-values (((a_178)
@@ -8481,7 +8549,7 @@
                                                                                                                                                                                                                                                                                                                                                          e_12
                                                                                                                                                                                                                                                                                                                                                          t_3)
                                                                                                                                                                                                                                                                                                                                                         (let-values (((p_110)
-                                                                                                                                                                                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                                                                                                                                                                                                      v_82))
                                                                                                                                                                                                                                                                                                                                                           (let-values (((fst_13)
                                                                                                                                                                                                                                                                                                                                                                         (let-values (((a_181)
                                                                                                                                                                                                                                                                                                                                                                                       (car
@@ -8542,7 +8610,7 @@
                                                                                                                                                                                                                                                                                                                                               (alt_70)))
                                                                                                                                                                                                                                                                                                                                           (alt_70))))))))
                                                                                                                                                                                                                                                                                                                     (if (let-values (((p_112)
-                                                                                                                                                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                                                                                                                                                                      v_82))
                                                                                                                                                                                                                                                                                                                           (if (pair?
                                                                                                                                                                                                                                                                                                                                p_112)
                                                                                                                                                                                                                                                                                                                             (let-values (((a_184)
@@ -8563,7 +8631,7 @@
                                                                                                                                                                                                                                                                                                                       (let-values (((fst_14
                                                                                                                                                                                                                                                                                                                                      e_15)
                                                                                                                                                                                                                                                                                                                                     (let-values (((p_114)
-                                                                                                                                                                                                                                                                                                                                                  v_80))
+                                                                                                                                                                                                                                                                                                                                                  v_82))
                                                                                                                                                                                                                                                                                                                                       (let-values (((fst_15)
                                                                                                                                                                                                                                                                                                                                                     (let-values (((a_186)
                                                                                                                                                                                                                                                                                                                                                                   (car
@@ -8600,7 +8668,7 @@
                                                                                                                                                                                                                                                                                                                           (alt_69)))
                                                                                                                                                                                                                                                                                                                       (alt_69))))))))
                                                                                                                                                                                                                                                                                                 (if (let-values (((p_115)
-                                                                                                                                                                                                                                                                                                                  v_80))
+                                                                                                                                                                                                                                                                                                                  v_82))
                                                                                                                                                                                                                                                                                                       (if (pair?
                                                                                                                                                                                                                                                                                                            p_115)
                                                                                                                                                                                                                                                                                                         (let-values (((a_188)
@@ -8621,7 +8689,7 @@
                                                                                                                                                                                                                                                                                                   (let-values (((fst_16
                                                                                                                                                                                                                                                                                                                  e_17)
                                                                                                                                                                                                                                                                                                                 (let-values (((p_117)
-                                                                                                                                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                                                                                                                                   (let-values (((fst_17)
                                                                                                                                                                                                                                                                                                                                 (let-values (((a_190)
                                                                                                                                                                                                                                                                                                                                               (car
@@ -8661,7 +8729,7 @@
                                                                                                                                                                                                                                                                                                       (alt_68)))
                                                                                                                                                                                                                                                                                                   (alt_68))))))))
                                                                                                                                                                                                                                                                             (if (let-values (((p_70)
-                                                                                                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                                                                                                   (if (pair?
                                                                                                                                                                                                                                                                                        p_70)
                                                                                                                                                                                                                                                                                     (let-values (((a_129)
@@ -8673,7 +8741,7 @@
                                                                                                                                                                                                                                                                               (let-values (((fst_18
                                                                                                                                                                                                                                                                                              items_2)
                                                                                                                                                                                                                                                                                             (let-values (((p_71)
-                                                                                                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                                                                                                               (let-values (((fst_19)
                                                                                                                                                                                                                                                                                                             (let-values (((a_192)
                                                                                                                                                                                                                                                                                                                           (car
@@ -8762,18 +8830,18 @@
                                                                                                                                                                                                                                                                                                                                                 (pos-pre-inc_19
                                                                                                                                                                                                                                                                                                                                                  pos_67)
                                                                                                                                                                                                                                                                                                                                                 pos_67))
-                                                                                                                                                                                                                                                                                                                                             ((v_83
+                                                                                                                                                                                                                                                                                                                                             ((v_85
                                                                                                                                                                                                                                                                                                                                                all-cont?/pos_20)
-                                                                                                                                                                                                                                                                                                                                              (let-values (((v_84)
+                                                                                                                                                                                                                                                                                                                                              (let-values (((v_86)
                                                                                                                                                                                                                                                                                                                                                             (pos->vals_22
                                                                                                                                                                                                                                                                                                                                                              pos_68)))
                                                                                                                                                                                                                                                                                                                                                 (values
-                                                                                                                                                                                                                                                                                                                                                 v_84
+                                                                                                                                                                                                                                                                                                                                                 v_86
                                                                                                                                                                                                                                                                                                                                                  (if all-cont?_22
                                                                                                                                                                                                                                                                                                                                                    (lambda (pos_71)
                                                                                                                                                                                                                                                                                                                                                      (all-cont?_22
                                                                                                                                                                                                                                                                                                                                                       pos_71
-                                                                                                                                                                                                                                                                                                                                                      v_84))
+                                                                                                                                                                                                                                                                                                                                                      v_86))
                                                                                                                                                                                                                                                                                                                                                    #f))))
                                                                                                                                                                                                                                                                                                                                              ((pos_72)
                                                                                                                                                                                                                                                                                                                                               (if pos-pre-inc_20
@@ -8786,7 +8854,7 @@
                                                                                                                                                                                                                                                                                                                                             #t)
                                                                                                                                                                                                                                                                                                                                         (if val-cont?_22
                                                                                                                                                                                                                                                                                                                                           (val-cont?_22
-                                                                                                                                                                                                                                                                                                                                           v_83)
+                                                                                                                                                                                                                                                                                                                                           v_85)
                                                                                                                                                                                                                                                                                                                                           #t)
                                                                                                                                                                                                                                                                                                                                         #f)
                                                                                                                                                                                                                                                                                                                                     (let-values (((stms_11
@@ -8801,7 +8869,7 @@
                                                                                                                                                                                                                                                                                                                                                                     (let-values (((s*_0
                                                                                                                                                                                                                                                                                                                                                                                    v*_0)
                                                                                                                                                                                                                                                                                                                                                                                   (absyn-expr->il
-                                                                                                                                                                                                                                                                                                                                                                                   v_83
+                                                                                                                                                                                                                                                                                                                                                                                   v_85
                                                                                                                                                                                                                                                                                                                                                                                    #f)))
                                                                                                                                                                                                                                                                                                                                                                       (values
                                                                                                                                                                                                                                                                                                                                                                        (append
@@ -8857,7 +8925,7 @@
                                                                                                                                                                                                                                                                                   (alt_67)))
                                                                                                                                                                                                                                                                               (alt_67))))))))
                                                                                                                                                                                                                                                         (if (let-values (((p_118)
-                                                                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                                                                               (if (pair?
                                                                                                                                                                                                                                                                    p_118)
                                                                                                                                                                                                                                                                 (let-values (((a_193)
@@ -8869,7 +8937,7 @@
                                                                                                                                                                                                                                                           (let-values (((fst_20
                                                                                                                                                                                                                                                                          items_4)
                                                                                                                                                                                                                                                                         (let-values (((p_119)
-                                                                                                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                                                                                                                      v_82))
                                                                                                                                                                                                                                                                           (let-values (((fst_21)
                                                                                                                                                                                                                                                                                         (let-values (((a_194)
                                                                                                                                                                                                                                                                                                       (car
@@ -8994,7 +9062,7 @@
                                                                                                                                                                                                                                                               (alt_66)))
                                                                                                                                                                                                                                                           (alt_66))))))))
                                                                                                                                                                                                                                     (if (let-values (((p_120)
-                                                                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                                                                                      v_82))
                                                                                                                                                                                                                                           (if (pair?
                                                                                                                                                                                                                                                p_120)
                                                                                                                                                                                                                                             (let-values (((a_195)
@@ -9015,7 +9083,7 @@
                                                                                                                                                                                                                                       (let-values (((fst_22
                                                                                                                                                                                                                                                      lv_0)
                                                                                                                                                                                                                                                     (let-values (((p_122)
-                                                                                                                                                                                                                                                                  v_80))
+                                                                                                                                                                                                                                                                  v_82))
                                                                                                                                                                                                                                                       (let-values (((fst_23)
                                                                                                                                                                                                                                                                     (let-values (((a_197)
                                                                                                                                                                                                                                                                                   (car
@@ -9052,7 +9120,7 @@
                                                                                                                                                                                                                                           (alt_65)))
                                                                                                                                                                                                                                       (alt_65))))))))
                                                                                                                                                                                                                 (if (let-values (((p_123)
-                                                                                                                                                                                                                                  v_80))
+                                                                                                                                                                                                                                  v_82))
                                                                                                                                                                                                                       (if (pair?
                                                                                                                                                                                                                            p_123)
                                                                                                                                                                                                                         (let-values (((a_199)
@@ -9082,7 +9150,7 @@
                                                                                                                                                                                                                                  lv_2
                                                                                                                                                                                                                                  rv_0)
                                                                                                                                                                                                                                 (let-values (((p_126)
-                                                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                                                   (let-values (((fst_25)
                                                                                                                                                                                                                                                 (let-values (((a_137)
                                                                                                                                                                                                                                                               (car
@@ -9146,7 +9214,7 @@
                                                                                                                                                                                                                       (alt_64)))
                                                                                                                                                                                                                   (alt_64))))))))
                                                                                                                                                                                             (if (let-values (((p_128)
-                                                                                                                                                                                                              v_80))
+                                                                                                                                                                                                              v_82))
                                                                                                                                                                                                   (if (pair?
                                                                                                                                                                                                        p_128)
                                                                                                                                                                                                     (let-values (((a_140)
@@ -9167,7 +9235,7 @@
                                                                                                                                                                                                              b_20
                                                                                                                                                                                                              xs_20)
                                                                                                                                                                                                             (let-values (((p_130)
-                                                                                                                                                                                                                          v_80))
+                                                                                                                                                                                                                          v_82))
                                                                                                                                                                                                               (let-values (((fst_27)
                                                                                                                                                                                                                             (let-values (((a_205)
                                                                                                                                                                                                                                           (car
@@ -9311,51 +9379,51 @@
                                                                                                                                                                                                            init_25)))))
                                                                                                                                                                                                   (alt_63)))
                                                                                                                                                                                               (alt_63))))))))
-                                                                                                                                                                        (if (let-values (((p_131)
-                                                                                                                                                                                          v_80))
+                                                                                                                                                                        (if (let-values (((p_83)
+                                                                                                                                                                                          v_82))
                                                                                                                                                                               (if (pair?
-                                                                                                                                                                                   p_131)
-                                                                                                                                                                                (let-values (((a_207)
+                                                                                                                                                                                   p_83)
+                                                                                                                                                                                (let-values (((a_151)
                                                                                                                                                                                               (cdr
-                                                                                                                                                                                               p_131)))
-                                                                                                                                                                                  (let-values (((p_85)
-                                                                                                                                                                                                a_207))
+                                                                                                                                                                                               p_83)))
+                                                                                                                                                                                  (let-values (((p_84)
+                                                                                                                                                                                                a_151))
                                                                                                                                                                                     (if (pair?
-                                                                                                                                                                                         p_85)
-                                                                                                                                                                                      (let-values (((a_208)
+                                                                                                                                                                                         p_84)
+                                                                                                                                                                                      (let-values (((a_207)
                                                                                                                                                                                                     (cdr
-                                                                                                                                                                                                     p_85)))
+                                                                                                                                                                                                     p_84)))
                                                                                                                                                                                         (list?
-                                                                                                                                                                                         a_208))
+                                                                                                                                                                                         a_207))
                                                                                                                                                                                       #f)))
                                                                                                                                                                                 #f))
                                                                                                                                                                           (let-values (((fst_28
                                                                                                                                                                                          b_23
                                                                                                                                                                                          xs_23)
-                                                                                                                                                                                        (let-values (((p_132)
-                                                                                                                                                                                                      v_80))
+                                                                                                                                                                                        (let-values (((p_85)
+                                                                                                                                                                                                      v_82))
                                                                                                                                                                                           (let-values (((fst_29)
-                                                                                                                                                                                                        (let-values (((a_153)
+                                                                                                                                                                                                        (let-values (((a_152)
                                                                                                                                                                                                                       (car
-                                                                                                                                                                                                                       p_132)))
-                                                                                                                                                                                                          a_153))
+                                                                                                                                                                                                                       p_85)))
+                                                                                                                                                                                                          a_152))
                                                                                                                                                                                                        ((b_24
                                                                                                                                                                                                          xs_24)
-                                                                                                                                                                                                        (let-values (((d_43)
+                                                                                                                                                                                                        (let-values (((d_42)
                                                                                                                                                                                                                       (cdr
-                                                                                                                                                                                                                       p_132)))
-                                                                                                                                                                                                          (let-values (((p_133)
-                                                                                                                                                                                                                        d_43))
+                                                                                                                                                                                                                       p_85)))
+                                                                                                                                                                                                          (let-values (((p_86)
+                                                                                                                                                                                                                        d_42))
                                                                                                                                                                                                             (let-values (((b_25)
-                                                                                                                                                                                                                          (let-values (((a_209)
+                                                                                                                                                                                                                          (let-values (((a_153)
                                                                                                                                                                                                                                         (car
-                                                                                                                                                                                                                                         p_133)))
-                                                                                                                                                                                                                            a_209))
+                                                                                                                                                                                                                                         p_86)))
+                                                                                                                                                                                                                            a_153))
                                                                                                                                                                                                                          ((xs_25)
-                                                                                                                                                                                                                          (let-values (((d_61)
+                                                                                                                                                                                                                          (let-values (((d_43)
                                                                                                                                                                                                                                         (cdr
-                                                                                                                                                                                                                                         p_133)))
-                                                                                                                                                                                                                            d_61)))
+                                                                                                                                                                                                                                         p_86)))
+                                                                                                                                                                                                                            d_43)))
                                                                                                                                                                                                               (values
                                                                                                                                                                                                                b_25
                                                                                                                                                                                                                xs_25))))))
@@ -9392,31 +9460,31 @@
                                                                                                                                                                                        (void)
                                                                                                                                                                                        ((letrec-values (((for-loop_25)
                                                                                                                                                                                                          (lambda (il_7
-                                                                                                                                                                                                                  pos_41)
+                                                                                                                                                                                                                  pos_79)
                                                                                                                                                                                                            (begin
                                                                                                                                                                                                              'for-loop
                                                                                                                                                                                                              (if (if pos-cont?_26
                                                                                                                                                                                                                    (pos-cont?_26
-                                                                                                                                                                                                                    pos_41)
+                                                                                                                                                                                                                    pos_79)
                                                                                                                                                                                                                    #t)
                                                                                                                                                                                                                (let-values (((x_38
                                                                                                                                                                                                                               all-cont?/pos_23)
                                                                                                                                                                                                                              (let-values (((x_39)
                                                                                                                                                                                                                                            (pos->vals_25
-                                                                                                                                                                                                                                            pos_41)))
+                                                                                                                                                                                                                                            pos_79)))
                                                                                                                                                                                                                                (values
                                                                                                                                                                                                                                 x_39
                                                                                                                                                                                                                                 (if all-cont?_25
-                                                                                                                                                                                                                                  (lambda (pos_79)
+                                                                                                                                                                                                                                  (lambda (pos_80)
                                                                                                                                                                                                                                     (all-cont?_25
-                                                                                                                                                                                                                                     pos_79
+                                                                                                                                                                                                                                     pos_80
                                                                                                                                                                                                                                      x_39))
                                                                                                                                                                                                                                   #f))))
-                                                                                                                                                                                                                            ((pos_40)
+                                                                                                                                                                                                                            ((pos_39)
                                                                                                                                                                                                                              (if pos-pre-inc_23
                                                                                                                                                                                                                                (pos-pre-inc_23
-                                                                                                                                                                                                                                pos_41)
-                                                                                                                                                                                                                               pos_41)))
+                                                                                                                                                                                                                                pos_79)
+                                                                                                                                                                                                                               pos_79)))
                                                                                                                                                                                                                  (if (if val-cont?_25
                                                                                                                                                                                                                        (val-cont?_25
                                                                                                                                                                                                                         x_38)
@@ -9427,13 +9495,13 @@
                                                                                                                                                                                                                                    (let-values (((il_10)
                                                                                                                                                                                                                                                  (let-values ()
                                                                                                                                                                                                                                                    (let-values (((s_16)
-                                                                                                                                                                                                                                                                 (let-values (((v_85)
+                                                                                                                                                                                                                                                                 (let-values (((v_87)
                                                                                                                                                                                                                                                                                x_38))
-                                                                                                                                                                                                                                                                   (let-values (((v_86)
-                                                                                                                                                                                                                                                                                 v_85))
+                                                                                                                                                                                                                                                                   (let-values (((v_88)
+                                                                                                                                                                                                                                                                                 v_87))
                                                                                                                                                                                                                                                                      (let-values (((vec-v_32)
                                                                                                                                                                                                                                                                                    (struct->vector
-                                                                                                                                                                                                                                                                                    v_86)))
+                                                                                                                                                                                                                                                                                    v_88)))
                                                                                                                                                                                                                                                                        (let-values (((alt_77)
                                                                                                                                                                                                                                                                                      (lambda ()
                                                                                                                                                                                                                                                                                        (begin
@@ -9441,9 +9509,9 @@
                                                                                                                                                                                                                                                                                          (error
                                                                                                                                                                                                                                                                                           'match
                                                                                                                                                                                                                                                                                           "failed ~e"
-                                                                                                                                                                                                                                                                                          v_86)))))
+                                                                                                                                                                                                                                                                                          v_88)))))
                                                                                                                                                                                                                                                                          (if (Quote?
-                                                                                                                                                                                                                                                                              v_86)
+                                                                                                                                                                                                                                                                              v_88)
                                                                                                                                                                                                                                                                            (let-values ()
                                                                                                                                                                                                                                                                              (let-values (((s_17)
                                                                                                                                                                                                                                                                                            (vector->values
@@ -9466,7 +9534,7 @@
                                                                                                                                                                                                                                       il_10)))))
                                                                                                                                                                                                                      (if (if (if all-cont?/pos_23
                                                                                                                                                                                                                                (all-cont?/pos_23
-                                                                                                                                                                                                                                pos_40)
+                                                                                                                                                                                                                                pos_39)
                                                                                                                                                                                                                                #t)
                                                                                                                                                                                                                            (not
                                                                                                                                                                                                                             #f)
@@ -9474,7 +9542,7 @@
                                                                                                                                                                                                                        (for-loop_25
                                                                                                                                                                                                                         il_8
                                                                                                                                                                                                                         (pos-next_26
-                                                                                                                                                                                                                         pos_40))
+                                                                                                                                                                                                                         pos_39))
                                                                                                                                                                                                                        il_8))
                                                                                                                                                                                                                    il_7))
                                                                                                                                                                                                                il_7)))))
@@ -9483,42 +9551,42 @@
                                                                                                                                                                                         init_26))))))
                                                                                                                                                                               (alt_62)))
                                                                                                                                                                           (alt_62))))))))
-                                                                                                                                                    (if (let-values (((p_134)
-                                                                                                                                                                      v_80))
+                                                                                                                                                    (if (let-values (((p_131)
+                                                                                                                                                                      v_82))
                                                                                                                                                           (if (pair?
-                                                                                                                                                               p_134)
-                                                                                                                                                            (let-values (((a_210)
+                                                                                                                                                               p_131)
+                                                                                                                                                            (let-values (((a_208)
                                                                                                                                                                           (cdr
-                                                                                                                                                                           p_134)))
-                                                                                                                                                              (let-values (((p_135)
-                                                                                                                                                                            a_210))
+                                                                                                                                                                           p_131)))
+                                                                                                                                                              (let-values (((p_132)
+                                                                                                                                                                            a_208))
                                                                                                                                                                 (if (pair?
-                                                                                                                                                                     p_135)
-                                                                                                                                                                  (let-values (((a_211)
+                                                                                                                                                                     p_132)
+                                                                                                                                                                  (let-values (((a_209)
                                                                                                                                                                                 (cdr
-                                                                                                                                                                                 p_135)))
+                                                                                                                                                                                 p_132)))
                                                                                                                                                                     (eq?
                                                                                                                                                                      '()
-                                                                                                                                                                     a_211))
+                                                                                                                                                                     a_209))
                                                                                                                                                                   #f)))
                                                                                                                                                             #f))
                                                                                                                                                       (let-values (((fst_30
                                                                                                                                                                      snd_6)
-                                                                                                                                                                    (let-values (((p_136)
-                                                                                                                                                                                  v_80))
+                                                                                                                                                                    (let-values (((p_133)
+                                                                                                                                                                                  v_82))
                                                                                                                                                                       (let-values (((fst_31)
-                                                                                                                                                                                    (let-values (((a_212)
+                                                                                                                                                                                    (let-values (((a_210)
                                                                                                                                                                                                   (car
-                                                                                                                                                                                                   p_136)))
-                                                                                                                                                                                      a_212))
+                                                                                                                                                                                                   p_133)))
+                                                                                                                                                                                      a_210))
                                                                                                                                                                                    ((snd_7)
-                                                                                                                                                                                    (let-values (((d_62)
+                                                                                                                                                                                    (let-values (((d_61)
                                                                                                                                                                                                   (cdr
-                                                                                                                                                                                                   p_136)))
-                                                                                                                                                                                      (let-values (((a_213)
+                                                                                                                                                                                                   p_133)))
+                                                                                                                                                                                      (let-values (((a_211)
                                                                                                                                                                                                     (car
-                                                                                                                                                                                                     d_62)))
-                                                                                                                                                                                        a_213))))
+                                                                                                                                                                                                     d_61)))
+                                                                                                                                                                                        a_211))))
                                                                                                                                                                         (values
                                                                                                                                                                          fst_31
                                                                                                                                                                          snd_7)))))
@@ -9540,42 +9608,42 @@
                                                                                                                                                                snd_6))))
                                                                                                                                                           (alt_61)))
                                                                                                                                                       (alt_61))))))))
-                                                                                                                                (if (let-values (((p_137)
-                                                                                                                                                  v_80))
+                                                                                                                                (if (let-values (((p_134)
+                                                                                                                                                  v_82))
                                                                                                                                       (if (pair?
-                                                                                                                                           p_137)
-                                                                                                                                        (let-values (((a_214)
+                                                                                                                                           p_134)
+                                                                                                                                        (let-values (((a_212)
                                                                                                                                                       (cdr
-                                                                                                                                                       p_137)))
-                                                                                                                                          (let-values (((p_138)
-                                                                                                                                                        a_214))
+                                                                                                                                                       p_134)))
+                                                                                                                                          (let-values (((p_135)
+                                                                                                                                                        a_212))
                                                                                                                                             (if (pair?
-                                                                                                                                                 p_138)
-                                                                                                                                              (let-values (((a_215)
+                                                                                                                                                 p_135)
+                                                                                                                                              (let-values (((a_213)
                                                                                                                                                             (cdr
-                                                                                                                                                             p_138)))
+                                                                                                                                                             p_135)))
                                                                                                                                                 (eq?
                                                                                                                                                  '()
-                                                                                                                                                 a_215))
+                                                                                                                                                 a_213))
                                                                                                                                               #f)))
                                                                                                                                         #f))
                                                                                                                                   (let-values (((fst_32
                                                                                                                                                  snd_8)
-                                                                                                                                                (let-values (((p_139)
-                                                                                                                                                              v_80))
+                                                                                                                                                (let-values (((p_136)
+                                                                                                                                                              v_82))
                                                                                                                                                   (let-values (((fst_33)
-                                                                                                                                                                (let-values (((a_216)
+                                                                                                                                                                (let-values (((a_214)
                                                                                                                                                                               (car
-                                                                                                                                                                               p_139)))
-                                                                                                                                                                  a_216))
+                                                                                                                                                                               p_136)))
+                                                                                                                                                                  a_214))
                                                                                                                                                                ((snd_9)
-                                                                                                                                                                (let-values (((d_63)
+                                                                                                                                                                (let-values (((d_62)
                                                                                                                                                                               (cdr
-                                                                                                                                                                               p_139)))
-                                                                                                                                                                  (let-values (((a_217)
+                                                                                                                                                                               p_136)))
+                                                                                                                                                                  (let-values (((a_215)
                                                                                                                                                                                 (car
-                                                                                                                                                                                 d_63)))
-                                                                                                                                                                    a_217))))
+                                                                                                                                                                                 d_62)))
+                                                                                                                                                                    a_215))))
                                                                                                                                                     (values
                                                                                                                                                      fst_33
                                                                                                                                                      snd_9)))))
@@ -9599,7 +9667,7 @@
                                                                                                                         (alt_46))))
                                                                                                                   (let-values ()
                                                                                                                     (alt_46)))))))))
-                                                                                            (if (Set!? v_67)
+                                                                                            (if (Set!? v_69)
                                                                                               (let-values ()
                                                                                                 (let-values (((id_6
                                                                                                                e_19)
@@ -9608,7 +9676,7 @@
                                                                                                                1)))
                                                                                                   (values
                                                                                                    (let-values (((stms_25
-                                                                                                                  v_87)
+                                                                                                                  v_89)
                                                                                                                  (absyn-expr->il
                                                                                                                   e_19
                                                                                                                   #f)))
@@ -9616,12 +9684,12 @@
                                                                                                       stms_25
                                                                                                       (ILAssign24.1
                                                                                                        id_6
-                                                                                                       v_87)))
+                                                                                                       v_89)))
                                                                                                    (ILValue12.1
                                                                                                     (void)))))
                                                                                               (let-values ()
                                                                                                 (alt_45)))))))))
-                                                                        (if (LetValues? v_67)
+                                                                        (if (LetValues? v_69)
                                                                           (let-values ()
                                                                             (let-values (((bindings_1 body_7)
                                                                                           (vector->values vec-v_18 1)))
@@ -9640,31 +9708,31 @@
                                                                                                 (void)
                                                                                                 ((letrec-values (((for-loop_26)
                                                                                                                   (lambda (stms_26
-                                                                                                                           pos_80)
+                                                                                                                           pos_81)
                                                                                                                     (begin
                                                                                                                       'for-loop
                                                                                                                       (if (if pos-cont?_27
                                                                                                                             (pos-cont?_27
-                                                                                                                             pos_80)
+                                                                                                                             pos_81)
                                                                                                                             #t)
                                                                                                                         (let-values (((b_26
                                                                                                                                        all-cont?/pos_24)
                                                                                                                                       (let-values (((b_27)
                                                                                                                                                     (pos->vals_26
-                                                                                                                                                     pos_80)))
+                                                                                                                                                     pos_81)))
                                                                                                                                         (values
                                                                                                                                          b_27
                                                                                                                                          (if all-cont?_26
-                                                                                                                                           (lambda (pos_81)
+                                                                                                                                           (lambda (pos_82)
                                                                                                                                              (all-cont?_26
-                                                                                                                                              pos_81
+                                                                                                                                              pos_82
                                                                                                                                               b_27))
                                                                                                                                            #f))))
-                                                                                                                                     ((pos_82)
+                                                                                                                                     ((pos_83)
                                                                                                                                       (if pos-pre-inc_24
                                                                                                                                         (pos-pre-inc_24
-                                                                                                                                         pos_80)
-                                                                                                                                        pos_80)))
+                                                                                                                                         pos_81)
+                                                                                                                                        pos_81)))
                                                                                                                           (if (if val-cont?_26
                                                                                                                                 (val-cont?_26
                                                                                                                                  b_26)
@@ -9682,7 +9750,7 @@
                                                                                                                                                stms_29)))))
                                                                                                                               (if (if (if all-cont?/pos_24
                                                                                                                                         (all-cont?/pos_24
-                                                                                                                                         pos_82)
+                                                                                                                                         pos_83)
                                                                                                                                         #t)
                                                                                                                                     (not
                                                                                                                                      #f)
@@ -9690,7 +9758,7 @@
                                                                                                                                 (for-loop_26
                                                                                                                                  stms_27
                                                                                                                                  (pos-next_27
-                                                                                                                                  pos_82))
+                                                                                                                                  pos_83))
                                                                                                                                 stms_27))
                                                                                                                             stms_26))
                                                                                                                         stms_26)))))
@@ -9725,38 +9793,38 @@
                                                                                       ((letrec-values (((for-loop_27)
                                                                                                         (lambda (stms_30
                                                                                                                  rv_3
-                                                                                                                 pos_83
-                                                                                                                 pos_84)
+                                                                                                                 pos_84
+                                                                                                                 pos_85)
                                                                                                           (begin
                                                                                                             'for-loop
                                                                                                             (if (if (if pos-cont?_28
                                                                                                                       (pos-cont?_28
-                                                                                                                       pos_83)
+                                                                                                                       pos_84)
                                                                                                                       #t)
                                                                                                                   (<
-                                                                                                                   pos_84
+                                                                                                                   pos_85
                                                                                                                    end_5)
                                                                                                                   #f)
                                                                                                               (let-values (((e_20
                                                                                                                              all-cont?/pos_25)
                                                                                                                             (let-values (((e_21)
                                                                                                                                           (pos->vals_27
-                                                                                                                                           pos_83)))
+                                                                                                                                           pos_84)))
                                                                                                                               (values
                                                                                                                                e_21
                                                                                                                                (if all-cont?_27
-                                                                                                                                 (lambda (pos_85)
+                                                                                                                                 (lambda (pos_86)
                                                                                                                                    (all-cont?_27
-                                                                                                                                    pos_85
+                                                                                                                                    pos_86
                                                                                                                                     e_21))
                                                                                                                                  #f))))
-                                                                                                                           ((pos_86)
+                                                                                                                           ((pos_87)
                                                                                                                             (if pos-pre-inc_25
                                                                                                                               (pos-pre-inc_25
-                                                                                                                               pos_83)
-                                                                                                                              pos_83))
+                                                                                                                               pos_84)
+                                                                                                                              pos_84))
                                                                                                                            ((body14_0)
-                                                                                                                            pos_84))
+                                                                                                                            pos_85))
                                                                                                                 (if (if (if val-cont?_27
                                                                                                                           (val-cont?_27
                                                                                                                            e_20)
@@ -9800,7 +9868,7 @@
                                                                                                                                      rv_5)))))
                                                                                                                     (if (if (if all-cont?/pos_25
                                                                                                                               (all-cont?/pos_25
-                                                                                                                               pos_86)
+                                                                                                                               pos_87)
                                                                                                                               #t)
                                                                                                                           (not
                                                                                                                            #f)
@@ -9809,9 +9877,9 @@
                                                                                                                        stms_31
                                                                                                                        rv_4
                                                                                                                        (pos-next_28
-                                                                                                                        pos_86)
+                                                                                                                        pos_87)
                                                                                                                        (+
-                                                                                                                        pos_84
+                                                                                                                        pos_85
                                                                                                                         inc_1))
                                                                                                                       (values
                                                                                                                        stms_31
@@ -9828,7 +9896,7 @@
                                                                                        init_28
                                                                                        start_11)))))))
                                                                           (let-values () (alt_44)))))))))
-                                                    (if (If? v_67)
+                                                    (if (If? v_69)
                                                       (let-values ()
                                                         (let-values (((pred-e_0 t-branch_0 f-branch_0)
                                                                       (vector->values vec-v_17 1)))
@@ -9852,7 +9920,7 @@
                                                                       (append1 fs_2 (ILVarDec20.1 result-id_1 fe_0)))))
                                                                    result-id_1)))))))
                                                       (let-values () (alt_43)))))))))
-                                (if (CaseLambda? v_67)
+                                (if (CaseLambda? v_69)
                                   (let-values ()
                                     (let-values (((clauses_1) (vector->values vec-v_16 1)))
                                       (let-values (((fixed-lams_0 rest-lams_0)
@@ -9884,30 +9952,30 @@
                                                             (begin
                                                               (void)
                                                               ((letrec-values (((for-loop_28)
-                                                                                (lambda (fold-var_12 pos_87)
+                                                                                (lambda (fold-var_12 pos_88)
                                                                                   (begin
                                                                                     'for-loop
                                                                                     (if (if pos-cont?_29
-                                                                                          (pos-cont?_29 pos_87)
+                                                                                          (pos-cont?_29 pos_88)
                                                                                           #t)
                                                                                       (let-values (((c_12
                                                                                                      all-cont?/pos_26)
                                                                                                     (let-values (((c_13)
                                                                                                                   (pos->vals_28
-                                                                                                                   pos_87)))
+                                                                                                                   pos_88)))
                                                                                                       (values
                                                                                                        c_13
                                                                                                        (if all-cont?_28
-                                                                                                         (lambda (pos_88)
+                                                                                                         (lambda (pos_89)
                                                                                                            (all-cont?_28
-                                                                                                            pos_88
+                                                                                                            pos_89
                                                                                                             c_13))
                                                                                                          #f))))
-                                                                                                   ((pos_89)
+                                                                                                   ((pos_90)
                                                                                                     (if pos-pre-inc_26
                                                                                                       (pos-pre-inc_26
-                                                                                                       pos_87)
-                                                                                                      pos_87)))
+                                                                                                       pos_88)
+                                                                                                      pos_88)))
                                                                                         (if (if val-cont?_28
                                                                                               (val-cont?_28 c_12)
                                                                                               #t)
@@ -9946,13 +10014,13 @@
                                                                                                              fold-var_15)))))
                                                                                             (if (if (if all-cont?/pos_26
                                                                                                       (all-cont?/pos_26
-                                                                                                       pos_89)
+                                                                                                       pos_90)
                                                                                                       #t)
                                                                                                   (not #f)
                                                                                                   #f)
                                                                                               (for-loop_28
                                                                                                fold-var_13
-                                                                                               (pos-next_29 pos_89))
+                                                                                               (pos-next_29 pos_90))
                                                                                               fold-var_13))
                                                                                           fold-var_12))
                                                                                       fold-var_12)))))
@@ -9965,7 +10033,7 @@
                                               (name-in-module 'core 'attachProcedureArity)
                                               (list val_7 arities_0))))))))
                                   (let-values () (alt_42)))))))))
-            (if (Lambda? v_67)
+            (if (Lambda? v_69)
               (let-values ()
                 (let-values (((formals_7 body_8 unchecked?_0) (vector->values vec-v_15 1)))
                   (let-values (((->jslist_0)
@@ -10016,26 +10084,26 @@
                                               (void)
                                               (let-values () (check-range start_12 end_6 inc_2)))
                                             ((letrec-values (((for-loop_29)
-                                                              (lambda (stms_35 rv_6 pos_90 pos_91)
+                                                              (lambda (stms_35 rv_6 pos_91 pos_92)
                                                                 (begin
                                                                   'for-loop
-                                                                  (if (if (if pos-cont?_30 (pos-cont?_30 pos_90) #t)
-                                                                        (< pos_91 end_6)
+                                                                  (if (if (if pos-cont?_30 (pos-cont?_30 pos_91) #t)
+                                                                        (< pos_92 end_6)
                                                                         #f)
                                                                     (let-values (((e_22 all-cont?/pos_27)
                                                                                   (let-values (((e_23)
-                                                                                                (pos->vals_29 pos_90)))
+                                                                                                (pos->vals_29 pos_91)))
                                                                                     (values
                                                                                      e_23
                                                                                      (if all-cont?_29
-                                                                                       (lambda (pos_92)
-                                                                                         (all-cont?_29 pos_92 e_23))
+                                                                                       (lambda (pos_93)
+                                                                                         (all-cont?_29 pos_93 e_23))
                                                                                        #f))))
-                                                                                 ((pos_93)
+                                                                                 ((pos_94)
                                                                                   (if pos-pre-inc_27
-                                                                                    (pos-pre-inc_27 pos_90)
-                                                                                    pos_90))
-                                                                                 ((body19_0) pos_91))
+                                                                                    (pos-pre-inc_27 pos_91)
+                                                                                    pos_91))
+                                                                                 ((body19_0) pos_92))
                                                                       (if (if (if val-cont?_29 (val-cont?_29 e_22) #t)
                                                                             #t
                                                                             #f)
@@ -10049,7 +10117,7 @@
                                                                                                                         body18_0)
                                                                                                                        body19_0)))
                                                                                                           (let-values (((s_19
-                                                                                                                         v_88)
+                                                                                                                         v_90)
                                                                                                                         (absyn-expr->il
                                                                                                                          e_22
                                                                                                                          (if last?_2
@@ -10060,25 +10128,25 @@
                                                                                                                (append
                                                                                                                 stms_37
                                                                                                                 s_19)
-                                                                                                               v_88)
+                                                                                                               v_90)
                                                                                                               (values
                                                                                                                (append
                                                                                                                 stms_37
                                                                                                                 s_19
                                                                                                                 (list
-                                                                                                                 v_88))
-                                                                                                               v_88)))))))
+                                                                                                                 v_90))
+                                                                                                               v_90)))))))
                                                                                           (values stms_38 rv_8)))))
                                                                           (if (if (if all-cont?/pos_27
-                                                                                    (all-cont?/pos_27 pos_93)
+                                                                                    (all-cont?/pos_27 pos_94)
                                                                                     #t)
                                                                                 (not #f)
                                                                                 #f)
                                                                             (for-loop_29
                                                                              stms_36
                                                                              rv_7
-                                                                             (pos-next_30 pos_93)
-                                                                             (+ pos_91 inc_2))
+                                                                             (pos-next_30 pos_94)
+                                                                             (+ pos_92 inc_2))
                                                                             (values stms_36 rv_7)))
                                                                         (values stms_35 rv_6)))
                                                                     (values stms_35 rv_6))))))
@@ -10102,20 +10170,20 @@
   (lambda (b_28)
     (begin
       (let-values (((args_16 expr_7)
-                    (let-values (((v_89) b_28))
-                      (let-values (((v_90) v_89))
+                    (let-values (((v_91) b_28))
+                      (let-values (((v_92) v_91))
                         (let-values ()
-                          (let-values (((alt_78) (lambda () (begin 'alt (error 'match "failed ~e" v_90)))))
-                            (if (let-values (((p_140) v_90)) (if (pair? p_140) #t #f))
+                          (let-values (((alt_78) (lambda () (begin 'alt (error 'match "failed ~e" v_92)))))
+                            (if (let-values (((p_137) v_92)) (if (pair? p_137) #t #f))
                               (let-values (((args_17 expr_8)
-                                            (let-values (((p_141) v_90))
-                                              (let-values (((args_18) (let-values (((a_218) (car p_141))) a_218))
-                                                           ((expr_9) (let-values (((d_64) (cdr p_141))) d_64)))
+                                            (let-values (((p_138) v_92))
+                                              (let-values (((args_18) (let-values (((a_216) (car p_138))) a_216))
+                                                           ((expr_9) (let-values (((d_63) (cdr p_138))) d_63)))
                                                 (values args_18 expr_9)))))
                                 (let-values () (values args_17 expr_8)))
                               (alt_78))))))))
-        (let-values (((stms_39 v_91) (absyn-expr->il expr_7 #f)))
-          (let-values (((v_92) args_16))
+        (let-values (((stms_39 v_93) (absyn-expr->il expr_7 #f)))
+          (let-values (((v_94) args_16))
             (let-values ()
               (let-values (((alt_79)
                             (lambda ()
@@ -10146,33 +10214,33 @@
                                                                (let-values () (check-range start_13 end_7 inc_3)))
                                                              (void)
                                                              ((letrec-values (((for-loop_30)
-                                                                               (lambda (fold-var_16 pos_94 pos_95)
+                                                                               (lambda (fold-var_16 pos_95 pos_96)
                                                                                  (begin
                                                                                    'for-loop
-                                                                                   (if (if (< pos_94 end_7)
+                                                                                   (if (if (< pos_95 end_7)
                                                                                          (if pos-cont?_31
-                                                                                           (pos-cont?_31 pos_95)
+                                                                                           (pos-cont?_31 pos_96)
                                                                                            #t)
                                                                                          #f)
-                                                                                     (let-values (((i_54) pos_94)
+                                                                                     (let-values (((i_54) pos_95)
                                                                                                   ((arg_2
                                                                                                     all-cont?/pos_28)
                                                                                                    (let-values (((arg_3)
                                                                                                                  (pos->vals_30
-                                                                                                                  pos_95)))
+                                                                                                                  pos_96)))
                                                                                                      (values
                                                                                                       arg_3
                                                                                                       (if all-cont?_30
-                                                                                                        (lambda (pos_96)
+                                                                                                        (lambda (pos_97)
                                                                                                           (all-cont?_30
-                                                                                                           pos_96
+                                                                                                           pos_97
                                                                                                            arg_3))
                                                                                                         #f))))
-                                                                                                  ((pos_97)
+                                                                                                  ((pos_98)
                                                                                                    (if pos-pre-inc_28
                                                                                                      (pos-pre-inc_28
-                                                                                                      pos_95)
-                                                                                                     pos_95)))
+                                                                                                      pos_96)
+                                                                                                     pos_96)))
                                                                                        (if (if val-cont?_30
                                                                                              (val-cont?_30 arg_2)
                                                                                              #t)
@@ -10197,14 +10265,14 @@
                                                                                                             fold-var_19)))))
                                                                                            (if (if (if all-cont?/pos_28
                                                                                                      (all-cont?/pos_28
-                                                                                                      pos_97)
+                                                                                                      pos_98)
                                                                                                      #t)
                                                                                                  (not #f)
                                                                                                  #f)
                                                                                              (for-loop_30
                                                                                               fold-var_17
-                                                                                              (+ pos_94 inc_3)
-                                                                                              (pos-next_31 pos_97))
+                                                                                              (+ pos_95 inc_3)
+                                                                                              (pos-next_31 pos_98))
                                                                                              fold-var_17))
                                                                                          fold-var_16))
                                                                                      fold-var_16)))))
@@ -10214,57 +10282,57 @@
                                                               init_31))))))
                                             (append
                                              stms_39
-                                             (cons (ILVarDec20.1 result-id_2 v_91) binding-stms_1))))))))))))
-                (if (let-values (((p_142) v_92))
-                      (if (pair? p_142) (let-values (((a_219) (cdr p_142))) (eq? '() a_219)) #f))
-                  (let-values (((a_220) (let-values (((a_221) (car v_92))) a_221)))
-                    (let-values () (append1 stms_39 (ILVarDec20.1 a_220 v_91))))
+                                             (cons (ILVarDec20.1 result-id_2 v_93) binding-stms_1))))))))))))
+                (if (let-values (((p_139) v_94))
+                      (if (pair? p_139) (let-values (((a_217) (cdr p_139))) (eq? '() a_217)) #f))
+                  (let-values (((a_218) (let-values (((a_219) (car v_94))) a_219)))
+                    (let-values () (append1 stms_39 (ILVarDec20.1 a_218 v_93))))
                   (alt_79))))))))))
  (define-values
   (absyn-value->il)
-  (lambda (d_65)
+  (lambda (d_64)
     (begin
-      (if (Quote? d_65)
-        (let-values () (absyn-value->il (Quote-datum d_65)))
-        (if (string? d_65)
-          (let-values () (ILApp7.1 (name-in-module 'core 'UString.make) (list (ILValue12.1 d_65))))
-          (if (symbol? d_65)
+      (if (Quote? d_64)
+        (let-values () (absyn-value->il (Quote-datum d_64)))
+        (if (string? d_64)
+          (let-values () (ILApp7.1 (name-in-module 'core 'UString.make) (list (ILValue12.1 d_64))))
+          (if (symbol? d_64)
             (let-values ()
-              (ILApp7.1 (name-in-module 'core 'PrimitiveSymbol.make) (list (ILValue12.1 (symbol->string d_65)))))
-            (if (keyword? d_65)
+              (ILApp7.1 (name-in-module 'core 'PrimitiveSymbol.make) (list (ILValue12.1 (symbol->string d_64)))))
+            (if (keyword? d_64)
               (let-values ()
-                (ILApp7.1 (name-in-module 'core 'Keyword.make) (list (ILValue12.1 (keyword->string d_65)))))
-              (if (list? d_65)
-                (let-values () (ILApp7.1 (name-in-module 'core 'Pair.makeList) (map2 absyn-value->il d_65)))
-                (if (empty? d_65)
+                (ILApp7.1 (name-in-module 'core 'Keyword.make) (list (ILValue12.1 (keyword->string d_64)))))
+              (if (list? d_64)
+                (let-values () (ILApp7.1 (name-in-module 'core 'Pair.makeList) (map2 absyn-value->il d_64)))
+                (if (empty? d_64)
                   (let-values () (name-in-module 'core 'Pair.EMPTY))
-                  (if (cons? d_65)
+                  (if (cons? d_64)
                     (let-values ()
                       (ILApp7.1
                        (name-in-module 'core 'Pair.make)
-                       (list (absyn-value->il (car d_65)) (absyn-value->il (cdr d_65)))))
-                    (if (vector? d_65)
+                       (list (absyn-value->il (car d_64)) (absyn-value->il (cdr d_64)))))
+                    (if (vector? d_64)
                       (let-values ()
                         (ILApp7.1
                          (name-in-module 'core 'Vector.make)
-                         (list (ILArray8.1 (map2 absyn-value->il (vector->list d_65))))))
-                      (if (hash? d_65)
+                         (list (ILArray8.1 (map2 absyn-value->il (vector->list d_64))))))
+                      (if (hash? d_64)
                         (let-values ()
                           (let-values (((maker_0)
-                                        (if (hash-eq? d_65)
+                                        (if (hash-eq? d_64)
                                           (let-values () 'Hash.makeEq)
-                                          (if (hash-eqv? d_65)
+                                          (if (hash-eqv? d_64)
                                             (let-values () 'Hash.makeEqv)
-                                            (if (hash-equal? d_65)
+                                            (if (hash-equal? d_64)
                                               (let-values () 'Hash.makeEqual)
                                               (let-values () (error 'assemble-value "unknown hash type")))))))
-                            (let-values (((mutable_0) (not (immutable? d_65))))
+                            (let-values (((mutable_0) (not (immutable? d_64))))
                               (ILApp7.1
                                (name-in-module 'core maker_0)
                                (list
                                 (ILArray8.1
                                  (reverse$1
-                                  (let-values (((ht_7) d_65))
+                                  (let-values (((ht_7) d_64))
                                     (begin
                                       (if (variable-reference-from-unsafe? (#%variable-reference))
                                         (void)
@@ -10300,36 +10368,36 @@
                                        null
                                        (hash-iterate-first ht_7))))))
                                 (ILValue12.1 mutable_0))))))
-                        (if (bytes? d_65)
+                        (if (bytes? d_64)
                           (let-values ()
                             (ILApp7.1
                              (name-in-module 'core 'Bytes.fromIntArray)
-                             (list (ILArray8.1 (map2 ILValue12.1 (bytes->list d_65))))))
-                          (if (box? d_65)
+                             (list (ILArray8.1 (map2 ILValue12.1 (bytes->list d_64))))))
+                          (if (box? d_64)
                             (let-values ()
-                              (ILApp7.1 (name-in-module 'core 'Box.make) (list (absyn-value->il (unbox d_65)))))
-                            (if (char? d_65)
+                              (ILApp7.1 (name-in-module 'core 'Box.make) (list (absyn-value->il (unbox d_64)))))
+                            (if (char? d_64)
                               (let-values ()
                                 (ILApp7.1
                                  (name-in-module 'core 'Char.charFromCodepoint)
-                                 (list (absyn-value->il (char->integer d_65)))))
-                              (if (let-values (((or-part_75) (regexp? d_65)))
-                                    (if or-part_75 or-part_75 (byte-regexp? d_65)))
+                                 (list (absyn-value->il (char->integer d_64)))))
+                              (if (let-values (((or-part_75) (regexp? d_64)))
+                                    (if or-part_75 or-part_75 (byte-regexp? d_64)))
                                 (let-values ()
-                                  (let-values (((v_93) (object-name d_65)))
+                                  (let-values (((v_95) (object-name d_64)))
                                     (ILApp7.1
                                      (name-in-module 'core 'Regexp.fromString)
-                                     (list (ILValue12.1 (if (bytes? v_93) (bytes->string/utf-8 v_93) v_93))))))
-                                (if (let-values (((or-part_76) (integer? d_65)))
+                                     (list (ILValue12.1 (if (bytes? v_95) (bytes->string/utf-8 v_95) v_95))))))
+                                (if (let-values (((or-part_76) (integer? d_64)))
                                       (if or-part_76
                                         or-part_76
-                                        (let-values (((or-part_77) (boolean? d_65)))
+                                        (let-values (((or-part_77) (boolean? d_64)))
                                           (if or-part_77
                                             or-part_77
-                                            (let-values (((or-part_78) (void? d_65)))
-                                              (if or-part_78 or-part_78 (real? d_65)))))))
-                                  (let-values () (ILValue12.1 d_65))
-                                  (let-values () (error (~a "unsupported value" d_65))))))))))))))))))))
+                                            (let-values (((or-part_78) (void? d_64)))
+                                              (if or-part_78 or-part_78 (real? d_64)))))))
+                                  (let-values () (ILValue12.1 d_64))
+                                  (let-values () (error (~a "unsupported value" d_64))))))))))))))))))))
  (define-values
   (expand-normal-case-lambda)
   (lambda (fixed-lams_1 rest-lams_1)
@@ -10356,7 +10424,7 @@
                                                    (lambda (lams*_0 names*_0)
                                                      (begin
                                                        'loop
-                                                       (let-values (((v_94) (list lams*_0 names*_0)))
+                                                       (let-values (((v_96) (list lams*_0 names*_0)))
                                                          (let-values ()
                                                            (let-values (((alt_80)
                                                                          (lambda ()
@@ -10370,81 +10438,81 @@
                                                                                                  (error
                                                                                                   'match
                                                                                                   "failed ~e"
-                                                                                                  v_94)))))
-                                                                                 (if (let-values (((p_143) v_94))
-                                                                                       (if (pair? p_143)
-                                                                                         (if (let-values (((a_222)
-                                                                                                           (car p_143)))
-                                                                                               (let-values (((p_144)
-                                                                                                             a_222))
-                                                                                                 (if (pair? p_144)
+                                                                                                  v_96)))))
+                                                                                 (if (let-values (((p_140) v_96))
+                                                                                       (if (pair? p_140)
+                                                                                         (if (let-values (((a_220)
+                                                                                                           (car p_140)))
+                                                                                               (let-values (((p_141)
+                                                                                                             a_220))
+                                                                                                 (if (pair? p_141)
                                                                                                    #t
                                                                                                    #f)))
-                                                                                           (let-values (((a_223)
-                                                                                                         (cdr p_143)))
-                                                                                             (let-values (((p_145)
-                                                                                                           a_223))
-                                                                                               (if (pair? p_145)
-                                                                                                 (if (let-values (((a_224)
+                                                                                           (let-values (((a_221)
+                                                                                                         (cdr p_140)))
+                                                                                             (let-values (((p_142)
+                                                                                                           a_221))
+                                                                                               (if (pair? p_142)
+                                                                                                 (if (let-values (((a_222)
                                                                                                                    (car
-                                                                                                                    p_145)))
-                                                                                                       (let-values (((p_146)
-                                                                                                                     a_224))
+                                                                                                                    p_142)))
+                                                                                                       (let-values (((p_143)
+                                                                                                                     a_222))
                                                                                                          (if (pair?
-                                                                                                              p_146)
+                                                                                                              p_143)
                                                                                                            #t
                                                                                                            #f)))
-                                                                                                   (let-values (((a_225)
+                                                                                                   (let-values (((a_223)
                                                                                                                  (cdr
-                                                                                                                  p_145)))
-                                                                                                     (eq? '() a_225))
+                                                                                                                  p_142)))
+                                                                                                     (eq? '() a_223))
                                                                                                    #f)
                                                                                                  #f)))
                                                                                            #f)
                                                                                          #f))
                                                                                    (let-values (((lh_0 lt_0 nh_0 nt_0)
-                                                                                                 (let-values (((p_147)
-                                                                                                               v_94))
+                                                                                                 (let-values (((p_144)
+                                                                                                               v_96))
                                                                                                    (let-values (((lh_1
                                                                                                                   lt_1)
-                                                                                                                 (let-values (((a_226)
+                                                                                                                 (let-values (((a_224)
                                                                                                                                (car
-                                                                                                                                p_147)))
-                                                                                                                   (let-values (((p_148)
-                                                                                                                                 a_226))
+                                                                                                                                p_144)))
+                                                                                                                   (let-values (((p_145)
+                                                                                                                                 a_224))
                                                                                                                      (let-values (((lh_2)
-                                                                                                                                   (let-values (((a_227)
+                                                                                                                                   (let-values (((a_225)
                                                                                                                                                  (car
-                                                                                                                                                  p_148)))
-                                                                                                                                     a_227))
+                                                                                                                                                  p_145)))
+                                                                                                                                     a_225))
                                                                                                                                   ((lt_2)
-                                                                                                                                   (let-values (((d_66)
+                                                                                                                                   (let-values (((d_65)
                                                                                                                                                  (cdr
-                                                                                                                                                  p_148)))
-                                                                                                                                     d_66)))
+                                                                                                                                                  p_145)))
+                                                                                                                                     d_65)))
                                                                                                                        (values
                                                                                                                         lh_2
                                                                                                                         lt_2)))))
                                                                                                                 ((nh_1
                                                                                                                   nt_1)
-                                                                                                                 (let-values (((d_67)
+                                                                                                                 (let-values (((d_66)
                                                                                                                                (cdr
-                                                                                                                                p_147)))
-                                                                                                                   (let-values (((a_228)
+                                                                                                                                p_144)))
+                                                                                                                   (let-values (((a_226)
                                                                                                                                  (car
-                                                                                                                                  d_67)))
-                                                                                                                     (let-values (((p_149)
-                                                                                                                                   a_228))
+                                                                                                                                  d_66)))
+                                                                                                                     (let-values (((p_146)
+                                                                                                                                   a_226))
                                                                                                                        (let-values (((nh_2)
-                                                                                                                                     (let-values (((a_229)
+                                                                                                                                     (let-values (((a_227)
                                                                                                                                                    (car
-                                                                                                                                                    p_149)))
-                                                                                                                                       a_229))
+                                                                                                                                                    p_146)))
+                                                                                                                                       a_227))
                                                                                                                                     ((nt_2)
-                                                                                                                                     (let-values (((d_68)
+                                                                                                                                     (let-values (((d_67)
                                                                                                                                                    (cdr
-                                                                                                                                                    p_149)))
-                                                                                                                                       d_68)))
+                                                                                                                                                    p_146)))
+                                                                                                                                       d_67)))
                                                                                                                          (values
                                                                                                                           nh_2
                                                                                                                           nt_2)))))))
@@ -10484,17 +10552,17 @@
                                                                                             *arguments*_0))
                                                                                           (loop_55 lt_0 nt_0)))))
                                                                                    (alt_81))))))))
-                                                             (if (let-values (((p_150) v_94))
-                                                                   (if (pair? p_150)
-                                                                     (if (let-values (((a_230) (car p_150)))
-                                                                           (eq? '() a_230))
-                                                                       (let-values (((a_231) (cdr p_150)))
-                                                                         (let-values (((p_151) a_231))
-                                                                           (if (pair? p_151)
-                                                                             (if (let-values (((a_232) (car p_151)))
-                                                                                   (eq? '() a_232))
-                                                                               (let-values (((a_233) (cdr p_151)))
-                                                                                 (eq? '() a_233))
+                                                             (if (let-values (((p_147) v_96))
+                                                                   (if (pair? p_147)
+                                                                     (if (let-values (((a_228) (car p_147)))
+                                                                           (eq? '() a_228))
+                                                                       (let-values (((a_229) (cdr p_147)))
+                                                                         (let-values (((p_148) a_229))
+                                                                           (if (pair? p_148)
+                                                                             (if (let-values (((a_230) (car p_148)))
+                                                                                   (eq? '() a_230))
+                                                                               (let-values (((a_231) (cdr p_148)))
+                                                                                 (eq? '() a_231))
                                                                                #f)
                                                                              #f)))
                                                                        #f)
@@ -10549,19 +10617,19 @@
                       (begin
                         (void)
                         ((letrec-values (((for-loop_32)
-                                          (lambda (res_9 least-var-arity_0 pos_98)
+                                          (lambda (res_9 least-var-arity_0 pos_99)
                                             (begin
                                               'for-loop
-                                              (if (if pos-cont?_32 (pos-cont?_32 pos_98) #t)
+                                              (if (if pos-cont?_32 (pos-cont?_32 pos_99) #t)
                                                 (let-values (((lam_5 all-cont?/pos_29)
-                                                              (let-values (((lam_6) (pos->vals_31 pos_98)))
+                                                              (let-values (((lam_6) (pos->vals_31 pos_99)))
                                                                 (values
                                                                  lam_6
                                                                  (if all-cont?_31
-                                                                   (lambda (pos_99) (all-cont?_31 pos_99 lam_6))
+                                                                   (lambda (pos_100) (all-cont?_31 pos_100 lam_6))
                                                                    #f))))
-                                                             ((pos_100)
-                                                              (if pos-pre-inc_29 (pos-pre-inc_29 pos_98) pos_98)))
+                                                             ((pos_101)
+                                                              (if pos-pre-inc_29 (pos-pre-inc_29 pos_99) pos_99)))
                                                   (if (if val-cont?_31 (val-cont?_31 lam_5) #t)
                                                     (let-values (((res_10 least-var-arity_1)
                                                                   (let-values (((res_11) res_9)
@@ -10604,10 +10672,10 @@
                                                                                                  least-var-arity_2))
                                                                                               (void)))))))))
                                                                       (values res_12 least-var-arity_3)))))
-                                                      (if (if (if all-cont?/pos_29 (all-cont?/pos_29 pos_100) #t)
+                                                      (if (if (if all-cont?/pos_29 (all-cont?/pos_29 pos_101) #t)
                                                             (not #f)
                                                             #f)
-                                                        (for-loop_32 res_10 least-var-arity_1 (pos-next_32 pos_100))
+                                                        (for-loop_32 res_10 least-var-arity_1 (pos-next_32 pos_101))
                                                         (values res_10 least-var-arity_1)))
                                                     (values res_9 least-var-arity_0)))
                                                 (values res_9 least-var-arity_0))))))
@@ -10626,34 +10694,34 @@
             (let-values () (lambda (__11) (Quote7.1 #t)))
             (if (list? frmls_1)
               (let-values ()
-                (lambda (v_95)
-                  (App9.1 (ImportedIdent3.1 'equal? '#%kernel #t) (list v_95 (Quote7.1 (length frmls_1))))))
+                (lambda (v_97)
+                  (App9.1 (ImportedIdent3.1 'equal? '#%kernel #t) (list v_97 (Quote7.1 (length frmls_1))))))
               (if (cons? frmls_1)
                 (let-values ()
-                  (lambda (v_96)
+                  (lambda (v_98)
                     (App9.1
                      (ImportedIdent3.1 '>= '#%kernel #t)
-                     (list v_96 (Quote7.1 (sub1 (length (improper->proper frmls_1))))))))
+                     (list v_98 (Quote7.1 (sub1 (length (improper->proper frmls_1))))))))
                 (void)))))))))
  (define-values
   (resolve-procedure-arities)
   (lambda (arities_1)
     (begin
       (let-values (((arity<_0)
-                    (lambda (a_234 b_29)
+                    (lambda (a_232 b_29)
                       (begin
                         'arity<
                         (<
-                         (if (arity-at-least? a_234) (arity-at-least-value a_234) a_234)
+                         (if (arity-at-least? a_232) (arity-at-least-value a_232) a_232)
                          (if (arity-at-least? b_29) (arity-at-least-value b_29) b_29))))))
         (let-values (((arity-equal?_0)
-                      (lambda (a_235 b_30)
-                        (begin 'arity-equal? (if (not (arity<_0 a_235 b_30)) (not (arity<_0 b_30 a_235)) #f)))))
+                      (lambda (a_233 b_30)
+                        (begin 'arity-equal? (if (not (arity<_0 a_233 b_30)) (not (arity<_0 b_30 a_233)) #f)))))
           ((letrec-values (((loop_56)
                             (lambda (arities*_0 result_12)
                               (begin
                                 'loop
-                                (let-values (((v_97) arities*_0))
+                                (let-values (((v_99) arities*_0))
                                   (let-values ()
                                     (let-values (((alt_82)
                                                   (lambda ()
@@ -10672,22 +10740,22 @@
                                                                                               (error
                                                                                                'match
                                                                                                "failed ~e"
-                                                                                               v_97)))))
-                                                                              (if (let-values (((p_152) v_97))
-                                                                                    (if (pair? p_152) #t #f))
+                                                                                               v_99)))))
+                                                                              (if (let-values (((p_149) v_99))
+                                                                                    (if (pair? p_149) #t #f))
                                                                                 (let-values (((hd_8 tl_3)
-                                                                                              (let-values (((p_153)
-                                                                                                            v_97))
+                                                                                              (let-values (((p_150)
+                                                                                                            v_99))
                                                                                                 (let-values (((hd_9)
-                                                                                                              (let-values (((a_236)
+                                                                                                              (let-values (((a_234)
                                                                                                                             (car
-                                                                                                                             p_153)))
-                                                                                                                a_236))
+                                                                                                                             p_150)))
+                                                                                                                a_234))
                                                                                                              ((tl_4)
-                                                                                                              (let-values (((d_69)
+                                                                                                              (let-values (((d_68)
                                                                                                                             (cdr
-                                                                                                                             p_153)))
-                                                                                                                d_69)))
+                                                                                                                             p_150)))
+                                                                                                                d_68)))
                                                                                                   (values hd_9 tl_4)))))
                                                                                   (let-values ()
                                                                                     (loop_56
@@ -10700,17 +10768,17 @@
                                                                                        result_12
                                                                                        (cons hd_8 result_12)))))
                                                                                 (alt_84))))))))
-                                                          (if (let-values (((p_154) v_97)) (if (pair? p_154) #t #f))
+                                                          (if (let-values (((p_151) v_99)) (if (pair? p_151) #t #f))
                                                             (let-values (((hd_10 tl_5)
-                                                                          (let-values (((p_155) v_97))
+                                                                          (let-values (((p_152) v_99))
                                                                             (let-values (((hd_11)
-                                                                                          (let-values (((a_237)
-                                                                                                        (car p_155)))
-                                                                                            a_237))
+                                                                                          (let-values (((a_235)
+                                                                                                        (car p_152)))
+                                                                                            a_235))
                                                                                          ((tl_6)
-                                                                                          (let-values (((d_70)
-                                                                                                        (cdr p_155)))
-                                                                                            d_70)))
+                                                                                          (let-values (((d_69)
+                                                                                                        (cdr p_152)))
+                                                                                            d_69)))
                                                                               (values hd_11 tl_6)))))
                                                               (if (arity-at-least? hd_10)
                                                                 (let-values ()
@@ -10722,7 +10790,7 @@
                                                                      (cons hd_10 result_12))))
                                                                 (alt_83)))
                                                             (alt_83))))))))
-                                      (if (eq? '() v_97)
+                                      (if (eq? '() v_99)
                                         (let-values () (let-values () (reverse$1 result_12)))
                                         (alt_82)))))))))
              loop_56)

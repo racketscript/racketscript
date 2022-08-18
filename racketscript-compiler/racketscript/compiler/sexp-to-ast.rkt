@@ -103,6 +103,8 @@
        [(eq? 'lexical (hash-ref bindings v #f))
         (LocalIdent v)]
        ;; FIXME not really always '#%kernel
+       [(eq? v 'primitive-table)
+        (ImportedIdent v '#%linklet #t)]
        [else (ImportedIdent v '#%kernel #t)])]
     [`(set! ,s ,e)
      (Set! s (t e))]
@@ -118,7 +120,7 @@
          (error 'linklet-expand)]))
 
 
-(define (parse-linklet v path)
+(define (parse-linklet v path [expander? #f])
   (match v
     [`(linklet ,imports ,exports . ,body)
      (define imps (for*/hash ([(j import) (in-indexed imports)]
@@ -130,5 +132,8 @@
          [`(define-values ,is ,_)
           (for ([i is]) (hash-set! defs i 'define))]
          [`,_ (void)]))
-     (Linklet path imports exports (map (lambda (v) (to-absyn v (hash-union imps defs))) body))]))
+     ;; FIXME kludge to deal with `primitive-table` without producing circular dependency
+     ;;       racketscript.js -> kernel.rkt.js -> racketscript.js (for linklet api) ...
+     (define final-imports (if expander? (cons '#%linklet imports) imports))
+     (Linklet path final-imports exports (map (lambda (v) (to-absyn v (hash-union imps defs))) body))]))
 
