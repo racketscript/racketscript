@@ -45,7 +45,7 @@
   ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
 
 
-  (parameterize ([module-object-name-map (make-module-map requires* '(#%kernel))])
+  (parameterize ([module-object-name-map (make-module-map requires* '(#%kernel #%primitive-table))])
     (ILLinklet
       (filter ILRequire? requires*)
       (absyn-exports->il exports)
@@ -71,10 +71,8 @@
 
 ;; TODO not using a lot of the code here, eventually should be able to delete
 (define (absyn-requires->il import-list path)
-  (cons (ILRequire "../runtime/kernel.rkt.js" 'M0 '*)
-        (if (member '#%linklet import-list)
-          (list (ILRequire "./racketscript.js" 'M1 '*))
-          '())))
+  (list (ILRequire "../runtime/kernel.rkt.js" 'M0 '*)
+        (ILRequire "../runtime/table.rkt.js" 'M1 '*)))
 
 
 ;;   (for/list ([mod-path import-list]

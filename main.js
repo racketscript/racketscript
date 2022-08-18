@@ -1,22 +1,6 @@
 import * as Expander from './expander.js';
-import * as Linklet from './racketscript.js';
 import * as CORE from '../runtime/core.js';
-import * as Kernel from '../runtime/kernel.rkt.js';
-
-const { displayln } = Kernel;
-const print = displayln;
-
-const sym = CORE.PrimitiveSymbol.make;
-
-const currPrimitiveTable = Kernel.primitiveTable;
-
-Kernel.primitiveTable = (symbol) => {
-    if (symbol.equals(sym('#%linklet'))) {
-        return Linklet;
-    } else {
-        return currPrimitiveTable;
-    }
-};
+import { displayln as print } from '../runtime/kernel.rkt.js';
 
 const demoNamespace = Expander.make_namespace();
 const KERNEL_IMPORT = CORE.Pair.makeList(

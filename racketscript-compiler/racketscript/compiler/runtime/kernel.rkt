@@ -1611,7 +1611,8 @@
 (define+provide (check-for-break) ($/undefined))
 (define+provide (reparameterize v) v)
 
-(define paramz-table
+;; TODO shouldn't need to be provided, is right now for `table.rkt`
+(define+provide paramz-table
   (hash 'parameterization-key    parameterization-key
         'break-enabled-key       break-enabled-key
         'cache-configuration     cache-configuration
