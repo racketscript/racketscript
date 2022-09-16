@@ -1,4 +1,4 @@
-#lang racketscript/base
+#lang racketscript
 
 (require racketscript/interop)
 
