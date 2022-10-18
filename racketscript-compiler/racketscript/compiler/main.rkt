@@ -245,6 +245,11 @@
   (for ([pm primitive-modules])
     (put-to-pending! pm))
 
+  ;; Add stale modules to the compile queue.
+  (for ([(mod timestamp) timestamps])
+    (when (not (skip-module-compile? timestamps mod))
+      (put-to-pending! mod)))
+
   (let loop ()
     (define next (and (non-empty-queue? pending) (dequeue! pending)))
     (cond
