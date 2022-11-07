@@ -250,12 +250,12 @@
     (when (not (skip-module-compile? timestamps mod))
       (put-to-pending! mod)))
 
-  (let loop ()
+  (let loop ([compiled-modules empty])
     (define next (and (non-empty-queue? pending) (dequeue! pending)))
     (cond
       [(and next (skip-module-compile? timestamps next))
        (log-rjs-info (~a "Skipping " next))
-       (loop)]
+       (loop compiled-modules)]
       [next
        (current-source-file next)
        (make-directory* (path-only (module-output-file next)))
@@ -277,13 +277,14 @@
            [(? symbol? _) (void)]
            [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
            [_ (put-to-pending! mod)]))
-       (loop)]
+       (loop (cons next compiled-modules))]
       [(false? next)
        (dump-module-timestamps! timestamps)
        (unless (equal? (js-target) "plain")
          (log-rjs-info "Running NPM [Install/Build].")
          (npm-install-build))
-       (log-rjs-info "Finished.")])))
+       (log-rjs-info "Finished.")
+       compiled-modules])))
 
 ;; String -> String
 (define (js-string-beautify js-str)
@@ -423,3 +424,33 @@
     ['complete (racket->js)])
 
   (void))
+
+(module+ test
+  (require rackunit)
+
+  (define tests-dir (normalize-path (build-path racketscript-dir
+                                                'up 'up
+                                                "tests")))
+
+  (test-case "check stale dependency compilation"
+    (define dep-cache-dir (build-path tests-dir "dep-cache"))
+    (define has-dependency (build-path dep-cache-dir
+                                       "has-dependency.rkt"))
+    (define dependency (normalize-path (build-path tests-dir
+                                                   "dep-cache"
+                                                   "private"
+                                                   "dependency.rkt")))
+    (parameterize ([main-source-file has-dependency]
+                   [global-export-graph (get-export-tree (list has-dependency))]
+                   [current-source-file has-dependency]
+                   [recompile-all-modules? #f]
+                   [current-output-port (open-output-nowhere)])
+      (file-or-directory-modify-seconds dependency 100)
+      (racket->js)
+      ;; Change dependency's modification time to simulate
+      ;; an edit to the source file.
+      (file-or-directory-modify-seconds dependency 200)
+      (check-true (ormap (lambda (mod) (equal? mod dependency))
+                         (racket->js))
+                  "stale dependency not recompiled."))
+    (delete-directory/files (output-directory))))
