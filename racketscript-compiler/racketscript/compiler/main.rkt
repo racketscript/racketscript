@@ -19,6 +19,7 @@
          "assembler.rkt"
          "config.rkt"
          "expand.rkt"
+         "linklet-expand.rkt"
          "global.rkt"
          "il-analyze.rkt"
          "il.rkt"
@@ -280,6 +281,29 @@
          (npm-install-build))
        (log-rjs-info "Finished.")])))
 
+(define (compile-linklet-import mod)
+  (current-source-file mod)
+  (make-directory* (path-only (module-output-file mod)))
+
+  (define expanded (quick-expand mod))
+  (define ast (convert expanded (override-module-path mod)))
+
+  (assemble-module (insert-arity-checks
+                     (absyn-module->il* ast))
+                   #f)
+
+  (for ([mod (in-set (Module-imports ast))]
+        #:when (not (symbol? mod)))
+    (compile-linklet-import mod)))
+
+(define (compile-linklet-imports lnk)
+  (for ([mod (in-set primitive-modules)])
+    (compile-linklet-import mod))
+
+  #;(for ([mod (in-set (Linklet-imports lnk))]
+        #:when (not (symbol? mod)))
+    (compile-linklet-import mod)))
+
 ;; String -> String
 (define (js-string-beautify js-str)
   (match-define (list in-p-out out-p-in pid in-p-err control)
@@ -324,6 +348,7 @@
    ["--ast" "Expand and print AST" (build-mode 'absyn)]
    ["--il" "Compile to intermediate langauge (IL)" (build-mode 'il)]
    ["--js" "Compile and print JS module to stdout" (build-mode 'js)]
+   [("-l" "--linklet") "Compile a linklet as an s-expression to JS and print to stdout" (build-mode 'linklet)]
    ["--complete" "Compile module and its dependencies to JS" (build-mode 'complete)]
    #:args ([filename 'stdin])
    (match `(,filename ,(input-from-stdin?))
@@ -363,7 +388,9 @@
   (unless (equal? (build-mode) 'js)
     (log-rjs-info "RacketScript root directory: ~a" racketscript-dir))
 
-  (unless (input-from-stdin?)
+  (define linklet-mode? (equal? (build-mode) 'linklet))
+
+  (unless (or (input-from-stdin?) linklet-mode?)
     ;; Initialize global-export-graph so that we can import each module as an
     ;; object and follow identifier's from there. For stdin builds, we have to
     ;; defer this operation.
@@ -371,6 +398,9 @@
       ;; As 'js mode prints output to stdout, we don't want to mix
       (log-rjs-info "Resolving module dependencies and identifiers... "))
     (global-export-graph (get-export-tree (list source))))
+
+  (when linklet-mode?
+    (global-export-graph (get-export-tree (list (collection-file-path "base.rkt" "racket")))))
 
   (define (expanded-module)
     (cond
@@ -415,6 +445,30 @@
       (if (js-output-beautify?)
           (js-string-beautify (get-output-string output-string))
           (get-output-string output-string)))]
-    ['complete (racket->js)])
+    ['complete (racket->js)]
+    ['linklet
+     (define p (path->complete-path (main-source-file)))
+     (current-source-file p)
+
+     (define default-module-name (string-slice (~a (last-path-element
+                                                     (main-source-file)))
+                                               0 -5))
+
+     (prepare-build-directory default-module-name)
+     
+     (define lnk-port (open-input-file source))
+     (define lnk-ast (parse-linklet (read lnk-port) p))
+
+     (define out-str (open-output-string))
+
+     (~> (absyn-linklet->il lnk-ast)
+         (insert-arity-checks _)
+         (assemble-linklet _ out-str))
+
+     (call-with-output-file "js-build/modules/foo.js"
+       (λ (out) (display (get-output-string out-str) out));;(js-string-beautify (get-output-string out-str)) out))
+       #:exists 'replace)
+
+     (compile-linklet-imports lnk-ast)])
 
   (void))

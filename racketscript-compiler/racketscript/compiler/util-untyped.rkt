@@ -1,12 +1,10 @@
-#lang racket
+#lang racket/base
 
-(provide links-module?
-         improper->proper
+(require "match.rkt")
+
+(provide improper->proper
          *jsident-pattern*
          js-identifier?)
-
-(require setup/dirs
-         setup/link)
 
 ;; Path Path -> Boolean
 ;; Returns true if path has base as prefix
@@ -20,28 +18,26 @@
                [p path*])
        (equal? b p))]))
 
-;; Module-Path -> (Maybe (list String Path))
-;; If `mod-path` belongs to a module listed in (find-links-file),
-;; return a list containing:
-;; - the link name,
-;; - and path to root of the module
-;; e.g., '("racketscript-compiler"
-;;         #<path:/home/username/racketscript/racketscript-compiler>)
-;; else return false.
-(define (links-module? mod-path)
-  (define links-file (find-links-file))
-  (for*/or ([links-file (current-library-collection-links)]
-            #:when links-file
-            [link-path (links #:file links-file #:root? #t)])
-    (and (subpath? link-path mod-path)
-         (let-values ([(base link-name dir?) (split-path link-path)])
-           (list (~a link-name) link-path)))))
+(define (link-path-elem->string elem)
+  (if (symbol? elem)
+    elem
+    (bytes->string/locale elem)))
+
+(define (get-root-links links-file)
+  (define-values (base _f _b) (split-path links-file))
+  (let ([specs (read (open-input-file links-file))])
+    (for/list ([spec specs]
+               #:when (eq? 'root (car spec)))
+      (simplify-path
+        (apply build-path
+              base
+              (map link-path-elem->string (cadr spec)))))))
 
 (define (improper->proper l)
   (match l
-    [(cons a b) (cons a (improper->proper b))]
-    ['() '()]
-    [_ (cons l '())]))
+    [`(,a . ,b) (cons a (improper->proper b))]
+    [`() '()]
+    [`,_ (cons l '())]))
 (module+ test
   (check-equal? (improper->proper '()) '())
   (check-equal? (improper->proper '(1 . 2)) '(1 2))

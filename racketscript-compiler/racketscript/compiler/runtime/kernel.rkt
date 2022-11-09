@@ -2,7 +2,9 @@
 
 (require (for-syntax syntax/parse)
          racketscript/interop
-         "lib.rkt")
+         "lib.rkt"
+         ;; "linklet-primitive.rkt"
+         "unsafe.rkt")
 
 ;; ----------------------------------------------------------------------------
 ;; Equality
@@ -30,7 +32,7 @@
     (cond
       [(#js.Values.check vals)
        (#js.receiver.apply *this* (#js.vals.getAll))]
-      [(not (or (eq? vals *undefined*) (eq? vals *null*)))
+      [else #;(not (or (eq? vals *undefined*) (eq? vals *null*)))
        (#js.receiver.apply *this* (array vals))])))
 
 ;; ----------------------------------------------------------------------------
@@ -284,6 +286,15 @@
     (#js.map.apply *null* ($> (array lam) (concat lsts)))
     *null*))
 
+;; FIXME contract for pos being non-negative
+(define+provide (list-tail lst pos)
+  (let loop ([l lst]
+             [p pos])
+    (cond
+      [(<= p 0) l]
+      [(not (pair? l)) (throw (#js.Core.racketContractError "list-tail: index reaches a non-pair"))]
+      [else (loop (cdr l) (sub1 p))])))
+
 ;; ----------------------------------------------------------------------------
 ;; Mutable Pairs
 
@@ -457,7 +468,8 @@
 (define+provide hash-equal? #js.Core.Hash.isEqualHash)
 (define+provide hash-eqv? #js.Core.Hash.isEqvHash)
 (define+provide hash-eq? #js.Core.Hash.isEqHash)
-(define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO: implement weak hashes
+(define+provide hash-weak? #js.Core.Hash.isWeakHash) ;; TODO implement weak hashes
+(define+provide hash-ephemeron? #js.Core.Hash.isEphemeronHash) ;; TODO implement ephemeron hashes
 
 (define+provide hash-ref
   (case-lambda
@@ -521,8 +533,11 @@
 (define+provide (hash-iterate-next h i)
   (#js.h.iterateNext i))
 
-(define+provide (hash-iterate-key h i)
-  (#js.h.iterateKey i))
+(define+provide hash-iterate-key
+  (case-lambda
+    [(h i) (#js.h.iterateKey i)] ;; FIXME spec says throw contract error if bad index, does that already happen?
+    [(h i bad-index-v)
+     (if #js.i.value (#js.h.iterateKey i) bad-index-v)])) ;; FIXME really dumb check, improve
 
 (define+provide (hash-iterate-value h i)
   (#js.h.iterateValue i))
@@ -1129,11 +1144,12 @@
 
 (define+provide raise #js.Kernel.doraise)
 
-(define+provide exn:fail? #js.Core.isErr)
-(define+provide exn:fail:contract? #js.Core.isContractErr)
-(define+provide exn:fail:contract:arity? #js.Core.isContractErr)
-(define+provide (exn-message e)
-  (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
+;; TODO all of exception-handling may need to get re-implemented
+;; (define+provide exn:fail? #js.Core.isErr)
+;; (define+provide exn:fail:contract? #js.Core.isContractErr)
+;; (define+provide exn:fail:contract:arity? #js.Core.isContractErr)
+;; (define+provide (exn-message e)
+;;   (#js.Core.UString.makeMutable (#js.Core.errMsg e)))
 
 ;; --------------------------------------------------------------------------
 ;; Ports + Writers
@@ -1222,6 +1238,11 @@
 (define+provide (procedure-arity-mask fn) (procedure-arity fn))
 (define+provide (bitwise-bit-set? mask n) #t)
 (define+provide (procedure-extract-target f) #f)
+
+;; same implementation as Pyret's.
+;; could implement this by checking if mask is a valid arity, then returning a new
+;; procedure that takes _at most_ `_mask` arguments.
+(define+provide (procedure-reduce-arity-mask proc mask [name #f] [realm 'racket]) proc)
 
 ;; --------------------------------------------------------------------------
 ;; Regexp
@@ -1348,11 +1369,15 @@
 (define+provide build-path ; multi-arity
   (v-λ (base) #:unchecked base))
 
-;; TODO: manually implement weak references? or ES6 WeakMap? see pr#106
+;; TODO manually implement weak references? or ES6 WeakMap? see pr#106
 (define+provide make-weak-hash make-hash)
 (define+provide make-weak-hasheqv make-hasheqv)
 (define+provide make-weak-hasheq make-hasheq)
 
+;; TODO manually implement ephemeron references? ES6 WeakMap doesn't work(?)
+(define+provide make-ephemeron-hash make-hash)
+(define+provide make-ephemeron-hasheqv make-hasheqv)
+(define+provide make-ephemeron-hasheq make-hasheq)
 
 (define+provide (current-environment-variables) null)
 (define+provide (environment-variables-ref e n) #f)
@@ -1364,28 +1389,303 @@
 
 (define+provide (version) "99.0") ;; fake
 
+(define (->path p)
+  (cond
+    [(string? p) (#js.Core.Path.fromString p)]
+    [(bytes? p) (#js.Core.Path.fromString (#js.Core.Bytes.toString p))]
+    [(path? p) p]
+    [else
+     (raise
+       (#js.Core.makeArgumentsError "->path"
+                                    "argument cannot be transformed into path"
+                                    p))]))
+
+(define+provide current-directory (make-parameter (#js.Core.FS.currentDir)))
+
+(define+provide (relative-path? p) (#js.p.isRelative))
+(define+provide (absolute-path? p) (#js.p.isAbsolute))
+(define+provide (complete-path? p) (#js.p.isComplete))
+
+(define+provide (path->complete-path p [base (current-directory)])
+  (let ([p^ (->path p)]
+        [base^ (->path base)])
+    (cond
+      [(complete-path? p^) p^]
+      [(complete-path? base^) (#js.base^.appendPath p^)]
+      [else (throw (#js.Core.racketContractError "expected: path?" "given: " base^))])))
+
+(define+provide (split-path p)
+  (let ([p^ (->path p)])
+    (#js.p^.splitPath)))
+
+(define+provide (simplify-path p)
+  (let* ([p^ (->path p)]
+         [abs-path (path->complete-path p^)])
+    (#js.abs-path.simplify)))
+
 (define+provide string->path #js.Core.Path.fromString)
 
 ;; --------------------------------------------------------------------------
 
-(define+provide (dynamic-wind f g h)
-  (f) (g) (h))
+(define+provide (dynamic-wind pre-thunk value-thunk post-thunk)
+  (pre-thunk)
+  (define res (value-thunk))
+  (post-thunk)
+  res)
 
 (define+provide (datum-intern-literal v) v)
 
-;; semaphore stubs
-(define+provide (make-semaphore x) x)
-(define+provide (semaphore-peek-evt x) x)
-(define+provide call-with-semaphore
-  (v-λ (s f) #:unchecked #f))
 
 ;; ----------------------------------------------------------------------------
-;; Syntax
-
-;; TODO: implement these stubs
+;; Syntax (borrowed from syntax.rkt, should fix like unsafe)
 
 (define+provide syntax-source #js.Core.Correlated.syntaxSource)
 (define+provide syntax-line #js.Core.Correlated.syntaxLine)
 (define+provide syntax-column #js.Core.Correlated.syntaxColumn)
 (define+provide syntax-position #js.Core.Correlated.syntaxPosition)
 (define+provide syntax-span #js.Core.Correlated.syntaxSpan)
+(define+provide datum->syntax #js.Core.Correlated.datumToSyntax)
+(define+provide syntax? #js.Core.Correlated.syntaxP)
+(define+provide syntax-property (v-λ () #:unchecked #f))
+
+(define+provide (syntax-property-symbol-keys stx) '())
+
+;; TODO question: should I turn syntax-e into an exported function that wraps this?
+(define+provide (syntax-e v) (#js.v.get))
+;; FIXME this is definitely wrong, right? I guess I don't know how correlated actually works
+;;       this ONLY works for correlated syntax, which doesn't work
+(define+provide (syntax->datum v) (#js.v.get))
+
+;; FIXME other related runtime functions
+(struct srcloc (source line column position span)
+  #:extra-constructor-name make-srcloc
+  #:transparent)
+
+(provide (struct-out srcloc))
+
+
+;; ----------------------------------------------------------------------------
+;; Unsafe forms for Expander Linklet
+
+;; FIXME since imports don't work properly in linklet mode, re-provide unsafe forms here
+;; (provide (all-from-out "unsafe.rkt"))
+
+(define+provide unsafe-make-place-local #js.Core.Box.make)
+(define+provide (unsafe-place-local-set! b v) (#js.b.set v))
+(define+provide (unsafe-place-local-ref b) (#js.b.get))
+
+(define+provide (unsafe-root-continuation-prompt-tag)
+  (#js.Core.Marks.defaultContinuationPromptTag))
+
+(define+provide (unsafe-car v) #js.v.hd)
+(define+provide (unsafe-cdr v) #js.v.tl)
+
+(define+provide (unsafe-immutable-hash-iterate-first h)
+  (#js.h.iterateFirst))
+
+(define+provide (unsafe-immutable-hash-iterate-next h i)
+  (#js.h.iterateNext i))
+
+(define+provide (unsafe-immutable-hash-iterate-key h i)
+  (#js.h.iterateKey i))
+
+(define+provide unsafe-undefined #js.Core.theUnsafeUndefined)
+
+(define+provide (unsafe-start-atomic) (void))
+(define+provide (unsafe-end-atomic) (void))
+
+(define+provide (unsafe-vector-ref v k)
+  (#js.v.ref k))
+(define+provide (unsafe-vector-length v)
+  (#js.v.length))
+
+(define+provide (unsafe-struct*-cas! v k old-val new-val)
+  ;;  FIXME correct error message
+  (when (or (< k 0) (>= k #js.v._desc.totalInitFields))
+    (throw (#js.Core.racketContractError "arity mismatch in unsafe-struct*-cas!")))
+
+  (if (eq? old-val ($ #js.v._fields k))
+    (begin (:= ($ #js.v._fields k) new-val) #t)
+    #f))
+
+(define+provide current-compile-target-machine
+  (make-parameter 'racketscript))
+
+(define Core   ($/require/* "./core.js"))
+
+(define-binop bitwise-or \|)
+
+(define-syntax (define-unsafe-fx-binop+provide stx)
+  (syntax-parse stx
+    [(_ opname:id op:id)
+     #'(begin
+         (provide opname)
+         (define+provide (opname a b)
+           (bitwise-or (binop op a b) 0)))]))
+
+(define-unsafe-fx-binop+provide unsafe-fx+         +)
+(define-unsafe-fx-binop+provide unsafe-fx-         -)
+(define-unsafe-fx-binop+provide unsafe-fx*         *)
+(define-unsafe-fx-binop+provide unsafe-fxquotient  /)
+(define-unsafe-fx-binop+provide unsafe-fxremainder %)
+
+(define+provide (unsafe-fx< a b)
+  (binop < a b))
+
+(define+provide (unsafe-fx= a b)
+  (binop === a b))
+
+;; ----------------------------------------------------------------------------
+;; floating point forms for expander linklet
+
+(define+provide fl*  (#js.Core.attachProcedureArity #js.Core.Number.mul 0))
+(define+provide fl/  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
+(define+provide fl+  (#js.Core.attachProcedureArity #js.Core.Number.add 0))
+(define+provide fl-  (#js.Core.attachProcedureArity #js.Core.Number.sub 1))
+(define+provide fl<  (#js.Core.attachProcedureArity #js.Core.Number.lt 1))
+(define+provide fl>  (#js.Core.attachProcedureArity #js.Core.Number.gt 1))
+(define+provide fl<= (#js.Core.attachProcedureArity #js.Core.Number.lte 1))
+(define+provide fl>= (#js.Core.attachProcedureArity #js.Core.Number.gte 1))
+(define+provide fl=  (#js.Core.attachProcedureArity #js.Core.Number.equals 1))
+
+(define-syntax (define-fx-binop+provide stx)
+  (syntax-parse stx
+    [(_ opname:id op:id)
+     #'(begin
+         (define+provide (opname a b)
+           (bitwise-or (binop op a b) 0)))]))
+
+(define-fx-binop+provide fx+         +)
+(define-fx-binop+provide fx-         -)
+(define-fx-binop+provide fx*         *)
+(define-fx-binop+provide fxquotient  /)
+(define-fx-binop+provide fxremainder %)
+
+(define+provide (fxmodulo a b)
+  (define remainder (binop % a b))
+  (#js.Math.floor (if (binop >= remainder 0)
+                      remainder
+                      (binop + remainder b))))
+
+(define+provide (fxabs a)
+  (#js.Math.abs a))
+
+
+(define+provide (fx= a b)
+  (binop === a b))
+(define+provide (fx< a b)
+  (binop < a b))
+(define+provide (fx<= a b)
+  (binop <= a b))
+(define+provide (fx> a b)
+  (binop > a b))
+(define+provide (fx>= a b)
+  (binop >= a b))
+(define+provide (fxmin a b)
+  (if ($/binop < a b) a b))
+(define+provide (fxmax a b)
+  (if ($/binop > a b) b a))
+
+
+(define-fx-binop+provide fxrshift  >>)
+(define-fx-binop+provide fxlshift  <<)
+(define-fx-binop+provide fxand     &&)
+(define-fx-binop+provide fxior     \|\|)
+(define-fx-binop+provide fxxor     ^)
+(define+provide fxnot                     #js.Core.bitwiseNot)
+
+(define+provide flvector #js.Array.from) ; just create regular array
+(define+provide flvector? #js.Array.isArray)
+(define+provide fxvector #js.Array.from) ; just create regular array
+(define+provide fxvector? #js.Array.isArray)
+
+;; ----------------------------------------------------------------------------
+;; for #%paramz
+(define Paramz ($/require/* "./paramz.js"))
+
+(define+provide parameterization-key #js.Paramz.ParameterizationKey)
+(define+provide break-enabled-key #js.Paramz.BreakEnabledKey)
+(define+provide cache-configuration #js.Paramz.BreakEnabledKey)
+(define+provide extend-parameterization #js.Paramz.extendParameterization)
+(define+provide exception-handler-key #js.Paramz.ExceptionHandlerKey)
+(define+provide (check-for-break) ($/undefined))
+(define+provide (reparameterize v) v)
+
+;; TODO shouldn't need to be provided, is right now for `table.rkt`
+(define+provide paramz-table
+  (hash 'parameterization-key    parameterization-key
+        'break-enabled-key       break-enabled-key
+        'cache-configuration     cache-configuration
+        'extend-parameterization extend-parameterization
+        'exception-handler-key   exception-handler-key
+        'check-for-break         check-for-break
+        'reparameterize          reparameterize))
+
+
+;; ----------------------------------------------------------------------------
+;; Other random forms I need to include
+
+;; based on Pycket's implementation of the same function at time of writing
+(define+provide (sync/timeout timeout . evts)
+  (cond
+    [(number? timeout) #f]
+    [(procedure? timeout) (timeout)]
+    [else (throw (#js.Core.racketCoreError "sync/timeout doesn't support given timeout type"))]))
+
+;; TODO should probably be real but w/e
+(define+provide error-syntax->string-handler
+  (make-parameter (v-λ (x n) "syntax")))
+
+(define+provide error-print-source-location (make-parameter #t))
+
+;;; THREADS ;;;
+;; Return the thread descriptor for the current thread
+;; Since JS isn't multithreaded, just return the same 'descriptor'
+;;   for all threads
+(define+provide (current-thread) #js.Core.Thread.currentThread)
+
+;;; SEMAPHORES ;;;
+(define+provide semaphore? #js.Core.Semaphore.check)
+(define+provide (make-semaphore [init 0]) (#js.Core.Semaphore.make init))
+(define+provide (semaphore-post v) (#js.v.post))
+(define+provide (semaphore-wait v) (#js.v.wait))
+
+;; PRE-EXISTING STUBS
+(define+provide (semaphore-peek-evt x) x)
+(define+provide call-with-semaphore
+  (v-λ (s f) #:unchecked #f))
+
+;; Random vector things
+(define+provide vector*-set! vector-set!)
+
+;; ----------------------------------------------------------------------------
+;; New Exception Support
+(provide (struct-out exn) (struct-out exn:fail))
+
+(struct exn (message continuation-marks)
+  #:extra-constructor-name make-exn
+  #:transparent)
+
+(struct exn:fail exn ()
+  #:extra-constructor-name make-exn:fail
+  #:transparent)
+
+;; ----------------------------------------------------------------------------
+(define+provide (primitive-table table-name)
+  (cond
+    [(equal? table-name '#%kernel) #js.Core.KernelTable.kernelTable]
+    [(equal? table-name '#%linklet)
+     (let ([lnkTable #js.Core.Linklet.primitiveTable])
+       (hash-set lnkTable 'primitive-table primitive-table))]
+    [(equal? table-name '#%paramz) paramz-table]
+    ;; Pycket has entries for all of the tables below
+    [(equal? table-name '#%foreign) (hash)]
+    [(equal? table-name '#%unsafe)  (hash)]
+    [(equal? table-name '#%futures) (hash)]
+    [(equal? table-name '#%place)   (hash)]
+    [(equal? table-name '#%flfxnum) (hash)]
+    [(equal? table-name '#%extfl)   (hash)]
+    [(equal? table-name '#%network) (hash)]
+
+
+    [else #f]))

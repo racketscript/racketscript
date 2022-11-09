@@ -1,9 +1,6 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     racket/syntax
-                     syntax/parse)
-         (for-meta 2 syntax/parse)
+(require (for-syntax racket/base)
          "config.rkt")
 
 (provide log-rjs-info
@@ -11,20 +8,48 @@
          log-rjs-warning
          log-rjs-error)
 
-(define-syntax log-rjs
-  (syntax-parser
-    [(_ kind:id)
-     #:with name (format-id #'kind "log-rjs-~a" (syntax-e #'kind) #:source #'kind)
-     #:with str (symbol->string (syntax-e #'kind))
-     (syntax (define-syntax name
-               (syntax-parser
-                 [(_ a0 a* (... ...))
-                  #'(when (logging?)
-                      (begin (printf "[~a]" 'str)
-                             (unless (equal? (string-ref a0 0) #\[)
-                               (printf " "))
-                             (printf a0 a* (... ...))
-                             (printf "\n")))])))]))
+(define-syntax (log-rjs stx)
+  (syntax-case stx ()
+    [(_ kind)
+     (identifier? #'kind)
+     (with-syntax ([name (datum->syntax #'kind
+                                        (string->symbol
+                                          (format "log-rjs-~a" (syntax-e #'kind))))]
+                   [str (symbol->string (syntax-e #'kind))]
+                   [(fst rst) (generate-temporaries '(fst rst))])
+       #'(define (name fst . rst)
+           (when (logging?)
+             (begin (printf "[~a]" 'str)
+                    (unless (equal? (string-ref fst 0) #\[)
+                      (printf " "))
+                    (apply printf fst rst)
+                    (printf "\n")))))]))
+       ;; (syntax
+
+       ;;   (define-syntax (name stx)
+       ;;     (syntax-case stx ()
+       ;;       [(_ a0 a* (... ...))
+       ;;        #'(when (logging?)
+       ;;            (begin (printf "[~a]" 'str)
+       ;;                   (unless (equal? (string-ref a0 0) #\[)
+       ;;                     (printf " "))
+       ;;                   (printf a0 a* (... ...))
+       ;;                   (printf "\n")))]))))]))
+
+;; (define-syntax log-rjs
+;;   (syntax-parser
+;;     [(_ kind:id)
+;;      #:with name (format-id #'kind "log-rjs-~a" (syntax-e #'kind) #:source #'kind)
+;;      #:with str (symbol->string (syntax-e #'kind))
+;;      (syntax (define-syntax name
+;;                (syntax-parser
+;;                  [(_ a0 a* (... ...))
+;;                   #'(when (logging?)
+;;                       (begin (printf "[~a]" 'str)
+;;                              (unless (equal? (string-ref a0 0) #\[)
+;;                                (printf " "))
+;;                              (printf a0 a* (... ...))
+;;                              (printf "\n")))])))]))
 (log-rjs info)
 (log-rjs error)
 (log-rjs warning)

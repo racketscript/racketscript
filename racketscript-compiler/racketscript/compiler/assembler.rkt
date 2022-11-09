@@ -1,43 +1,40 @@
-#lang typed/racket/base
+#lang racket/base
 
 ;;; Generate JavaScript code from abstract syntax. Each binding name
 ;;; in assumed to be fresh, to enforce lexical scope rules of Racket
 ;;; in JavaScript
 
-(require racket/format
-         racket/function
-         racket/list
-         racket/match
+(require racket/list
          racket/string
+         (only-in racket/function curry)
+         "match.rkt"
+         "struct-match.rkt"
          "config.rkt"
-         "il.rkt"
+         "ir.rkt"
          "logging.rkt"
          "util.rkt")
 
 (provide assemble
-         assemble-module
+         assemble-linklet
          assemble-statement*
          assemble-statement)
 
-(: assemble (-> ILProgram Void))
 (define (assemble p)
   (assemble-statement* p (current-output-port)))
 
-(: assemble-expr (-> ILExpr Output-Port Void))
 (define (assemble-expr expr out)
   (define emit (curry fprintf out))
-  (: emit-args (-> (Listof ILExpr) String Void))
+
   (define (emit-args args sep)
     (let loop ([a* args])
       (match a*
-        ['() (void)]
-        [(cons a '()) (assemble-expr a out)]
-        [(cons a tl)
+        [`() (void)]
+        [`(,a) (assemble-expr a out)]
+        [`(,a . ,tl)
          (assemble-expr a out)
          (emit sep)
          (loop tl)])))
 
-  (: wrap-e? (-> ILExpr Boolean))
   ;; Wrap expression 'e' when being applied, referenced
   ;; or indexed
   (define (wrap-e? e)
@@ -49,16 +46,16 @@
              (number? (ILValue-v e))
              (byte? (ILValue-v e)))))
 
-  (match expr
+  (struct-match expr
     [(ILLambda args body)
      (emit "function(")
-     (define args-str : (Listof String)
+     (define args-str
        (cond
          [(symbol? args) (list (~a "..." (normalize-symbol args)))]
          [(list? args) (map normalize-symbol args)]
          [(cons? args) (append1 (map normalize-symbol (car args))
                                 (~a "..." (normalize-symbol (cdr args))))]
-         [else (error 'assemble-expr "λ must be unchecked by assembler phase")]))
+         [else (displayln args) (error 'assemble-expr "λ must be unchecked by assembler phase")]))
      (emit (string-join args-str ", "))
      (emit ") {")
      (for ([s body])
@@ -72,7 +69,7 @@
      (emit-args args ",")
      (emit ")")]
     [(ILBinaryOp oper args)
-     (assert (>= (length args) 2)) ;; TODO: Update the type of ILBinaryOp
+     ;; (assert (>= (length args) 2)) ;; TODO Update the type of ILBinaryOp
      (for/last? ([arg last? args])
        (when (ILBinaryOp? arg) (emit "("))
        (assemble-expr arg out)
@@ -138,15 +135,13 @@
        (emit (~a (normalize-symbol expr)))]
     [_ (error "unsupported expr" (void))]))
 
-(: assemble-statement* (-> ILStatement* Output-Port Void))
 (define (assemble-statement* stmt* out)
   (for [(s stmt*)]
     (assemble-statement s out)))
 
-(: assemble-statement (-> ILStatement Output-Port Void))
 (define (assemble-statement stmt out)
   (define emit (curry fprintf out))
-  (match stmt
+  (struct-match stmt
     [(ILVarDec id expr)
      (emit (~a "var " (normalize-symbol id)))
      (when expr
@@ -173,12 +168,13 @@
      (emit "}")]
     [(ILIf* clauses)
      (let loop ([clauses clauses])
-       (match clauses
-         [(cons (ILIfClause #f body) ctl)
+       (match-define `(,hd . ,ctl) clauses)
+       (struct-match hd
+         [(ILIfClause cnd body) #:when (not cnd)
           (emit "{")
           (assemble-statement* body out)
           (emit "}")]
-         [(cons (ILIfClause (? ILExpr? pred) body) ctl)
+         [(ILIfClause pred body) #:when (ILExpr? pred)
           (emit "if (")
           (assemble-expr pred out)
           (emit ") {")
@@ -234,35 +230,41 @@
          (emit ")"))
        (emit ";")]))
 
-(: assemble-module (-> ILModule (Option Output-Port) Void))
-(define (assemble-module mod maybeout)
-  (match-define (ILModule id provides requires body) mod)
-  (log-rjs-info "[assemble] ~a" id)
-  (let ([cb (λ ([out : Output-Port])
-              (assemble-requires* requires out)
-              (for ([b body])
-                (assemble-statement b out))
-              (assemble-provides* provides out))])
-    (if maybeout
-        (cb maybeout)
-        ;; For all other cases we need a valid module name, eg. kernel
-        (call-with-output-file (module-output-file (assert id path?))
-          #:exists 'replace
-          cb))))
+(define (assemble-linklet lnk out)
+  (struct-match-define (ILLinklet imports exports body) lnk)
+  (log-rjs-info "[assemble linklet]")
 
-(: assemble-requires* (-> ILRequire* Output-Port Void))
+  (assemble-requires* imports out)
+  (for ([b body])
+    (assemble-statement b out))
+  (assemble-provides* exports out))
+
+;; (define (assemble-module mod maybeout)
+;;   (match-define (ILModule id provides requires body) mod)
+;;   (log-rjs-info "[assemble] ~a" id)
+;;   (let ([cb (λ ([out : Output-Port])
+;;               (assemble-requires* requires out)
+;;               (for ([b body])
+;;                 (assemble-statement b out))
+;;               (assemble-provides* provides out))])
+;;     (if maybeout
+;;         (cb maybeout)
+;;         ;; For all other cases we need a valid module name, eg. kernel
+;;         (call-with-output-file (module-output-file (assert id path?))
+;;           #:exists 'replace
+;;           cb))))
+
 (define (assemble-requires* reqs* out)
   (define emit (curry fprintf out))
-  (define core-import-path
-    ;; (current-source-file) should not be false, else abort
-    (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
-                           (jsruntime-module-path 'core)))
+
+  ;; need some relative mechanism to do this in the future
 
   (emit "import * as ~a from '~a';"
         (jsruntime-core-module)
-        core-import-path)
+        "../runtime/core.js")
+
   (for ([req reqs*])
-    (match-define (ILRequire mod obj-name import-sym) req)
+    (struct-match-define (ILRequire mod obj-name import-sym) req)
     (define import-string
       (case import-sym
         [(default) (format "import ~a from \"~a\";"
@@ -275,14 +277,21 @@
 
     (emit import-string)))
 
-(: assemble-provides* (-> ILProvide* Output-Port Void))
+;; (define (assemble-requires* reqs* out)
+;;   (define emit (curry fprintf out))
+;;   (define core-import-path
+;;     ;; (current-source-file) should not be false, else abort
+;;     (jsruntime-import-path (cast (current-source-file) (U Symbol Path))
+;;                            (jsruntime-module-path 'core)))
+
+
 (define (assemble-provides* p* out)
   (define emit (curry fprintf out))
 
   (unless (empty? p*)
     (emit "export { ")
     (for/last? ([p last? p*])
-               (match p
+               (struct-match p
                  [(ILSimpleProvide id)
                   (emit (~a (normalize-symbol id)))]
                  [(ILRenamedProvide local-id exported-id)
@@ -294,28 +303,27 @@
 
     (emit " };")))
 
-(: assemble-value (-> Any Output-Port Void))
 (define (assemble-value v out)
   (define emit (curry fprintf out))
-  ;; TODO: this will eventually be replaced by runtime primitives
+  ;; TODO this will eventually be replaced by runtime primitives
   (cond
     [(string? v)
      (emit "~s" v)]
     [(number? v)
-     (match v
-       [+inf.0 (emit "Infinity")]
-       [-inf.0 (emit "-Infinity")]
-       [+nan.0 (emit "NaN")]
-       [+nan.f  (emit "NaN")]
-       [_ #:when (single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
-       [_ (emit (~a v))])] ;; TODO
+     (cond
+       [(equal? +inf.0 v) (emit "Infinity")]
+       [(equal? -inf.0 v) (emit "-Infinity")]
+       [(equal? +nan.0 v) (emit "NaN")] ;; same as +nan.f
+       ;; [(equal? +nan.f v)  (emit "NaN")]
+       [(single-flonum? v) (emit (~a (exact->inexact (inexact->exact v))))]
+       [else (emit (~a v))])] ;; TODO
     [(boolean? v) (emit (if v "true" "false"))]
     [(void? v)
      (emit "null")]
     [else (error "Unexpected value: " v)]))
 
 [module+ test
-  (require typed/rackunit
+  (require rackunit
            racket/port)
 
   ;; TODO: Replace with this, but fails to typecheck.

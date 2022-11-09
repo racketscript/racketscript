@@ -5,6 +5,12 @@
 
 (provide (all-defined-out))
 
+(struct Linklet ([path    : Path-String] ;; TODO eventually get rid of paths, need it for now
+                 [imports : (Listof (Listof (U Symbol (Listof Symbol))))]
+                 [exports : (Listof (U Symbol (Listof Symbol)))]
+                 [forms   : (Listof GeneralTopLevelForm)])
+  #:transparent)
+
 (struct Module  ([id      : Symbol]
                  [path    : Path]
                  [lang    : (U Symbol String (Listof Symbol))]
@@ -24,6 +30,7 @@
   [TopLevelForm             GeneralTopLevelForm
                             Expr
                             Module
+                            Linklet
                             Begin]
 
   [GeneralTopLevelForm      Expr
@@ -84,7 +91,9 @@
 
   [Ident  (LocalIdent         [id : Symbol])
           (ImportedIdent      [id : Symbol] [src-mod : Module-Path] [reachable? : Boolean])
-          (TopLevelIdent      [id : Symbol])]
+          (TopLevelIdent      [id : Symbol])
+          (PrimitiveIdent     [id : Symbol])
+          (LinkletImportIdent [id : Symbol] [position : Integer])]
 
   [Begin   (Listof TopLevelForm)]
 

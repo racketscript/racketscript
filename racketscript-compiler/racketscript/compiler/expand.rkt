@@ -31,15 +31,18 @@
          "global.rkt"
          "logging.rkt"
          "moddeps.rkt"
-         "util.rkt")
+         "util.rkt"
+         "expander-forms.rkt")
 
 (provide convert
+         convert-linklet
          open-read-module
          read-module
          to-absyn
          to-absyn/top
          read-and-expand-module
-         quick-expand)
+         quick-expand
+         expand-linklet)
 
 (define current-module (make-parameter #f))
 (define current-phase (make-parameter 0))
@@ -241,7 +244,10 @@
      (JSRequire (syntax-e #'name) (syntax-e #'mod) '*)]
     [(define-values (id ...) b)
      (DefineValues (syntax->datum #'(id ...)) (to-absyn #'b))]
-    [(#%top . x) (TopId (syntax-e #'x))]
+    [(#%top . x)
+     (if (set-member? EXPANDER-FORMS (syntax-e #'x))
+       (ImportedIdent (syntax-e #'x) '#%kernel #t)
+       (TopId (syntax-e #'x)))]
     [(#%variable-reference x) (VarRef (to-absyn #'x))]
     [(#%variable-reference) (VarRef #f)]
     [i:identifier #:when (quoted?) (syntax-e #'i)]
@@ -278,6 +284,7 @@
                     (equal? src-mod-path '#%runtime))
                (current-module-imports (set-add (current-module-imports) '#%kernel))
                (current-module-imports (set-add (current-module-imports) src-mod-path)))
+
 
            ;;HACK: See test/struct/import-struct.rkt. Somehow, the
            ;;  struct constructor has different src-id returned by
@@ -435,6 +442,16 @@
     [_
      (error 'convert "bad ~a ~a" mod (syntax->datum mod))]))
 
+(define (convert-linklet linklet path)
+  (syntax-parse linklet #;(freshen-linklet-forms linklet)
+    #:literal-sets ((kernel-literals #:phase (current-phase)))
+    [((~datum linklet) _imports _exports forms ...)
+     (parameterize ([current-module-imports (set)]
+                    [lexical-bindings (make-free-id-table)])
+       (let ([contents (filter-map to-absyn (syntax->list #'(forms ...)))]
+             [imports (current-module-imports)])
+         (Linklet path contents imports)))]))
+
 (define (freshen-mod-forms mod)
   (syntax-parse mod
     #:literal-sets ((kernel-literals #:phase (current-phase)))
@@ -480,6 +497,19 @@
   (parameterize ([current-namespace (make-base-namespace)])
     (expand stx)))
 
+(define (do-expand-linklet stx)
+  (syntax-parse stx
+    [((~datum linklet) imports exports . rest)
+     (parameterize ([current-namespace (make-base-namespace)])
+       #`(linklet imports exports #,@(map expand (syntax->list #'rest))))]
+    [((~datum linklet) . rest)
+     (error 'do-expand-linklet
+            "got ill-formed linklet: ~a\n" (syntax->datum #'rest))]
+    [rest
+     (error 'do-expand-linklet
+            "got something that isn't a module: ~a\n" (syntax->datum #'rest))]))
+  
+
 ;;; Read modules
 
 (define (read-module input)
@@ -489,6 +519,13 @@
   (call-with-input-file (actual-module-path in-path)
     (λ (in)
       (read-module in))))
+
+(define (expand-linklet in-path)
+  (log-rjs-info "[expand-linklet] ~a" in-path)
+  (define full-path (path->complete-path (actual-module-path in-path)))
+  (parameterize ([current-directory (path-only full-path)])
+    (do-expand-linklet (open-read-module in-path))))
+
 
 (define (quick-expand in-path)
   (log-rjs-info "[expand] ~a" in-path)
@@ -502,6 +539,9 @@
   (read-accept-reader #t)
   (read-accept-lang #t)
   (do-expand (read-syntax (object-name input) input)))
+
+(define (read-and-expand-linklet input)
+  (read-syntax (object-name input) input))
 
 ;;;----------------------------------------------------------------------------
 ;;; Flatten Phases in Module

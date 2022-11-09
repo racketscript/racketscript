@@ -1,226 +1,139 @@
-#lang typed/racket/base
+#lang racket/base
 
 ;;; Generate IL code from abstract syntax. Each binding name
 ;;; in assumed to be fresh, to enforce lexical scope rules of Racket
 
 (require racket/bool
-         racket/format
          racket/list
-         racket/match
-         racket/set
-         threading
-         "absyn.rkt"
+         "ast.rkt"
          "config.rkt"
          "environment.rkt"
          "il-analyze.rkt"
-         "il.rkt"
+         "ir.rkt"
          "logging.rkt"
-         "util.rkt")
-
-(require/typed racket/syntax
-  [format-symbol (-> String Any * Symbol)])
-
-(require/typed version/utils
-  [version<=? (-> String String Boolean)])
+         "util.rkt"
+         "set.rkt"
+         "match.rkt"
+         "struct-match.rkt")
 
 (provide absyn-top-level->il
          absyn-gtl-form->il
          absyn-expr->il
-         absyn-module->il)
+         absyn-linklet->il)
 
-(define-type-alias ModuleObjectNameMap (HashTable (U Path Symbol)
-                                                  Symbol))
+(define module-object-name-map (make-parameter (hash)))
 
-(: module-object-name-map (Parameter ModuleObjectNameMap))
-(define module-object-name-map
-  (make-parameter ((inst hash (U Path Symbol) Symbol))))
-
-
-(: absyn-top-level->il (-> TopLevelForm ILStatement*))
 (define (absyn-top-level->il form)
   (cond
-    [(Module? form) (error 'absyn-top-level->il
-                           "Not supported. Todo.")]
+    [(Linklet? form) (error 'absyn-top-level->il
+                            "Not supported. Todo.")]
     [(Expr? form)
      (define-values (stmt v) (absyn-expr->il form #f))
      (append1 stmt v)]
     [(Begin? form) (absyn-expr->il form #f)]
-    [else (error "only modules supported at top level")]))
+    [else (error "only some forms supported at top level")]))
+
+;; FIXME I do ZERO handling of javascript forms
+(define (absyn-linklet->il lnk)
+  (struct-match-define (Linklet path imports exports forms) lnk)
+  (log-rjs-info "[linklet il]")
+
+  (define imported-mod-path-list (flatten imports))
+  (define requires* (absyn-requires->il imported-mod-path-list path))
+
+  ;; FIXME it's really odd that we have three things that keep needing to get passed around that have the same information
+  ;;       in them -- imported-mod-path-list + the 'requires' objects + module-object-name-map
 
 
-(: absyn-module->il (-> Module ILModule))
-(define (absyn-module->il mod)
-  (match-define (Module id path lang imports quoted-bindings forms) mod)
-  (log-rjs-info "[il] ~a" id)
+  (parameterize ([module-object-name-map (make-module-map requires* '(#%kernel #%primitive-table))])
+    (ILLinklet
+      (filter ILRequire? requires*)
+      (absyn-exports->il exports)
+      (append-map absyn-gtl-form->il forms))))
 
-  (: provides (Boxof ILProvide*))
-  (define provides (box '()))
+(define (make-module-map reqs imported-paths)
+  (for/fold ([acc (module-object-name-map)])
+            ([req reqs]
+             [mod-path imported-paths])
+    (if (ILRequire? req)
+      (hash-set acc
+                mod-path
+                (ILRequire-name req))
+      acc)))
 
-  ;; Since we get identifiers directly from defining module, we keep
-  ;; track of defines, use this for exporting all defines or exclude
-  ;; re-exports here
-  (: top-level-defines (Setof Symbol))
-  (define top-level-defines
-    (list->set
-     (append
-      (append-map DefineValues-ids
-                  (filter DefineValues? forms))
-      (map JSRequire-alias
-           (filter JSRequire? forms)))))
-
-  (: add-provides! (-> ILProvide* Void))
-  (define (add-provides! p*)
-    (set-box! provides (append (unbox provides) p*)))
-
-  (define imported-mod-path-list (set->list imports))
-
-  (: requires* (Listof (Option ILRequire)))
-  (define requires*
-    ;; FIXME: We put #f so that we can match it exactly
-    ;;  later in mod-stms
-    (for/list ([mod-path imported-mod-path-list]
-               [counter (in-naturals)])
-      (define mod-obj-name (string->symbol (~a "M" counter)))
-      (define import-name
-        (match mod-path
-          [(? symbol? _)
-           (jsruntime-import-path path
-                                  (jsruntime-module-path mod-path))]
-          [_ (module->relative-import (cast mod-path Path))]))
-      ;; See expansion of identifier in `expand.rkt` for primitive
-      ;; modules
-      (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
-                   (equal? path (actual-module-path mod-path)))
-              (and (primitive-module-path? (actual-module-path path))
-                   (set-member? ignored-module-imports-in-boot mod-path)))
-          #f
-          (ILRequire import-name mod-obj-name '*))))
-
-  ;; Append all JavaScript requires we find at GTL over here
-  (: js-requires (Boxof (Listof ILRequire)))
-  (define js-requires (box '()))
-
-  ;; Filter out #f requires*
-  (: racket-requires ILRequire*)
-  (define racket-requires (filter ILRequire? requires*))
-
-  (define mod-stms
-    (parameterize ([module-object-name-map
-                    ; Names we will use for module objects in JS
-                    (for/fold ([acc (module-object-name-map)])
-                              ([req requires*]
-                               [mod-path imported-mod-path-list])
-                      (if (ILRequire? req)
-                          (hash-set acc
-                                    mod-path
-                                    (ILRequire-name req))
-                          acc))])
-      (append-map
-       (λ ([form : ModuleLevelForm])
-         (cond
-           [(JSRequire? form)
-            (set-box! js-requires
-                      (cons (ILRequire (~a (JSRequire-path form))
-                                       (JSRequire-alias form)
-                                       (JSRequire-mode form))
-                            (unbox js-requires)))
-            '()]
-           [(GeneralTopLevelForm? form) (absyn-gtl-form->il form)]
-           [(Provide*? form)
-            (add-provides! (absyn-provide->il form top-level-defines)) '()]
-           [(SubModuleForm? form) '()])) ;; TODO
-       forms)))
-
-  ;; Compute `provides` from this modoule
-
-  (: final-provides ILProvide*)
-  (define final-provides
-    (let ([current-module-define?
-           (λ (p)
-             (match p
-               [(ILSimpleProvide id)
-                (set-member? top-level-defines id )]
-               [(ILRenamedProvide local-id exported-id)
-                (set-member? top-level-defines local-id)]))])
-      (cons (ILSimpleProvide *quoted-binding-ident-name*)
-            (~> (unbox provides)
-                (filter current-module-define? _)
-                (remove-duplicates _)))))
-
-  ;; Also expose quoted bindings
-  (: quoted-bindings-stms ILStatement*)
-  (define quoted-bindings-stms
-    (cons (ILVarDec *quoted-binding-ident-name* (ILObject '()))
-          (~> (set->list quoted-bindings)
-              (filter (λ (b) (set-member? top-level-defines b)) _)
-              (map (λ ([b : Symbol])
-                     (define b* (string->symbol (normalize-symbol b)))
-                     (ILAssign (ILRef *quoted-binding-ident-name* b*) b*))
-                   _))))
-
-  (ILModule path
-            final-provides
-            (append racket-requires (unbox js-requires))
-            (append mod-stms quoted-bindings-stms)))
+(define (absyn-exports->il exports)
+  (for/list ([ex exports])
+    (cond
+      [(symbol? ex) (SimpleProvide ex)]
+      [(list? ex) (RenamedProvide (car ex) (cadr ex))]
+      [else (error 'exports->il "unknown export form in linklet" ex)])))
 
 
-(: absyn-gtl-form->il (-> GeneralTopLevelForm ILStatement*))
+;; TODO not using a lot of the code here, eventually should be able to delete
+(define (absyn-requires->il import-list path)
+  (list (ILRequire "../runtime/kernel.rkt.js" 'M0 '*)
+        (ILRequire "../runtime/table.rkt.js" 'M1 '*)))
+
+
+;;   (for/list ([mod-path import-list]
+;;              [counter (in-naturals)])
+;;     (define mod-obj-name (string->symbol (~a "M" counter)))
+;;     (ILRequire mod-path mod-obj-name '*)))
+    ;; (define import-name
+    ;;   (if (symbol? mod-path)
+    ;;     (jsruntime-import-path path
+    ;;                            (jsruntime-module-path mod-path))
+    ;;     (module->relative-import mod-path)))
+
+    ;; ;; See expansion of identifier in `expand.rkt` for primitive
+    ;; ;; modules
+    ;; (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
+    ;;               (equal? path (actual-module-path mod-path)))
+    ;;         (and (primitive-module-path? (actual-module-path path))
+    ;;               (set-member? ignored-module-imports-in-boot mod-path)))
+    ;;     #f
+    ;;     (ILRequire import-name mod-obj-name '*))))
+
 (define (absyn-gtl-form->il form)
   (cond
     [(Expr? form)
      (define-values (stms v) (absyn-expr->il form #f))
      (append1 stms v)]
     [(DefineValues? form)
-     (match-define (DefineValues ids expr) form)
+     (struct-match-define (DefineValues ids expr) form)
      (absyn-binding->il (cons ids expr))]
     [(JSRequire? form) (error 'absyn-gtl-form->il
                               "Required should be hoisted")]))
 
-(: absyn-provide->il (-> Provide* (Setof Symbol) ILProvide*))
 (define (absyn-provide->il forms top-level-defs)
-  (: defs-without-exclude (-> (Setof Symbol) (Setof Symbol) (Listof Symbol)))
   (define (defs-without-exclude def-set exclude-lst)
-    (~> (set->list def-set)
-        (filter (λ (id) (not (set-member? exclude-lst id))) _)))
+    (let ([def-lst (set->list def-set)])
+      (filter (λ (id) (not (set-member? exclude-lst id))) def-lst)))
 
-  (for/fold ([result : ILProvide* '()])
+  (for/fold ([result '()])
             ([form forms])
-    (match form
-      [(SimpleProvide _) (cons form result)]
-      [(RenamedProvide _ _) (cons form result)]
-      [(AllDefined exclude)
-       (~> (defs-without-exclude top-level-defs exclude)
-           (map SimpleProvide _)
-           (append result _))]
-      [(PrefixAllDefined prefix-id exclude)
-       (let* ([to-export (defs-without-exclude top-level-defs exclude)]
-              [new-ids (map (λ (id)
-                              (format-symbol "~a~a" prefix-id id))
-                            to-export)])
-         (append result
-                 (map RenamedProvide to-export new-ids)))])))
+    ;; TODO adding sufixes to underscored identifiers so I don't need to add
+    ;;      support for them in my pattern matcher
+    (struct-match form
+      [(SimpleProvide _fst) (cons form result)]
+      [(RenamedProvide _fst _snd) (cons form result)])))
 
-(: absyn-expr->il (-> Expr Boolean (Values ILStatement* ILExpr)))
 ;;; An expression in Racket may need to be split into several
 ;;; statements in JS. However, since expression always has a
 ;;; values, we return pair of statements and the final value
 ;;; of expression.
 ;;; TODO: returned ILExpr should be just ILValue?
 (define (absyn-expr->il expr overwrite-mark-frame?)
-  (match expr
-    [(PlainLambda formals body unchecked?)
-     (: ->jslist (-> ILExpr ILExpr))
+  (struct-match expr
+    [(Lambda formals body unchecked?)
      (define (->jslist f)
        (ILApp (name-in-module 'core 'Pair.listFromArray) (list f)))
 
-     (: maybe-make-checked-formals (-> Formals ILFormals))
      (define (maybe-make-checked-formals formals)
        (if (or unchecked? (skip-arity-checks?))
            formals
            (ILCheckedFormals formals)))
 
-     (: in-formals Formals)
-     (: stms-formals-init ILStatement*)
      (define-values (in-formals stms-formals-init)
        (cond
          [(symbol? formals)
@@ -235,8 +148,8 @@
                   (list (ILVarDec fp (->jslist in-fp))))]))
 
      (define-values (body-stms body-value)
-       (for/fold/last ([stms : ILStatement* '()]
-                       [rv : ILExpr (ILValue (void))])
+       (for/fold/last ([stms '()]
+                       [rv (ILValue (void))])
                       ([e last? body])
                       (define-values (s v)
                         (absyn-expr->il e (and last? overwrite-mark-frame?)))
@@ -259,10 +172,10 @@
        (if (case-lambda-has-dead-clause? expr)
            (begin (log-rjs-warning "found a case-lambda with dead-clause")
                   (values '() clauses))
-           (values (filter (λ ([l : PlainLambda])
+           (values (filter (λ (l)
                              (number? (lambda-arity l)))
                            clauses)
-                   (filter (λ ([l : PlainLambda])
+                   (filter (λ (l)
                              (not (number? (lambda-arity l))))
                            clauses))))
 
@@ -271,14 +184,14 @@
      (define arities
        (ILArray
         (for/list ([c (resolve-procedure-arities (map lambda-arity clauses))])
-          (match c
-            [(arity-at-least v)
+          (cond
+            [(arity-at-least? c)
              (define-values (_ val)
                (absyn-expr->il
-                (PlainApp (ImportedIdent 'make-arity-at-least '#%kernel #t) (list (Quote v)))
-                #f))
+                 (App (ImportedIdent 'make-arity-at-least '#%kernel #t) (list (Quote (arity-at-least-value c))))
+                 #f))
              val]
-            [(? number? val) (ILValue val)]))))
+            [(number? c) (ILValue c)]))))
 
      (values stms (ILApp (name-in-module 'core 'attachProcedureArity) (list val arities)))]
 
@@ -296,12 +209,12 @@
 
     [(LetValues bindings body)
      (define binding-stms
-       (for/fold ([stms : ILStatement* '()])
+       (for/fold ([stms '()])
                  ([b bindings])
          (append stms
                  (absyn-binding->il b))))
      (for/fold/last ([stms binding-stms]
-                     [rv : ILExpr (ILValue (void))])
+                     [rv (ILValue (void))])
                     ([e last? body])
                     (define-values (s nv)
                       (absyn-expr->il e (and last? overwrite-mark-frame?)))
@@ -315,18 +228,28 @@
                         (ILAssign id v)))
              (ILValue (void)))]
 
-    [(PlainApp (ImportedIdent '#%js-ffi _ _) args)
+    [(App lam args)
+     #:when (and (ImportedIdent? lam)
+                 (eq? '#%js-ffi (ImportedIdent-id lam)))
      (match args
-       [(list (Quote 'var) (Quote var))
-        (values '() (cast var Symbol))]
-       [(list (Quote 'string) (Quote str))
-        (values '() (ILValue str))]
-       [(list (Quote 'ref) b xs ...)
+       [`(,fst ,snd)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'var))
+        (values '() (Quote-datum snd))]
+       [`(,fst ,snd)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'string))
+        (values '() (ILValue (Quote-datum snd)))]
+       [`(,fst ,b ,xs ...)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'ref))
         (define-values (stms il) (absyn-expr->il b #f))
         (values stms
                 (for/fold ([il il])
                           ([x xs])
-                  (match-define (Quote s) x) ;; Previous phase wrap
+                  (struct-match-define (Quote s) x) ;; Previous phase wrap
                                              ;; the symbol in quote
 
                   ;; HACK: To avoid wrapping the base symbol into
@@ -334,10 +257,12 @@
                   ;; sensitively
                   ;; TODO: We should accept only vaild JS idents.
                   (if (ILValue? il)
-                      (ILRef (cast (ILValue-v il) Symbol)
-                             (cast s Symbol))
-                      (ILRef il (cast s Symbol)))))]
-       [(list (Quote 'index) b xs ...)
+                      (ILRef (ILValue-v il)
+                             s)
+                      (ILRef il s))))]
+       [`(,fst ,b ,xs ...)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'index))
         (define-values (stms il) (absyn-expr->il b #f))
         (for/fold ([stms stms]
                    [il il])
@@ -345,79 +270,102 @@
           (define-values (x-stms s-il) (absyn-expr->il x #f))
           (values (append stms x-stms)
                   (if (ILValue? il)
-                      (ILIndex (cast (ILValue-v il) Symbol)
+                      (ILIndex (ILValue-v il)
                                s-il)
                       (ILIndex il s-il))))]
-       [(list (Quote 'assign) lv rv)
+       [`(,fst ,lv ,rv)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'assign))
         (define-values (lv-stms lv-il) (absyn-expr->il lv #f))
         (define-values (rv-stms rv-il) (absyn-expr->il rv #f))
         (values (append lv-stms
                         rv-stms
-                        (list (ILAssign (cast lv-il ILLValue) rv-il)))
+                        (list (ILAssign lv-il rv-il)))
                 (ILValue (void)))]
-       [(list (Quote 'new) lv)
+       [`(,fst ,lv)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'new))
         (define-values (stms il) (absyn-expr->il lv #f))
         (values stms
-                (ILNew (cast il (U ILLValue ILApp))))]
-       [(list (Quote 'array) items ...)
+                (ILNew il))]
+       [`(,fst ,items ...)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'array))
         (define-values (stms* items*)
-          (for/fold ([stms : ILStatement* '()]
-                     [vals : (Listof ILExpr) '()])
+          (for/fold ([stms '()]
+                     [vals '()])
                     ([item items])
             (define-values (s* v*) (absyn-expr->il item #f))
             (values (append stms s*)
                     (append vals (list v*)))))
         (values stms*
                 (ILArray items*))]
-       [(list (Quote 'object) items ...)
-        (define-values (keys vals) (split-at items (cast (/ (length items) 2)
-                                                           Nonnegative-Integer)))
+       [`(,fst ,items ...)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'object))
+        (define-values (keys vals) (split-at items (/ (length items) 2)))
         (define-values (stms* items*)
-          (for/fold ([stms : ILStatement* '()]
-                     [kvs : (Listof (Pairof ObjectKey ILExpr)) '()])
-                    ([k (cast keys (Listof Quote))]
-                     [v (cast vals (Listof Expr))])
+          (for/fold ([stms '()]
+                     [kvs '()])
+                    ([k keys]
+                     [v vals])
             (define-values (s* v*) (absyn-expr->il v #f))
             (values (append stms s*)
-                    (append kvs (list (cons (cast (Quote-datum k) ObjectKey)
+                    (append kvs (list (cons (Quote-datum k)
                                             v*))))))
         (values stms* (ILObject items*))]
-       [(list (Quote 'throw) e)
+       [`(,fst ,e)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'throw)) 
         (define-values (stms val) (absyn-expr->il e #f))
         (values (append1 stms (ILThrow val)) (ILValue (void)))]
-       [(list (Quote 'typeof) e)
+       [`(,fst ,e)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'typeof))
         (define-values (stms val) (absyn-expr->il e #f))
         (values stms (ILTypeOf val))]
-       [(list (Quote 'instanceof) e t)
+       [`(,fst ,e ,t)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'instanceof))
         ;;TODO: Not ANF.
         (define-values (stms val) (absyn-expr->il e #f))
         (define-values (tstms tval) (absyn-expr->il t #f))
         (values (append stms tstms) (ILInstanceOf val tval))]
-       [(list (Quote 'operator) (Quote oper) e0 e1)
+       [`(,fst ,snd ,e0 ,e1)
+        #:when (and (Quote? fst)
+                    (Quote? snd)
+                    (eq? (Quote-datum fst) 'operator))
+        (struct-match-define (Quote oper) snd)
         ;;TODO: not ANF
         (define-values (stms0 val0) (absyn-expr->il e0 #f))
         (define-values (stms1 val1) (absyn-expr->il e1 #f))
         (values (append stms0 stms1)
-                (ILBinaryOp (cast oper Symbol) (list val0 val1)))]
-       [(list (Quote 'null))
+                (ILBinaryOp oper (list val0 val1)))]
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'null))
         (values '() (ILNull))]
-       [(list (Quote 'undefined))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'undefined))
         (values '() (ILUndefined))]
-       [(list (Quote 'arguments))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'arguments))
         (values '() (ILArguments))]
-       [(list (Quote 'this))
+       [`(,fst)
+        #:when (and (Quote? fst)
+                    (eq? (Quote-datum fst) 'this))
         (values '() (ILThis))]
-       [_ (error 'absyn-expr->il "unknown ffi form" args)])]
+       [`,_ (error 'absyn-expr->il "unknown ffi form" args)])]
 
-    [(PlainApp lam args)
+    [(App lam args)
      ;;NOTE: Comparision operators work only on two operands TODO
      ;;later
-     (: binops (Listof ImportedIdent))
-     (define binops (map (λ ([b : Symbol])
+     (define binops (map (λ (b)
                            (ImportedIdent b '#%kernel #t))
                          '(+ - * /)))
 
-     (: il-app/binop (-> Ident (Listof ILExpr) (U ILApp ILBinaryOp)))
      (define (il-app/binop v arg*)
        (define v-il (let-values ([(_ v) (absyn-expr->il v #f)])
                       v))
@@ -428,16 +376,16 @@
          [(and (equal? v (ImportedIdent '/ '#%kernel #t))
                (length=? arg* 1))
           (ILBinaryOp '/ (cons (ILValue 1) arg*))]
-         [(and (ImportedIdent? v) (member v binops) (>= (length arg* ) 2))
+         [(and (ImportedIdent? v) (member v binops) (>= (length arg*) 2))
           (ILBinaryOp (ImportedIdent-id v) arg*)]
          [else (ILApp v-il arg*)]))
 
      ;; If some arguements produce statement, it may have side effects
      ;; and hence lambda expression should be computed first.
-     (match-define-values (lam+arg-stms (cons lam-val arg-vals) _)
-       (for/fold/last ([stms : ILStatement* '()]
-                       [vals : (Listof ILExpr) '()]
-                       [next-has-stms? : Boolean #f])
+     (define-values (lam+arg-stms lam-part-vals _rst)
+       (for/fold/last ([stms '()]
+                       [vals '()]
+                       [next-has-stms? #f])
                       ([arg last? (reverse (cons lam args))])
          (define-values (s v) (absyn-expr->il arg #f))
          (cond
@@ -459,29 +407,31 @@
                     (cons v vals)
                     (or next-has-stms? (cons? s)))])))
 
+     (match-define `(,lam-val ,arg-vals ...) lam-part-vals)
+
      (if (Ident? lam)
          (values lam+arg-stms
                  (il-app/binop lam arg-vals))
          (values lam+arg-stms
                  (ILApp lam-val arg-vals)))]
 
-    [(TopId id) (values '() id)] ;; FIXME: rename top-levels?
-
     [(Quote datum) (values '() (absyn-value->il datum))]
     ;; Begin Statements
 
-    [(cons hd '())
+    [_ #:when (and (pair? expr) (null? (cdr expr)))
+     (match-define `(,hd) expr)
      (cond
        [(Expr? hd) (absyn-expr->il hd overwrite-mark-frame?)]
        [else (error "last datum in body must be expression")])]
 
-    [(cons hd tl)
+    [_ #:when (pair? expr)
+     (match-define `(,hd . ,tl) expr)
      (define hd-stms (absyn-top-level->il hd))
      (define-values (tl-stms v) (absyn-expr->il tl overwrite-mark-frame?))
      (values (append hd-stms tl-stms)
              v)]
 
-    ['() (values '() (ILValue (void)))]
+    [_ #:when (null? expr) (values '() (ILValue (void)))]
 
     [(LocalIdent id) (values '() id)]
 
@@ -497,7 +447,7 @@
     [(ImportedIdent id src_ reachable?)
      ;; FIXME?: Racket7 workaround
      (define src
-       (if (and (version<=? "7.0" (version))
+       (if (and (< (get-major-version (substring (version) 0 1)) 7)
                 (equal? src_ '#%runtime))
            '#%kernel
            src_))
@@ -520,8 +470,8 @@
      (cond
        [(and (or (symbol? (current-source-file))
                  (path? (current-source-file)))
-             (equal? (actual-module-path (cast (current-source-file) ModuleName))
-                     (actual-module-path (cast src ModuleName))))
+             (equal? (actual-module-path (current-source-file))
+                     (actual-module-path src)))
         (absyn-expr->il (LocalIdent id) overwrite-mark-frame?)]
        [(false? reachable?)
         ;; Probably a macro-introduced binding.
@@ -532,7 +482,7 @@
                                          (log-rjs-warning "missing unreachable binding ~s ~s" id* src)
                                          src)))
         (values '()
-                (ILRef (ILRef (assert mod-obj-name symbol?)
+                (ILRef (ILRef mod-obj-name
                               *quoted-binding-ident-name*)
                        id*))]
        [else
@@ -540,9 +490,11 @@
                                        (lambda ()
                                          (log-rjs-warning "missing reachable binding ~s ~s" id* src)
                                          src)))
-        (values '() (ILRef (assert mod-obj-name symbol?) id*))])]
+        (values '() (ILRef mod-obj-name id*))])]
 
-    [(WithContinuationMark key _ (and (WithContinuationMark key _ _) wcm))
+    [(WithContinuationMark key _fst wcm) #:when (WithContinuationMark? wcm)
+     (struct-match-define (WithContinuationMark key _snd _thd) wcm)
+
      ;; Overwrites previous key
      (absyn-expr->il wcm overwrite-mark-frame?)]
 
@@ -586,20 +538,18 @@
     [_ (error (~a "unsupported expr " expr))]))
 
 
-(: absyn-binding->il (-> Binding ILStatement*))
 (define (absyn-binding->il b)
-  (match-define (cons args expr) b)
+  (match-define `(,args . ,expr) b)
   (define-values (stms v) (absyn-expr->il expr #f))
   (match args
-    [(list a)
+    [`(,a)
      (append1 stms
               (ILVarDec a v))]
-    [_
+    [`,_
      (define result-id (fresh-id 'let_result))
-     (: binding-stms ILStatement*)
      (define binding-stms
-       (for/list ([i : Natural (range (length args))]
-                  [arg : Symbol args])
+       (for/list ([i (range (length args))]
+                  [arg args])
          (ILVarDec arg (ILApp (ILRef result-id 'getAt)
                               (list (ILValue i))))))
      (append stms
@@ -607,7 +557,6 @@
                    binding-stms))]))
 
 
-(: absyn-value->il (-> Any ILExpr))
 (define (absyn-value->il d)
   (cond
     [(Quote? d) (absyn-value->il (Quote-datum d))]
@@ -634,9 +583,8 @@
             (list
              (ILArray
               (map absyn-value->il
-                   (vector->list (cast d (Vectorof Any)))))))]
+                   (vector->list d)))))]
     [(hash? d)
-     (: maker Symbol)
      (define maker (cond
                      [(hash-eq? d) 'Hash.makeEq]
                      [(hash-eqv? d) 'Hash.makeEqv]
@@ -669,41 +617,38 @@
      (ILValue d)]
     [else (error (~a "unsupported value" d))]))
 
-(: expand-normal-case-lambda (-> (Listof PlainLambda)
-                                 (Listof PlainLambda)
-                                 (Values ILStatement* ILExpr)))
 (define (expand-normal-case-lambda fixed-lams rest-lams)
-  (define fixed-lam-names : (Listof Symbol)
+  (define fixed-lam-names
     (build-list (length fixed-lams) (λ (_) (fresh-id 'cl))))
-  (define rest-lam-names : (Listof Symbol)
+  (define rest-lam-names
     (build-list (length rest-lams) (λ (_) (fresh-id 'cl))))
 
   (define fixed-lam-name (fresh-id 'fixed-lam))
   (define fixed-lam-map
-    (ILObject (map (λ ([id : Symbol] [lam : PlainLambda])
+    (ILObject (map (λ (id lam)
                      (let ([arity (lambda-arity lam)])
                        (if (number? arity)
                            (cons (string->symbol (~a arity)) id)
                            (error 'expand-normal-case-lambda "assertion failed"))))
                    fixed-lam-names fixed-lams)))
 
-  (define *null* (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'null))))
-  (define *arguments* (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'arguments))))
+  (define *null* (App (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'null))))
+  (define *arguments* (App (ImportedIdent '#%js-ffi '#%kernel #t) (list (Quote 'arguments))))
 
   (define-values (var-lam-stms var-lam-val)
     (absyn-expr->il
-     (let loop : Expr ([lams*   rest-lams]
-                       [names*  rest-lam-names])
+     (let loop ([lams*   rest-lams]
+                [names*  rest-lam-names])
           (match (list lams* names*)
-            [(list '() '()) (PlainApp (ImportedIdent 'error '#%kernel #t)
-                                      (list (Quote "case-lambda: invalid case")))]
-            [(list (cons lh lt) (cons nh nt))
-             (define arguments-length (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t)
+            [`(() ()) (App (ImportedIdent 'error '#%kernel #t)
+                           (list (Quote "case-lambda: invalid case")))]
+            [`((,lh . ,lt) (,nh . ,nt))
+             (define arguments-length (App (ImportedIdent '#%js-ffi '#%kernel #t)
                                                 (list (Quote 'ref)
                                                       (LocalIdent nh)
                                                       (Quote 'length))))
              (If ((get-formals-predicate lh) arguments-length)
-                 (PlainApp (PlainApp (ImportedIdent '#%js-ffi '#%kernel #t)
+                 (App (App (ImportedIdent '#%js-ffi '#%kernel #t)
                                      (list (Quote 'ref)
                                            (LocalIdent nh)
                                            (Quote 'apply)))
@@ -721,25 +666,24 @@
                 (append1 var-lam-stms
                          (ILReturn var-lam-val)))))
 
-  (let ([make-lam (λ ([id : Symbol] [lam : PlainLambda])
+  (let ([make-lam (λ (id lam)
                     (define-values (stms lam-expr) (absyn-expr->il lam #f))
-                    (assert stms empty?)
+                    stms
                     (ILVarDec id lam-expr))])
     (values (append (map make-lam fixed-lam-names fixed-lams)
                     (map make-lam rest-lam-names rest-lams))
             (ILLambda '() dispatch-stms))))
 
-(: case-lambda-has-dead-clause? (-> CaseLambda Boolean))
 ;; Returns true if the given case-lambda has an unreachable clause.
 ;; Eg. (case-lambda
 ;;       [(a . b) "take at-least 1"]
 ;;       [(a b) "take exactly 2"])
 (define (case-lambda-has-dead-clause? clam)
   (define-values (result _)
-    (for/fold : (Values Boolean Number)
-              ([res : Boolean #f]
-               [least-var-arity : Real +inf.0])
-              ([lam (CaseLambda-clauses clam)])
+    (for/fold
+      ([res #f]
+       [least-var-arity +inf.0])
+      ([lam (CaseLambda-clauses clam)])
       (let ([arity (lambda-arity lam)])
         (cond
           [(and (number? arity) (< arity least-var-arity))
@@ -756,64 +700,59 @@
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '(a) '() #f)
-                  (PlainLambda '(a b) '() #f)
-                  (PlainLambda '((a) . c) '() #f))))
+                  (Lambda '(a) '() #f)
+                  (Lambda '(a b) '() #f)
+                  (Lambda '((a) . c) '() #f))))
                "all clauses are reachable")
   (check-false (case-lambda-has-dead-clause?
                 (CaseLambda
                  (list
-                  (PlainLambda '((a b c) . d) '() #f)
-                  (PlainLambda '(a b) '() #f))))
+                  (Lambda '((a b c) . d) '() #f)
+                  (Lambda '(a b) '() #f))))
                "all clauses are reachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '((a b c) . d) '() #f)
-                 (PlainLambda '(a b c) '() #f))))
+                 (Lambda '((a b c) . d) '() #f)
+                 (Lambda '(a b c) '() #f))))
               "last clauses is unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(() . a) '() #f)
-                 (PlainLambda '((a) . c) '() #f)
-                 (PlainLambda '(a b) '() #f))))
+                 (Lambda '(() . a) '() #f)
+                 (Lambda '((a) . c) '() #f)
+                 (Lambda '(a b) '() #f))))
               "second and third clause are unreachable")
   (check-true (case-lambda-has-dead-clause?
                (CaseLambda
                 (list
-                 (PlainLambda '(a) '() #f)
-                 (PlainLambda '((a) . c) '() #f)
-                 (PlainLambda '(a b) '() #f))))
+                 (Lambda '(a) '() #f)
+                 (Lambda '((a) . c) '() #f)
+                 (Lambda '(a b) '() #f))))
               "third clause is unreachable"))
 
-(: get-formals-predicate (-> PlainLambda (-> Expr Expr)))
 (define (get-formals-predicate c)
   ;; TODO: Use binary ops instead of function call for cmp
-  (define frmls (PlainLambda-formals c))
+  (define frmls (Lambda-formals c))
   (define length-js-name (ImportedIdent 'length '#%kernel #t))
   (cond
     [(symbol? frmls) (λ (_) (Quote #t))]
     [(list? frmls)
-     (λ ([v : Expr])
-       (PlainApp (ImportedIdent 'equal? '#%kernel #t)
+     (λ (v)
+       (App (ImportedIdent 'equal? '#%kernel #t)
                  (list
                   v
                   (Quote (length frmls)))))]
     [(cons? frmls)
-     (λ ([v : Expr])
-       (PlainApp (ImportedIdent '>= '#%kernel #t)
+     (λ (v)
+       (App (ImportedIdent '>= '#%kernel #t)
                  (list
                   v
                   (Quote (sub1
                           (length
                            (improper->proper frmls)))))))]))
 
-(define-type ProcedureArity (U arity-at-least Exact-Nonnegative-Integer))
-(: resolve-procedure-arities (-> (Listof ProcedureArity)
-                                 (Listof ProcedureArity)))
 (define (resolve-procedure-arities arities)
-  (: arity< (-> ProcedureArity ProcedureArity Boolean))
   (define (arity< a b)
     (< (if (arity-at-least? a)
            (arity-at-least-value a)
@@ -822,29 +761,26 @@
            (arity-at-least-value b)
            b)))
 
-  (: arity-equal? (-> ProcedureArity ProcedureArity Boolean))
   (define (arity-equal? a b)
     (and (not (arity< a b))
          (not (arity< b a))))
 
   (let loop ([arities* (sort arities arity<)]
-             [result : (Listof ProcedureArity) '()])
+             [result '()])
     (match arities*
-      ['() (reverse result)]
-      [(cons (and (arity-at-least v) hd) tl)
+      [`() (reverse result)]
+      [`(,hd . ,tl) #:when (arity-at-least? hd)
        (reverse (if (and (cons? result) (arity-equal? (car result) hd))
                     (cons hd (cdr result))
                     (cons hd result)))]
-      [(cons hd tl)
+      [`(,hd . ,tl)
        (loop tl (if (and (cons? result) (arity-equal? (car result) hd))
                     result
                     (cons hd result)))])))
 
 (module+ test
-  (require typed/rackunit
-           racket/pretty)
+  (require rackunit)
 
-  (: -absyn-expr->il (-> Expr (Values ILStatement* ILExpr)))
   (define (-absyn-expr->il expr)
     (absyn-expr->il expr #f))
 
@@ -869,12 +805,8 @@
     (ilcheck absyn-gtl-form->il form stms))
 
   (define LI LocalIdent)
-  (define LI* (λ s*
-                ((inst map LocalIdent Symbol)
-                 LocalIdent
-                 (cast s* (Listof Symbol)))))
+  (define LI* (λ s* (map LocalIdent s*)))
 
-  (: kident (-> Symbol ImportedIdent))
   (define (kident s) (ImportedIdent s '#%kernel #t))
 
   (define-syntax-rule (convert+print fn absyn)
@@ -887,18 +819,15 @@
   ;; enable test environment
   (test-environment? #t)
 
-  (: ~str (-> String ILExpr))
   (define (~str s)
     (ILApp
      (name-in-module 'core 'UString.make)
      (list (ILValue s))))
 
-  (: ~sym (-> Symbol ILExpr))
   (define (~sym s)
     (ILApp
      (name-in-module 'core 'PrimitiveSymbol.make) (list (ILValue (symbol->string s)))))
 
-  (: ~cons (-> ILExpr ILExpr ILExpr))
   (define (~cons a b)
     (ILApp (name-in-module 'core 'Pair.make) (list a b)))
 
@@ -932,10 +861,10 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Lambda Expressions"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
+    (check-ilexpr (Lambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda '(x) (list (ILReturn 'x))))
-    (check-ilexpr (PlainLambda 'x (LI* 'x) #t)
+    (check-ilexpr (Lambda 'x (LI* 'x) #t)
                   '()
                   (ILApp
                    (name-in-module 'core 'attachProcedureArity)
@@ -963,14 +892,14 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Lambda expressions"
-    (check-ilexpr (PlainLambda '(x) (LI* 'x) #t)
+    (check-ilexpr (Lambda '(x) (LI* 'x) #t)
                   '()
                   (ILLambda
                    '(x)
                    (list (ILReturn 'x))))
-    (check-ilexpr (PlainLambda '(a b)
+    (check-ilexpr (Lambda '(a b)
                                (list
-                                (PlainApp (LocalIdent 'list)
+                                (App (LocalIdent 'list)
                                           (LI* 'a 'b)))
                                #t)
                   '()
@@ -993,11 +922,11 @@
                                              (Quote 'yes)
                                              (Quote 'false)))
                                    (cons '(b)
-                                         (PlainApp (kident '+)
+                                         (App (kident '+)
                                                    (list
                                                     (Quote 1)
                                                     (Quote 2)))))
-                             (list (PlainApp (LocalIdent 'list)
+                             (list (App (LocalIdent 'list)
                                              (LI* 'a 'b))))
                   (list
                    (ILIf (ILBinaryOp '!== (list (~val #t) (~val #f)))
@@ -1010,16 +939,16 @@
   ;; --------------------------------------------------------------------------
 
   (test-case "Identify binary operators"
-    (check-ilexpr (PlainApp (kident '+) '())
+    (check-ilexpr (App (kident '+) '())
                   '()
                   (ILApp (ILRef 'kernel '+) '()))
-    (check-ilexpr (PlainApp (kident '/) '())
+    (check-ilexpr (App (kident '/) '())
                   '()
                   (ILApp (ILRef 'kernel '/) '()))
-    (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
+    (check-ilexpr (App (kident '+) (list (Quote 1) (Quote 2)))
                   '()
                   (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
-    (check-ilexpr (PlainApp (kident '-) (list (Quote 1)
+    (check-ilexpr (App (kident '-) (list (Quote 1)
                                               (Quote 2)
                                               (Quote 3)))
                   '()
@@ -1044,10 +973,10 @@
     (check-ilexpr
      (CaseLambda
       (list
-       (PlainLambda '(a b) (list (PlainApp (kident 'add)
+       (Lambda '(a b) (list (App (kident 'add)
                                            (LI* 'a 'b)))
                     #t)
-       (PlainLambda '(a b c) (list (PlainApp (kident 'mul)
+       (Lambda '(a b c) (list (App (kident 'mul)
                                              (LI* 'a 'b 'c)))
                     #t)))
      (list
@@ -1088,19 +1017,19 @@
 
   (test-case "Foreign Function Interface"
     (check-ilexpr
-     (PlainApp absyn-js-ffi (list (Quote 'var) (Quote 'console)))
+     (App absyn-js-ffi (list (Quote 'var) (Quote 'console)))
      '()
      'console)
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'ref) (Quote 'obj) (Quote 'key1) (Quote 'key2)))
      '()
      (ILRef (ILRef (~sym 'obj) 'key1) 'key2))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'ref)
             (LocalIdent 'obj) (Quote 'key1) (Quote 'key2)))
@@ -1108,16 +1037,16 @@
      (ILRef (ILRef 'obj 'key1) 'key2))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'index)
             (Quote 'obj)
-            (PlainApp (LocalIdent 'do) (list (Quote "Hello!")))))
+            (App (LocalIdent 'do) (list (Quote "Hello!")))))
      '()
      (ILIndex (~sym 'obj) (ILApp 'do (list (~str "Hello!")))))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'object)
             (Quote 'key1) (Quote 'key2) (Quote 'key3)
@@ -1128,7 +1057,7 @@
                      (cons 'key3 (~sym 'val3)))))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'array)
             (Quote 1) (Quote 2) (Quote 3)))
@@ -1136,7 +1065,7 @@
      (ILArray (list (ILValue 1) (ILValue 2) (ILValue 3))))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'assign)
             (LocalIdent 'name) (Quote "John Doe")))
@@ -1144,21 +1073,21 @@
      (ILValue (void))) ;;TODO: FFI special case!
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'new) (LocalIdent 'Array)))
      '()
      (ILNew 'Array))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'throw) (Quote "What")))
      (list (ILThrow (~str "What")))
      (ILValue (void)))
 
     (check-ilexpr
-     (PlainApp
+     (App
       absyn-js-ffi
       (list (Quote 'operator) (Quote '+) (Quote 1) (Quote 2)))
      '()
@@ -1168,8 +1097,8 @@
 
   (test-case "Top Level Forms"
     (check-iltoplevel
-     (list (PlainApp (kident 'display) (list (Quote "hello")))
-           (PlainApp (kident 'print) (list (Quote "what" )
+     (list (App (kident 'display) (list (Quote "hello")))
+           (App (kident 'print) (list (Quote "what" )
                                            (LocalIdent 'out))))
      (list
       (ILApp (ILRef 'kernel 'display) (list (~str "hello")))
@@ -1184,9 +1113,9 @@
 
     (check-ilgtl
      (DefineValues '(x ident)
-       (PlainApp (kident 'values)
+       (App (kident 'values)
                  (list (Quote 42)
-                       (PlainLambda '(x) (LI* 'x) #t))))
+                       (Lambda '(x) (LI* 'x) #t))))
      (list
       (ILVarDec
        'let_result1

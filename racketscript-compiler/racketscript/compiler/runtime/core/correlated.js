@@ -48,4 +48,3 @@ export function syntaxPosition(v) { return false; }
 
 /* eslint no-unused-vars: ["error", { "args": "none" }] */
 export function syntaxSpan(v) { return false; }
-
