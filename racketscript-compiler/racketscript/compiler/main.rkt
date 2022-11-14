@@ -221,70 +221,64 @@
        (= (get-module-timestamp ts mod)
           (file-or-directory-modify-seconds (actual-module-path mod)))))
 
-;; -> Void
+;; -> (Setof Path)
 ;; For given global parameters starts build process starting
-;; with entry point module and all its dependencies
+;; with entry point module and all its dependencies. Returns
+;; a set module paths that were compiled (typically ignored).
 (define (racket->js)
   (define added (mutable-set))
   (define pending (make-queue))
-
-  ;; build directories to output build folder.
-  (define default-module-name (string-slice (~a (last-path-element
-                                                 (main-source-file)))
-                                            0 -4))
-  (prepare-build-directory default-module-name)
-
   (define (put-to-pending! mod)
     (unless (set-member? added mod)
       (set-add! added mod)
       (enqueue! pending mod)))
 
-  (define timestamps (load-cached-module-timestamps))
+  (define default-module-name (string-slice (~a (last-path-element
+                                                 (main-source-file)))
+                                            0 -4))
+  (prepare-build-directory default-module-name)
 
   (put-to-pending! (path->complete-path (main-source-file)))
   (for ([pm primitive-modules])
     (put-to-pending! pm))
 
-  ;; Add stale modules to the compile queue.
+  (define timestamps (load-cached-module-timestamps))
   (for ([(mod timestamp) timestamps])
     (when (not (skip-module-compile? timestamps mod))
       (put-to-pending! mod)))
 
-  (let loop ([compiled-modules empty])
-    (define next (and (non-empty-queue? pending) (dequeue! pending)))
-    (cond
-      [(and next (skip-module-compile? timestamps next))
-       (log-rjs-info (~a "Skipping " next))
-       (loop compiled-modules)]
-      [next
-       (current-source-file next)
-       (make-directory* (path-only (module-output-file next)))
-       (save-module-timestamp! timestamps next)
+  (define compiled-modules
+    (for/set ([next (in-queue pending)]
+              #:unless (and (skip-module-compile? timestamps next)
+                            (log-rjs-info (~a "Skipping " next))))
 
-       (define expanded (quick-expand next))
-       (define ast (convert expanded (override-module-path next)))
+      (current-source-file next)
+      (make-directory* (path-only (module-output-file next)))
+      (save-module-timestamp! timestamps next)
 
-       (assemble-module (insert-arity-checks
-                         (absyn-module->il* ast))
-                        #f)
+      (define expanded (quick-expand next))
+      (define ast (convert expanded (override-module-path next)))
+      (assemble-module (insert-arity-checks
+                        (absyn-module->il* ast))
+                       #f)
 
-       ;; Run JS beautifier
-       (when (js-output-beautify?)
-         (system (format "js-beautify -r ~a" (module-output-file next))))
+      (when (js-output-beautify?)
+        (system (format "js-beautify -r ~a" (module-output-file next))))
 
-       (for ([mod (in-set (Module-imports ast))])
-         (match mod
-           [(? symbol? _) (void)]
-           [_ #:when (collects-module? mod) (void) (put-to-pending! mod)]
-           [_ (put-to-pending! mod)]))
-       (loop (cons next compiled-modules))]
-      [(false? next)
-       (dump-module-timestamps! timestamps)
-       (unless (equal? (js-target) "plain")
-         (log-rjs-info "Running NPM [Install/Build].")
-         (npm-install-build))
-       (log-rjs-info "Finished.")
-       compiled-modules])))
+      (for ([mod (in-set (Module-imports ast))])
+        (match mod
+          [(? symbol? _) (void)]
+          [_ #:when (collects-module? mod) (put-to-pending! mod)]
+          [_ (put-to-pending! mod)]))
+
+      next))
+
+  (dump-module-timestamps! timestamps)
+  (unless (equal? (js-target) "plain")
+    (log-rjs-info "Running NPM [Install/Build].")
+    (npm-install-build))
+  (log-rjs-info "Finished.")
+  compiled-modules)
 
 ;; String -> String
 (define (js-string-beautify js-str)
@@ -421,9 +415,7 @@
       (if (js-output-beautify?)
           (js-string-beautify (get-output-string output-string))
           (get-output-string output-string)))]
-    ['complete (racket->js)])
-
-  (void))
+    ['complete (racket->js) (void)]))
 
 (module+ test
   (require rackunit)
@@ -450,7 +442,7 @@
       ;; Change dependency's modification time to simulate
       ;; an edit to the source file.
       (file-or-directory-modify-seconds dependency 200)
-      (check-true (ormap (lambda (mod) (equal? mod dependency))
-                         (racket->js))
+      (check-true (set-member? (racket->js)
+                               dependency)
                   "stale dependency not recompiled."))
     (delete-directory/files (output-directory))))
