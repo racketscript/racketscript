@@ -8,7 +8,7 @@
     ["racket" "6.4"]
     "typed-racket-lib"
     "typed-racket-more"
-    "threading"
+    "threading-lib"
     "graph-lib"
     "anaphoric"))
 
