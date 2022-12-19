@@ -197,6 +197,8 @@
 (define-checked+provide (bitwise-not [v number?])
   (#js.Core.Number.bitwiseNot v))
 
+(define+provide (bitwise-bit-set? n m)
+  (not (zero? (bitwise-and n (arithmetic-shift 1 m)))))
 ;; ----------------------------------------------------------------------------
 ;; Booleans
 
@@ -1033,6 +1035,7 @@
 (define-property+provide prop:serialize)
 (define-property+provide prop:custom-write)
 (define-property+provide prop:sealed)
+(define-property+provide prop:object-name)
 
 (define+provide prop:procedure #js.Core.Struct.propProcedure)
 (define+provide prop:equal+hash #js.Core.Struct.propEqualHash)
@@ -1219,8 +1222,6 @@
   (v-λ (x n)
        "str" #;(#js.x.toString)))
 
-(define+provide (procedure-arity-mask fn) (procedure-arity fn))
-(define+provide (bitwise-bit-set? mask n) #t)
 (define+provide (procedure-extract-target f) #f)
 
 ;; --------------------------------------------------------------------------
@@ -1299,6 +1300,14 @@
                (or (exact-nonnegative-integer? v)
                    (kernel:arity-at-least? v)))
              v)))
+
+(define+provide (procedure-arity-mask fn)
+  (let ([ar (procedure-arity fn)])
+    (cond
+      [(integer? ar)
+       (arithmetic-shift 1 ar)]
+      [(kernel:arity-at-least? ar)
+       (arithmetic-shift -1 (kernel:arity-at-least-value ar))])))
 
 (define+provide (checked-procedure-check-and-extract type v proc v1 v2)
   (cond
