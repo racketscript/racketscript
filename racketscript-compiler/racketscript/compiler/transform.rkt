@@ -606,9 +606,10 @@
              (cons (ILVarDec result-id v)
                    binding-stms))]))
 
-
 (: absyn-value->il (-> Any ILExpr))
 (define (absyn-value->il d)
+  ;; Order here matters. For example, a list is always a cons
+  ;; but a cons is not always a list.
   (cond
     [(Quote? d) (absyn-value->il (Quote-datum d))]
     [(string? d)
@@ -620,11 +621,11 @@
     [(keyword? d)
      (ILApp (name-in-module 'core 'Keyword.make)
             (list (ILValue (keyword->string d))))]
+    [(empty? d)
+     (name-in-module 'core 'Pair.EMPTY)]
     [(list? d)
      (ILApp (name-in-module 'core 'Pair.makeList)
             (map absyn-value->il d))]
-    [(empty? d)
-     (name-in-module 'core 'Pair.EMPTY)]
     [(cons? d)
      (ILApp (name-in-module 'core 'Pair.make)
             (list (absyn-value->il (car d))
