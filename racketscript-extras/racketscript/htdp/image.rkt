@@ -124,18 +124,6 @@
 (define (image-height i)  #js.i.height)
 (define (image-width i)   #js.i.width)
 
-(define-proto EmptyScene
-  (λ (width height borders?)
-    #:with-this this
-    (set-object! this
-                 [type      "empty-scene"]
-                 [width     width]
-                 [height    height]
-                 [borders?  borders?]))
-  [render (λ (ctx x y)
-            ;; TODO: borders?
-            (void))])
-
 (define-proto Text
   (λ (text size color face family style weight underline?)
     #:with-this this
@@ -281,7 +269,8 @@
              (loop (cdr points)))))))])
 
 (define (empty-scene width height)
-  (new (EmptyScene width height #f)))
+  (overlay (rectangle width height 'solid 'white)
+           (rectangle width height 'outline 'black)))
 
 (define (text txt size color)
   (new (Text txt
