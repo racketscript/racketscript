@@ -1,35 +1,65 @@
 #lang racketscript/boot
 
-(require racketscript/interop "lib.rkt" (for-syntax syntax/parse))
+(require racketscript/interop
+         racketscript/compiler/directive
+         "kernel.rkt"
+         "lib.rkt"
+         (for-syntax syntax/parse))
 
-(define+provide fl*  (#js.Core.attachProcedureArity #js.Core.Number.mul 0))
-(define+provide fl/  (#js.Core.attachProcedureArity #js.Core.Number.div 1))
-(define+provide fl+  (#js.Core.attachProcedureArity #js.Core.Number.add 0))
-(define+provide fl-  (#js.Core.attachProcedureArity #js.Core.Number.sub 1))
-(define+provide fl<  (#js.Core.attachProcedureArity #js.Core.Number.lt 1))
-(define+provide fl>  (#js.Core.attachProcedureArity #js.Core.Number.gt 1))
-(define+provide fl<= (#js.Core.attachProcedureArity #js.Core.Number.lte 1))
-(define+provide fl>= (#js.Core.attachProcedureArity #js.Core.Number.gte 1))
-(define+provide fl=  (#js.Core.attachProcedureArity #js.Core.Number.equals 1))
+(define+provide fl*  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.multiply
+                                                                       #js.Core.Number.JS.mul ) 0))
+(define+provide fl/  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.divide
+                                                                       #js.Core.Number.JS.div ) 1))
+(define+provide fl+  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.add
+                                                                       #js.Core.Number.JS.add ) 0))
+(define+provide fl-  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.subtract
+                                                                       #js.Core.Number.JS.sub ) 1))
+(define+provide fl<  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.lessThan
+                                                                       #js.Core.Number.JS.lt ) 1))
+(define+provide fl>  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.greaterThan
+                                                                       #js.Core.Number.JS.gt ) 1))
+(define+provide fl<= (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.lessThanOrEqual
+                                                                       #js.Core.Number.JS.lte ) 1))
+(define+provide fl>= (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.greaterThanOrEqual
+                                                                       #js.Core.Number.JS.gte ) 1))
+(define+provide fl=  (#js.Core.attachProcedureArity (if-scheme-numbers #js.Core.Number.Scheme.approxEquals
+                                                                       #js.Core.Number.JS.equals ) 1))
 
-(define+provide flabs #js.Math.abs)
-(define+provide flmin #js.Math.min)
-(define+provide flmax #js.Math.max)
-(define+provide flround #js.Math.round)
-(define+provide flfloor #js.Math.floor)
-(define+provide flceiling #js.Math.ceil)
-(define+provide fltruncate #js.Math.trunc)
+(define+provide flabs (if-scheme-numbers #js.Core.Number.Scheme.abs
+                                         #js.Math.abs))
+(define+provide flmin (if-scheme-numbers min
+                                         #js.Math.min))
+(define+provide flmax (if-scheme-numbers max
+                                         #js.Math.max))
+(define+provide flround (if-scheme-numbers round
+                                           #js.Math.round))
+(define+provide flfloor (if-scheme-numbers floor
+                                           #js.Math.floor))
+(define+provide flceiling (if-scheme-numbers ceiling
+                                             #js.Math.ceil))
+(define+provide fltruncate (if-scheme-numbers truncate
+                                              #js.Math.trunc))
 
-(define+provide flsin #js.Math.sin)
-(define+provide flcos #js.Math.cos)
-(define+provide fltan #js.Math.tan)
-(define+provide flasin #js.Math.asin)
-(define+provide flacos #js.Math.acos)
-(define+provide flatan #js.Math.atan)
-(define+provide fllog #js.Math.log)
-(define+provide flexp #js.Math.exp)
-(define+provide flsqrt #js.Math.sqrt)
-(define+provide flexpt #js.Math.pow)
+(define+provide flsin (if-scheme-numbers sin
+                                         #js.Math.sin))
+(define+provide flcos (if-scheme-numbers cos
+                                         #js.Math.cos))
+(define+provide fltan (if-scheme-numbers tan
+                                         #js.Math.tan))
+(define+provide flasin (if-scheme-numbers asin
+                                          #js.Math.asin))
+(define+provide flacos (if-scheme-numbers acos
+                                          #js.Math.acos))
+(define+provide flatan (if-scheme-numbers atan
+                                          #js.Math.atan))
+(define+provide fllog (if-scheme-numbers log
+                                         #js.Math.log))
+(define+provide flexp (if-scheme-numbers exp
+                                         #js.Math.exp))
+(define+provide flsqrt (if-scheme-numbers sqrt
+                                          #js.Math.sqrt))
+(define+provide flexpt (if-scheme-numbers expt
+                                          #js.Math.pow))
   
 (define-binop bitwise-or \|)
 
@@ -77,7 +107,7 @@
 (define-fx-binop+provide fxand     &&)
 (define-fx-binop+provide fxior     \|\|)
 (define-fx-binop+provide fxxor     ^)
-(define+provide fxnot                     #js.Core.bitwiseNot)
+(define+provide fxnot #js.Core.bitwiseNot)
 
 (define+provide flvector #js.Array.from) ; just create regular array
 (define+provide flvector? #js.Array.isArray)

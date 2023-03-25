@@ -4,6 +4,7 @@
         "ecmaVersion": 2017,
         "sourceType": "module"
     },
+    "ignorePatterns": ["**/scheme-numbers.js"],
     "rules": {
         "indent": ["error", 4],
         "import/extensions": ["error", "always"],

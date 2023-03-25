@@ -235,7 +235,7 @@ class StructTypeDescriptor extends PrintablePrimitive {
             C.falsy(
                 options.superType._isSealed(),
                 racketCoreError,
-                'make-struct-type: cannot make a subtype of a sealed type',
+                'make-struct-type: cannot make a subtype of a sealed type'
             );
             this._totalInitFields += options.superType._totalInitFields;
         }

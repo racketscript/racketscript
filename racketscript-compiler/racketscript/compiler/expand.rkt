@@ -369,14 +369,10 @@
     [_ #:when (prefab-struct-key (syntax-e v)) #f] ;; TODO: No error to compile FFI
     [_ #:when (box? (syntax-e v)) (box (parameterize ([quoted? #t])
                                          (to-absyn (unbox (syntax-e v)))))]
-    [_ #:when (exact-integer? (syntax-e v))
-       (Quote (syntax-e v))]
     [_ #:when (boolean? (syntax-e v)) (Quote (syntax-e v))]
     [_ #:when (keyword? (syntax-e v)) (Quote (syntax-e v))]
     [(~or (~datum +inf.0) (~datum -inf.0) (~datum nan.0))
      (Quote (syntax-e v))]
-    [_ #:when (real? (syntax-e v)) (Quote (syntax-e v))]
-    [_ #:when (complex? (syntax-e v)) #f]
     [_ #:when (char? (syntax-e v))
        (Quote (syntax-e v))]
     [_ #:when (regexp? (syntax-e v))

@@ -315,6 +315,17 @@
                         (ILAssign id v)))
              (ILValue (void)))]
 
+    [(PlainApp (ImportedIdent '#%rs-compiler _ _) args)
+     (match args
+       [(list (Quote 'if-scheme-numbers) consequent alternate)
+        (if (use-scheme-numbers?)
+            (absyn-expr->il consequent #f)
+            (absyn-expr->il alternate #f))]
+       [(list (Quote 'if-scheme-numbers) consequent)
+        (if (use-scheme-numbers?)
+            (absyn-expr->il consequent #f)
+            (values '() (ILValue (void))))]
+       [else (error 'absyn-expr->il "unknown RS compiler directive" args)])]
     [(PlainApp (ImportedIdent '#%js-ffi _ _) args)
      (match args
        [(list (Quote 'var) (Quote var))
@@ -421,16 +432,18 @@
      (define (il-app/binop v arg*)
        (define v-il (let-values ([(_ v) (absyn-expr->il v #f)])
                       v))
-       (cond
-         [(and (equal? v (ImportedIdent '- '#%kernel #t))
-               (length=? arg* 1))
-          (ILApp v-il arg*)]
-         [(and (equal? v (ImportedIdent '/ '#%kernel #t))
-               (length=? arg* 1))
-          (ILBinaryOp '/ (cons (ILValue 1) arg*))]
-         [(and (ImportedIdent? v) (member v binops) (>= (length arg* ) 2))
-          (ILBinaryOp (ImportedIdent-id v) arg*)]
-         [else (ILApp v-il arg*)]))
+       (if (use-scheme-numbers?)
+           (ILApp v-il arg*)
+           (cond
+             [(and (equal? v (ImportedIdent '- '#%kernel #t))
+                   (length=? arg* 1))
+              (ILApp v-il arg*)]
+             [(and (equal? v (ImportedIdent '/ '#%kernel #t))
+                   (length=? arg* 1))
+              (ILBinaryOp '/ (cons (ILValue 1) arg*))]
+             [(and (ImportedIdent? v) (member v binops) (>= (length arg* ) 2))
+              (ILBinaryOp (ImportedIdent-id v) arg*)]
+             [else (ILApp v-il arg*)])))
 
      ;; If some arguements produce statement, it may have side effects
      ;; and hence lambda expression should be computed first.
@@ -618,6 +631,13 @@
     [(symbol? d)
      (ILApp (name-in-module 'core 'PrimitiveSymbol.make)
             (list (ILValue (symbol->string d))))]
+    [(and (complex? d)
+          (not (real? d)))
+     (if (use-scheme-numbers?)
+         (ILApp (name-in-module 'core 'Number.Scheme.makeComplex)
+                (list (absyn-value->il (real-part d))
+                      (absyn-value->il (imag-part d))))
+         (error (~a "Complex numbers not supported with JS number semantics: " d)))]
     [(keyword? d)
      (ILApp (name-in-module 'core 'Keyword.make)
             (list (ILValue (keyword->string d))))]
@@ -663,11 +683,15 @@
      (define v (object-name d)) ; string or bytes
      (ILApp (name-in-module 'core 'Regexp.fromString)
             (list (ILValue (if (bytes? v) (bytes->string/utf-8 v) v))))]
-    [(or (integer? d)
+    [(or (exact-integer? d)
          (boolean? d)
-         (void? d)
-         (real? d))
+         (void? d))
      (ILValue d)]
+    [(real? d)
+     (if (use-scheme-numbers?)
+         (ILApp (name-in-module 'core 'Number.Scheme.makeFloat)
+                (list (ILValue d)))
+         (ILValue d))]
     [else (error (~a "unsupported value" d))]))
 
 (: expand-normal-case-lambda (-> (Listof PlainLambda)
@@ -1005,7 +1029,9 @@
                          (list (ILVarDec 'if_res1 (~sym 'yes)))
                          (list (ILVarDec 'if_res1 (~sym 'false))))
                    (ILVarDec 'a 'if_res1)
-                   (ILVarDec 'b (ILBinaryOp '+ (list (~val 1) (~val 2)))))
+                   (ILVarDec 'b (if (use-scheme-numbers?)
+                                    (ILApp (ILRef 'kernel '+) (list (ILValue 1) (ILValue 2)))
+                                    (ILBinaryOp '+ (list (~val 1) (~val 2))))))
                   (ILApp 'list '(a b))))
 
   ;; --------------------------------------------------------------------------
@@ -1019,14 +1045,19 @@
                   (ILApp (ILRef 'kernel '/) '()))
     (check-ilexpr (PlainApp (kident '+) (list (Quote 1) (Quote 2)))
                   '()
-                  (ILBinaryOp '+ (list (ILValue 1) (ILValue 2))))
+                  (if (use-scheme-numbers?)
+                      (ILApp (ILRef 'kernel '+) (list (ILValue 1) (ILValue 2)))
+                      (ILBinaryOp '+ (list (ILValue 1) (ILValue 2)))))
     (check-ilexpr (PlainApp (kident '-) (list (Quote 1)
                                               (Quote 2)
                                               (Quote 3)))
                   '()
-                  (ILBinaryOp '-
-                              (list
-                               (ILValue 1) (ILValue 2) (ILValue 3)))))
+                  (if (use-scheme-numbers?)
+                      (ILApp (ILRef 'kernel '-)
+                             (list (ILValue 1) (ILValue 2) (ILValue 3)))
+                      (ILBinaryOp '-
+                                  (list
+                                   (ILValue 1) (ILValue 2) (ILValue 3))))))
 
   ;; --------------------------------------------------------------------------
 

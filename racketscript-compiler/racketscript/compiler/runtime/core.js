@@ -8,7 +8,7 @@ import * as UString from './core/unicode_string.js';
 import * as Regexp from './core/regexp.js';
 import * as Hash from './core/hash.js';
 import * as Keyword from './core/keyword.js';
-import * as Number from './core/numbers.js';
+import * as Number from './core/numbers/numbers.js';
 import * as Pair from './core/pair.js';
 import * as Ports from './core/ports.js';
 import * as Primitive from './core/primitive.js';

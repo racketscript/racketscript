@@ -8,7 +8,8 @@
          racketscript/compiler/util
          racketscript/compiler/global
          racketscript/compiler/moddeps
-         racketscript/compiler/il-analyze)
+         racketscript/compiler/il-analyze
+         (for-syntax syntax/parse))
 
 ;; Print Racket and JS output of test programs to stdout
 ;; Also show check failure
@@ -129,19 +130,19 @@
                                  (when (verbose?)
                                    ((error-display-handler) "racket->js failed" e))
                                  #f)])
-      (racket->js)
-      (cond [coverage-mode? (list (list "" "") (list "" ""))]
-            [(js-only?)
-             (define expected-file (path-add-extension fpath ".expected" "."))
-             (define expected
-               (if (file-exists? expected-file)
-                   (file->string expected-file)
-                   ""))
-             (list (list expected "")
-                   (log-and-return 'nodejs (run-in-nodejs fpath)))]
-            [else
-             (list (log-and-return 'racket (run-in-racket fpath))
-                   (log-and-return 'nodejs (run-in-nodejs fpath)))]))))
+      (racket->js))
+    (cond [coverage-mode? (list (list "" "") (list "" ""))]
+          [(js-only?)
+           (define expected-file (path-add-extension fpath ".expected" "."))
+           (define expected
+             (if (file-exists? expected-file)
+                 (file->string expected-file)
+                 ""))
+           (list (list expected "")
+                 (log-and-return 'nodejs (run-in-nodejs fpath)))]
+          [else
+           (list (log-and-return 'racket (run-in-racket fpath))
+                 (log-and-return 'nodejs (run-in-nodejs fpath)))])))
 ;; Path-String -> Void
 ;; Rackunit check for RacketScript. Executes module at file fpath
 ;; in Racket and NodeJS and compare their outputs
@@ -252,53 +253,80 @@
 
   (empty? failed-tests))
 
+(define-syntax (define-test-case stx)
+  (syntax-parse stx
+    [(_ test-name:id
+        (~optional test-desc:string)
+        ([param:id value] ...))
+     #:do [(define test-name-length (syntax-span #'test-name))]
+     #`(define test-name
+         (lambda (paths)
+           (setup)
+           (define passed #t)
+           (define (set-passed! new-value)
+             (set! passed (and passed new-value)))
 
-;; Runs tests with each kind of option
-(define (run tc-search-patterns)
-  (setup)
-  (define passed #t)
-  (define (set-passed! new-value)
-    (set! passed (and passed new-value)))
+           (parameterize ([param value] ...)
+             (displayln 'test-name)
+             (displayln (make-string #,test-name-length #\-))
+             (displayln test-desc)
+             (displayln "")
+             (set-passed! (run-tests paths)))
 
-  (displayln "-> RacketScript Fixtures Runner <-\n")
-  (when coverage-mode? (displayln "Running in coverage mode."))
+           (displayln "")
+           passed))]))
 
-  (unless coverage-mode?
-    (parameterize ([enabled-optimizations (set)])
-      (displayln "---------------------------------")
-      (displayln "::: Optimizations on ::: none :::")
-      (displayln "---------------------------------")
-      (set-passed! (run-tests (filter-not
-                      (λ (s) (string-contains? s "optimize"))
-                      tc-search-patterns)))))
+(define-syntax (run-test-suite stx)
+  (syntax-parse stx
+    [(_ test-case ...+ (~seq #:with paths))
+     #'(and
+         (test-case paths) ...)]
+    [(_ test-case ...+)
+     #'(and
+         (test-case) ...)]))
 
-  ;; (displayln "")
-  ;; (parameterize ([enabled-optimizations (set self-tail->loop)])
-  ;;   (displayln "--------------------------------")
-  ;;   (displayln "::: Optimizations on ::: TCO :::")
-  ;;   (displayln "--------------------------------")
-  ;;   (run-tests tc-search-patterns))
+(define-syntax (fixture-run stx)
+  (define common
+    #'(begin
+        (displayln "")
+        (displayln "-> RacketScript Fixtures Runner <-\n")
+        (when coverage-mode? (displayln "Running in coverage mode."))))
+  (syntax-parse stx
+    [(_ test ...+)
+     #`(begin
+         #,common
+         (unless (andmap (lambda (x) x)
+                         (list test ...))
+           (exit 1)))]))
 
-  ;; (displayln "")
-  ;; (parameterize ([enabled-optimizations (set flatten-if-else)])
-  ;;   (displayln "--------------------------------------------")
-  ;;   (displayln "::: Optimizations on ::: Flatten If-Else :::")
-  ;;   (displayln "-------------------------------------------")
-  ;;   (run-tests tc-search-patterns))
+(define-test-case Baseline
+                "Racket programs without optimization"
+                ([enabled-optimizations (set)]))
 
-  (displayln "")
-  (parameterize ([enabled-optimizations (set flatten-if-else
-                                             self-tail->loop)])
-    (displayln "--------------------------------")
-    (displayln "::: Optimizations on ::: All :::")
-    (displayln "-------------------------------")
-    (set-passed! (run-tests tc-search-patterns)))
+(define-test-case Optimized
+                "Racket programs with all optimizations applied"
+                ([enabled-optimizations (set flatten-if-else
+                                             self-tail->loop)]))
 
-  (unless passed (exit 1)))
+(define-test-case Scheme-Numbers
+                "Racket programs using scheme number semantics"
+                ([enabled-optimizations (set)]
+                 [use-scheme-numbers? #t]))
+
+(define-test-case FFI-Baseline
+                "FFI tests without optimization"
+                ([js-only? #t]))
+
+(define-test-case FFI-Optimized
+                "FFI tests with all optimizations applied"
+                ([js-only? #t]
+                 [enabled-optimizations (set flatten-if-else
+                                             self-tail->loop)]))
 
 (module+ main
-  ;; For setup we keep this on by default, and later turned off
+  (define quick? (make-parameter #f))
 
+  ;; For setup we keep this on by default, and later turned off
   (define tc-search-pattern
     (command-line
      #:program "racketscript-fixture"
@@ -311,10 +339,19 @@
      [("-v" "--verbose") "Show exceptions when running tests."
       (racketscript-stdout? #t)
       (verbose? #t)]
+     [("--js-only") "Compare js output against .expected file."
+      (js-only? #t)]
+     [("--quick") "Only run tests with all optimizations applied."
+      (quick? #t)]
      #:args (p . ps*)
      (cons p ps*)))
 
-  (run tc-search-pattern))
+  (fixture-run
+   (run-test-suite (if (quick?)
+                       void
+                       Baseline)
+                   Optimized
+                   #:with tc-search-pattern)))
 
 (module+ test
   (define-runtime-path fixture-module "fixture.rkt")
@@ -323,14 +360,30 @@
   (define (fixture-path-patterns . paths)
     (for/list ([p paths]) (~a (build-path fixture-module-dir p) "/*.rkt")))
 
-  (run (fixture-path-patterns "racket-core"
-                              "test-the-test"
-                              "basic"
-                              "struct"
-                              "hash"
-                              "wcm"
-                              "modules"
-                              "optimize"
-                              "experimental"))
-  (parameterize ([js-only? #t])
-    (run (fixture-path-patterns "ffi"))))
+  (define basic-tests
+    (fixture-path-patterns
+     "racket-core"
+     "test-the-test"
+     "basic"
+     "struct"
+     "hash"
+     "wcm"
+     "modules"
+     "experimental"))
+
+
+  (fixture-run
+
+   (run-test-suite (if coverage-mode?
+                       void
+                       Baseline)
+                   Scheme-Numbers
+                   #:with basic-tests)
+
+   (run-test-suite Optimized
+                   #:with (append basic-tests
+                                  (fixture-path-patterns "optimize")))
+
+   (run-test-suite FFI-Baseline
+                   FFI-Optimized
+                   #:with (fixture-path-patterns "ffi"))))
