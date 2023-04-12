@@ -269,8 +269,9 @@
              (loop (cdr points)))))))])
 
 (define (empty-scene width height [color "white"])
-  (rectangle width height "solid" color)
-  (rectangle width height "outline" "black"))
+    (overlay
+        (rectangle width height "solid" color)
+        (rectangle width height "outline" "black")))
 
 (define (text txt size color)
   (new (Text txt
