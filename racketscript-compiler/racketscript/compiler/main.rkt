@@ -265,11 +265,11 @@
       (when (js-output-beautify?)
         (system (format "js-beautify -r ~a" (module-output-file next))))
 
-      (for ([mod (in-set (Module-imports ast))])
-        (match mod
-          [(? symbol? _) (void)]
-          [_ #:when (collects-module? mod) (put-to-pending! mod)]
-          [_ (put-to-pending! mod)]))
+      (for ([mod (in-set (Module-imports ast))]
+            #:unless (or (symbol? mod)
+                         (set-member? ignored-module-imports-in-boot
+                                      mod)))
+        (put-to-pending! mod))
 
       next))
 
