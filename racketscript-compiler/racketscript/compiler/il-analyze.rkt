@@ -75,6 +75,8 @@
       [(ILIndex expr field-expr)
        (ILIndex (traverse-expr expr) (traverse-expr field-expr))]
       [(ILNew e) (ILNew (cast (traverse-expr e) (U ILApp ILLValue)))]
+      [(ILAsync e) (ILAsync (traverse-expr e))]
+      [(ILAwait e) (ILAwait (traverse-expr e))]
       [(ILInstanceOf expr type)
        (ILInstanceOf (traverse-expr expr) (traverse-expr type))]
       [(ILTypeOf expr) (ILTypeOf (traverse-expr expr))]
@@ -202,6 +204,8 @@
        (ILTypeOf (handle-expr expr))]
       [(ILNew v)
        (ILNew (cast (handle-expr v) (U Symbol ILRef ILIndex ILApp)))]
+      [(ILAsync v) (ILAsync (handle-expr v))]
+      [(ILAwait v) (ILAwait (handle-expr v))]
       [(ILValue v) e]
       [(ILUndefined) e]
       [(ILArguments) e]
@@ -670,6 +674,8 @@
       [(ILThis) e]
       [(ILNull) e]
       [(ILNew v) e]
+      [(ILAsync expr) (ILAsync (handle-expr/general expr))]
+      [(ILAwait expr) (ILAwait (handle-expr/general expr))]
       [(? symbol? v) e]))
 
   (: handle-stm (-> ILStatement ILResult))
@@ -895,6 +901,8 @@
       [(ILUndefined) (list (set) (set))]
       [(ILNull) (list (set) (set))]
       [(ILNew e) (find e defs)]
+      [(ILAsync e) (find e defs)]
+      [(ILAwait e) (find e defs)]
       [(? symbol? v)
        (list (set)
              (if (set-member? defs v)
@@ -978,6 +986,8 @@
     [(ILUndefined) #f]
     [(ILNull) #f]
     [(ILNew _) #t]
+    [(ILAsync _) #t]
+    [(ILAwait _) #t]
     [(ILInstanceOf expr type) (or (has-application? expr)
                                   (has-application? type))]
     [(ILTypeOf expr) (has-application? expr)]
@@ -1100,6 +1110,8 @@
     [(ILThis) (list (set) (set))]
     [(ILNull) (list (set) (set))]
     [(ILNew e) (used+defined/statement e)]
+    [(ILAsync e) (used+defined/statement e)]
+    [(ILAwait e) (used+defined/statement e)]
     [(? symbol? v)
      (list (set v) (set))]))
 
@@ -1203,6 +1215,8 @@
                                         (flatten-if-else/expr fieldexpr))]
     [(ILNew expr*) (ILNew (cast (flatten-if-else/expr expr*)
                                 (U ILLValue ILApp)))]
+    [(ILAsync expr) (ILAsync (flatten-if-else/expr expr))]
+    [(ILAwait expr) (ILAwait (flatten-if-else/expr expr))]
     [(ILInstanceOf expr* type) (ILInstanceOf (flatten-if-else/expr expr*)
                                              (flatten-if-else/expr type))]
     [(ILTypeOf expr) (ILTypeOf (flatten-if-else/expr expr))]

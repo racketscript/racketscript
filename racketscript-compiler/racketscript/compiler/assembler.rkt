@@ -125,6 +125,12 @@
      (emit "typeof(")
      (assemble-expr expr out)
      (emit ")")]
+    [(ILAsync expr)
+     (emit "async ")
+     (assemble-expr expr out)]
+    [(ILAwait expr)
+     (emit "await ")
+     (assemble-expr expr out)]
     [(ILValue v) (assemble-value v out)]
     [(ILNull)
      (emit "null")]

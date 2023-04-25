@@ -1,10 +1,11 @@
 #lang racketscript/base
 
-;; Emulates 2htdp/image library as much as possible. Also see
-;; Whalesong's implementation, which we have referrred
+;; Emulates 2htdp/image library as much as possible.
+;; Borrows from Whalesong's implementation
 
 (require (for-syntax racketscript/base
                      syntax/parse)
+         racketscript/interop
          racket/bool
          "private/color.rkt"
          "../private/jscommon.rkt")
@@ -47,6 +48,7 @@
          bitmap/data
          bitmap/url
          freeze
+         ready
 
          print-image
          color
@@ -468,6 +470,77 @@
                             (- (half #js.image.width))
                             (- (half #js.image.height)))))])
 
+;; from: https://github.com/mdn/js-examples/blob/master/promises-test/index.html
+;; function imgLoad(url) {
+;;     // Create new promise with the Promise() constructor;
+;;     // This has as its argument a function
+;;     // with two parameters, resolve and reject
+;;     return new Promise(function(resolve, reject) {
+;;       // Standard XHR to load an image
+;;       var request = new XMLHttpRequest();
+;;       request.open('GET', url);
+;;       request.responseType = 'blob';
+;;       // When the request loads, check whether it was successful
+;;       request.onload = function() {
+;;         if (request.status === 200) {
+;;         // If successful, resolve the promise by passing back the request response
+;;           resolve(request.response);
+;;         } else {
+;;         // If it fails, reject the promise with a error message
+;;           reject(Error('Image didn\'t load successfully; error code:' + request.statusText));
+;;         }
+;;       };
+;;       request.onerror = function() {
+;;       // Also deal with the case when the entire request fails to begin with
+;;       // This is probably a network error, so reject the promise with an appropriate message
+;;           reject(Error('There was a network error.'));
+;;       };
+;;       // Send the request
+;;       request.send();
+;;     });
+;;       }
+(define (imgLoad url)
+  ($/new
+   (#js*.Promise
+    (lambda (resolve reject)
+      (define request ($/new (#js*.XMLHttpRequest)))
+      (#js.request.open #js"GET" url)
+      ($/:= #js.request.responseType #js"blob")
+      ($/:= #js.request.onload
+            (lambda ()
+              (if ($/binop ===  #js.request.status 200)
+                  (resolve #js.request.response)
+                  (reject (#js*.Error #js"Image didnt load successfully")))))
+      ($/:= #js.request.onerror
+            (lambda () ($/throw (#js*.Error #js"There was a network error"))))
+      (#js.request.send)))))
+
+($/define/async (ready obj)
+  (when ($/defined? #js.obj.ready) (#js.obj.ready)))
+
+(define-proto UrlBitmap
+  (λ (data)
+    #:with-this this
+    (set-object! this [loaded-image (imgLoad data)]))
+  [ready
+   ($/async
+    (λ () #:with-this this
+      (define data ($/await #js.this.loaded-image))
+      (define image (new #js*.Image))
+      (:= #js.image.crossOrigin #js"anonymous")
+      (:= #js.image.src (#js*.window.URL.createObjectURL data))
+      (set-object! this
+                 [image  image]
+                 [width  #js.image.width]
+                 [height #js.image.height])))]
+    [render
+     (λ (ctx x y)
+       #:with-this this
+       (define image #js.this.image)
+       (with-origin ctx [x y]
+         (#js.ctx.drawImage image
+          (- (half #js.image.width))
+          (- (half #js.image.height)))))])
 
 (define-proto Freeze
   (λ (img)
@@ -668,7 +741,9 @@
   (new (Bitmap data)))
 
 (define (bitmap/url url)
-  (new (Bitmap url)))
+  (define b (new (UrlBitmap url)))
+  (register-async-obj b)
+  b)
 
 (define (frame img)
   (color-frame "black" img))

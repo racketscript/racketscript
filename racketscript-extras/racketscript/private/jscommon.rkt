@@ -1,7 +1,8 @@
 #lang racketscript/base
 
 (require (for-syntax racketscript/base
-                     syntax/parse))
+                     syntax/parse)
+         racketscript/interop)
 
 (provide :=
          *this*
@@ -12,6 +13,8 @@
          set-object!
          schedule-method
          schedule-animation-frame
+         register-async-obj
+         await-async-objs
          document
          console
          Math
@@ -74,6 +77,14 @@
   (let ([self this])
     (#js*.window.requestAnimationFrame (λ ()
                                          (($ self step))))))
+
+;; global table of promises that must be await'ed
+;; TODO: this should go somewhere in big-bang obj?
+(define ASYNC-OBJS ($/array))
+(define (register-async-obj obj)
+  (#js.ASYNC-OBJS.push obj))
+($/define/async (await-async-objs)
+  (#js*.Promise.all (#js.ASYNC-OBJS.map (lambda (x) (#js.x.ready)))))
 
 ;;-----------------------------------------------------------------------------
 ;; Helper functions

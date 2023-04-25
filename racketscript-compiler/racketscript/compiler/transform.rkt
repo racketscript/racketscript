@@ -387,6 +387,12 @@
        [(list (Quote 'typeof) e)
         (define-values (stms val) (absyn-expr->il e #f))
         (values stms (ILTypeOf val))]
+       [(list (Quote 'async) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values stms (ILAsync val))]
+       [(list (Quote 'await) e)
+        (define-values (stms val) (absyn-expr->il e #f))
+        (values stms (ILAwait val))]
        [(list (Quote 'instanceof) e t)
         ;;TODO: Not ANF.
         (define-values (stms val) (absyn-expr->il e #f))
@@ -406,7 +412,7 @@
         (values '() (ILArguments))]
        [(list (Quote 'this))
         (values '() (ILThis))]
-       [_ (error 'absyn-expr->il "unknown ffi form" args)])]
+       [_ (error 'absyn-expr->il "unknown ffi form: ~a" args)])]
 
     [(PlainApp lam args)
      ;;NOTE: Comparision operators work only on two operands TODO
@@ -582,7 +588,7 @@
      (values stms result-id)]
     [(VarRef _)  (values '() (absyn-value->il '#%variable-reference))]
 
-    [_ (error (~a "unsupported expr " expr))]))
+    [_ (error 'absyn-expr->il "unsupported expr ~a" expr)]))
 
 
 (: absyn-binding->il (-> Binding ILStatement*))
@@ -667,7 +673,7 @@
          (void? d)
          (real? d))
      (ILValue d)]
-    [else (error (~a "unsupported value" d))]))
+    [else (error 'absyn-value->il "unsupported value ~a" d)]))
 
 (: expand-normal-case-lambda (-> (Listof PlainLambda)
                                  (Listof PlainLambda)
