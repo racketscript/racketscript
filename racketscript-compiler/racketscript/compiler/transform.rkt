@@ -667,6 +667,11 @@
          (void? d)
          (real? d))
      (ILValue d)]
+    [(and (number? d) (zero? d)) (ILValue d)] ; some zero values are not real, eg 0.0+0.0i
+    [(and (number? d) (not (real? d))) ;; FIXME with real complex num implementation
+     (ILApp (name-in-module 'core 'Pair.make)
+            (list (ILValue (real-part d))
+                  (ILValue (imag-part d))))]
     [else (error (~a "unsupported value" d))]))
 
 (: expand-normal-case-lambda (-> (Listof PlainLambda)
