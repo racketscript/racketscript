@@ -27,7 +27,9 @@
          ignored-module-imports-in-boot
          ignored-undefined-identifier?
 
-         skip-arity-checks?)
+         skip-arity-checks?
+
+         use-scheme-numbers?)
 
 ;;; ---------------------------------------------------------------------------
 (define FFI-CALL-ID '#%js-ffi)
@@ -134,3 +136,9 @@
 
 (: skip-arity-checks? (Parameter Boolean))
 (define skip-arity-checks? (make-parameter #f))
+
+;;; ---------------------------------------------------------------------------
+
+;; Compiler flag for switching between JS and Scheme number semantics.
+(: use-scheme-numbers? (Parameter Boolean))
+(define use-scheme-numbers? (make-parameter #f))

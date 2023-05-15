@@ -1,4 +1,4 @@
-import { racketCoreError } from './errors.js';
+import { racketCoreError } from '../errors.js';
 
 /* Arithmetic */
 

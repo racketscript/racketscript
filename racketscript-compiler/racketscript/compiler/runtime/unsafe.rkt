@@ -2,10 +2,10 @@
 
 (require (for-syntax syntax/parse)
          racketscript/interop
+         racketscript/compiler/directive
          "lib.rkt")
 
 (define Core   ($/require/* "./core.js"))
-
 
 ;;-----------------------------------------------------------------------------
 ;; Unsafe Numeric Operations
@@ -23,7 +23,8 @@
 (define-unsafe-fx-binop+provide unsafe-fx+         +)
 (define-unsafe-fx-binop+provide unsafe-fx-         -)
 (define-unsafe-fx-binop+provide unsafe-fx*         *)
-(define-unsafe-fx-binop+provide unsafe-fxquotient  /)
+(define+provide unsafe-fxquotient  (if-scheme-numbers #js.Core.Number.Scheme.divide
+                                                      #js.Core.Number.JS.divide))
 (define-unsafe-fx-binop+provide unsafe-fxremainder %)
 
 (define+provide (unsafe-fxmodulo a b)

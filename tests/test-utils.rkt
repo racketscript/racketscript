@@ -1,6 +1,10 @@
 #lang racket/base
-(require (for-syntax racket/base syntax/parse version/utils)
+
+(require (for-syntax racket/base
+                     syntax/parse
+                     version/utils)
          syntax/parse/define)
+
 (provide (all-defined-out))
 
 (define-syntax (run-if-version stx)

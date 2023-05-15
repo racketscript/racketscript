@@ -5,7 +5,8 @@
          *jsident-pattern*
          js-identifier?)
 
-(require setup/dirs
+(require (for-syntax syntax/parse)
+         setup/dirs
          setup/link)
 
 ;; Path Path -> Boolean

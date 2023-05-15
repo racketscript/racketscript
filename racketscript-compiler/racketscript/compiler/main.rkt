@@ -35,7 +35,8 @@
          racketscript-dir
          skip-npm-install
          enabled-optimizations
-         recompile-all-modules?)
+         recompile-all-modules?
+         use-scheme-numbers?)
 
 (define build-mode (make-parameter 'complete))
 (define skip-npm-install (make-parameter #f))
@@ -314,6 +315,8 @@
     (enabled-optimizations (set-add (enabled-optimizations) flatten-if-else))]
    ["--lift-returns" "Translate self tail calls to loops"
     (enabled-optimizations (set-add (enabled-optimizations) lift-returns))]
+   ["--scheme-numbers" "Use Scheme number semantics"
+    (use-scheme-numbers? #t)]
    #:multi
    [("-t" "--target") target "Build target environment [plain|webpack|closure-compiler|babel]"
     (if (member target *targets*)
