@@ -91,7 +91,8 @@
       ;; modules
       (if (or (and (primitive-module? mod-path)  ;; a self-import cycle
                    (equal? path (actual-module-path mod-path)))
-              (set-member? ignored-module-imports-in-boot mod-path))
+              (and (primitive-module-path? (actual-module-path path))
+                   (set-member? ignored-module-imports-in-boot mod-path)))
           #f
           (ILRequire import-name mod-obj-name '*))))
 

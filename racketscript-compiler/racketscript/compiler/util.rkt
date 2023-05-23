@@ -228,6 +228,7 @@
        (build-path (output-directory) "links" name (~a rel-path ".js")))
      ;; because we just created root links directory, but files could be
      ;; deep arbitrarily inside
+     (make-directory* (assert (path-only output-path) path?))
      ;; TODO: doesn't handle arbitrary deep files for now
      (path->complete-path output-path)]
     [(list 'general mod-path)
