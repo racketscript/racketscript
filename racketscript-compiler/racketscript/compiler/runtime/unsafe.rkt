@@ -23,8 +23,7 @@
 (define-unsafe-fx-binop+provide unsafe-fx+         +)
 (define-unsafe-fx-binop+provide unsafe-fx-         -)
 (define-unsafe-fx-binop+provide unsafe-fx*         *)
-(define+provide unsafe-fxquotient  (if-scheme-numbers #js.Core.Number.Scheme.divide
-                                                      #js.Core.Number.JS.divide))
+(define-unsafe-fx-binop+provide unsafe-fxquotient  /)
 (define-unsafe-fx-binop+provide unsafe-fxremainder %)
 
 (define+provide (unsafe-fxmodulo a b)
