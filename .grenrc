@@ -1,0 +1,11 @@
+{
+  "dataSource": "commits",
+  "includeMessages": "commits",
+  "changelogFilename": "CHANGELOG.md",
+  "onlyMilestones": false,
+  "ignoreIssuesWith": [
+    "wontfix",
+    "duplicate"
+  ]
+}
+
