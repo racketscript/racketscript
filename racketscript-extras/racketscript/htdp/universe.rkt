@@ -32,7 +32,6 @@
     (:= #js.this.interval   (/ 1000 *default-frames-per-second*))
     (:= #js.this.handlers   handlers)
 
-    (#js*.console.log #js"big bang :3")
     (:= #js.this.-active-handlers         ($/obj))
     (:= #js.this.-world-change-listeners  ($/array))
 
