@@ -2,11 +2,11 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
-         "universe-primitives.rkt"
-         "jscommon.rkt"
-         "encode-decode.rkt"
-         "debug-tools.rkt"
-         "universe-server.rkt")
+         "./private/peer-universe/universe-primitives.rkt"
+         "./private/peer-universe/jscommon.rkt"
+         "./private/peer-universe/encode-decode.rkt"
+         "./private/peer-universe/debug-tools.rkt"
+         "./private/peer-universe/universe-server.rkt")
 
 (provide on-mouse
          on-tick
