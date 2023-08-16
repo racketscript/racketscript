@@ -2,61 +2,102 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
-         "../private/jscommon.rkt")
+         "universe-primitives.rkt"
+         "jscommon.rkt"
+         "encode-decode.rkt"
+         "debug-tools.rkt"
+         "universe-server.rkt")
 
 (provide on-mouse
          on-tick
          on-key
          on-release
+         on-receive
+         register
+         name
          to-draw
          stop-when
          big-bang
+
+         on-new
+         on-msg
+         on-disconnect
+         server-id
+         universe
+
+         package?
+         make-package
+
+         bundle?
+         make-bundle
+         mail?
+         make-mail
+
+         iworld-name
+         iworld?
+         iworld=?
 
          key=?
          mouse=?)
 
 (define *default-frames-per-second* 70)
 
-(define (make-big-bang init-world handlers)
-  (new (BigBang init-world handlers)))
+(define (make-big-bang init-world handlers dom-root)
+  (new (BigBang init-world handlers (if ($/binop != dom-root $/null)
+                                         dom-root #js*.document.body))))
 
-(define (big-bang init-world . handlers)
-  ($> (make-big-bang init-world handlers)
+(define (big-bang init-world #:dom-root [dom-root $/null] . handlers)
+  ($> (make-big-bang init-world handlers dom-root)
       (setup)
       (start)))
 
 (define-proto BigBang
-  (λ (init-world handlers)
+  (λ (init-world handlers dom-root)
     #:with-this this
     (:= #js.this.world      init-world)
     (:= #js.this.interval   (/ 1000 *default-frames-per-second*))
     (:= #js.this.handlers   handlers)
 
-    (#js*.console.log #js"big bang :3")
+    (:= #js.this.is-universe? #false)
+
+    (:= #js.this.dom-root dom-root)
+
     (:= #js.this.-active-handlers         ($/obj))
     (:= #js.this.-world-change-listeners  ($/array))
+    (:= #js.this.-package-listeners       ($/array))
+
+    (:= #js.this.-uses-peer  #f)
+    (:= #js.this.-peer-name  #js"client")
+    (:= #js.this.-server-id  #js"server")
+    (:= #js.this.-peer            $/undefined)
+    (:= #js.this.-conn            $/undefined)
+    (:= #js.this.-peer-init-tasks ($/array))
 
     (:= #js.this.-idle       #t)
     (:= #js.this.-stopped    #t)
-    (:= #js.this.-events     ($/array)))
+    (:= #js.this.-events     ($/array))
+    
+    (define canvas  (#js.document.createElement #js"canvas"))
+    (define ctx     (#js.canvas.getContext #js"2d"))
+    (#js.canvas.setAttribute #js"tabindex" 1)
+    (#js.canvas.setAttribute #js"style" #js"outline: none")
+    (:= #js.this.-canvas    canvas)
+    (:= #js.this.-context   ctx))
   [setup
    (λ ()
      #:with-this this
-     ;; Create canvas DOM element and add to screen
-     (define canvas  (#js.document.createElement #js"canvas"))
-     (define ctx     (#js.canvas.getContext #js"2d"))
+     
+     (define canvas #js.this.-canvas)
 
-     (#js.canvas.setAttribute #js"tabindex" 1)
-     (#js.canvas.setAttribute #js"style" #js"outline: none")
-
-     (:= #js.this.-canvas    canvas)
-     (:= #js.this.-context   ctx)
-
-     (#js.document.body.appendChild canvas)
+     (#js.this.dom-root.appendChild canvas)
      (#js.canvas.focus)
 
      (#js.this.register-handlers)
 
+     (if #js.this.-uses-peer
+         (#js.this.init-peer-connection)
+         (void))
+    
      ;; Set canvas size as the size of first world
      (define draw-handler ($ #js.this.-active-handlers #js"to-draw"))
      (unless draw-handler
@@ -105,6 +146,7 @@
                   [-stopped #t]
                   [-idle    #t])
      (#js.this.deregister-handlers)
+     (#js.this.-canvas.remove)
      (set-object! #js.this
                   [-active-handlers ($/obj)]
                   [handlers '()]))]
@@ -119,8 +161,18 @@
      (when #js.this.-idle
        (schedule-animation-frame #js.this 'process_events)))]
   [change-world
-   (λ (new-world)
+   (λ (handler-result)
      #:with-this this
+     
+     ;; WIP: handle packages being passed as new-world
+     ;; see https://docs.racket-lang.org/teachpack/2htdpuniverse.html#%28part._universe._.Sending_.Messages%29
+     (define new-world handler-result)
+     (if (package? handler-result)
+         (begin
+           (set! new-world (package-world handler-result))
+           (#js.this.handle-package handler-result))
+         (void))
+     
      (define listeners #js.this.-world-change-listeners)
      (let loop ([i 0])
        (when (< i #js.listeners.length)
@@ -137,6 +189,25 @@
      #:with-this this
      (define index (#js.this.-world-change-listeners.indexOf cb))
      (#js.this.-world-change-listeners.splice index 1))]
+  [handle-package
+   (λ (pkg)
+     #:with-this this
+     (define message (package-message pkg))
+     (define listeners #js.this.-package-listeners)
+     (let loop ([i 0])
+       (when (< i #js.listeners.length)
+         (define listener ($ #js.listeners i))
+         (listener message)
+         (loop (add1 i)))))]
+  [add-package-listener
+   (λ (cb)
+     #:with-this this
+     (#js.this.-package-listeners.push cb))]
+  [remove-package-listener
+   (λ (cb)
+     #:with-this this
+     (define index (#js.this.-package-listeners.indexOf cb))
+     (#js.this.-package-listeners.splice index 1))]
   [process-events
    (λ ()
      #:with-this this
@@ -155,6 +226,8 @@
               ; raw evt must be checked 1st; bc handler will be undefined
               [(equal? #js.evt.type #js"raw")
                (#js.evt.invoke #js.this.world evt)]
+              [($/binop === handler $/undefined)
+               (begin (#js*.console.warn #js"WARNING: processing event w/ undefined handler.") (void))]
               [handler (#js.handler.invoke #js.this.world evt)]
               [else
                (#js.console.warn "ignoring unknown/unregistered event type: " evt)]))
@@ -163,7 +236,57 @@
           (#js.this.queue-event ($/obj [type #js"to-draw"]))
           (loop #f)]))
 
-     (:= #js.this.-idle #t))])
+     (:= #js.this.-idle #t))]
+  [init-peer-connection
+   ; Should we let users pick their own IDs? Would that be a security issue?
+   (λ ()
+     #:with-this this
+     (define peer (new (Peer)))
+     (:= #js.this.-peer peer)
+     
+     (#js.peer.on #js"open"
+      (λ ()      
+        (define conn (#js.peer.connect (js-string #js.this.-server-id)
+                                       ($/obj [label #js.this.-peer-name])))
+        (:= #js.this.-conn conn)
+        (define init-tasks #js.this.-peer-init-tasks)
+        
+        (define (on-conn-open)
+          ;; Loop through this.-peer-init-tasks[] and execute all callbacks
+          (let loop ([i 0])
+            (when (< i #js.init-tasks.length)
+             (define task ($ #js.init-tasks i))
+             (task peer conn)
+             (loop (add1 i))))
+          ;; Add beforeunload and unload listeners to close the connection
+          (#js*.window.addEventListener #js"beforeunload"
+            (λ (_)
+              (#js.conn.close)))
+          (#js*.window.addEventListener #js"unload"
+            (λ (_)
+              (#js.conn.close)
+            ))
+          )
+        (#js.conn.on #js"open" on-conn-open)
+        (#js.conn.on #js"close" (λ (_) (
+          ;; TODO: implement disconnect event
+          #js*.console.log #js"conn closed")
+          (#js*.alert #js"Client has been disconnected by the server or the connection has been lost.")))
+        )))]
+  ;; cb = (peer: Peer, conn: DataConnection) => void
+  [add-peer-init-task
+   (λ (cb)
+     #:with-this this
+     ;; If peer and conn already exist, execute callback
+     ;; else, append callback to this.-peer-init-tasks[]
+     (define conn #js.this.-conn)
+     (define peer #js.this.-peer)
+     (define conn-open?
+      (if ($/typeof conn "undefined")
+          #f #js.conn.open))
+     (if conn-open?
+         (cb peer conn)
+         (#js.this.-peer-init-tasks.push cb)))])
 
 (define (to-draw cb)
   (λ (bb)
@@ -185,16 +308,16 @@
                     #f)])))
 
 (define (on-tick cb rate)
-  (λ (bb)
+  (λ (bb-u)
     (define on-tick-evt ($/obj [type #js"on-tick"]))
     ($/obj
      [name         #js"on-tick"]
      [register     (λ ()
                      #:with-this this
-                     (#js.bb.queue-event on-tick-evt)
+                     (#js.bb-u.queue-event on-tick-evt)
                      (if rate
                          (set! rate (* 1000 rate))
-                         (set! rate #js.bb.interval)))]
+                         (set! rate #js.bb-u.interval)))]
      [deregister   (λ ()
                      #:with-this this
                      (define last-cb #js.this.last-cb)
@@ -203,12 +326,14 @@
                        ;; particularly with high fps, so we need to do
                        ;; something at event loop itself.
                        (#js*.window.clearTimeout last-cb)))]
-     [invoke       (λ (world _)
+     [invoke       (λ (state _)
                      #:with-this this
-                     (#js.bb.change-world (cb world))
+                     (if #js.bb-u.is-universe?
+                         (#js.bb-u.change-state (cb state))
+                         (#js.bb-u.change-world (cb state)))
                      (:= #js.this.last-cb (#js*.setTimeout
                                             (λ ()
-                                              (#js.bb.queue-event on-tick-evt))
+                                              (#js.bb-u.queue-event on-tick-evt))
                                             rate))
                      #t)])))
 
@@ -383,3 +508,83 @@
   (equal? k1 k2))
 (define (mouse=? m1 m2)
   (equal? m1 m2))
+
+(define (on-receive cb)
+  (λ (bb)
+    (define on-receive-evt ($/obj [type #js"on-receive"]))
+    ($/obj
+     [name         #js"on-receive"]
+     [register     (λ ()
+                     #:with-this this
+
+                     (#js.bb.add-peer-init-task
+                      (λ (peer conn)
+                        (:= #js.this.conn-data-listener
+                            (λ (data)
+                              (#js.bb.queue-event ($/obj [type #js.on-receive-evt.type]
+                                                         [msg data]))))
+                        
+                        (#js.conn.on #js"data" #js.this.conn-data-listener)
+   
+                        (:= #js.this.package-listener
+                            (λ (message)
+                              #:with-this this
+                              (#js.conn.send (encode-data message))
+                              0))
+   
+                        (#js.bb.add-package-listener #js.this.package-listener)))
+
+                     0)]
+     [deregister   (λ ()
+                     #:with-this this
+                     (define peer #js.bb.-peer)
+                     (define should-destroy-peer?
+                       (if ($/typeof peer "undefined")
+                           #f
+                           (not #js.peer.disconnected)))
+                     (if should-destroy-peer?
+                         (begin 
+                           (#js.peer.disconnect)
+                           (#js.peer.destroy))
+                         (void))
+                     (#js.bb.remove-package-listener #js.this.package-listener)
+                     0)]
+     [invoke       (λ (world evt)
+                     #:with-this this
+                     (#js.bb.change-world (cb world (decode-data #js.evt.msg)))
+                     #t)])))
+
+(define (register server-id)
+  (λ (bb)
+    ($/obj
+     [name         #js"register"]
+     [register     (λ ()
+                     #:with-this this
+                     (:= #js.bb.-server-id server-id)
+                     (:= #js.bb.-uses-peer #t)
+                     0)]
+     [deregister   (λ ()
+                     #:with-this this
+                     (define conn #js.bb.-conn)
+                     (define conn-open?
+                      (if ($/typeof conn "undefined")
+                          #f #js.conn.open))
+                     (#js*.console.log conn-open?)
+                     (if conn-open?
+                      (#js.conn.close)
+                      (void))
+                     0)]
+     [invoke       (λ (world evt)
+                     #:with-this this
+                     #t
+                     )])))
+
+(define (name name)
+  (λ (bb)
+    ($/obj
+      [name        #js"name"]
+      [register    (λ ()
+                     #:with-this this
+                     (:= #js.bb.-peer-name (js-string name))
+                     (void))]
+      [deregister  (λ () (void))])))
