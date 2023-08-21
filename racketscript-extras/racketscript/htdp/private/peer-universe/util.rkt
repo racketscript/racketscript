@@ -4,10 +4,92 @@
                      syntax/parse))
 
 (provide format-js-str
-         (all-defined-out))
+         generate-id
+         js-string?
+         js-object?
+         null?
+         undefined?
+         js-array?
+         msg->string)
 
 (define-syntax-rule (format-js-str fmt-str args ...)
   (js-string (format fmt-str args ...)))
+
+
+;; 
+;; Funny words courtesy of ChatGPT
+;; 
+
+(define funny-adjectives (list "bumbling"
+                               "quizzical"
+                               "wacky"
+                               "zany"
+                               "fluffy"
+                               "bizarre"
+                               "hilarious"
+                               "whimsical"
+                               "absurd"
+                               "goofy"
+                               "ridiculous"
+                               "loopy"
+                               "nutty"
+                               "eccentric"
+                               "silly"
+                               "quirky"
+                               "jovial"
+                               "giggly"
+                               "mirthful"
+                               "haphazard"
+                               "chucklesome"
+                               "fanciful"
+                               "droll"
+                               "boisterous"
+                               "offbeat"
+                               "hysterical"
+                               "peculiar"
+                               "lighthearted"
+                               "playful"
+                               "amusing"))
+
+(define funny-nouns (list "goober"
+                          "banana"
+                          "sock-puppet"
+                          "llama"
+                          "rubber-chicken"
+                          "pajamas"
+                          "gobbledygook"
+                          "poodle"
+                          "bubble-wrap"
+                          "tater-tot"
+                          "cheeseburger"
+                          "wiggle"
+                          "snorkel"
+                          "ticklemonster"
+                          "jello"
+                          "balloon-animal"
+                          "slinky"
+                          "spaghetti"
+                          "bumblebee"
+                          "dingleberry"
+                          "flapdoodle"
+                          "doohickey"
+                          "noodle"
+                          "gobbledygook"
+                          "whatchamacallit"
+                          "snickerdoodle"
+                          "popsicle"
+                          "gigglesnort"
+                          "wobble"
+                          "hootenanny"
+                          "noodle"))
+
+(define (generate-id)
+  (define adjective (list-ref funny-adjectives 
+                              (random (length funny-adjectives))))
+  (define noun (list-ref funny-nouns
+                         (random (length funny-nouns))))
+  (format "~a-~a" adjective noun))
+
 
 (define (js-string? s)
   (or ($/typeof s "string") ($/instanceof s #js*.String)))
@@ -40,3 +122,4 @@
              (js-array?  msg)
              (null?      msg))  (#js*.JSON.stringify msg)]
         [else (format "~a" msg)]))
+

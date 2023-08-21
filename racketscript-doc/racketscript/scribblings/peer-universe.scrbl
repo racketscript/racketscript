@@ -60,7 +60,7 @@ Differences from the original @racket[big-bang] API include:
 @italic{Original @racket[universe] docs.}
 
 @nested[#:style 'inset]{@itemlist[
-                                  @item{The @racket[server-id] clause can be used with @racket[universe] to specify its peer id (which gets passed into the @racket[register] clause of a @racket[big-bang] call). Note that two servers should not have the same peer id, or problems will occur.}
+                                  @item{The @racket[server-id] clause can be used with @racket[universe] to specify its peer id (which gets passed into the @racket[register] clause of a @racket[big-bang] call).}
                                   @item{@racket[universe] takes and optional @italic{#:dom-root} keyword argument to specify a root element to insert the logging gui into.}
                                   @item{No @racket[port] clause.}
                                   @item{No @racket[state] clause (yet).}
@@ -71,3 +71,4 @@ Differences from the original @racket[big-bang] API include:
     Lets you specify the @racket[peer-id] of the @racket[universe] that you're initializing. Use this @racket[peer-id] with the @racket[register] clause in a @racket[big-bang] call to connect a client.
 }
 
+@margin-note{If this clause is not provided, a random id will be generated and logged. Also, note that if two universes have the same peer ID, conflicts may occur when users try to join.}
