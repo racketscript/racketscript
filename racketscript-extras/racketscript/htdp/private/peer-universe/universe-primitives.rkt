@@ -3,9 +3,7 @@
 (require ;htdp/error
          racket/list)
 
-(provide sexp?
-         
-         make-package
+(provide make-package
          package?
          package-world
          package-message
@@ -32,19 +30,6 @@
          ;; private
          make-iworld
          iworld-conn)
-
-(define (sexp? x)
-  (cond
-    [(empty? x) #true]
-    [(string? x) #true]
-    [(bytes? x) #true]
-    [(symbol? x) #true]
-    [(number? x) #true]
-    [(boolean? x) #true]
-    [(char? x) #true]
-    [(pair? x) (and (list? x) (andmap sexp? x))]
-    ; [(and (struct? x) (prefab-struct-key x)) (for/and ((i (struct->vector x))) (sexp? i))]
-    [else #false]))
 
 (struct u-package (world message))
 (define (make-package world message)

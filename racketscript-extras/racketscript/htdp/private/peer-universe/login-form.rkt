@@ -2,7 +2,7 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
-         "jscommon.rkt"
+         "../../../private/jscommon.rkt"
          "util.rkt")
 
 (provide create-login-form)

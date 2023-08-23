@@ -84,10 +84,8 @@
                           "noodle"))
 
 (define (generate-id)
-  (define adjective (list-ref funny-adjectives 
-                              (random (length funny-adjectives))))
-  (define noun (list-ref funny-nouns
-                         (random (length funny-nouns))))
+  (define adjective (list-ref funny-adjectives (random (length funny-adjectives))))
+  (define noun      (list-ref funny-nouns      (random (length funny-nouns))))
   (format "~a-~a" adjective noun))
 
 
@@ -96,14 +94,15 @@
 
 ;; NOTE: because every racket datatype in 
 ;;       racketscript is stored as a js object,
-;;       ($/typeof obj <any racket variable>)
+;;       ($/typeof obj <racket variable>)
 ;;       will always be true
 (define (js-object? obj)
   (and (not (string? obj)
             (number? obj)
             (boolean? obj)
             (list? obj)
-            (symbol? obj))
+            (symbol? obj)
+            (struct? obj))
        ($/typeof obj "object")))
 
 (define (null? val)
@@ -116,10 +115,9 @@
   (#js*.Array.isArray arr))
 
 (define (msg->string msg)
-  (cond [(undefined? msg)       "undefined"]
-        [(js-string? msg)       (js-string->string msg)]
-        [(or (js-object? msg)
-             (js-array?  msg)
-             (null?      msg))  (#js*.JSON.stringify msg)]
+  (cond [(undefined? msg) "undefined"]
+        [(js-string? msg) (js-string->string msg)]
+        [(or (js-object? msg) (js-array? msg) (null? msg))
+         (#js*.JSON.stringify msg)]
         [else (format "~a" msg)]))
 

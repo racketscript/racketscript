@@ -2,10 +2,9 @@
 
 (require (for-syntax racketscript/base
                      syntax/parse)
+         "../private/jscommon.rkt"
          "./private/peer-universe/universe-primitives.rkt"
-         "./private/peer-universe/jscommon.rkt"
          "./private/peer-universe/encode-decode.rkt"
-         "./private/peer-universe/debug-tools.rkt"
          "./private/peer-universe/universe-server.rkt"
          "./private/peer-universe/login-form.rkt")
 
@@ -46,8 +45,9 @@
 (define *default-frames-per-second* 70)
 
 (define (make-big-bang init-world handlers dom-root)
-  (new (BigBang init-world handlers (if ($/binop != dom-root $/null)
-                                         dom-root #js*.document.body))))
+  (new (BigBang init-world handlers
+                (if ($/binop != dom-root $/null)    ;; Workaround for problem with 
+                    dom-root #js*.document.body)))) ;; default args in nested functions
 
 (define (big-bang init-world #:dom-root [dom-root $/null] . handlers)
   ($> (make-big-bang init-world handlers dom-root)
@@ -61,6 +61,8 @@
     (:= #js.this.interval   (/ 1000 *default-frames-per-second*))
     (:= #js.this.handlers   handlers)
 
+    ;; Lets evt handlers check whether they're being passed a universe or
+    ;; big-bang instance, so they can adjust their behavior
     (:= #js.this.is-universe? #false)
 
     (:= #js.this.dom-root dom-root)
@@ -69,9 +71,10 @@
     (:= #js.this.-world-change-listeners  ($/array))
     (:= #js.this.-package-listeners       ($/array))
 
-    (:= #js.this.-uses-peer  #f)
-    (:= #js.this.-peer-name  #js"client")
-    (:= #js.this.-server-id  #js"server")
+    (:= #js.this.-uses-peer #f)
+    (:= #js.this.-peer-name #js"client") ;; Default name
+    (:= #js.this.-server-id #js"server") ;; Default server
+    
     (:= #js.this.-peer            $/undefined)
     (:= #js.this.-conn            $/undefined)
     (:= #js.this.-peer-init-tasks ($/array))
@@ -97,9 +100,7 @@
 
      (#js.this.register-handlers)
 
-     (if #js.this.-uses-peer
-         (#js.this.init-peer-connection)
-         (void))
+     (when #js.this.-uses-peer (#js.this.init-peer-connection))
     
      ;; Set canvas size as the size of first world
      (define draw-handler ($ #js.this.-active-handlers #js"to-draw"))
@@ -167,15 +168,11 @@
    (λ (handler-result)
      #:with-this this
      
-     ;; WIP: handle packages being passed as new-world
-     ;; see https://docs.racket-lang.org/teachpack/2htdpuniverse.html#%28part._universe._.Sending_.Messages%29
      (define new-world handler-result)
-     (if (package? handler-result)
-         (begin
-           (set! new-world (package-world handler-result))
-           (#js.this.handle-package handler-result))
-         (void))
-     
+     (when (package? handler-result)
+       (set! new-world (package-world handler-result))
+       (#js.this.handle-package handler-result))
+
      (define listeners #js.this.-world-change-listeners)
      (let loop ([i 0])
        (when (< i #js.listeners.length)
@@ -241,14 +238,13 @@
 
      (:= #js.this.-idle #t))]
   [init-peer-connection
-   ; Should we let users pick their own IDs? Would that be a security issue?
    (λ ()
      #:with-this this
      (define peer (new (Peer)))
      (:= #js.this.-peer peer)
      
      (#js.peer.on #js"open"
-      (λ ()      
+      (λ ()
         (define conn (#js.peer.connect (js-string #js.this.-server-id)
                                        ($/obj [label #js.this.-peer-name])))
         (:= #js.this.-conn conn)
@@ -261,24 +257,20 @@
              (define task ($ #js.init-tasks i))
              (task peer conn)
              (loop (add1 i))))
-          ;; Add beforeunload and unload listeners to close the connection
+          ;; Let the server know we've disconnected when the window closes
           (#js*.window.addEventListener #js"beforeunload"
             (λ (_)
               (#js.conn.close)))
           (#js*.window.addEventListener #js"unload"
             (λ (_)
-              (#js.conn.close)
-            ))
-          )
+              (#js.conn.close))))
         (#js.conn.on #js"open" on-conn-open)
-        (#js.conn.on #js"close" (λ (_) (
-          ;; TODO: implement disconnect event
-          #js*.console.log #js"conn closed")
-          (#js*.alert #js"Client has been disconnected by the server or the connection has been lost.")))
-        )))]
-  ;; cb = (peer: Peer, conn: DataConnection) => void
+        (#js.conn.on #js"close" 
+         (λ (_)
+           (#js*.console.log #js"conn closed")
+           (#js*.alert #js"Client disconnected."))))))]
   [add-peer-init-task
-   (λ (cb)
+   (λ (cb) ;; cb: (peer: Peer, conn: DataConnection) => void
      #:with-this this
      ;; If peer and conn already exist, execute callback
      ;; else, append callback to this.-peer-init-tasks[]
@@ -516,78 +508,69 @@
   (λ (bb)
     (define on-receive-evt ($/obj [type #js"on-receive"]))
     ($/obj
-     [name         #js"on-receive"]
-     [register     (λ ()
-                     #:with-this this
-
-                     (#js.bb.add-peer-init-task
-                      (λ (peer conn)
-                        (:= #js.this.conn-data-listener
-                            (λ (data)
-                              (#js.bb.queue-event ($/obj [type #js.on-receive-evt.type]
-                                                         [msg data]))))
-                        
-                        (#js.conn.on #js"data" #js.this.conn-data-listener)
-   
-                        (:= #js.this.package-listener
-                            (λ (message)
-                              #:with-this this
-                              (#js.conn.send (encode-data message))
-                              0))
-   
-                        (#js.bb.add-package-listener #js.this.package-listener)))
-
-                     0)]
-     [deregister   (λ ()
-                     #:with-this this
-                     (define peer #js.bb.-peer)
-                     (define should-destroy-peer?
-                       (if ($/typeof peer "undefined")
-                           #f
-                           (not #js.peer.disconnected)))
-                     (if should-destroy-peer?
-                         (begin 
-                           (#js.peer.disconnect)
-                           (#js.peer.destroy))
-                         (void))
-                     (#js.bb.remove-package-listener #js.this.package-listener)
-                     0)]
-     [invoke       (λ (world evt)
-                     #:with-this this
-                     (#js.bb.change-world (cb world (decode-data #js.evt.msg)))
-                     #t)])))
+     [name #js"on-receive"]
+     [register
+      (λ ()
+        #:with-this this
+        (#js.bb.add-peer-init-task
+         (λ (peer conn)
+           (:= #js.this.conn-data-listener
+               (λ (data)
+                 (#js.bb.queue-event ($/obj [type #js.on-receive-evt.type]
+                                            [msg data]))))
+           (#js.conn.on #js"data" #js.this.conn-data-listener)
+           (:= #js.this.package-listener
+               (λ (message)
+                 #:with-this this
+                 (#js.conn.send (encode-data message))))
+           (#js.bb.add-package-listener #js.this.package-listener))))]
+     [deregister
+      (λ ()
+        #:with-this this
+        (define peer #js.bb.-peer)
+        (define should-destroy-peer?
+          (if ($/typeof peer "undefined")
+              #f
+              (not #js.peer.disconnected)))
+        (when should-destroy-peer?
+          (#js.peer.disconnect)
+          (#js.peer.destroy))
+        (#js.bb.remove-package-listener #js.this.package-listener))]
+     [invoke
+      (λ (world evt)
+        #:with-this this
+        (#js.bb.change-world (cb world (decode-data #js.evt.msg)))
+        #t)])))
 
 (define (register server-id)
   (λ (bb)
     ($/obj
      [name         #js"register"]
-     [register     (λ ()
-                     #:with-this this
-                     (:= #js.bb.-server-id server-id)
-                     (:= #js.bb.-uses-peer #t)
-                     0)]
-     [deregister   (λ ()
-                     #:with-this this
-                     (define conn #js.bb.-conn)
-                     (define conn-open?
-                      (if ($/typeof conn "undefined")
-                          #f #js.conn.open))
-                     (#js*.console.log conn-open?)
-                     (if conn-open?
-                      (#js.conn.close)
-                      (void))
-                     0)]
-     [invoke       (λ (world evt)
-                     #:with-this this
-                     #t
-                     )])))
+     [register
+      (λ ()
+        #:with-this this
+        (:= #js.bb.-server-id server-id)
+        (:= #js.bb.-uses-peer #t))]
+     [deregister
+      (λ ()
+        #:with-this this
+        (define conn #js.bb.-conn)
+        (define conn-open?
+         (if ($/typeof conn "undefined")
+             #f #js.conn.open))
+        (#js*.console.log conn-open?)
+        (when conn-open? (#js.conn.close)))]
+     [invoke
+      (λ (world evt)
+        #:with-this this
+        #t)])))
 
 (define (name name)
   (λ (bb)
     ($/obj
       [name        #js"name"]
-      [register    (λ ()
-                     #:with-this this
-                     (:= #js.bb.-peer-name (js-string name))
-                     (void))]
+      [register
+       (λ ()
+         #:with-this this
+         (:= #js.bb.-peer-name (js-string name)))]
       [deregister  (λ () (void))])))

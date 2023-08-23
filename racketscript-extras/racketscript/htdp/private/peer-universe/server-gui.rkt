@@ -3,30 +3,22 @@
 (require (for-syntax racketscript/base
                      syntax/parse)
          "encode-decode.rkt"
-         "debug-tools.rkt"
          "universe-primitives.rkt"
-         "jscommon.rkt")
+         "../../../private/jscommon.rkt")
 
 (provide server-gui)
 
-(define DEFAULT-DISPLAY-MODE #js"block")
 (define WIDTH 500)
 (define HEIGHT 300)
 
 (define-proto ServerLogger
-  (λ (root stop-callback restart-callback)
+  (λ (root)
     #:with-this this
 
-    ; <div id="server-logger-container">
-    ;     <checkbox>Auto-scroll</checkbox>
-    ;     <textbox>logged text</textbox>
-    ;     <div class="button-container">
-    ;          <button>stop</button>
-    ;         <button>stop and restart</button>
-    ;     </div>
-    ; </div>
     (:= #js.this.logs  ($/array))
     (:= #js.this.autoscroll? #true)
+
+    (:= #js.this.peer-id #js"")
 
     ;; Create elements
     (:= #js.this.container      (#js*.document.createElement #js"div"))
@@ -34,9 +26,8 @@
     (:= #js.this.checkbox-div   (#js*.document.createElement #js"div"))
     (:= #js.this.checkbox-label (#js*.document.createElement #js"label"))
     (:= #js.this.checkbox       (#js*.document.createElement #js"input"))
-    (:= #js.this.button-div     (#js*.document.createElement #js"div"))
-    (:= #js.this.stop-button    (#js*.document.createElement #js"button"))
-    (:= #js.this.restart-button (#js*.document.createElement #js"button"))
+    (:= #js.this.id-text        (#js*.document.createElement #js"em"))
+    (:= #js.this.id-copy-button (#js*.document.createElement #js"button"))
 
     ;; Configure elements
     (:= #js.this.container.style.display #js"none")
@@ -52,29 +43,23 @@
     (:= #js.this.checkbox.onclick (lambda () (:= #js.this.autoscroll? #js.this.checkbox.checked)))
     (:= #js.this.checkbox.checked #true)
 
-    (:= #js.this.stop-button.innerHTML          #js"stop")
-    (:= #js.this.stop-button.style.grid-area    #js"stop")
-    (:= #js.this.stop-button.onclick            stop-callback)
-    (:= #js.this.restart-button.innerHTML       #js"restart")
-    (:= #js.this.restart-button.style.grid-area #js"restart")
-    (:= #js.this.restart-button.onclick         restart-callback)
-    (:= #js.this.button-div.style.width         #js"100%")
-    (:= #js.this.button-div.style.display       #js"grid")
-    (:= #js.this.button-div.style.gridTemplateAreas
-        #js"'stop restart'")
+    (:= #js.this.id-text.innerHTML           #js"peer id: undefined ")
+    (:= #js.this.id-copy-button.innerHTML    #js"copy")
+    (:= #js.this.id-copy-button.style.margin-left #js"5px")
+
+    (:= #js.this.id-copy-button.onclick
+        (λ ()
+          (#js*.navigator.clipboard.writeText #js.this.peer-id)
+          (#js*.alert #js"Copied peer ID to clipboard.")))
 
     ;; Add elements to document
     (#js.this.checkbox-div.appendChild #js.this.checkbox-label)
     (#js.this.checkbox-div.appendChild #js.this.checkbox)
 
-    (#js.this.button-div.appendChild #js.this.stop-button)
-    (#js.this.button-div.appendChild #js.this.restart-button)
-
+    (#js.this.container.appendChild #js.this.id-text)
+    (#js.this.container.appendChild #js.this.id-copy-button)
     (#js.this.container.appendChild #js.this.textbox)
     (#js.this.container.appendChild #js.this.checkbox-div)
-    (if (and restart-callback stop-callback)
-        (#js.this.container.appendChild #js.this.button-div)
-        (void))
     (#js.root.appendChild #js.this.container)
     this)
     [log
@@ -82,18 +67,20 @@
        #:with-this this
        (#js.this.logs.push (js-string text))
        (#js.this.render)
-       (#js*.console.log (js-string text))
-       (void))]
+       (#js*.console.log (js-string text)))]
     [show
      (λ ()
        #:with-this this
-       (:= #js.this.container.style.display DEFAULT-DISPLAY-MODE)
-       (void))]
+       (:= #js.this.container.style.display "block"))]
     [hide
      (λ ()
        #:with-this this
-       (:= #js.this.container.style.display #js"none")
-       (void))]
+       (:= #js.this.container.style.display #js"none"))]
+    [set-id!
+     (λ (new-id)
+       #:with-this this
+       (:= #js.this.peer-id new-id)
+       (:= #js.this.id-text.innerHTML (js-string (format "peer id: ~a " new-id))))]
     [render
      (λ ()
        #:with-this this
@@ -103,13 +90,11 @@
                                                       ($/+ res #js"\n\n" (js-string curr))))
                                                 #js""))
        (:= #js.this.textbox.innerHTML log-string)
-       (cond [(equal? #js.this.autoscroll? #true)
-              (:= #js.this.textbox.scrollTop #js.this.textbox.scrollHeight)]
-             [else (void)])
-       (void))])
+       (when (equal? #js.this.autoscroll? #true)
+             (:= #js.this.textbox.scrollTop #js.this.textbox.scrollHeight)))])
 
-(define (make-gui root stop-callback restart-callback)
-  (new (ServerLogger root stop-callback restart-callback)))
+(define (make-gui root)
+  (new (ServerLogger root)))
 
-(define (server-gui [root-element #js*.document.body] [stop-callback #false] [restart-callback #false])
-  (make-gui root-element stop-callback restart-callback))
+(define (server-gui [root-element #js*.document.body])
+  (make-gui root-element))

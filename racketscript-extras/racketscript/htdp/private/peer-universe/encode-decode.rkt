@@ -5,7 +5,31 @@
 
 (require "util.rkt")
 
-(define DATA-TYPE-WARNING #js"racketscript/htdp/universe: Unsupported datatype being passed to/from server.")
+;
+; ---------------------------------------------
+; 
+; Encoding data to be sent via json and decoded
+; by receiver into regular JS
+; 
+; ---------------------------------------------
+;
+; example:
+;
+; 'sym 
+;   |  encoded and sent over peer connection
+;   V
+; {
+;   val: "sym", type: "symbol"
+; }
+;   |  received and decoded
+;   V
+; 'sym
+;
+; ---------------------------------------------
+;
+
+(define DATA-TYPE-WARNING 
+        #js"racketscript/htdp/universe: Unsupported datatype being passed to/from server.")
 
 (define (encode-array arr)
   (#js.arr.map (lambda (elem) (encode-data elem))))
@@ -23,25 +47,9 @@
 (define (decode-object obj)
   (define keys (#js*.Object.keys obj))
   (#js.keys.reduce (lambda (res key)
-                                 ($/:= ($ res key) (decode-data ($ obj key)))
-                                 res)
-                               ($/obj)))
-
-#|
-('test "some_string" #js"test" {test: "test"})
-
-
-"test"
-{
-  val: "test", type: "string"
-}
-
-'sym
-{
-  val: "sym", type: "symbol"
-}
-
-|#
+                     ($/:= ($ res key) (decode-data ($ obj key)))
+                     res)
+                   ($/obj)))
 
 (define (encode-data data)
   (cond [(list? data) (foldl (lambda (curr result)
@@ -68,13 +76,13 @@
         [else              (begin 
                              (#js*.console.warn ($/array DATA-TYPE-WARNING data))
                              ($/obj [type #js"unknown"]
-                                  [val data]))]))
+                                    [val data]))]))
 
 (define (decode-data data)
   (cond [(#js*.Array.isArray data) (#js.data.reduce (lambda (result curr)
                                                       (append result (list (decode-data curr))))
                                                     '())]
-        [($/binop == #js.data.type #js"null") $/null]
+        [($/binop == #js.data.type #js"null")      $/null]
         [($/binop == #js.data.type #js"undefined") $/undefined]
         [($/binop == #js.data.type #js"number")    #js.data.val]
         [($/binop == #js.data.type #js"string")    (js-string->string #js.data.val)]
