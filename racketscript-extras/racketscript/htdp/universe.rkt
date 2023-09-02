@@ -11,6 +11,7 @@
          to-draw
          stop-when
          big-bang
+         name
 
          key=?
          mouse=?)
@@ -382,3 +383,17 @@
   (equal? k1 k2))
 (define (mouse=? m1 m2)
   (equal? m1 m2))
+
+(define (name name)
+  (λ (bb)
+    ($/obj
+      [name        #js"name"]
+      [register
+       (λ ()
+         #:with-this this
+         (:= #js.this.old-title #js*.document.title)
+         (:= #js*.document.title (js-string name)))]
+      [deregister
+       (λ ()
+         #:with-this this
+         (:= #js*.document.title #js.this.old-title))])))
