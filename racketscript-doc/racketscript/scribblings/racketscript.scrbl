@@ -17,3 +17,4 @@ possible.
 
 @include-section{start.scrbl}
 @include-section{ffi.scrbl}
+@include-section{peer-universe.scrbl}
