@@ -43,6 +43,7 @@ which will expand to the appropriate call to @racket[#%js-ffi].
            (#%js-ffi 'instanceof obj type)
            (#%js-ffi 'string str)
            (#%js-ffi 'require mod)
+           (#%js-ffi 'requirerkt mod)
            (#%js-ffi 'operator 'op operand ...))
 ]{}
 
@@ -64,6 +65,7 @@ Summary of JavaScript operations supported by @racket[#%js-ffi]:
           @item{@racket['instanceof]: JS @tt{instanceof} operation}
           @item{@racket['string]: JS strings (incompatible with Racket/RacketScript strings, see @racket[$/str])}
           @item{@racket['require]: JS @tt{import}, use to import JS libraries}
+          @item{@racket['requirerkt]: JS @tt{import}, use to import Racket libraries as JS}
           @item{@racket['operator]: Use to call JS functions requiring infix notation}
           ]
 
@@ -135,7 +137,7 @@ Shorthand for multiple @racket[$]s. Allows more direct use of dot notation in Ra
           ([mod string?])]{
    JavaScript import statement.
                                          
-   Often used with @racket[define], e.g., @racket[(define express ($/require "express"))] compiles to:
+   Must be used with @racket[define], e.g., @racket[(define express ($/require "express"))] compiles to:
 
    @tt{import * as express from "express";}
    
@@ -148,6 +150,23 @@ Shorthand for multiple @racket[$]s. Allows more direct use of dot notation in Ra
     JavaScript import all statement.
 
     Shorthand for @racket[($/require mod *)]}
+
+@defform*[#:literals (*)
+          (($/require/rkt mod)
+           ($/require/rkt mod *))
+          #:contracts
+          ([mod string?])]{
+   JavaScript import statement, but for Racket files, i.e., @racket[mod]
+   is a Racket file name whose compiled JS file gets required in the output JS.
+
+   This form is needed because the RacketScript compiler's dependency
+   calculations skips JS identifiers.
+
+   Must be used with @racket[define], e.g., @racket[(define lib ($/require/rkt "lib.rkt"))] compiles to:
+
+   @tt{import * as lib from "lib.rkt.js";}
+
+   Equivalent to @racket[(#%js-ffi 'requirerkt mod)] or  @racket[(#%js-ffi 'requirerkt '* mod)]}
 
 @defform[($> e call ...)
          #:grammar
