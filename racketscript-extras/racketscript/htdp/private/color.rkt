@@ -207,4 +207,5 @@
          ["darkgray" (-color 169 169 169)]
          ["dim gray" (-color 105 105 105)]
          ["dimgray" (-color 105 105 105)]
-         ["black" (-color 0 0 0)]))
+         ["black" (-color 0 0 0)]
+         ["transparent" (-color 0 0 0 0)]))
