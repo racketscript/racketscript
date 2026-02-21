@@ -7,6 +7,7 @@
          $/array
          $/require
          $/require/*
+         $/require/rkt
          $$
          $>
          $/:=
@@ -161,6 +162,13 @@
   (syntax-parse stx
     [(_ mod:str)
      #`(#%js-ffi 'require '* mod)]))
+
+(define-syntax ($/require/rkt stx)
+  (syntax-parse stx
+    [(_ mod:str)
+     #`(#%js-ffi 'requirerkt mod)]
+    [(_ mod:str (~datum *))
+     #`(#%js-ffi 'requirerkt '* mod)]))
 
 (define-syntax ($> stx)
   (define-syntax-class chaincall
