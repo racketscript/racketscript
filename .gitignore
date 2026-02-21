@@ -2,6 +2,7 @@ compiled/
 coverage/
 tmp/
 js-build/
+racketscript-doc/racketscript/doc
 
 # common backups, autosaves, lock files, OS meta-files
 *~
